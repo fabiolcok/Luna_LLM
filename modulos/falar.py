@@ -107,3 +107,30 @@ def falar_texto(texto, voz="F1", velocidade=1.05, ao_iniciar=None, ao_terminar=N
         print(f"Erro ao gerar/tocar fala no Supertonic: {e}")
         if ao_terminar:
             ao_terminar()
+
+
+def limpar_texto_para_voz(texto):
+    """Remove markdown e formatações que atrapalham o TTS."""
+    if not texto:
+        return ""
+
+    import re
+
+    texto = re.sub(r'^\[[\w]+\]\s*', '', texto)
+
+    if re.match(r'^\s*\{.*\}\s*$', texto, re.DOTALL):
+        return ""
+
+    texto = re.sub(r'\*+', '', texto)
+    texto = re.sub(r'#+\s*', '', texto)
+    texto = re.sub(r'`+', '', texto)
+    texto = re.sub(r'_{1,2}(.*?)_{1,2}', r'\1', texto)
+    texto = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', texto)
+
+    texto = re.sub(r'^\s*[\*\-•]\s+', '', texto, flags=re.MULTILINE)
+    texto = re.sub(r'^\s*\d+\.\s+', '', texto, flags=re.MULTILINE)
+
+    texto = re.sub(r'\n{2,}', '\n', texto)
+    texto = texto.strip()
+
+    return texto

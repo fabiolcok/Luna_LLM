@@ -725,3 +725,202 @@ def desenhar_imagem(prompt_imagem):
     webbrowser.open(url)
     
     return f"Imagem gerada e aberta no navegador."
+
+
+#================================================================
+#          CATÁLOGO DE FERRAMENTAS (SCHEMAS E MAPA DE FUNÇÕES)
+#================================================================
+
+def executar_analise_aba():
+    contexto = obter_contexto_navegador()
+    if isinstance(contexto, dict):
+        relatorio = (
+            f"SISTEMA: O Fábio está olhando para a seguinte tela agora:\n"
+            f"TÍTULO: {contexto.get('titulo', 'Desconhecido')}\n"
+            f"URL: {contexto.get('url', 'Desconhecida')}\n"
+            f"CONTEÚDO:\n{contexto.get('texto', '')}\n\n"
+            "Fale algo em uma frase."
+        )
+        return relatorio
+    return contexto
+
+
+ferramentas_disponiveis = [
+    {
+        "type": "function",
+        "function": {
+            "name": "resumir_youtube",
+            "description": "Resume o vídeo do YouTube que o Fábio está assistindo AGORA na aba ativa do Firefox.",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "adicionar_agenda",
+            "description": "Cria um NOVO evento na agenda. NUNCA use esta ferramenta para consultar ou ler a agenda.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "resumo": {"type": "string"},
+                    "data_hora_iso": {"type": "string"}
+                },
+                "required": ["resumo", "data_hora_iso"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "controlar_spotify",
+            "description": "Use para tocar músicas no Spotify. IMPORTANTE: Se o usuário pedir 'qualquer música' ou NÃO especificar o nome, você TEM PERMISSÃO para escolher o nome de uma música famosa aleatória por conta própria.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "acao": {"type": "string", "enum": ["tocar"]},
+                    "nome_musica": {
+                        "type": "string",
+                        "description": "O nome da música. Se o usuário não disse qual, invente uma música popular e coloque aqui."
+                    }
+                },
+                "required": ["acao", "nome_musica"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "pesquisar_web",
+            "description": "Use esta ferramenta SEMPRE que você precisar de informações atualizadas.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "pergunta": {"type": "string"}
+                },
+                "required": ["pergunta"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "enviar_whatsapp",
+            "description": "Use para enviar uma mensagem de WhatsApp para alguém.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "destinatario": {"type": "string"},
+                    "mensagem": {"type": "string"}
+                },
+                "required": ["destinatario", "mensagem"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "checar_emails",
+            "description": "Use para ver os novos e-mails.",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "controlar_navegador",
+            "description": "Controla a aba ativa do Firefox.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "acao": {"type": "string", "enum": ["abrir_url", "clicar", "ler_texto", "rolar_baixo", "digitar_texto", "navegacao", "controle_midia", "listar_abas", "trocar_aba"]},
+                    "parametro": {"type": "string"}
+                },
+                "required": ["acao"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "analisar_aba_atual",
+            "description": "Lê o CONTEÚDO TEXTUAL da aba ativa do Firefox.",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "listar_processos_pesados",
+            "description": "Lista os 5 programas que mais estão consumindo memória RAM no PC do Fábio agora.",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "abrir_programa",
+            "description": "Abre um programa ou jogo no computador do Fábio.",
+            "parameters": {
+                "type": "object",
+                "properties": {"nome_programa": {"type": "string"}},
+                "required": ["nome_programa"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "matar_processo",
+            "description": "Força o fechamento de um programa que travou ou que está pesando no PC.",
+            "parameters": {
+                "type": "object",
+                "properties": {"nome_processo": {"type": "string"}},
+                "required": ["nome_processo"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "ver_tela",
+            "description": "Captura a tela atual do usuário.",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "ler_selecionado",
+            "description": "Use SEMPRE que o Fábio pedir para ler texto selecionado.",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "desenhar_imagem",
+            "description": "Gera uma imagem. Use quando o Fábio pedir um desenho.",
+            "parameters": {
+                "type": "object",
+                "properties": {"prompt_imagem": {"type": "string"}},
+                "required": ["prompt_imagem"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "ler_agenda_google",
+            "description": "Lê os eventos e compromissos que o Fábio já tem agendados para hoje.",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "obter_clima",
+            "description": "Obtém a previsão do tempo e a temperatura atual.",
+            "parameters": {"type": "object", "properties": {}}
+        }
+    },
+]
