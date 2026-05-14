@@ -1,0 +1,40 @@
+# Ambiente virtual
+venv/
+.venv/
+env/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Tokens e credenciais gerados em runtime
+token.json
+*.token
+
+# Banco de dados e dados gerados em runtime
+modelos/chromadb/
+modelos/memoria_permanente.json
+modelos/estado_proativo.json
+modelos/manifests/
+chroma_db/
+*.db
+*.sqlite
+
+# Cache de autenticação
+modelos/spotify_cache
+PyWhatKit_DB.txt
+
+# Logs
+*.log
+
+# VSCode
+.vscode/
+
+# Sistema
+.DS_Store
+Thumbs.db

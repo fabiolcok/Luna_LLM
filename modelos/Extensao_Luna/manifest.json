@@ -1,0 +1,23 @@
+{
+  "manifest_version": 2,
+  "name": "Olhos da Luna",
+  "version": "1.1",
+  "description": "Extensão que permite a IA Luna controlar o Firefox via WebSocket.",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "<all_urls>"
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "olhos-da-luna@seu-pc.local",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
+  "background": {
+    "scripts": ["background.js"]
+  }
+}

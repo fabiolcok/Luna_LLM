@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Luna - Interface Neural</title>
+    <style>
+        body {
+            background-color: #0d0d12;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            width: 80%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Bloco de quem está falando */
+        .caixa-texto {
+            padding: 20px;
+            border-radius: 12px;
+            background: #16161e;
+            border-left: 5px solid #444;
+            min-height: 80px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        /* Estilo específico para a Luna */
+        #luna-bloco { border-color: #7aa2f7; }
+        #luna-texto { font-size: 1.2rem; line-height: 1.5; color: #b4f9f8; }
+
+        /* Estilo específico para o Fábio */
+        #usuario-bloco { border-color: #bb9af7; opacity: 0.8; }
+        #usuario-texto { font-style: italic; color: #cfc9c2; }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            color: #565f89;
+        }
+
+        /* Botão Interromper */
+        #btn-interromper {
+            background-color: #f7768e;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            align-self: center;
+            margin-top: 20px;
+            text-transform: uppercase;
+        }
+
+        #btn-interromper:hover {
+            background-color: #ff5d77;
+            transform: scale(1.05);
+        }
+
+        #btn-interromper:active { transform: scale(0.95); }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- PARTE QUE O FÁBIO FALA -->
+        <div id="usuario-bloco" class="caixa-texto">
+            <label>Fábio (Você):</label>
+            <div id="usuario-texto">Aguardando áudio...</div>
+        </div>
+
+        <!-- PARTE QUE A LUNA FALA -->
+        <div id="luna-bloco" class="caixa-texto">
+            <label>Luna:</label>
+            <div id="luna-texto">Zzz... dormindo.</div>
+        </div>
+
+        <!-- BOTÃO INTERROMPER -->
+        <button id="btn-interromper">🛑 Interromper Fala</button>
+
+    </div>
+
+    <script>
+        // Conecta ao WebSocket do servidor Python
+        const socket = new WebSocket('ws://' + window.location.host + '/ws');
+
+        socket.onmessage = function(event) {
+            const dados = JSON.parse(event.data);
+
+            // Atualiza o texto da Luna (legenda)
+            if (dados.legenda !== undefined) {
+                document.getElementById('luna-texto').innerText = dados.legenda;
+            }
+
+            // Atualiza o que você falou (transcrição do Whisper)
+            if (dados.usuario !== undefined) {
+                document.getElementById('usuario-texto').innerText = dados.usuario;
+            }
+        };
+
+        // Envia o comando de interrupção quando clica no botão
+        document.getElementById('btn-interromper').onclick = function() {
+            socket.send(JSON.stringify({ comando: 'interromper' }));
+        };
+    </script>
+</body>
+</html>
