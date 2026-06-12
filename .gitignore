@@ -12,7 +12,11 @@ __pycache__/
 dist/
 build/
 
-# Tokens e credenciais gerados em runtime
+# Credenciais e segredos
+.env
+modelos/credentials.json
+
+# Tokens gerados em runtime
 token.json
 *.token
 
@@ -20,10 +24,15 @@ token.json
 modelos/chromadb/
 modelos/memoria_permanente.json
 modelos/estado_proativo.json
+modelos/estado_luna.json
+modelos/vistos.json
 modelos/manifests/
 chroma_db/
 *.db
 *.sqlite
+
+# Backups locais (o próprio git já é o histórico/backup)
+modulos/bkp/
 
 # Cache de autenticação
 modelos/spotify_cache
