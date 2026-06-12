@@ -2,8 +2,10 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Luna - Interface Neural</title>
+    <title>Luna</title>
     <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
             background-color: #0d0d12;
             color: #e0e0e0;
@@ -12,111 +14,1075 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            margin: 0;
+            min-height: 100vh;
+            padding: 24px;
         }
 
         .container {
-            width: 80%;
-            max-width: 800px;
+            width: 100%;
+            max-width: 780px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 16px;
         }
 
-        /* Bloco de quem está falando */
+        /* GIF — invisível até o primeiro GIF chegar */
+        #gif-container {
+            width: 100%;
+            max-height: 0;
+            border-radius: 14px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: max-height 0.5s ease, opacity 0.5s ease;
+        }
+
+        #gif-container.ativo {
+            max-height: 380px;
+            opacity: 1;
+        }
+
+        #gif-img {
+            max-width: 100%;
+            max-height: 380px;
+            width: auto;
+            height: auto;
+            display: block;
+            opacity: 0;
+            transition: opacity 0.45s ease;
+            /* Vignette aplicada diretamente na imagem — funciona em qualquer proporção */
+            -webkit-mask-image:
+                linear-gradient(to right,  transparent 0%, black 8%, black 92%, transparent 100%),
+                linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
+            -webkit-mask-composite: source-in;
+            mask-image:
+                linear-gradient(to right,  transparent 0%, black 8%, black 92%, transparent 100%),
+                linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
+            mask-composite: intersect;
+        }
+
+        #gif-placeholder { display: none; }
+
+        /* Caixas de texto */
         .caixa-texto {
-            padding: 20px;
-            border-radius: 12px;
-            background: #16161e;
-            border-left: 5px solid #444;
-            min-height: 80px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            padding: 12px 16px;
+            border-radius: 10px;
+            background: #11111a;
+            border-left: 4px solid #444;
+            min-height: 48px;
         }
 
-        /* Estilo específico para a Luna */
-        #luna-bloco { border-color: #7aa2f7; }
-        #luna-texto { font-size: 1.2rem; line-height: 1.5; color: #b4f9f8; }
-
-        /* Estilo específico para o Fábio */
-        #usuario-bloco { border-color: #bb9af7; opacity: 0.8; }
-        #usuario-texto { font-style: italic; color: #cfc9c2; }
+        #luna-bloco    { border-color: #7aa2f7; }
+        #usuario-bloco { border-color: #bb9af7; opacity: 0.75; }
 
         label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-weight: bold;
             text-transform: uppercase;
-            font-size: 0.8rem;
-            letter-spacing: 1px;
+            font-size: 0.78rem;
+            letter-spacing: 1.5px;
             color: #565f89;
         }
 
-        /* Botão Interromper */
-        #btn-interromper {
-            background-color: #f7768e;
-            color: white;
+        #luna-texto    { font-size: 1.15rem; line-height: 1.55; color: #b4f9f8; }
+        #usuario-texto { font-size: 1.15rem; font-style: italic; color: #cfc9c2; }
+
+        /* Pensamento colapsável — mesmo visual das outras caixas */
+        #pensamento-details {
+            border-radius: 10px;
+            background: #11111a;
+            border-left: 4px solid #3a3a5a;
+            overflow: hidden;
+        }
+
+        #pensamento-details summary {
+            padding: 12px 16px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 0.78rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #565f89;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+
+        #pensamento-details summary::-webkit-details-marker { display: none; }
+
+        #pensamento-details summary::before {
+            content: '▶';
+            font-size: 0.6rem;
+            transition: transform 0.35s ease;
+        }
+
+        #pensamento-details[open] summary::before {
+            transform: rotate(90deg);
+        }
+
+        #pensamento-details summary:hover { color: #7a7aaa; }
+
+        #pensamento-texto {
+            padding: 0 16px;
+            font-size: 1.15rem;
+            color: #4a4a6a;
+            white-space: pre-wrap;
+            line-height: 1.55;
+            border-top: 1px solid #1a1a2e;
+            overflow: hidden;
+            height: 0;
+            opacity: 0;
+            transition: height 0.35s ease, opacity 0.35s ease, padding 0.35s ease;
+            font-family: inherit;
+        }
+
+        /* Botão */
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        #btn-interromper, #btn-toggle-proativo {
             border: none;
-            padding: 15px 30px;
+            padding: 13px 24px;
             border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
-            transition: transform 0.2s, background 0.2s;
-            align-self: center;
-            margin-top: 20px;
+            transition: transform 0.15s, background 0.15s, color 0.15s;
             text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.95rem;
         }
 
-        #btn-interromper:hover {
-            background-color: #ff5d77;
-            transform: scale(1.05);
+        #btn-interromper {
+            background-color: #f7768e;
+            color: white;
+        }
+        #btn-interromper:hover  { background-color: #ff5d77; transform: scale(1.04); }
+        #btn-interromper:active { transform: scale(0.96); }
+
+        #btn-toggle-proativo {
+            background-color: #1a2a1a;
+            color: #9ece6a;
+            border: 1px solid #2a3a2a;
+        }
+        #btn-toggle-proativo:hover  { background-color: #1f3320; transform: scale(1.04); }
+        #btn-toggle-proativo:active { transform: scale(0.96); }
+        #btn-toggle-proativo.inativo {
+            background-color: #1a1a1a;
+            color: #3a3a5a;
+            border-color: #2a2a3a;
+        }
+        #btn-toggle-proativo.inativo:hover { background-color: #222; }
+
+        /* Status mic */
+        #status-mic {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            letter-spacing: 0.5px;
+            color: #2a2a3a;
+            transition: color 0.3s;
+            min-height: 20px;
+        }
+        #status-mic-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+            flex-shrink: 0;
+        }
+        #status-mic.aguardando {
+            color: #3a3a5a;
+        }
+        #status-mic.aguardando #status-mic-dot {
+            animation: pulsar 2.4s ease-in-out infinite;
+        }
+        #status-mic.gravando {
+            color: #f7768e;
+        }
+        #status-mic.gravando #status-mic-dot {
+            animation: pulsar 0.8s ease-in-out infinite;
+        }
+        #status-mic.processando {
+            color: #7aa2f7;
+        }
+        #status-mic.processando #status-mic-dot {
+            animation: pulsar 0.35s ease-in-out infinite;
+        }
+        @keyframes pulsar {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%       { opacity: 0.2; transform: scale(0.5); }
         }
 
-        #btn-interromper:active { transform: scale(0.95); }
+        /* Métricas */
+        #metricas-bar {
+            display: flex;
+            justify-content: center;
+            gap: 28px;
+            font-size: 0.72rem;
+            letter-spacing: 0.5px;
+            font-variant-numeric: tabular-nums;
+            color: #2a2a3a;
+        }
+        #metricas-bar span { transition: color 0.4s; }
+        #metricas-bar span.ativo { color: #3a3a5a; }
+
+        /* History button */
+        #btn-historico {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            background: #11111a;
+            border: 1px solid #2a2a4a;
+            color: #565f89;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s, border-color 0.2s, background 0.2s;
+            z-index: 100;
+        }
+        #btn-historico:hover { color: #7aa2f7; border-color: #7aa2f7; background: #0d1526; }
+
+        /* History panel */
+        #historico-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        #historico-overlay.ativo { opacity: 1; pointer-events: all; }
+
+        #historico-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 320px;
+            background: #0d0d12;
+            border-right: 1px solid #1a1a2e;
+            z-index: 300;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        #historico-panel.aberto { transform: translateX(0); }
+
+        .historico-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            border-bottom: 1px solid #1a1a2e;
+            flex-shrink: 0;
+            background: #0d0d12;
+        }
+        .historico-header > span {
+            font-size: 0.78rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #565f89;
+        }
+        #btn-historico-fechar, #btn-historico-limpar {
+            background: none;
+            border: none;
+            color: #3a3a5a;
+            cursor: pointer;
+            font-size: 0.95rem;
+            padding: 4px 6px;
+            border-radius: 4px;
+            transition: color 0.2s;
+            font-family: inherit;
+        }
+        #btn-historico-fechar:hover { color: #f7768e; }
+        #btn-historico-limpar { font-size: 0.78rem; letter-spacing: 0.5px; }
+        #btn-historico-limpar:hover { color: #f7768e; }
+
+        #historico-lista {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+            scrollbar-width: thin;
+            scrollbar-color: #1e1e2e transparent;
+        }
+        #historico-lista::-webkit-scrollbar { width: 4px; }
+        #historico-lista::-webkit-scrollbar-thumb { background: #1e1e2e; border-radius: 2px; }
+
+        .turno {
+            padding: 10px 16px;
+            border-bottom: 1px solid #0f0f18;
+        }
+        .turno-tempo {
+            font-size: 0.65rem;
+            color: #2a2a3a;
+            margin-bottom: 5px;
+            letter-spacing: 0.5px;
+        }
+        .turno-usuario {
+            font-size: 0.82rem;
+            color: #7a7a9a;
+            font-style: italic;
+            margin-bottom: 5px;
+            line-height: 1.4;
+        }
+        .turno-usuario::before { content: 'Você  '; font-style: normal; color: #3a3a5a; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1px; }
+        .turno-luna {
+            font-size: 0.85rem;
+            color: #b4f9f8;
+            line-height: 1.45;
+        }
+        .turno-luna::before { content: 'Luna  '; color: #3a5a5a; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1px; }
+        .turno-proativo .turno-usuario { display: none; }
+
+        #historico-vazio {
+            padding: 32px 16px;
+            text-align: center;
+            font-size: 0.78rem;
+            color: #2a2a3a;
+        }
+
+        /* Gear button */
+        #btn-config {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            background: #11111a;
+            border: 1px solid #2a2a4a;
+            color: #565f89;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s, border-color 0.2s, background 0.2s;
+            z-index: 100;
+        }
+        #btn-config:hover { color: #7aa2f7; border-color: #7aa2f7; background: #0d1526; }
+
+        /* Overlay */
+        #config-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        #config-overlay.ativo { opacity: 1; pointer-events: all; }
+
+        /* Panel */
+        #config-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            height: 100vh;
+            width: 300px;
+            background: #0d0d12;
+            border-left: 1px solid #1a1a2e;
+            z-index: 300;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+        }
+        #config-panel.aberto { transform: translateX(0); }
+
+        .config-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            border-bottom: 1px solid #1a1a2e;
+            position: sticky;
+            top: 0;
+            background: #0d0d12;
+            z-index: 1;
+        }
+        .config-header > span {
+            font-size: 0.78rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #565f89;
+        }
+        #btn-config-fechar {
+            background: none;
+            border: none;
+            color: #3a3a5a;
+            cursor: pointer;
+            font-size: 0.95rem;
+            padding: 4px 6px;
+            border-radius: 4px;
+            transition: color 0.2s;
+            font-family: inherit;
+        }
+        #btn-config-fechar:hover { color: #f7768e; }
+
+        .config-secao {
+            padding: 14px 16px;
+            border-bottom: 1px solid #1a1a2e;
+        }
+        .config-secao-titulo {
+            font-size: 0.68rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #3a3a5a;
+            margin-bottom: 10px;
+        }
+        .config-linha {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 5px 0;
+            font-size: 0.88rem;
+            color: #cfc9c2;
+        }
+        .config-sublinha {
+            padding-left: 10px;
+            font-size: 0.82rem;
+            color: #7a7a9a;
+        }
+
+        /* Toggle */
+        .toggle { position: relative; display: inline-block; width: 38px; height: 20px; flex-shrink: 0; }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle .slider {
+            position: absolute; inset: 0;
+            background: #1e1e2e;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: 1px solid #2a2a3a;
+        }
+        .toggle .slider::before {
+            content: '';
+            position: absolute;
+            width: 14px; height: 14px;
+            left: 2px; top: 2px;
+            background: #3a3a5a;
+            border-radius: 50%;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .toggle input:checked + .slider { background: #0d2a1a; border-color: #1a3a2a; }
+        .toggle input:checked + .slider::before { transform: translateX(18px); background: #9ece6a; }
+
+        /* Voice grid */
+        .voz-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            margin-top: 8px;
+        }
+        .btn-voz {
+            background: #11111a;
+            border: 1px solid #1e1e2e;
+            color: #3a3a5a;
+            padding: 7px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+        .btn-voz:hover { border-color: #565f89; color: #cfc9c2; }
+        .btn-voz.ativo { border-color: #7aa2f7; color: #7aa2f7; background: #0d1526; }
+
+        /* Speed slider */
+        .config-slider-linha {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .config-slider-linha input[type=range] {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 3px;
+            border-radius: 2px;
+            background: #1e1e2e;
+            outline: none;
+            cursor: pointer;
+        }
+        .config-slider-linha input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            background: #7aa2f7;
+            cursor: pointer;
+        }
+        #btn-reload, #btn-fechar-luna {
+            width: 100%;
+            background: none;
+            border: 1px solid #1e1e2e;
+            padding: 9px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-family: inherit;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        #btn-reload { color: #3a3a5a; }
+        #btn-reload:hover { color: #7aa2f7; border-color: #7aa2f7; }
+        #btn-fechar-luna { color: #3a2020; border-color: #2a1a1a; margin-top: 6px; }
+        #btn-fechar-luna:hover { color: #f7768e; border-color: #f7768e; }
+
+        .config-velocidade-valor {
+            font-size: 0.82rem;
+            color: #7aa2f7;
+            min-width: 34px;
+            text-align: right;
+        }
+
+        /* Drag & drop overlay */
+        #drag-overlay {
+            position: fixed;
+            inset: 6px;
+            background: rgba(122, 162, 247, 0.05);
+            border: 2px dashed #7aa2f7;
+            border-radius: 14px;
+            z-index: 999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 0.88rem;
+            color: #7aa2f7;
+            letter-spacing: 1px;
+            pointer-events: none;
+        }
+        #drag-overlay.ativo { display: flex; }
+        #drag-overlay-icone { font-size: 2rem; opacity: 0.7; }
+
+        /* Attachment badge */
+        #anexo-bar {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            background: #0d1526;
+            border: 1px solid #2a3a5a;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            color: #7aa2f7;
+        }
+        #anexo-bar.ativo { display: flex; }
+        #anexo-nome { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #btn-anexo-remover {
+            background: none;
+            border: none;
+            color: #3a3a5a;
+            cursor: pointer;
+            font-size: 0.88rem;
+            padding: 0 2px;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+        #btn-anexo-remover:hover { color: #f7768e; }
     </style>
 </head>
 <body>
+    <div id="drag-overlay">
+        <div id="drag-overlay-icone">📎</div>
+        <span>Solte para anexar</span>
+    </div>
+
+    <button id="btn-historico" title="Histórico">⏱</button>
+    <div id="historico-overlay"></div>
+
+    <div id="historico-panel">
+        <div class="historico-header">
+            <span>Histórico</span>
+            <div style="display:flex;gap:4px;align-items:center;">
+                <button id="btn-historico-limpar" title="Limpar histórico">🗑 Limpar</button>
+                <button id="btn-historico-fechar">✕</button>
+            </div>
+        </div>
+        <div id="historico-lista">
+            <div id="historico-vazio">Nenhuma conversa ainda.</div>
+        </div>
+    </div>
+
+    <button id="btn-config" title="Configurações">⚙</button>
+    <div id="config-overlay"></div>
+
+    <div id="config-panel">
+        <div class="config-header">
+            <span>Configurações</span>
+            <button id="btn-config-fechar">✕</button>
+        </div>
+
+        <!-- Comportamento -->
+        <div class="config-secao">
+            <div class="config-secao-titulo">Comportamento</div>
+            <div class="config-linha">
+                <span>Proativo</span>
+                <label class="toggle"><input type="checkbox" id="cfg-proativo" checked><span class="slider"></span></label>
+            </div>
+            <div class="config-linha">
+                <span>Memória permanente</span>
+                <label class="toggle"><input type="checkbox" id="cfg-memoria"><span class="slider"></span></label>
+            </div>
+        </div>
+
+        <!-- Tarefas proativas -->
+        <div class="config-secao" id="secao-tarefas">
+            <div class="config-secao-titulo">Tarefas proativas</div>
+            <div class="config-linha config-sublinha">
+                <span>Monitorar jogos</span>
+                <label class="toggle"><input type="checkbox" id="cfg-tarefa-jogos" checked><span class="slider"></span></label>
+            </div>
+            <div class="config-linha config-sublinha">
+                <span>E-mails</span>
+                <label class="toggle"><input type="checkbox" id="cfg-tarefa-emails" checked><span class="slider"></span></label>
+            </div>
+            <div class="config-linha config-sublinha">
+                <span>Agenda</span>
+                <label class="toggle"><input type="checkbox" id="cfg-tarefa-agenda" checked><span class="slider"></span></label>
+            </div>
+            <div class="config-linha config-sublinha">
+                <span>Pausa ergonômica</span>
+                <label class="toggle"><input type="checkbox" id="cfg-tarefa-pausa" checked><span class="slider"></span></label>
+            </div>
+            <div class="config-linha config-sublinha">
+                <span>Clima</span>
+                <label class="toggle"><input type="checkbox" id="cfg-tarefa-clima" checked><span class="slider"></span></label>
+            </div>
+            <div class="config-linha config-sublinha">
+                <span>Bom dia</span>
+                <label class="toggle"><input type="checkbox" id="cfg-tarefa-bom_dia" checked><span class="slider"></span></label>
+            </div>
+            <div class="config-linha config-sublinha">
+                <span>Promoções Steam</span>
+                <label class="toggle"><input type="checkbox" id="cfg-tarefa-steam" checked><span class="slider"></span></label>
+            </div>
+            <div class="config-linha config-sublinha">
+                <span>Contexto navegador</span>
+                <label class="toggle"><input type="checkbox" id="cfg-tarefa-navegador" checked><span class="slider"></span></label>
+            </div>
+        </div>
+
+        <!-- Voz + Velocidade -->
+        <div class="config-secao">
+            <div class="config-secao-titulo">Voz</div>
+            <div class="voz-grid">
+                <button class="btn-voz ativo" data-voz="F1">F1</button>
+                <button class="btn-voz" data-voz="F2">F2</button>
+                <button class="btn-voz" data-voz="F3">F3</button>
+                <button class="btn-voz" data-voz="F4">F4</button>
+                <button class="btn-voz" data-voz="F5">F5</button>
+                <button class="btn-voz" data-voz="M1">M1</button>
+                <button class="btn-voz" data-voz="M2">M2</button>
+                <button class="btn-voz" data-voz="M3">M3</button>
+                <button class="btn-voz" data-voz="M4">M4</button>
+                <button class="btn-voz" data-voz="M5">M5</button>
+            </div>
+            <div class="config-secao-titulo" style="margin-top:14px;">Velocidade</div>
+            <div class="config-slider-linha">
+                <input type="range" id="cfg-velocidade" min="0.8" max="1.8" step="0.1" value="1.2">
+                <span class="config-velocidade-valor" id="cfg-velocidade-valor">1.2×</span>
+            </div>
+        </div>
+
+        <!-- Reload / Fechar -->
+        <div class="config-secao" style="border-bottom:none;">
+            <button id="btn-reload" onclick="window.location.reload()">↺ Recarregar interface</button>
+            <button id="btn-fechar-luna">⏻ Fechar Luna</button>
+        </div>
+    </div>
 
     <div class="container">
-        
-        <!-- PARTE QUE O FÁBIO FALA -->
+
+        <!-- GIF -->
+        <div id="gif-container">
+            <img id="gif-img" src="" alt="">
+            <div id="gif-placeholder">◈</div>
+        </div>
+
+        <!-- Arquivo anexado -->
+        <div id="anexo-bar">
+            <span>📎</span>
+            <span id="anexo-nome">arquivo.txt</span>
+            <button id="btn-anexo-remover" title="Remover anexo">✕</button>
+        </div>
+
+        <!-- Status microfone -->
+        <div id="status-mic" class="aguardando">
+            <div id="status-mic-dot"></div>
+            <span id="status-mic-texto">Aguardando... Segure Ctrl+Alt+F8 para falar</span>
+        </div>
+
+        <!-- Fábio -->
         <div id="usuario-bloco" class="caixa-texto">
-            <label>Fábio (Você):</label>
-            <div id="usuario-texto">Aguardando áudio...</div>
+            <label>Você</label>
+            <div id="usuario-texto">Aguardando...</div>
         </div>
 
-        <!-- PARTE QUE A LUNA FALA -->
+        <!-- Pensamento colapsável -->
+        <details id="pensamento-details">
+            <summary>Pensamento</summary>
+            <div id="pensamento-texto">—</div>
+        </details>
+
+        <!-- Luna -->
         <div id="luna-bloco" class="caixa-texto">
-            <label>Luna:</label>
-            <div id="luna-texto">Zzz... dormindo.</div>
+            <label>Luna</label>
+            <div id="luna-texto">—</div>
         </div>
 
-        <!-- BOTÃO INTERROMPER -->
-        <button id="btn-interromper">🛑 Interromper Fala</button>
+        <div id="metricas-bar">
+            <span id="met-roteador">Roteador —</span>
+            <span id="met-persona">Persona —</span>
+        </div>
+
+        <div class="btn-row">
+            <button id="btn-interromper">⬛ Parar fala</button>
+            <button id="btn-toggle-proativo" title="Ativar/pausar modo proativo">◉ Proativo</button>
+        </div>
 
     </div>
 
     <script>
-        // Conecta ao WebSocket do servidor Python
         const socket = new WebSocket('ws://' + window.location.host + '/ws');
 
-        socket.onmessage = function(event) {
-            const dados = JSON.parse(event.data);
+        // --- Typewriter ---
+        const _tw = { luna: null, voce: null };
 
-            // Atualiza o texto da Luna (legenda)
-            if (dados.legenda !== undefined) {
-                document.getElementById('luna-texto').innerText = dados.legenda;
+        function typewriter(elementId, text, msPerChar, key) {
+            if (_tw[key]) clearInterval(_tw[key]);
+            const el = document.getElementById(elementId);
+            el.textContent = '';
+            let i = 0;
+            _tw[key] = setInterval(() => {
+                if (i < text.length) {
+                    el.textContent += text[i++];
+                } else {
+                    clearInterval(_tw[key]);
+                    _tw[key] = null;
+                }
+            }, msPerChar);
+        }
+
+        // --- Details suave ---
+        const detailsEl = document.getElementById('pensamento-details');
+        const summaryEl = detailsEl.querySelector('summary');
+        const conteudoEl = document.getElementById('pensamento-texto');
+
+        summaryEl.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (detailsEl.open) {
+                conteudoEl.style.height = conteudoEl.scrollHeight + 'px';
+                conteudoEl.style.padding = '0 16px';
+                requestAnimationFrame(() => {
+                    conteudoEl.style.height = '0';
+                    conteudoEl.style.opacity = '0';
+                });
+                setTimeout(() => { detailsEl.removeAttribute('open'); }, 360);
+            } else {
+                detailsEl.setAttribute('open', '');
+                const h = conteudoEl.scrollHeight;
+                conteudoEl.style.height = '0';
+                conteudoEl.style.opacity = '0';
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    conteudoEl.style.height = h + 'px';
+                    conteudoEl.style.opacity = '1';
+                    conteudoEl.style.padding = '10px 16px 14px';
+                }));
+                setTimeout(() => { conteudoEl.style.height = 'auto'; }, 360);
             }
+        });
 
-            // Atualiza o que você falou (transcrição do Whisper)
-            if (dados.usuario !== undefined) {
-                document.getElementById('usuario-texto').innerText = dados.usuario;
-            }
-        };
+        function trocarGif(url) {
+            const container = document.getElementById('gif-container');
+            const img       = document.getElementById('gif-img');
+            img.style.opacity = '0';
+            setTimeout(() => {
+                img.src = url;
+                img.onload = () => {
+                    container.classList.add('ativo');
+                    img.style.opacity = '1';
+                };
+            }, 250);
+        }
 
-        // Envia o comando de interrupção quando clica no botão
         document.getElementById('btn-interromper').onclick = function() {
             socket.send(JSON.stringify({ comando: 'interromper' }));
+        };
+
+        document.getElementById('btn-fechar-luna').onclick = function() {
+            socket.send(JSON.stringify({ comando: 'fechar' }));
+        };
+
+        // --- Drag & drop ---
+        const dragOverlay = document.getElementById('drag-overlay');
+        const anexoBar    = document.getElementById('anexo-bar');
+        const anexoNome   = document.getElementById('anexo-nome');
+        const TIPOS_TEXTO  = /\.(txt|md|py|js|ts|json|csv|html|css|xml|yaml|yml|log|ini|cfg|sh|bat)$/i;
+        let dragCount = 0;
+
+        document.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            if (++dragCount === 1) dragOverlay.classList.add('ativo');
+        });
+        document.addEventListener('dragleave', () => {
+            if (--dragCount === 0) dragOverlay.classList.remove('ativo');
+        });
+        document.addEventListener('dragover', (e) => e.preventDefault());
+        document.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragCount = 0;
+            dragOverlay.classList.remove('ativo');
+            const file = e.dataTransfer.files[0];
+            if (!file) return;
+            const isPDF  = file.name.toLowerCase().endsWith('.pdf');
+            const isText = TIPOS_TEXTO.test(file.name);
+            if (!isPDF && !isText) return;
+            const reader = new FileReader();
+            if (isPDF) {
+                reader.onload = (ev) => socket.send(JSON.stringify({
+                    tipo: 'arquivo', nome: file.name, formato: 'pdf',
+                    conteudo: ev.target.result.split(',')[1]
+                }));
+                reader.readAsDataURL(file);
+            } else {
+                reader.onload = (ev) => socket.send(JSON.stringify({
+                    tipo: 'arquivo', nome: file.name, formato: 'txt',
+                    conteudo: ev.target.result
+                }));
+                reader.readAsText(file, 'UTF-8');
+            }
+        });
+
+        document.getElementById('btn-anexo-remover').onclick = function() {
+            socket.send(JSON.stringify({ tipo: 'limpar_arquivo' }));
+            anexoBar.classList.remove('ativo');
+        };
+
+        // --- Histórico panel ---
+        const historicoPanel   = document.getElementById('historico-panel');
+        const historicoOverlay = document.getElementById('historico-overlay');
+        const historicoLista   = document.getElementById('historico-lista');
+
+        document.getElementById('btn-historico').onclick = function() {
+            historicoPanel.classList.add('aberto');
+            historicoOverlay.classList.add('ativo');
+        };
+        function fecharHistorico() {
+            historicoPanel.classList.remove('aberto');
+            historicoOverlay.classList.remove('ativo');
+        }
+        document.getElementById('btn-historico-fechar').onclick = fecharHistorico;
+        historicoOverlay.onclick = fecharHistorico;
+
+        document.getElementById('btn-historico-limpar').onclick = function() {
+            if (confirm('Limpar todo o histórico da sessão?'))
+                socket.send(JSON.stringify({ comando: 'limpar_historico' }));
+        };
+
+        function criarTurnoEl(turno) {
+            const div = document.createElement('div');
+            div.className = 'turno' + (turno.usuario ? '' : ' turno-proativo');
+            div.innerHTML =
+                `<div class="turno-tempo">${turno.tempo}</div>` +
+                (turno.usuario ? `<div class="turno-usuario">${turno.usuario}</div>` : '') +
+                `<div class="turno-luna">${turno.luna}</div>`;
+            return div;
+        }
+
+        function adicionarTurno(turno) {
+            const vazio = document.getElementById('historico-vazio');
+            if (vazio) vazio.remove();
+            historicoLista.appendChild(criarTurnoEl(turno));
+            historicoLista.scrollTop = historicoLista.scrollHeight;
+        }
+
+        // --- Config panel ---
+        const configPanel  = document.getElementById('config-panel');
+        const configOverlay = document.getElementById('config-overlay');
+
+        document.getElementById('btn-config').onclick = function() {
+            configPanel.classList.add('aberto');
+            configOverlay.classList.add('ativo');
+        };
+        function fecharConfig() {
+            configPanel.classList.remove('aberto');
+            configOverlay.classList.remove('ativo');
+        }
+        document.getElementById('btn-config-fechar').onclick = fecharConfig;
+        configOverlay.onclick = fecharConfig;
+
+        function enviarConfig(dados) {
+            socket.send(JSON.stringify(dados));
+        }
+
+        function aplicarEstadoConfig(estado) {
+            const proativoEl = document.getElementById('cfg-proativo');
+            if (proativoEl) proativoEl.checked = estado.proativo;
+            const memoriaEl = document.getElementById('cfg-memoria');
+            if (memoriaEl) memoriaEl.checked = estado.memoria;
+
+            if (estado.tarefas) {
+                for (const [nome, val] of Object.entries(estado.tarefas)) {
+                    const el = document.getElementById('cfg-tarefa-' + nome);
+                    if (el) el.checked = val;
+                }
+            }
+
+            document.querySelectorAll('.btn-voz').forEach(btn => {
+                btn.classList.toggle('ativo', btn.dataset.voz === estado.voz);
+            });
+
+            if (estado.velocidade !== undefined) {
+                const sl = document.getElementById('cfg-velocidade');
+                const vl = document.getElementById('cfg-velocidade-valor');
+                sl.value = estado.velocidade;
+                vl.textContent = parseFloat(estado.velocidade).toFixed(1) + '×';
+            }
+
+            document.getElementById('secao-tarefas').style.display =
+                (estado.proativo === false) ? 'none' : '';
+            if (estado.proativo !== undefined) atualizarBtnProativo(estado.proativo);
+        }
+
+        // Botão proativo rápido
+        const btnToggleProativo = document.getElementById('btn-toggle-proativo');
+        function atualizarBtnProativo(ativo) {
+            btnToggleProativo.classList.toggle('inativo', !ativo);
+            btnToggleProativo.textContent = ativo ? '◉ Proativo' : '○ Proativo';
+        }
+        btnToggleProativo.onclick = function() {
+            const novoEstado = this.classList.contains('inativo');
+            const cfgEl = document.getElementById('cfg-proativo');
+            cfgEl.checked = novoEstado;
+            document.getElementById('secao-tarefas').style.display = novoEstado ? '' : 'none';
+            atualizarBtnProativo(novoEstado);
+            enviarConfig({ config: 'proativo', valor: novoEstado });
+        };
+
+        // Comportamento toggles
+        document.getElementById('cfg-proativo').addEventListener('change', function() {
+            enviarConfig({ config: 'proativo', valor: this.checked });
+            atualizarBtnProativo(this.checked);
+            document.getElementById('secao-tarefas').style.display = this.checked ? '' : 'none';
+        });
+        document.getElementById('cfg-memoria').addEventListener('change', function() {
+            enviarConfig({ config: 'memoria', valor: this.checked });
+        });
+
+        // Task toggles
+        ['jogos', 'emails', 'agenda', 'pausa', 'clima', 'bom_dia', 'steam', 'navegador'].forEach(nome => {
+            const el = document.getElementById('cfg-tarefa-' + nome);
+            if (el) el.addEventListener('change', function() {
+                enviarConfig({ config: 'tarefa', nome: nome, valor: this.checked });
+            });
+        });
+
+        // Voice buttons
+        document.querySelectorAll('.btn-voz').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.btn-voz').forEach(b => b.classList.remove('ativo'));
+                this.classList.add('ativo');
+                enviarConfig({ config: 'voz', valor: this.dataset.voz });
+            });
+        });
+
+        // Speed slider
+        const velSlider = document.getElementById('cfg-velocidade');
+        const velValor  = document.getElementById('cfg-velocidade-valor');
+        velSlider.addEventListener('input', function() {
+            velValor.textContent = parseFloat(this.value).toFixed(1) + '×';
+        });
+        velSlider.addEventListener('change', function() {
+            enviarConfig({ config: 'velocidade', valor: parseFloat(this.value) });
+        });
+
+        // --- WebSocket ---
+        socket.onmessage = function(event) {
+            const dados = JSON.parse(event.data);
+            if (dados.tipo === 'arquivo_confirmado') {
+                anexoNome.textContent = dados.nome;
+                anexoBar.classList.add('ativo');
+                return;
+            }
+            if (dados.tipo === 'historico_completo') {
+                historicoLista.innerHTML = '';
+                if (dados.turnos.length === 0) {
+                    historicoLista.innerHTML = '<div id="historico-vazio">Nenhuma conversa ainda.</div>';
+                } else {
+                    dados.turnos.forEach(t => historicoLista.appendChild(criarTurnoEl(t)));
+                    historicoLista.scrollTop = historicoLista.scrollHeight;
+                }
+                return;
+            }
+            if (dados.tipo === 'historico_novo') {
+                adicionarTurno(dados.turno);
+                return;
+            }
+            if (dados.tipo === 'config_estado') {
+                aplicarEstadoConfig(dados.estado);
+                return;
+            }
+            if (dados.tipo === 'status_mic') {
+                const el = document.getElementById('status-mic');
+                const txt = document.getElementById('status-mic-texto');
+                el.className = dados.status;
+                const textos = {
+                    aguardando:   'Aguardando... Segure Ctrl+Alt+F8 para falar',
+                    gravando:     'Gravando... Solte para enviar',
+                    processando:  'Processando áudio...',
+                };
+                txt.textContent = textos[dados.status] || '';
+                return;
+            }
+            if (dados.tipo === 'metricas') {
+                if (dados.roteador) {
+                    const el = document.getElementById('met-roteador');
+                    el.textContent = `Roteador  ${dados.roteador.tps} tok/s`;
+                    el.classList.add('ativo');
+                }
+                if (dados.persona) {
+                    const el = document.getElementById('met-persona');
+                    el.textContent = `Persona  ${dados.persona.tps} tok/s`;
+                    el.classList.add('ativo');
+                }
+                return;
+            }
+            if (dados.legenda !== undefined) {
+                typewriter('luna-texto', dados.legenda || '—', 18, 'luna');
+                if (dados.legenda) anexoBar.classList.remove('ativo'); // arquivo foi consumido
+            }
+            if (dados.usuario !== undefined)
+                typewriter('usuario-texto', dados.usuario || 'Aguardando...', 18, 'voce');
+            if (dados.gif_url !== undefined)
+                trocarGif(dados.gif_url);
+            if (dados.pensamento !== undefined) {
+                conteudoEl.textContent = dados.pensamento || '—';
+                if (detailsEl.open) conteudoEl.style.height = 'auto';
+            }
         };
     </script>
 </body>

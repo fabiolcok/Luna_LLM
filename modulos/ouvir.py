@@ -10,17 +10,20 @@ import modelos.cores as cor
 
 
 
-""" 
-
-MÓDULO DE OUVIR DA LUNA 
+"""
+MÓDULO DE OUVIR DA LUNA (STT)
 ---------------------------------------------------------
-Este arquivo contem todas as funcoes para que a fala do usuario vire texto para a Luna ler. (STT)
-Alem disso ele tem um leitor leve que tenta descobrir qual das 4 emoções o usuario esta no momento da fala.
-Atualmente estou usando o faster_whisper
+Captura a fala do usuário e transcreve para texto usando Faster-Whisper.
+Modelo: "small", CPU, int8 — leve e rápido o suficiente para uso contínuo.
 
-Funcoes principais:
-- escutar_usuario(): faz tudo.
+PTT (Push-to-Talk): Ctrl+Alt+F8
+  Segure a combinação para gravar, solte para transcrever e enviar.
+  Áudios com menos de 0.6s são descartados (evita falsos gatilhos).
+  Alucinações conhecidas do Whisper (créditos de vídeo, inscreva-se, etc.)
+  são filtradas automaticamente antes de retornar.
 
+Funções principais:
+  escutar_usuario() — abre o stream de áudio, aguarda o PTT, transcreve e retorna o texto.
 """
 
 
@@ -50,6 +53,11 @@ def escutar_usuario():
             segurando = True
             gravando = True
             cor.verde("\n[🎙️ Gravando... Solte para ENVIAR]")
+            try:
+                import servidor as _srv
+                _srv.atualizar_status_mic("gravando")
+            except Exception:
+                pass
 
     def on_release(key):
         nonlocal gravando, segurando
@@ -60,8 +68,13 @@ def escutar_usuario():
             return False
 
 
-    cor.cinza(f"\n==================================================")
-    cor.verde("[🌑 Aguardando... Segure F12 para falar]")
+    cor.cinza(f"\n===========================================")
+    cor.verde("[🌑 Aguardando... Segure Ctrl+Alt+F8 para falar]")
+    try:
+        import servidor as _srv
+        _srv.atualizar_status_mic("aguardando")
+    except Exception:
+        pass
 
 
     stream = sd.InputStream(samplerate=taxa_amostragem, channels=1, dtype='float32', callback=callback_audio)
@@ -78,13 +91,35 @@ def escutar_usuario():
         return ""
 
     cor.verde("[Processando áudio...]")
+    try:
+        import servidor as _srv
+        _srv.atualizar_status_mic("processando")
+    except Exception:
+        pass
     audio_completo = np.concatenate(audio_frames, axis=0)
     audio_1d = np.squeeze(audio_completo)
 
+    # Ignorar áudios muito curtos (< 0.6s) — evita false triggers do PTT
+    duracao_segundos = len(audio_1d) / taxa_amostragem
+    if duracao_segundos < 0.6:
+        return ""
+
     try:
         segmentos, _ = modelo_whisper.transcribe(audio_1d, language="pt", beam_size=5)
-        texto_final = "".join([segmento.text for segmento in segmentos])
-        return texto_final.strip()
+        texto_final = "".join([segmento.text for segmento in segmentos]).strip()
+
+        # Filtrar alucinações conhecidas do Whisper (áudio ambiente, silêncio, vídeos)
+        _ALUCINACOES_WHISPER = {
+            "amara.org", "legendas pela comunidade", "transcrições por",
+            "subtitles by", "subtitle by", "legendado por", "traduzido por",
+            "obrigado por assistir", "inscreva-se no canal",
+        }
+        texto_lower = texto_final.lower()
+        if any(a in texto_lower for a in _ALUCINACOES_WHISPER):
+            cor.cinza(f"[🔇 Alucinação Whisper descartada: '{texto_final[:60]}']")
+            return ""
+
+        return texto_final
     except Exception as e:
         cor.vermelho(f"Erro na transcrição: {e}")
         return ""

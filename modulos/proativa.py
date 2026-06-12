@@ -4,52 +4,78 @@ import os
 import time
 import threading
 import datetime
-import random
 import requests
 import ctypes
-from modulos.habilidades import checar_emails_nao_lidos, ler_agenda_google, obter_previsao_tempo, pesquisar_na_web, obter_janela_em_foco, obter_contexto_navegador
+from modulos.habilidades import checar_emails_nao_lidos, ler_agenda_google, obter_previsao_tempo, obter_janela_em_foco, controlar_firefox_via_extensao
 from modulos.pensar import gerar_resposta
 from modulos.falar import falar_texto
-from modulos.memoria import carregar_vistos, salvar_vistos
+from modulos.memoria import carregar_vistos, salvar_vistos, atualizar_estado_luna
 import modelos.cores as cor
 import psutil
-from pathlib import Path
 import re
 
 """
 MÓDULO DE ROTINAS PROATIVAS DA LUNA
 ---------------------------------------------------------
-Este arquivo contém todas as funções de "Push" (Autônomas).
-São as tarefas que a Luna executa por conta própria no background,
-sem que o Fábio precise pedir, baseadas em tempo, estado do sistema ou eventos.
+Tarefas autônomas executadas em background sem o usuário pedir,
+baseadas em tempo, estado do sistema ou eventos detectados.
 
-Arquitetura Principal:
-- _loop_proativo(): O "coração" do sistema. Roda em loop contínuo (ex: a cada 30s).
-  Controla o sensor de AFK (inatividade) e gerencia a trava do Modo Não Perturbe 
-  (silencia tarefas invasivas se um jogo estiver aberto).
-- Controle de Estado (JSON): Funções `ler_estado_proativo` e `salvar_estado_proativo` 
-  criam uma "memória física" no disco para evitar repetição de broncas (como Lixo Digital e Bom Dia) no mesmo dia.
-- Sensor AFK (`obter_tempo_afk`): Utiliza `ctypes` do Windows para monitorar o tempo ocioso real do teclado/mouse.
+─────────────────────────────────────────────────────────
+ARQUITETURA DO LOOP
+─────────────────────────────────────────────────────────
+_loop_proativo() — roda a cada 30 segundos em thread separada.
 
-Integrações de API (Background):
-- OverFast API (`_buscar_dados_overwatch`): Busca estatísticas consolidadas de Overwatch (Endosso, Main Hero, Tempo jogado) para ofender o desempenho.
-- Steam API (`_pegar_wishlist`, `_pegar_preco`): Monitora a Wishlist e checa preços com descontos maiores que a margem definida.
+  Camada 1 — SEMPRE ativa (ignora suspensão e AFK):
+    └─ _tarefa_monitorar_jogos(): detecta abertura/fechamento de jogos via psutil.
 
-Tarefas Autônomas Disponíveis:
-- _tarefa_monitorar_jogos(): Vigia os processos do sistema. Detecta abertura/fechamento de jogos (Overwatch, LoL, Deadlock) e engatilha ofensas e checagem de API.
-- _tarefa_bom_dia(): Executa 1x ao dia. Junta a Agenda Google e E-mails em um prompt matinal cínico e letal.
-- _tarefa_lixo_digital(): Executa 1x ao dia. Inspeciona a pasta Downloads e julga a desorganização do usuário (apenas lê, não deleta).
-- _tarefa_checar_emails(): Checa novas mensagens não lidas periodicamente respeitando o horário de silêncio.
-- _tarefa_checar_agenda(): Alerta sobre compromissos iminentes baseados na antecedência configurada.
-- _tarefa_lembrete_pausa(): Cobra pausas ergonômicas após um longo período de atividade contínua.
-- _tarefa_monitorar_clima(): Alerta espontaneamente caso a API detecte uma mudança brusca (ex: começou a chover).
-- _tarefa_steam_wishlist(): Avisa sobre promoções agressivas na lista de desejos da Steam.
-- _tarefa_reagir_programa(): Puxa assunto questionando a utilidade do programa que acabou de ser aberto (possui debounce para não flodar).
-- _tarefa_puxar_assunto(): Lê o contexto do navegador (aba atual) ou a janela do SO em foco para criticar a produtividade do usuário.
+  Camada 2 — Ativa apenas se NÃO suspensa e AFK ≤ 5 min, e sem jogo aberto:
+    └─ emails, agenda, pausa, clima, steam_wishlist, bom_dia.
 
-Controle da Thread:
-- iniciar_modo_proativo(): Inicia a thread em background e sincroniza os timers (evita a 'avalanche' de notificações ao iniciar).
-- parar_modo_proativo(): Encerra de forma segura o loop autônomo.
+Suspensão automática:
+  Cada fala proativa chama registrar_tentativa(). Após MAX_TENTATIVAS (3) sem
+  resposta do usuário, _suspensa = True e a Camada 2 é bloqueada.
+  Resetado por: qualquer fala do usuário (registrar_interacao()) ou abertura de jogo.
+
+Memória física (modelos/estado_proativo.json):
+  Persiste entre reinicializações. Evita repetir bom_dia no mesmo dia.
+
+Sensor AFK (obter_tempo_afk):
+  Usa ctypes/WinAPI (GetLastInputInfo) para medir inatividade real de teclado e mouse.
+
+─────────────────────────────────────────────────────────
+INTEGRAÇÕES DE API
+─────────────────────────────────────────────────────────
+- OverFast API  (_buscar_dados_overwatch): perfil público do Overwatch —
+    endosso, hero main, horas totais. Usado ao fechar Overwatch.exe.
+
+- LCU API       (_buscar_dados_lol): API local do cliente do League of Legends
+    (https://127.0.0.1:{porta} via lockfile). Lê última partida do histórico —
+    vitória/derrota, campeão, KDA, CS, dano, duração.
+    Funciona com: Normal, Ranked, ARAM e modos PvP temporários.
+    NÃO funciona com: Prática de Ferreiro, tutoriais.
+    Aguarda 15s após fechar League of Legends.exe antes de consultar.
+
+- Steam API     (_pegar_wishlist / _pegar_preco): monitora a wishlist e alerta
+    quando um desconto supera DESCONTO_MINIMO (padrão: 50%).
+
+─────────────────────────────────────────────────────────
+TAREFAS AUTÔNOMAS ATIVAS
+─────────────────────────────────────────────────────────
+- _tarefa_monitorar_jogos(): Overwatch, LoL e Deadlock via psutil.
+    Ao abrir: briefing frio de sessão (rank/winrate via API) + reseta suspensão.
+    Ao fechar: consulta API do jogo e faz comentário factual com os dados reais.
+- _tarefa_checar_emails(): a cada 12h, fora do horário de silêncio (18h–09h).
+- _tarefa_checar_agenda(): a cada 60 min. Avisa apenas se evento em menos de 30 min.
+- _tarefa_lembrete_pausa(): a cada 90 min. Cobra pausa ergonômica.
+- _tarefa_monitorar_clima(): a cada 20 min. Fala apenas se começou a chover agora.
+- _tarefa_steam_wishlist(): a cada 24h. Avisa sobre promoções na wishlist.
+- _tarefa_bom_dia(): 1x/dia entre 08h–10h59. Resume agenda + emails com comentário matinal.
+
+─────────────────────────────────────────────────────────
+CONTROLE DA THREAD
+─────────────────────────────────────────────────────────
+- iniciar_modo_proativo(): inicia a thread e sincroniza todos os timers (evita avalanche inicial).
+- parar_modo_proativo(): encerra o loop com segurança.
 """
 
 
@@ -78,22 +104,17 @@ CONFIGURACAO = {
         "ativo": True,
         "intervalo_horas": 24,
     },
-    "puxar_assunto": {
-        "ativo": True,
-        "intervalo_minutos": 15,
-    },
     "bom_dia": {
         "ativo": True,
         "horario_falar": (8, 11),  # Vai falar entre 08:00 e 10:59
         "ultimo_dia_falado": None  # Guarda o dia do mês para resetar sozinho
-    }
-
+    },
 }
 
 # Jogos para ser monitorados.
 PROCESSOS_JOGOS = {
     "Overwatch.exe": "Overwatch",
-    "LeagueClient.exe": "League of Legends",
+    "League of Legends.exe": "League of Legends",
     "Deadlock.exe" : "Deadlock"
 }
 
@@ -106,20 +127,16 @@ ESTADO_JOGOS = {
 
 
 
-STEAM_API_KEY = "***REMOVIDO***"
-STEAM_ID = "***REMOVIDO***"
-DESCONTO_MINIMO = 60
+STEAM_API_KEY    = os.getenv("STEAM_API_KEY", "")
+STEAM_ID         = os.getenv("STEAM_ID", "")
+DESCONTO_MINIMO  = 50
 
 # ============================================================
 # REGRAS DE PERSONA (Injetado nos prompts proativos)
 # ============================================================
 REGRA_PERSONA = (
-    "Seu persona é sarcasmo clínico, frio, polido e passivo-agressivo. "
-    "Você não usa gírias infantis, não se exalta e não tenta ser engraçada. "
-    "Você destrói a autoestima do Fábio apontando a ineficiência dele como ser humano de forma assustadoramente calma e lógica. "
-    "REGRA 1: Fale DIRETAMENTE com o Fábio (use 'você'). "
-    "REGRA 2: É ESTRITAMENTE PROIBIDO USAR FERRAMENTAS OU AJUDAR. APENAS FALE. "
-    "REGRA 3: NUNCA use emojis, exclamações exageradas ou narrações. Seja letal, breve e educadamente cruel."
+    "Responda em português do Brasil. Tom frio e observacional, sem elogios e sem crueldade. "
+    "Fale diretamente com o Fábio (use 'você'). Sem emojis, sem asteriscos. Máximo 2 frases."
 )
 # ============================================================
 # ESTADO GLOBAL
@@ -134,13 +151,27 @@ _luna_ocupada = threading.Event()
 _historico_proativo = []
 _thread_rodando = False
 _ultimo_clima = {"chuva": None}
-_ultimo_programa = None
-_tempo_programa_detectado = None
+_sessao_inicio: float = 0.0
+_proativo_ativo = True
+TAREFAS_ATIVAS = {
+    "jogos": True, "emails": True, "agenda": True,
+    "pausa": True, "clima": True, "bom_dia": True, "steam": True, "navegador": True
+}
+
+# Estado interno da tarefa de contexto de navegação
+_nav_url_atual = ""
+_nav_url_desde = 0.0
+_nav_ultimo_comentario_url = ""
 
 ARQUIVO_ESTADO_PROATIVO = "modelos/estado_proativo.json"
 
-DEBOUNCE_PROGRAMA = 10
-COOLDOWN_PROGRAMA  = 30
+def configurar_proativo(ativo: bool):
+    global _proativo_ativo
+    _proativo_ativo = bool(ativo)
+
+def configurar_tarefa(nome: str, ativo: bool):
+    if nome in TAREFAS_ATIVAS:
+        TAREFAS_ATIVAS[nome] = bool(ativo)
 
 def registrar_tentativa():
     global _tentativas_sem_resposta, _suspensa
@@ -183,53 +214,38 @@ def _passou_intervalo(chave, minutos):
 def _falar_proativamente(texto_resposta):
     timeout = time.time() + 300
     while not luna_esta_livre():
-        print("[DEBUG] Proativo aguardando a Luna ficar livre...")
         if time.time() > timeout:
             return
         time.sleep(3)
+    try:
+        import servidor as _srv
+        _srv.atualizar_legenda(texto_resposta)
+        _srv.atualizar_usuario("")
+    except Exception:
+        pass
     falar_texto(texto_resposta)
 
-def _gerar_fala_proativa(prompt_sistema):
-    global _historico_proativo 
-    
-    # --- DEBUG 1: O que está entrando na LLM ---
-    cor.cinza(f"\n[🔧 DEBUG Proativo] Preparando para enviar prompt...")
-    cor.cinza(f"[🔧 DEBUG Proativo] Tamanho original: {len(prompt_sistema)} caracteres")
-    
-    # TRAVA 1: Cortar contexto gigante (Protege a entrada de dados)
-    # Se uma pesquisa web ou email trouxer muito lixo, cortamos para poupar a VRAM.
+def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150):
+    global _historico_proativo
+
+    cor.amarelo(f"[🌚 Proativo: {tarefa}]")
+
     if len(prompt_sistema) > 1500:
-        cor.amarelo("[⚠️ DEBUG] Prompt muito grande! Cortando para 1500 caracteres.")
         prompt_sistema = prompt_sistema[:1500] + "... [texto cortado]"
-        
+
     try:
-        # TRAVA 2: Limite de geração (Protege a saída de dados)
-        # Passamos max_tokens=150 para forçar a IA a colocar um ponto final rápido.
         resposta = gerar_resposta(
-            prompt_sistema, 
-            _historico_proativo, 
-            analisar=False, 
+            prompt_sistema,
+            _historico_proativo,
+            analisar=False,
             salvar=False,
-            max_tokens=150
+            max_tokens=max_tokens
         )
-        
-        # --- DEBUG 2: O que a LLM devolveu ---
-        if resposta:
-            cor.cinza(f"[🔧 DEBUG Proativo] Resposta gerada! Tamanho: {len(str(resposta))} caracteres")
-        else:
-            cor.vermelho("[🔧 DEBUG Proativo] A LLM retornou vazio.")
-            
         _historico_proativo = []
         return resposta
-        
-    except TypeError as e:
-        # Se der erro de TypeError, significa que o seu 'gerar_resposta' no pensar.py 
-        # ainda não aceita receber o argumento 'max_tokens'.
-        cor.vermelho(f"[Erro Proativo] Verifique se gerar_resposta aceita max_tokens: {e}")
-        return None
     except Exception as e:
         cor.vermelho(f"[Erro na geração proativa: {e}]")
-        _historico_proativo = [] 
+        _historico_proativo = []
         return None
 
 def ler_estado_proativo():
@@ -303,7 +319,7 @@ def _pegar_preco(appid):
 
 def _buscar_dados_overwatch():
     """Busca o perfil completo do Fábio e os heróis mais jogados na API do Overwatch."""
-    battletag = "Fabio-1600" 
+    battletag = os.getenv("OW_BATTLETAG", "Fabio-1600")
     
     url_perfil = f"https://overfast-api.tekrop.fr/players/{battletag}/summary"
     url_status = f"https://overfast-api.tekrop.fr/players/{battletag}/stats/summary"
@@ -311,42 +327,242 @@ def _buscar_dados_overwatch():
     try:
         resp_perfil = requests.get(url_perfil, timeout=10)
         if resp_perfil.status_code != 200:
-            return "Os servidores da Blizzard estão lentos no momento."
-            
+            return "SISTEMA: Os servidores da Blizzard estão inalcançáveis no momento."
+
         perfil = resp_perfil.json()
         privacidade = perfil.get("privacy", "unknown")
         endorsement = perfil.get("endorsement", {}).get("level", "Desconhecido")
-        titulo = perfil.get("title", "Nenhum título equipado")
-        
-        texto_stats = f"Nível de Endosso: {endorsement}. Título no perfil: '{titulo}'. "
-        
+        titulo = perfil.get("title", "Nenhum")
+
+        texto_stats = f"DADOS DA CONTA (Overwatch) - Nível de Endosso: {endorsement}. Título equipado: '{titulo}'. "
+
         if privacidade == "private":
-            texto_stats += "O perfil do jogador está PRIVADO. Ele escondeu as horas de jogo e heróis, provavelmente por ter vergonha das próprias estatísticas."
+            texto_stats += "O perfil está marcado como PRIVADO — horas de jogo e rankings não estão acessíveis."
             return texto_stats
             
+        # 1. PEGAR OS RANKS COMPETITIVOS DO PC
+        comp_data = perfil.get("competitive", {}).get("pc", {})
+        if comp_data:
+            ranks = []
+            for role in ["tank", "damage", "support"]:
+                if role in comp_data and comp_data[role]:
+                    tier = comp_data[role].get("division", "Unranked").capitalize() # Ex: Gold, Silver
+                    level = comp_data[role].get("tier", "") # Ex: 1, 2, 3
+                    ranks.append(f"{role.capitalize()}: {tier} {level}")
+            
+            if ranks:
+                texto_stats += f"Rankings Atuais no PC -> {', '.join(ranks)}. "
+            else:
+                texto_stats += "Sem ranking competitivo registrado nesta temporada. "
+        
+        # 2. PEGAR ESTATÍSTICAS GERAIS (KDA e WINRATE)
         resp_status = requests.get(url_status, timeout=10)
         if resp_status.status_code == 200:
             stats = resp_status.json()
             
             geral = stats.get("general", {})
-            tempo_total_segundos = geral.get("time_played", 0)
-            tempo_total_horas = int(tempo_total_segundos / 3600)
+            tempo_total_horas = int(geral.get("time_played", 0) / 3600)
             
-            texto_stats += f"Perfil Público. Tempo total desperdiçado jogando partidas casuais: {tempo_total_horas} horas. "
+            jogos_ganhos = geral.get("games_won", 0)
+            jogos_perdidos = geral.get("games_lost", 0)
+            winrate = geral.get("winrate", 0)
             
+            eliminacoes = geral.get("eliminations", 0)
+            mortes = geral.get("deaths", 0)
+            
+            texto_stats += f"Tempo total de jogo: {tempo_total_horas} horas. "
+            texto_stats += f"Eficiência de partidas: {jogos_ganhos} vitórias contra {jogos_perdidos} derrotas (Taxa de vitória: {winrate}%). "
+            if eliminacoes > 0 or mortes > 0:
+                texto_stats += f"Eficiência em combate: {eliminacoes} eliminações e {mortes} mortes ao longo da carreira. "
+            
+            # 3. PEGAR O MAIN E A TAXA DE VITÓRIA DELE
             herois = stats.get("heroes", {})
             if herois:
-                # O SEGREDO ESTÁ AQUI: O lambda diz pro Python olhar estritamente pro 'time_played' de cada herói
-                heroi_mais_jogado = max(herois, key=lambda k: herois[k].get("time_played", 0))
-                tempo_segundos = herois[heroi_mais_jogado].get("time_played", 0)
-                horas_main = int(tempo_segundos / 3600)
-                texto_stats += f"O personagem 'Main' (mais jogado) dele é {heroi_mais_jogado.capitalize()}, com {horas_main} horas de jogo."
+                # O herói mais jogado
+                heroi_main = max(herois, key=lambda k: herois[k].get("time_played", 0))
+                horas_main = int(herois[heroi_main].get("time_played", 0) / 3600)
+                winrate_main = herois[heroi_main].get("winrate", "Desconhecido")
+                
+                texto_stats += f"O personagem ('Main') mais jogado é {heroi_main.capitalize()}, com {horas_main} horas jogadas e taxa de vitória de {winrate_main}%. "
                 
         return texto_stats
             
     except Exception as e:
         print(f"\n[⚠️ ALERTA DEBUG: Falha na API do Overwatch: {e}]\n")
-        return "ERRO_DE_CONEXAO"
+        return "SISTEMA: Erro ao contatar a Blizzard. Não há dados."
+
+def _buscar_dados_lol():
+    """Busca dados da última partida via LCU (API local do cliente do LoL).
+    O lockfile fica ativo enquanto o LeagueClient.exe estiver rodando —
+    então pode ser consultado assim que League of Legends.exe fecha.
+    """
+    import base64
+    try:
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    except Exception:
+        pass
+
+    caminhos_lockfile = [
+        r"C:\Riot Games\League of Legends\lockfile",
+        os.path.join(os.path.expanduser("~"), r"AppData\Local\Riot Games\League of Legends\lockfile"),
+    ]
+    lockfile = next((p for p in caminhos_lockfile if os.path.exists(p)), None)
+    if not lockfile:
+        return "ERRO_LOCKFILE"
+
+    try:
+        with open(lockfile, "r") as f:
+            partes = f.read().strip().split(":")
+        # Formato: LeagueClient:PID:PORT:PASSWORD:PROTOCOL
+        porta, senha = partes[2], partes[3]
+        base = f"https://127.0.0.1:{porta}"
+        hdrs = {"Authorization": "Basic " + base64.b64encode(f"riot:{senha}".encode()).decode()}
+
+        # Summoner atual
+        resp_me = requests.get(f"{base}/lol-summoner/v1/current-summoner",
+                               headers=hdrs, verify=False, timeout=5)
+        if resp_me.status_code != 200:
+            cor.vermelho(f"[LCU summoner: status={resp_me.status_code} | {resp_me.text[:200]}]")
+            return "ERRO_LCU"
+        dados_summoner = resp_me.json()
+        puuid = dados_summoner.get("puuid", "")
+        summoner_id = dados_summoner.get("summonerId", "")
+        cor.amarelo(f"[LCU puuid: {puuid[:36]} | summonerId: {summoner_id}]")
+
+        # Mapa de championId → nome via LCU local
+        mapa_campeoes = {}
+        resp_champs = requests.get(
+            f"{base}/lol-game-data/assets/v1/champion-summary.json",
+            headers=hdrs, verify=False, timeout=5
+        )
+        if resp_champs.status_code == 200:
+            for c in resp_champs.json():
+                mapa_campeoes[c.get("id")] = c.get("name", "?")
+
+        # Última partida — endpoint atual usa /matches (não /games)
+        jogos = []
+        resp_hist = requests.get(
+            f"{base}/lol-match-history/v1/products/lol/current-summoner/matches",
+            headers=hdrs, verify=False, timeout=5
+        )
+        cor.amarelo(f"[LCU hist: status={resp_hist.status_code}]")
+        if resp_hist.status_code == 200:
+            raw = resp_hist.json()
+            cor.amarelo(f"[LCU hist raw keys: {list(raw.keys())}]")
+            # Tenta diferentes estruturas de resposta
+            jogos = (raw.get("games", {}).get("games")
+                     or raw.get("matches")
+                     or raw.get("games")
+                     or [])
+        else:
+            cor.vermelho(f"[LCU hist: {resp_hist.text[:300]}]")
+            return "ERRO_HISTORICO"
+        if not jogos:
+            return "ERRO_SEM_JOGO"
+
+        jogo = jogos[0]
+        stats, campeao = {}, "?"
+
+        for part in jogo.get("participants", []):
+            if part.get("puuid") == puuid:
+                stats = part.get("stats", {})
+                champ_id = part.get("championId")
+                campeao = (part.get("championName")
+                           or mapa_campeoes.get(champ_id)
+                           or (str(champ_id) if champ_id else "?"))
+                break
+
+        if not stats and jogo.get("participants"):
+            part = jogo["participants"][0]
+            stats = part.get("stats", {})
+            champ_id = part.get("championId")
+            campeao = (part.get("championName")
+                       or mapa_campeoes.get(champ_id)
+                       or (str(champ_id) if champ_id else "?"))
+
+        vitoria = stats.get("win", False)
+        k = stats.get("kills", 0)
+        d = stats.get("deaths", 0)
+        a = stats.get("assists", 0)
+        cs = stats.get("totalMinionsKilled", 0) + stats.get("neutralMinionsKilled", 0)
+        dano = stats.get("totalDamageDealtToChampions", 0)
+        duracao = jogo.get("gameDuration", 0) // 60
+
+        return (
+            f"{'VITÓRIA' if vitoria else 'DERROTA'} com {campeao}. "
+            f"KDA: {k}/{d}/{a}. CS: {cs}. "
+            f"Dano causado: {dano:,}. Duração: {duracao} minutos."
+        )
+
+    except Exception as e:
+        return f"ERRO: {e}"
+
+def _buscar_dados_deadlock():
+    """Busca última partida e stats agregados via deadlock-api.com (sem chave)."""
+    steam_id = int(os.getenv("STEAM_ID", "0"))
+    if steam_id <= 0:
+        return "STEAM_ID não configurado."
+    account_id = steam_id - 76561197960265728
+
+    try:
+        # Busca última partida com force_refetch para garantir dado fresco
+        r_hist = requests.get(
+            f"https://api.deadlock-api.com/v1/players/{account_id}/match-history",
+            params={"force_refetch": "true"},
+            timeout=15,
+        )
+        partidas = r_hist.json() if r_hist.status_code == 200 else []
+
+        # Busca stats agregados por herói (winrate geral)
+        r_stats = requests.get(
+            "https://api.deadlock-api.com/v1/hero-stats",
+            params={"account_ids": account_id},
+            timeout=10,
+        )
+        hero_stats = r_stats.json() if r_stats.status_code == 200 else []
+
+        # ── Resumo agregado ──
+        total_partidas = sum(s.get("matches_played", 0) for s in hero_stats)
+        total_vitorias = sum(s.get("wins", 0) for s in hero_stats)
+        winrate_geral  = round(total_vitorias / total_partidas * 100) if total_partidas > 0 else None
+
+        heroi_mais_jogado = None
+        if hero_stats:
+            top = max(hero_stats, key=lambda s: s.get("matches_played", 0))
+            heroi_mais_jogado = f"herói ID {top['hero_id']} ({top['matches_played']} partidas, {round(top['wins']/top['matches_played']*100) if top['matches_played'] else 0}% winrate)"
+
+        # ── Última partida ──
+        if not partidas:
+            partes = []
+            if total_partidas:
+                partes.append(f"Total de {total_partidas} partidas registradas")
+            if winrate_geral is not None:
+                partes.append(f"winrate geral {winrate_geral}%")
+            if heroi_mais_jogado:
+                partes.append(f"mais jogado: {heroi_mais_jogado}")
+            return "Sem dados da última partida. " + (". ".join(partes) or "Histórico ainda não indexado.") + "."
+
+        p       = partidas[0]
+        vitoria = p.get("match_result") == p.get("player_team")
+        k       = p.get("player_kills", 0)
+        d       = p.get("player_deaths", 0)
+        a       = p.get("player_assists", 0)
+        heroi   = f"herói ID {p.get('hero_id', '?')}"
+        duracao = round(p.get("match_duration_s", 0) / 60)
+        net_worth = p.get("net_worth", 0)
+        modo    = "Ranked" if p.get("match_mode") == 1 else "Unranked"
+
+        resumo = (
+            f"{'VITÓRIA' if vitoria else 'DERROTA'} ({modo}) com {heroi}. "
+            f"KDA: {k}/{d}/{a}. Net worth: {net_worth:,}. Duração: {duracao} minutos."
+        )
+        if winrate_geral is not None:
+            resumo += f" Winrate geral na conta: {winrate_geral}% em {total_partidas} partidas."
+        return resumo
+
+    except Exception as e:
+        return f"ERRO_DE_CONEXAO: {e}"
 
 # ============================================================
 # TAREFAS PROATIVAS
@@ -361,7 +577,7 @@ def _tarefa_checar_emails():
         for n in novos: _emails_vistos.add(n)
         if not novos or "não há novos" in resultado.lower(): return
         prompt = f"O Fábio tem {len(novos)} emails novos. Remetentes: {' | '.join(novos[:5])}. Avise-o. {REGRA_PERSONA}"
-        _falar_proativamente(_gerar_fala_proativa(prompt))
+        _falar_proativamente(_gerar_fala_proativa(prompt, "checar_emails"))
         registrar_tentativa()
     except Exception as e: cor.vermelho(f"[Erro emails: {e}]")
 
@@ -405,21 +621,21 @@ def _tarefa_checar_agenda():
         # 4. A PATADA (Só chega aqui e chama o Qwen se o evento estiver de fato estourando)
         prompt = (
             f"Faltam menos de {cfg['antecedencia_aviso_minutos']} minutos para este evento: {dados_agenda}. "
-            f"Avise-o de forma seca e critique a capacidade de organização dele. {REGRA_PERSONA}"
+            f"Avise-o de forma seca e direta. {REGRA_PERSONA}"
         )
         
-        fala = _gerar_fala_proativa(prompt)
+        fala = _gerar_fala_proativa(prompt, "checar_agenda")
         if fala:
             _falar_proativamente(fala)
             registrar_tentativa()
-            
-    except Exception as e: 
+
+    except Exception as e:
         cor.vermelho(f"[Erro agenda: {e}]")
 
 def _tarefa_lembrete_pausa():
     cfg = CONFIGURACAO["lembrete_pausa"]
     if not cfg["ativo"] or _em_horario_silencio(18, 9) or not _passou_intervalo("pausa", cfg["intervalo_minutos"]): return
-    _falar_proativamente(_gerar_fala_proativa(f"Mande o Fábio fazer uma pausa ou beber água em uma frase. {REGRA_PERSONA}"))
+    _falar_proativamente(_gerar_fala_proativa(f"Mande o Fábio fazer uma pausa ou beber água em uma frase. {REGRA_PERSONA}", "lembrete_pausa"))
     registrar_tentativa()
 
 def _tarefa_monitorar_clima():
@@ -429,13 +645,21 @@ def _tarefa_monitorar_clima():
         _ultimo_clima["chuva"] = chovendo_agora
         return
     if chovendo_agora and not _ultimo_clima["chuva"]:
-        _falar_proativamente(_gerar_fala_proativa(f"Começou a chover agora. Faça um comentário ácido sobre isso. {REGRA_PERSONA}"))
+        _falar_proativamente(_gerar_fala_proativa(f"Começou a chover agora. Faça um comentário curto e direto sobre isso. {REGRA_PERSONA}", "monitorar_clima"))
         registrar_tentativa()
     _ultimo_clima["chuva"] = chovendo_agora
 
 def _tarefa_steam_wishlist():
     cfg = CONFIGURACAO["Lista_Steam"]
-    if not cfg["ativo"] or not _passou_intervalo("steam", cfg["intervalo_horas"] * 60): return
+    if not cfg["ativo"]: return
+
+    # Usa timestamp persistido em disco para sobreviver a reinicializações
+    estado = ler_estado_proativo()
+    ultima_steam = estado.get("ultima_steam", 0)
+    agora = time.time()
+    if agora - ultima_steam < cfg["intervalo_horas"] * 3600:
+        return
+    salvar_estado_proativo("ultima_steam", agora)
     appids = _pegar_wishlist()
     if not appids: return
     promocoes, vistos = [], carregar_vistos()
@@ -455,49 +679,7 @@ def _tarefa_steam_wishlist():
     if promocoes:
         lista = ", ".join(f"{j['nome']} ({j['desconto']}%)" for j in promocoes)
         prompt = f"Tem promoção na wishlist da Steam: {lista}. Avise o Fábio para gastar dinheiro. {REGRA_PERSONA}"
-        _falar_proativamente(_gerar_fala_proativa(prompt))
-        registrar_tentativa()
-
-def _tarefa_reagir_programa():
-    global _ultimo_programa, _tempo_programa_detectado
-    programa_atual = obter_janela_em_foco()
-    if not programa_atual or programa_atual == _ultimo_programa:
-        _tempo_programa_detectado = None
-        return
-    if _tempo_programa_detectado is None:
-        _tempo_programa_detectado = time.time()
-        return
-    if time.time() - _tempo_programa_detectado < DEBOUNCE_PROGRAMA: return
-    if not _passou_intervalo("programa", COOLDOWN_PROGRAMA):
-        _ultimo_programa = programa_atual
-        _tempo_programa_detectado = None
-        return
-    _ultimo_programa = programa_atual
-    _tempo_programa_detectado = None
-    prompt = f"O Fábio abriu o programa: '{programa_atual}'. Faça um comentário curto questionando o que ele vai fazer. {REGRA_PERSONA}"
-    _falar_proativamente(_gerar_fala_proativa(prompt))
-    registrar_tentativa()
-
-def _tarefa_puxar_assunto():
-    cfg = CONFIGURACAO["puxar_assunto"]
-    if not cfg["ativo"] or not _passou_intervalo("puxar_assunto", cfg["intervalo_minutos"]): return
-    
-    # Removemos o "jogo_recente" do sorteio. Agora ela foca só em abas e janelas.
-    assunto = random.choice(["aba_atual", "janela_foco"])
-    texto = False
-    
-    if assunto == "aba_atual":
-        contexto = obter_contexto_navegador()
-        if isinstance(contexto, dict) and contexto.get("titulo"):
-            texto = _gerar_fala_proativa(f"O Fábio está na aba do navegador: '{contexto.get('titulo')}'. Faça um julgamento cínico e seco sobre ele estar perdendo tempo com isso. {REGRA_PERSONA}")
-            
-    elif assunto == "janela_foco":
-        janela = obter_janela_em_foco()
-        if "área de trabalho" not in janela.lower() and "Erro" not in janela:
-            texto = _gerar_fala_proativa(f"O Fábio está com a janela '{janela}' aberta. Questione a capacidade técnica dele de usar isso, com tom de superioridade. {REGRA_PERSONA}")
-
-    if texto:
-        _falar_proativamente(texto)
+        _falar_proativamente(_gerar_fala_proativa(prompt, "steam_wishlist"))
         registrar_tentativa()
 
 def _tarefa_bom_dia():
@@ -522,7 +704,6 @@ def _tarefa_bom_dia():
             
             try:
                 dados_agenda = ler_agenda_google()
-                cor.amarelo("lendo agenda")
             except:
                 dados_agenda = "Não foi possível acessar a agenda."
                 
@@ -536,9 +717,9 @@ def _tarefa_bom_dia():
 DADOS DA AGENDA PARA HOJE: {dados_agenda}.
 DADOS DA CAIXA DE EMAIL:{dados_email}.
 
-Dê um 'bom dia' usando sua peronalidade {REGRA_PERSONA}. Faça um julgamento. Máximo de 5 frases."""
+Dê um 'bom dia' usando sua personalidade {REGRA_PERSONA}. Informe o que tem na agenda e quantos emails há, com o assunto deles. Máximo de 5 frases."""
 
-            texto = _gerar_fala_proativa(prompt_matinal)
+            texto = _gerar_fala_proativa(prompt_matinal, "bom_dia", max_tokens=400)
             
             if texto:
                 _falar_proativamente(texto)
@@ -550,30 +731,53 @@ def _tarefa_monitorar_jogos():
     """Verifica se o Fábio iniciou ou encerrou uma partida."""
     global ESTADO_JOGOS
     
-    # Pega todos os nomes de processos rodando agora (jeito rápido)
-    processos_ativos = [p.info['name'] for p in psutil.process_iter(['name'])]
+    # Pega todos os nomes de processos rodando agora (case-insensitive)
+    processos_ativos = {p.info['name'].lower() for p in psutil.process_iter(['name'])}
 
     for exe, nome_jogo in PROCESSOS_JOGOS.items():
-        esta_rodando_agora = exe in processos_ativos
+        esta_rodando_agora = exe.lower() in processos_ativos
         estava_rodando_antes = ESTADO_JOGOS[nome_jogo]
 
         # CASO 1: Acabou de abrir o jogo
         if esta_rodando_agora and not estava_rodando_antes:
             ESTADO_JOGOS[nome_jogo] = True
+            registrar_interacao()  # usuário está ativo — reseta suspensão
+            atualizar_estado_luna("jogo_ativo", nome_jogo)
             print(f"[🎮 Jogo Detectado: {nome_jogo}]")
             
-            prompt = f"O Fábio acabou de abrir o jogo {nome_jogo}. Dê um 'boa sorte' usando sua persona {REGRA_PERSONA}, Seja breve (2 frases)."
-            texto = _gerar_fala_proativa(prompt)
+            if nome_jogo == "Overwatch":
+                print("[📊 Buscando dados para briefing de sessão...]")
+                dados_abertura = _buscar_dados_overwatch()
+                prompt = (
+                    f"O Fábio acabou de abrir Overwatch.\n"
+                    f"DADOS ATUAIS DA CONTA: {dados_abertura}\n"
+                    f"Faça um briefing de sessão frio e direto: rank atual + uma observação analítica sobre tendência de desempenho. "
+                    f"{REGRA_PERSONA} Máximo 2 frases."
+                )
+            elif nome_jogo == "Deadlock":
+                print("[📊 Buscando dados para briefing de sessão Deadlock...]")
+                dados_abertura = _buscar_dados_deadlock()
+                prompt = (
+                    f"O Fábio acabou de abrir Deadlock.\n"
+                    f"DADOS DA CONTA: {dados_abertura}\n"
+                    f"Faça um briefing de sessão frio: winrate atual + observação sobre tendência. "
+                    f"{REGRA_PERSONA} Máximo 2 frases."
+                )
+            else:
+                prompt = f"O Fábio acabou de abrir o {nome_jogo}. Registre o início da sessão de forma fria e direta. {REGRA_PERSONA} 1 frase."
+
+            texto = _gerar_fala_proativa(prompt, f"jogo_aberto_{nome_jogo}")
             if texto: _falar_proativamente(texto)
 
         # CASO 2: Acabou de fechar o jogo
         elif not esta_rodando_agora and estava_rodando_antes:
             ESTADO_JOGOS[nome_jogo] = False
+            atualizar_estado_luna("jogo_ativo", None)
             print(f"[🚫 Jogo Encerrado: {nome_jogo}]")
             
             # Dados padrão se o jogo não tiver API
             dados_extras = "Sem dados de API no momento."
-            instrucao_especifica = f"Zombe do tempo que ele desperdiçou jogando {nome_jogo} e da provável derrota dele."
+            instrucao_especifica = f"Registre o encerramento da sessão de {nome_jogo} de forma factual e direta, sem zombaria."
             
             # ==========================================
             # ROTEAMENTO DE APIS E DEBOCHES ESPECÍFICOS
@@ -585,13 +789,37 @@ def _tarefa_monitorar_jogos():
                 if dados_extras == "ERRO_DE_CONEXAO":
                     instrucao_especifica = "Ocorreu um erro de rede ao buscar os dados dele. Zombe da internet de padaria dele ou diga que os servidores da Blizzard se recusaram a processar um perfil tão medíocre."
                 else:
-                    instrucao_especifica = "Mencione os dados matemáticos da conta para esfregar na cara dele que você sabe como ele joga."
+                    instrucao_especifica = (
+                        "Use os dados como observação factual. "
+                        "1 frase com o dado mais relevante (rank ou winrate). "
+                        "1 frase de análise de padrão — sem zombaria, sem crueldade, apenas exatidão."
+                    )
             
             elif nome_jogo == "League of Legends":
-                instrucao_especifica = "Zombe do fato de que ele é um jogador de LoL, faça uma piada sobre a comunidade tóxica da qual ele faz parte e a certeza matemática de que ele afundou o time."
+                print("[🔎 Aguardando dados da última partida via LCU (15s)...]")
+                time.sleep(15)
+                dados_extras = _buscar_dados_lol()
+                cor.amarelo(f"[🎮 LCU retornou: {dados_extras[:120]}]")
+                if dados_extras.startswith("ERRO"):
+                    instrucao_especifica = "Não foi possível recuperar os dados da última partida. Registre o fim da sessão em 1 frase, sem inventar resultado."
+                else:
+                    instrucao_especifica = (
+                        "Use os dados como observação factual. "
+                        "1 frase com o resultado da partida e o KDA. "
+                        "1 frase de análise de padrão (ex: impacto do KDA no resultado) — sem zombaria, sem crueldade, apenas exatidão."
+                    )
                 
             elif nome_jogo == "Deadlock":
-                instrucao_especifica = "Zombe dele estar perdendo tempo testando um jogo novo da Valve achando que vai ter vantagem competitiva. Critique a mira dele."
+                print("[🔎 Buscando estatísticas da conta de Deadlock...]")
+                dados_extras = _buscar_dados_deadlock()
+                if dados_extras.startswith("ERRO"):
+                    instrucao_especifica = "Erro ao buscar dados. Comente sobre o fato de que nem a API conseguiu registrar o desempenho dele."
+                else:
+                    instrucao_especifica = (
+                        "Use os dados como observação factual. "
+                        "1 frase com o resultado da partida e KDA. "
+                        "1 frase sobre winrate ou padrão de desempenho — sem zombaria, apenas análise fria."
+                    )
 
             # ==========================================
             # MONTAGEM DO PROMPT
@@ -599,63 +827,82 @@ def _tarefa_monitorar_jogos():
             prompt = f"""O Fábio acabou de fechar o {nome_jogo}.
 DADOS TÉCNICOS DA CONTA: {dados_extras}
 
-Faça um comentário cínico de encerramento usando a sua personalidade atualizada:
+Registre o encerramento da sessão com tom observacional:
 {REGRA_PERSONA}
 
-INSTRUÇÃO DIRETIVA: {instrucao_especifica}
-Máximo de 3 frases. SEM EMOJIS."""
+INSTRUÇÃO: {instrucao_especifica}
+Máximo 2 frases. SEM EMOJIS."""
 
-            texto = _gerar_fala_proativa(prompt)
+            texto = _gerar_fala_proativa(prompt, f"jogo_fechado_{nome_jogo}", max_tokens=300)
             if texto: _falar_proativamente(texto)
 
-def _tarefa_lixo_digital():
-    # 1. Puxa o dia exato de hoje no momento em que a função é chamada
-    agora = datetime.datetime.now()
-    dia_atual = agora.day
-    
-    # 2. Verifica a memória física: já dei bronca hoje?
-    estado = ler_estado_proativo()
-    if estado.get("ultimo_dia_lixo_digital") == dia_atual:
-        return # Se sim, aborta silenciosamente e não faz nada
-        
-    # Detecta a pasta de downloads universal (funciona perfeitamente no seu CachyOS)
-    caminho_downloads = Path.home() / "Downloads"
-    
-    try:
-        if not caminho_downloads.exists():
+
+
+_DOMINIOS_IGNORAR = ("reddit.com", "twitter.com", "x.com", "facebook.com",
+                     "instagram.com", "tiktok.com", "twitch.tv")
+
+def _tarefa_contexto_navegador():
+    global _nav_url_atual, _nav_url_desde, _nav_ultimo_comentario_url
+
+    # 1. Firefox precisa estar na janela em foco
+    janela = obter_janela_em_foco().lower()
+    if "firefox" not in janela:
+        return
+
+    # 2. Limita chamadas à extensão a cada 2 minutos
+    if not _passou_intervalo("contexto_nav_ping", 2):
+        return
+
+    url = controlar_firefox_via_extensao("obter_url")
+    if not url or "Erro:" in url or not url.startswith("http"):
+        return
+
+    agora = time.time()
+
+    # URL mudou → reseta o cronômetro, sem comentar ainda
+    if url != _nav_url_atual:
+        _nav_url_atual = url
+        _nav_url_desde = agora
+        return
+
+    minutos_na_url = (agora - _nav_url_desde) / 60
+
+    # Só fala após 10 minutos e nunca repete na mesma URL
+    if minutos_na_url < 10 or url == _nav_ultimo_comentario_url:
+        return
+
+    url_lower = url.lower()
+
+    # Feeds e redes sociais → silêncio (scroll passivo, nada útil a dizer)
+    if any(d in url_lower for d in _DOMINIOS_IGNORAR):
+        _nav_ultimo_comentario_url = url  # marca para não checar de novo
+        return
+
+    # YouTube com vídeo aberto → ação concreta
+    if "youtube.com/watch" in url_lower or "youtu.be/" in url_lower:
+        prompt = (
+            f"O Fábio está com um vídeo do YouTube aberto há {int(minutos_na_url)} minutos. "
+            f"Pergunte de forma casual e direta se ele quer que você resuma o vídeo. "
+            f"NÃO diga 'você está assistindo' ou descreva o que ele faz. Só a pergunta. "
+            f"{REGRA_PERSONA} 1 frase."
+        )
+    # Outros sites de conteúdo (artigo, doc, notícia)
+    else:
+        titulo = controlar_firefox_via_extensao("obter_titulo") or ""
+        if not titulo or "Erro:" in titulo or len(titulo.strip()) < 8:
             return
-            
-        arquivos = [f for f in os.listdir(caminho_downloads) if os.path.isfile(caminho_downloads / f)]
-        quantidade = len(arquivos)
-        
-        # Se você foi disciplinado e a pasta está vazia, ela fica quieta
-        if quantidade == 1:
-            return
+        prompt = (
+            f"O Fábio está nessa página há {int(minutos_na_url)} minutos: '{titulo}'. "
+            f"Faça UM comentário curto sobre o assunto do título — fale sobre o tema, "
+            f"NÃO sobre o fato de ele estar lendo. Sem 'você está', sem narração. "
+            f"{REGRA_PERSONA} 1 frase."
+        )
 
-        # Lista até 5 arquivos para esfregar na sua cara
-        lista_arquivos = ", ".join(arquivos[:5])
-        if quantidade > 5:
-            lista_arquivos += f" e mais {quantidade - 5} outros"
-
-        print(f"\n[📂 Lixo Digital Detectado: {quantidade} arquivos em Downloads]")
-
-        prompt = f"""O Fábio costuma manter a pasta de Downloads vazia, mas hoje eu encontrei {quantidade} arquivos lá.
-ARQUIVOS ENCONTRADOS: {lista_arquivos}.
-
-Faça um comentário letal sobre essa desorganização súbita usando a sua personalidade:
-{REGRA_PERSONA}
-
-REGRA ADICIONAL: Você é apenas uma observadora cínica. É ESTRITAMENTE PROIBIDO sugerir que vai deletar ou organizar os arquivos. Apenas julgue a falha de disciplina dele.
-Máximo de 3 frases. SEM EMOJIS."""
-
-        texto = _gerar_fala_proativa(prompt)
-        if texto: 
-            _falar_proativamente(texto)
-            # 3. Salva no disco: A Luna trava o gatilho até a meia-noite
-            salvar_estado_proativo("ultimo_dia_lixo_digital", dia_atual)
-            
-    except Exception as e:
-        print(f"[⚠️ Erro ao acessar Downloads: {e}]")
+    texto = _gerar_fala_proativa(prompt, "contexto_navegador")
+    if texto:
+        _nav_ultimo_comentario_url = url
+        _falar_proativamente(texto)
+        registrar_tentativa()
 
 
 # ============================================================
@@ -667,28 +914,34 @@ def _loop_proativo():
     _ja_imprimiu_jogando = False
     
     while _thread_rodando:
+        if not _proativo_ativo:
+            time.sleep(30)
+            continue
+
+        if _sessao_inicio:
+            atualizar_estado_luna("horas_na_sessao", round((time.time() - _sessao_inicio) / 3600, 1))
         segundos_afk = obter_tempo_afk()
         minutos_afk = segundos_afk / 60
-        
+
+        # Camada 1 — sempre ativa, independente de suspensão ou AFK
+        if TAREFAS_ATIVAS.get("jogos", True):
+            _tarefa_monitorar_jogos()
+
         if not esta_suspensa() and minutos_afk <= 5:
             _ja_imprimiu_suspensa = False
-            
-            _tarefa_monitorar_jogos()
-            
+
             jogando_agora = any(ESTADO_JOGOS.values())
-            
+
             # O MODO "NÃO PERTURBE"
             if not jogando_agora:
                 _ja_imprimiu_jogando = False
-                _tarefa_checar_emails()
-                _tarefa_checar_agenda()
-                _tarefa_lembrete_pausa()
-                _tarefa_monitorar_clima()
-                _tarefa_steam_wishlist()
-                _tarefa_reagir_programa()
-                _tarefa_puxar_assunto()
-                _tarefa_bom_dia()
-                _tarefa_lixo_digital()
+                if TAREFAS_ATIVAS.get("emails", True): _tarefa_checar_emails()
+                if TAREFAS_ATIVAS.get("agenda", True): _tarefa_checar_agenda()
+                if TAREFAS_ATIVAS.get("pausa", True): _tarefa_lembrete_pausa()
+                if TAREFAS_ATIVAS.get("clima", True): _tarefa_monitorar_clima()
+                if TAREFAS_ATIVAS.get("steam", True): _tarefa_steam_wishlist()
+                if TAREFAS_ATIVAS.get("bom_dia", True): _tarefa_bom_dia()
+                if TAREFAS_ATIVAS.get("navegador", True): _tarefa_contexto_navegador()
             else:
                 if not _ja_imprimiu_jogando:
                     cor.amarelo("[🔇 Modo Não Perturbe Ativado — Aguardando o fim da partida]")
@@ -704,13 +957,19 @@ def _loop_proativo():
         time.sleep(30)
 
 def iniciar_modo_proativo():
-    global _thread_rodando
+    global _thread_rodando, _sessao_inicio
     if _thread_rodando: return
-    
+
     # CURA DA AVALANCHE: Definindo o 'ponto zero' como agora
     agora = time.time()
-    for chave in ["emails", "agenda", "pausa", "steam", "programa", "clima", "puxar_assunto"]:
+    for chave in ["emails", "agenda", "pausa", "clima"]:
         _ultima_execucao[chave] = agora
+
+    _sessao_inicio = agora
+    atualizar_estado_luna("horas_na_sessao", 0)
+    atualizar_estado_luna("jogo_ativo", None)
+    atualizar_estado_luna("programa_atual", "")
+    atualizar_estado_luna("programa_desde", None)
 
     _thread_rodando = True
     t = threading.Thread(target=_loop_proativo, daemon=True)

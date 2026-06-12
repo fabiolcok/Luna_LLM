@@ -1,22 +1,24 @@
 import numpy as np
 import sounddevice as sd
 from supertonic import TTS
-import re
 import modelos.cores as cor
 
 
-""" 
-
-MÓDULO DE FALA DA LUNA 
+"""
+MÓDULO DE FALA DA LUNA (TTS)
 ---------------------------------------------------------
-Este arquivo contem todas as funcoes para que a luna pode transformar o texto em fala (TTS)
+Transforma texto em fala usando o Supertonic v1.2.1 (PT-BR, voz F1, velocidade 1.2x).
+Roda localmente via sounddevice — sem API externa.
 
-Atualmente estou usando o Supertonic
+Funções principais:
+  falar_texto(texto, voz, velocidade, ao_iniciar, ao_terminar)
+      Motor TTS principal. Chama limpar_texto_para_voz antes de sintetizar.
+      Callbacks ao_iniciar/ao_terminar permitem controle externo (ex: mute mic).
 
-- limpar_acentos_para_motor(texto): tenta ajustar as palavras para a fhonetica correta (não vira naun)
-- falar_texto(texto, voz="F1", velocidade=1.35, ao_iniciar=None, ao_terminar=None): o motor do tts
-
-
+  limpar_texto_para_voz(texto)
+      Remove markdown, tokens de modelo, artefatos de tool result e alucinações
+      de training data antes de mandar para o TTS. Preserva '...', '!!!' e '??'
+      que o Supertonic usa para pausas e ênfase dramática.
 """
 
 
@@ -38,66 +40,53 @@ except Exception as e:
     tts_motor = None
 
 
+_voz_padrao = "F1"
+_velocidade_padrao = 1.2
 
-def limpar_acentos_para_motor(texto):
-    # Regras fonéticas vitais (Apenas o que o modelo gringo realmente não entende)
-    regras_foneticas = {
-        r'ês\b': 'eis',    # Pega português, inglês, mês
-        r'ç': 'ss',        # O clássico problema do Ç
-        r'ão\b': 'aun',    # Pega qualquer final 'ão'
-        r'ões\b': 'oins',  # Pega qualquer final 'ões' (configurações)
-        r'õe\b': 'oin'     # Pega qualquer final 'õe' (compõe)
-    }
-
-    # Aplica as regras vitais
-    for padrao, substituto in regras_foneticas.items():
-        texto = re.sub(padrao, substituto, texto, flags=re.IGNORECASE)
-
-    # 2. O EXTERMINADOR DE EMOJIS
-    # Mantém apenas: letras (\w), espaços (\s) e pontuações normais.
-    # Qualquer emoji como 🎮 ou 😎 será deletado do texto_limpo invisivelmente.
-    texto = re.sub(r'[^\w\s.,?!:;\'"()-]', '', texto)
-
-    return texto
+def configurar_voz(voz=None, velocidade=None):
+    global _voz_padrao, _velocidade_padrao
+    if voz is not None:
+        _voz_padrao = str(voz)
+    if velocidade is not None:
+        _velocidade_padrao = float(velocidade)
 
 
 # ==========================================
 # Função Principal
 # ==========================================
-def falar_texto(texto, voz="F1", velocidade=1.05, ao_iniciar=None, ao_terminar=None):
+def falar_texto(texto, voz=None, velocidade=None, ao_iniciar=None, ao_terminar=None):
     if not texto or not texto.strip():
         return
 
+    voz_usada = voz if voz is not None else _voz_padrao
+    velocidade_usada = velocidade if velocidade is not None else _velocidade_padrao
+
     try:
-        # Passamos o texto pelo nosso filtro fonético
-        #texto_limpo = limpar_acentos_para_motor(texto)
-        texto_limpo = texto
-        
+        texto_limpo = limpar_texto_para_voz(texto)
+        if not texto_limpo.strip():
+            return
 
         print("===================================")
-        cor.ciano(f"[🌚💬 Luna falando...] '{texto}'")
+        cor.ciano(f"[🌚💬 Luna falando ] '{texto_limpo}'")
         print("===================================")
-        
-        estilo_voz = tts_motor.get_voice_style(voice_name=voz)
-        
-        # Mandamos a versão "limpa" para o motor gerar o áudio
+
+        estilo_voz = tts_motor.get_voice_style(voice_name=voz_usada)
+
         wav, duration = tts_motor.synthesize(
             texto_limpo,
             voice_style=estilo_voz,
-            total_steps = 20,
+            total_steps=15,
             lang="pt",
-            speed=velocidade,
+            speed=velocidade_usada,
             silence_duration=0.5
         )
 
-        # Achata a matriz do Supertonic para a placa de som entender
         wav_achatado = np.squeeze(wav)
-        
+
         if ao_iniciar:
             ao_iniciar()
 
-        # 5. Tocamos direto no alto-falante usando o 'wav_achatado'
-        sd.play(wav_achatado, 44100)
+        sd.play(wav_achatado, tts_motor.sample_rate)
         sd.wait()
 
         if ao_terminar:
@@ -116,7 +105,40 @@ def limpar_texto_para_voz(texto):
 
     import re
 
+    texto = re.sub(r'(?i)^SISTEMA:.*$', '', texto, flags=re.MULTILINE).strip()
+    # Remove blocos de aviso do sistema que não devem ser lidos (ex: [AVISO DE SISTEMA...]: texto)
+    texto = re.sub(r'\[AVISO DE SISTEMA[^\]]*\][^\n]*', '', texto, flags=re.IGNORECASE)
     texto = re.sub(r'^\[[\w]+\]\s*', '', texto)
+    # Remove linhas que o modelo alucina como resultado de ferramenta
+    texto = re.sub(r'(?i)^A ferramenta\b.*$', '', texto, flags=re.MULTILINE).strip()
+    texto = re.sub(r'(?i)^Resultado\b.*:.*$', '', texto, flags=re.MULTILINE).strip()
+    # Remove descrições brutas do Gemini (ver_tela) que o modelo ecoa na resposta
+    texto = re.sub(r'(?i)^\[?(?:capturando tela|tela mostra|a tela (?:mostra|exibe|apresenta)).*$', '', texto, flags=re.MULTILINE).strip()
+    texto = re.sub(r'\[[^\]]{50,}\]', '', texto)  # Remove blocos longos entre colchetes
+    # Remove tokens de modelos fine-tuned (<|im_end|> etc). NÃO afeta expression tags do Supertonic
+    # (<breath>, <sigh>, <throatclear>, ...) — esses são processados pelo ONNX e devem passar intactos.
+    texto = re.sub(r'<\|[^|>]*\|+>?', '', texto)
+    # Remove aspas duplas que envolvem o texto inteiro (artefato do completion-style)
+    texto = re.sub(r'^"(.*)"$', r'\1', texto, flags=re.DOTALL)
+    # Remove artifacts de modelos fine-tuned (Dolphin etc) que simulam blocos de tool result
+    texto = re.sub(r'^\+{3,}.*$', '', texto, flags=re.MULTILINE)
+    texto = re.sub(r'\[TOOL_RESULT\].*?(\[ENDTOOLRESULT\]|$)', '', texto, flags=re.DOTALL)
+    # Remove código Python alucinado do training data (ex: Dolphin injetando exemplos de código)
+    texto = re.sub(r'^(?:from \S+ import|import \S+|def \w+\s*\(|class \w+[\s:(]).*$', '', texto, flags=re.MULTILINE)
+    texto = re.sub(r'^\s{4,}\S.*$', '', texto, flags=re.MULTILINE)  # linhas indentadas (corpo de função)
+    texto = re.sub(r'^\w[\w.]* = \w[\w.]*\.(?:from_pretrained|generate|encode|decode|from_config)\(.*$', '', texto, flags=re.MULTILINE)
+    # Remove texto em inglês que é training data (linhas que começam com artigos/pronomes ingleses + contexto de AI/tech)
+    texto = re.sub(r'^(?:The |An |A )(?:\w+ ){0,3}(?:AI|artificial|machine|neural|model|generator|system|assistant)\b.*$', '', texto, flags=re.MULTILINE | re.IGNORECASE)
+    # Remove linhas que a persona gera simulando resultado de ferramenta (ex: "Tocando agora: X")
+    texto = re.sub(r'(?i)^(?:tocando agora|playing now|now playing|reproduzindo agora)\s*:.*$', '', texto, flags=re.MULTILINE)
+    # Remove ponto antes de ! ou ? múltiplos (ex: "recursos.!!!" → "recursos...")
+    texto = re.sub(r'\.([!?]{2,})', r'...\1', texto)
+    # Normaliza mistura de ! e ? (ex: !!?? ou ?!?! → escolhe o predominante)
+    texto = re.sub(r'[!?]*[!][!?]*[?][!?]*|[!?]*[?][!?]*[!][!?]*', lambda m: '!!' if m.group().count('!') >= m.group().count('?') else '??', texto)
+    # Remove ... no início de linha nova (cria pausa dupla estranha)
+    texto = re.sub(r'\n\s*\.\.\.', ' ', texto)
+    # Remove ... sozinho no final do texto
+    texto = re.sub(r'\s*\.\.\.\s*$', '', texto)
 
     if re.match(r'^\s*\{.*\}\s*$', texto, re.DOTALL):
         return ""
@@ -129,6 +151,7 @@ def limpar_texto_para_voz(texto):
 
     texto = re.sub(r'^\s*[\*\-•]\s+', '', texto, flags=re.MULTILINE)
     texto = re.sub(r'^\s*\d+\.\s+', '', texto, flags=re.MULTILINE)
+    texto = re.sub(r'^\s*-{3,}\s*$', '', texto, flags=re.MULTILINE)  # Remove --- horizontal rule
 
     texto = re.sub(r'\n{2,}', '\n', texto)
     texto = texto.strip()

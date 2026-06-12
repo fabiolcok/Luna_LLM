@@ -23,6 +23,8 @@ warnings.filterwarnings("ignore")
 # ============================================================
 LIMITE_SESSOES      = 30        # máximo de conversas guardadas
 RESULTADOS_BUSCA    = 3         # quantas memórias buscar por pergunta
+LIMIAR_DISTANCIA    = 1.3       # descarta memórias acima dessa distância (0=idêntico, ~2=sem relação).
+                                # Evita que conversas antigas/irrelevantes contaminem o contexto.
 CAMINHO_MEMORIA     = "modelos/memoria_permanente.json"
 CAMINHO_CHROMADB    = "modelos/chromadb"
 MODELO_EMBEDDING    = "all-MiniLM-L6-v2"  # ~80MB, roda na CPU
@@ -139,19 +141,25 @@ def buscar_contexto_relevante(pergunta: str) -> str:
     try:
         resultados = _colecao.query(
             query_texts=[pergunta],
-            n_results=min(RESULTADOS_BUSCA, total)
+            n_results=min(RESULTADOS_BUSCA, total),
+            include=["documents", "metadatas", "distances"],
         )
 
         documentos = resultados.get("documents", [[]])[0]
         metadatas  = resultados.get("metadatas",  [[]])[0]
+        distancias = resultados.get("distances",  [[]])[0]
 
         if not documentos:
             return ""
 
         linhas = ["Conversas anteriores relevantes:"]
-        for doc, meta in zip(documentos, metadatas):
+        for doc, meta, dist in zip(documentos, metadatas, distancias):
+            if dist is not None and dist > LIMIAR_DISTANCIA:
+                continue  # memória pouco relacionada — não injeta no contexto
             linhas.append(f"[{meta.get('data', '')}]\n{doc}")
 
+        if len(linhas) == 1:   # nenhuma passou no limiar
+            return ""
         return "\n\n".join(linhas)
 
     except Exception as e:
@@ -218,3 +226,26 @@ def salvar_vistos(dados: dict):
     os.makedirs("modelos", exist_ok=True)
     with open(CAMINHO_VISTOS, "w") as f:
         json.dump(dados, f, ensure_ascii=False, indent=2)
+
+
+# ============================================================
+# ESTADO SITUACIONAL DA LUNA (JSON)
+# ============================================================
+CAMINHO_ESTADO_LUNA = "modelos/estado_luna.json"
+
+def ler_estado_luna() -> dict:
+    if not os.path.exists(CAMINHO_ESTADO_LUNA):
+        return {}
+    try:
+        with open(CAMINHO_ESTADO_LUNA, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def atualizar_estado_luna(chave: str, valor):
+    estado = ler_estado_luna()
+    estado[chave] = valor
+    estado["ultima_atualizacao"] = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
+    os.makedirs("modelos", exist_ok=True)
+    with open(CAMINHO_ESTADO_LUNA, "w", encoding="utf-8") as f:
+        json.dump(estado, f, ensure_ascii=False, indent=2)

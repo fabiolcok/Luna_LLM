@@ -32,6 +32,7 @@ import modelos.cores as cor
 import urllib.parse
 import webbrowser
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
 
 from google import genai
 from google.genai import types
@@ -39,6 +40,8 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+
+load_dotenv()
 
 
 
@@ -63,8 +66,9 @@ Funções Disponíveis:
 - pausar_spotify(): pausa a musica spotfy
 - proxima_musica_spotify(): passa a musica no spotfy
 - gerenciador_spotify(acao, nome_musica=""): Função gerente que recebe o comando da IA e distribui para as funções reais. (tocar_musica_spotify,pausar_spotify,proxima_musica_spotify)
-- apturar_tela_base64() -> str: Tira um print da tela e retorna como string base64 (JPEG comprimido).
-- analisar_imagem_gemini(imagem_base64: str, pergunta: str = "") -> str: a captura de tela manda para uma api de terceiros
+- capturar_tela_base64() -> str: Tira um print da tela e retorna como string base64 (JPEG comprimido).
+- analisar_imagem_gemini(imagem_base64, pergunta): Envia a captura de tela para a API Gemini e retorna a descrição.
+- executar_analise_aba(): Combina obter_contexto_navegador + analisar_imagem_gemini para resumir a aba ativa.
 - pesquisar_na_web(pergunta): Pesquisa no DuckDuckGo, pega os 3 primeiros resultados e lê o conteúdo completo do site principal.
 - enviar_mensagem_whatsapp(destinatario, mensagem): Envia WhatsApp. O destinatário pode ser um nome da agenda ou um número.
 - checar_emails_nao_lidos(limite=5): Conecta no e-mail, busca as últimas mensagens não lidas e retorna Remetente e Assunto.
@@ -75,6 +79,9 @@ Funções Disponíveis:
 - matar_processo(nome_processo): Permite a Luna forçar o fechamento de um programa que travou.
 - obter_janela_em_foco(): Descobre qual programa ou janela está em primeiro plano no Windows do Fábio.
 - desenhar_imagem(prompt_imagem): Gera uma imagem baseada na descrição da Luna e abre no navegador do Fábio.
+- definir_lembrete(mensagem, minutos): Cria um timer em background que dispara falar_texto após X minutos.
+- alternar_mute(): Muta ou desmuta o volume do sistema via pycaw (Windows).
+- ler_url_especifica(url): Faz fetch de uma URL, extrai parágrafos com BeautifulSoup e retorna até 15000 chars de texto limpo.
 
 """
 
@@ -137,10 +144,6 @@ def obter_transcricao(url):
         
     except Exception as e:
         return f"ERRO: Detalhe técnico - {e}"  
-
-
-
-
 
 #=======================================================
 #               FERRAMENTA GOOGLE AGENDA
@@ -276,9 +279,9 @@ def obter_previsao_tempo():
 #               FERRAMENTA SPOTFY
 #=======================================================    
 
-SPOTIPY_CLIENT_ID = "***REMOVIDO***"
-SPOTIPY_CLIENT_SECRET = "***REMOVIDO***"
-SPOTIPY_REDIRECT_URI = "http://127.0.0.1:8080"
+SPOTIPY_CLIENT_ID     = os.getenv("SPOTIPY_CLIENT_ID", "")
+SPOTIPY_CLIENT_SECRET = os.getenv("SPOTIPY_CLIENT_SECRET", "")
+SPOTIPY_REDIRECT_URI  = os.getenv("SPOTIPY_REDIRECT_URI", "http://127.0.0.1:8080")
 
 def tocar_musica_spotify(nome_musica):
     """Busca uma música e dá o play no dispositivo ativo do Spotify"""
@@ -377,8 +380,8 @@ def capturar_tela_base64() -> str:
 
     return base64.b64encode(buffer.read()).decode("utf-8")
 
-GEMINI_API_KEY = "***REMOVIDO***" # ESCONDER ISSO, NAO MANDA PARA IA WEB
-# https://aistudio.google.com/usage?timeRange=last-hour&project=gen-lang-client-0061154627
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GROQ_API_KEY   = os.getenv("GROQ_API_KEY", "")
 
 def analisar_imagem_gemini(imagem_base64: str, pergunta: str = "") -> str:
     client = genai.Client(api_key=GEMINI_API_KEY)
@@ -399,8 +402,35 @@ def analisar_imagem_gemini(imagem_base64: str, pergunta: str = "") -> str:
     return resposta.text
 
 #=======================================================
+#               FERRAMENTA LER URL ESPECÍFICA
+#=======================================================
+
+def ler_url_especifica(url: str) -> str:
+    """Faz o fetch de uma URL e retorna o texto extraído dos parágrafos."""
+    cor.amarelo(f"[🌚🌎 Lendo URL: '{url}']")
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        resposta = requests.get(url, headers=headers, timeout=8)
+        resposta.raise_for_status()
+
+        soup = BeautifulSoup(resposta.text, 'html.parser')
+        for tag in soup(['script', 'style', 'nav', 'footer', 'header']):
+            tag.decompose()
+
+        paragrafos = soup.find_all('p')
+        texto = "\n".join([p.get_text().strip() for p in paragrafos if len(p.get_text().strip()) > 30])
+
+        if not texto.strip():
+            texto = soup.get_text(separator='\n', strip=True)
+
+        return texto[:15000]
+    except Exception as e:
+        return f"Erro ao ler URL: {e}"
+
+
+#=======================================================
 #               FERRAMENTA PESQUISAR DUCK DUCK GO
-#=======================================================    
+#=======================================================
 
 def pesquisar_na_web(pergunta):
     """Pesquisa no DuckDuckGo, pega os 3 primeiros resultados e lê o conteúdo completo do site principal."""
@@ -502,9 +532,9 @@ def enviar_mensagem_whatsapp(destinatario, mensagem):
 
 
 #📧 CONFIGURAÇÕES DE E-MAIL
-EMAIL_USUARIO = "***REMOVIDO***"
-EMAIL_SENHA = "***REMOVIDO***" # Aquela de 16 letras, sem espaços
-SERVIDOR_IMAP = "imap.gmail.com" # Se for outlook, mude para imap-mail.outlook.com
+EMAIL_USUARIO = os.getenv("EMAIL_USUARIO", "")
+EMAIL_SENHA   = os.getenv("EMAIL_SENHA", "")
+SERVIDOR_IMAP = "imap.gmail.com"
 
 def checar_emails_nao_lidos(limite=5):
     """Conecta no e-mail, busca as últimas mensagens não lidas e retorna Remetente e Assunto."""
@@ -531,7 +561,7 @@ def checar_emails_nao_lidos(limite=5):
         resumo_emails = "Lista de e-mails não lidos do Fábio:\n\n"
         
         for id_email in ids_recentes:
-            res, msg_data = mail.fetch(id_email, "(RFC822)")
+            _, msg_data = mail.fetch(id_email, "(RFC822)")
             for response_part in msg_data:
                 if isinstance(response_part, tuple):
                     msg = email.message_from_bytes(response_part[1])
@@ -570,6 +600,12 @@ _resposta_pendente = None
 _evento_resposta = threading.Event()
 _loop_websocket = None
 
+import logging
+_logger_ws_silencioso = logging.getLogger("websockets.luna")
+_logger_ws_silencioso.addHandler(logging.NullHandler())
+_logger_ws_silencioso.propagate = False
+_logger_ws_silencioso.setLevel(logging.CRITICAL)
+
 async def _manipulador_conexao(websocket):
     global _conexao_ativa, _resposta_pendente
     cor.amarelo("[🌐 Firefox conectado à 🌚 Luna com sucesso!]")
@@ -585,8 +621,7 @@ async def _manipulador_conexao(websocket):
         _conexao_ativa = None
 
 async def _iniciar_servidor():
-    # Troque "localhost" por "127.0.0.1"
-    async with websockets.serve(_manipulador_conexao, "127.0.0.1", 8765):
+    async with websockets.serve(_manipulador_conexao, "127.0.0.1", 8765, logger=_logger_ws_silencioso):
         await asyncio.Future()  # Roda para sempre
 
 def _rodar_thread_websocket():
@@ -603,9 +638,14 @@ def iniciar_servidor_extensao():
 def controlar_firefox_via_extensao(acao: str, parametro: str = ""):
     """Função que a Luna vai chamar para controlar o navegador"""
     global _resposta_pendente
-    
+
     if not _conexao_ativa or not _loop_websocket:
         return "Erro: O Firefox não está conectado no momento. Peça ao Fábio para abrir o navegador."
+
+    # Garante que abrir_url sempre receba uma URL válida —
+    # se o modelo mandar só um nome (ex: "Wikipedia"), converte em busca do Google.
+    if acao == "abrir_url" and parametro and not parametro.startswith("http"):
+        parametro = f"https://www.google.com/search?q={urllib.parse.quote(parametro)}"
 
     comando = json.dumps({"acao": acao, "parametro": parametro})
     
@@ -711,20 +751,171 @@ def obter_janela_em_foco():
 #          FERRAMENTA DESENHAR COM APPS DE TERCEIROS
 #================================================================  
 
+# Hugging Face — geração de imagem grátis. Token em https://huggingface.co/settings/tokens
+HF_TOKEN = os.getenv("HF_TOKEN", "")
+MODELO_IMAGEM = "black-forest-labs/FLUX.1-schnell"
+
+# Guarda os bytes da última imagem gerada, para canais que enviam mídia (Telegram).
+_ultima_imagem_bytes = None
+
+def gerar_imagem_bytes(prompt_imagem, tentativas=2):
+    """Gera a imagem via Hugging Face (FLUX.1-schnell) e retorna os bytes PNG. None se falhar."""
+    if not HF_TOKEN:
+        cor.amarelo("[Imagem: HF_TOKEN nao configurado no .env]")
+        return None
+    from huggingface_hub import InferenceClient
+    client = InferenceClient(token=HF_TOKEN)
+    for i in range(tentativas):
+        try:
+            imagem = client.text_to_image(prompt_imagem, model=MODELO_IMAGEM)
+            buf = io.BytesIO()
+            imagem.save(buf, format="PNG")
+            return buf.getvalue()
+        except Exception as e:
+            cor.amarelo(f"[Imagem HF falhou (tentativa {i+1}/{tentativas}): {e}]")
+            time.sleep(3)
+    return None
+
+def obter_ultima_imagem_bytes():
+    """Retorna (e limpa) os bytes da última imagem gerada — usado pelo Telegram."""
+    global _ultima_imagem_bytes
+    b = _ultima_imagem_bytes
+    _ultima_imagem_bytes = None
+    return b
+
 def desenhar_imagem(prompt_imagem):
     """
-    Gera uma imagem baseada na descrição da Luna e abre no navegador do Fábio.
+    Gera uma imagem baseada na descrição da Luna, salva localmente e abre no navegador.
+    Os bytes ficam disponíveis em obter_ultima_imagem_bytes() para envio pelo Telegram.
     """
-    # Formata o texto para poder ir na URL (troca espaços por %20, etc)
-    prompt_seguro = urllib.parse.quote(prompt_imagem)
-    
-    # URL mágica do pollinations (gera imagem em 1024x1024)
-    url = f"https://image.pollinations.ai/prompt/{prompt_seguro}?width=1024&height=1024&nologo=true&model=flux-pro"
-    
-    # Abre uma nova aba no seu navegador padrão com a imagem gerada
-    webbrowser.open(url)
-    
-    return f"Imagem gerada e aberta no navegador."
+    global _ultima_imagem_bytes
+    _ultima_imagem_bytes = None
+
+    dados = gerar_imagem_bytes(prompt_imagem)
+    if not dados:
+        return "Erro: o serviço de geração de imagens está sobrecarregado agora. Tente de novo em alguns instantes."
+
+    _ultima_imagem_bytes = dados
+
+    # Salva em arquivo temporário e abre no navegador padrão (interface por voz/web)
+    try:
+        import tempfile
+        caminho = os.path.join(tempfile.gettempdir(), "luna_desenho.png")
+        with open(caminho, "wb") as f:
+            f.write(dados)
+        webbrowser.open(caminho)
+    except Exception:
+        pass
+
+    return "Imagem gerada."
+
+
+#================================================================
+#          FERRAMENTA LEMBRETE COM TIMER
+#================================================================
+
+def definir_lembrete(mensagem, minutos):
+    """Cria um timer em background que avisa o Fábio com voz após X minutos."""
+    minutos = float(minutos)
+    if minutos <= 0 or minutos > 1440:
+        return "Tempo inválido. Use entre 1 e 1440 minutos."
+
+    def _disparar():
+        time.sleep(minutos * 60)
+        from modulos.falar import falar_texto as _falar
+        cor.amarelo(f"[⏰ LEMBRETE DISPARADO: {mensagem}]")
+        _falar(f"Lembrete: {mensagem}")
+
+    threading.Thread(target=_disparar, daemon=True).start()
+
+    if minutos < 60:
+        tempo_str = f"{int(minutos)} minuto{'s' if minutos != 1 else ''}"
+    else:
+        horas = minutos / 60
+        tempo_str = f"{horas:.1f} hora{'s' if horas != 1.0 else ''}"
+
+    return f"Lembrete definido: vou te avisar em {tempo_str}. '{mensagem}'"
+
+
+#================================================================
+#          FERRAMENTA MUTE DO SISTEMA
+#================================================================
+
+def alternar_mute():
+    """Muta ou desmuta o volume do sistema Windows via pycaw."""
+    try:
+        from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+        from ctypes import cast, POINTER
+        from comtypes import CLSCTX_ALL
+
+        device = AudioUtilities.GetSpeakers()
+        # GetSpeakers() retorna AudioDevice wrapper — o COM object real fica em ._dev
+        interface = device._dev.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+        volume = cast(interface, POINTER(IAudioEndpointVolume))
+
+        mute_atual = volume.GetMute()
+        volume.SetMute(not mute_atual, None)
+        return "Volume mutado." if not mute_atual else "Volume desmutado."
+    except ImportError:
+        return "Erro: pycaw não instalado. Execute: pip install pycaw"
+    except Exception as e:
+        return f"Erro ao controlar volume: {e}"
+
+
+#================================================================
+#          FERRAMENTA OVERWATCH (STATS EM TEMPO REAL)
+#================================================================
+
+def consultar_overwatch() -> str:
+    """Busca perfil e estatísticas do Fábio no Overwatch via OverFast API."""
+    battletag = os.getenv("OW_BATTLETAG", "Fabio-1600")
+    url_perfil = f"https://overfast-api.tekrop.fr/players/{battletag}/summary"
+    url_stats  = f"https://overfast-api.tekrop.fr/players/{battletag}/stats/summary"
+
+    try:
+        resp = requests.get(url_perfil, timeout=10)
+        if resp.status_code != 200:
+            return "Perfil do Overwatch inacessível no momento."
+
+        perfil = resp.json()
+        if perfil.get("privacy") == "private":
+            return "Perfil do Overwatch está privado. Stats não disponíveis."
+
+        endorsement = perfil.get("endorsement", {}).get("level", "?")
+        titulo      = perfil.get("title") or "nenhum"
+
+        comp = perfil.get("competitive", {}).get("pc", {})
+        ranks = []
+        for role in ["tank", "damage", "support"]:
+            if role in comp and comp[role]:
+                tier  = comp[role].get("division", "Unranked").capitalize()
+                level = comp[role].get("tier", "")
+                ranks.append(f"{role}: {tier} {level}".strip())
+        rank_texto = ", ".join(ranks) if ranks else "sem rank competitivo"
+
+        texto = f"Overwatch — Endorsement {endorsement}, título: {titulo}, ranks: {rank_texto}."
+
+        resp2 = requests.get(url_stats, timeout=10)
+        if resp2.status_code == 200:
+            dados2  = resp2.json()
+            geral   = dados2.get("general", {})
+            horas   = int(geral.get("time_played", 0) / 3600)
+            winrate = geral.get("winrate", 0)
+            elim    = geral.get("eliminations", 0)
+            mortes  = geral.get("deaths", 0)
+            texto  += f" Total: {horas}h, winrate: {winrate}%, K/D: {elim}/{mortes}."
+
+            herois = dados2.get("heroes", {})
+            if herois:
+                main     = max(herois, key=lambda k: herois[k].get("time_played", 0))
+                h_horas  = int(herois[main].get("time_played", 0) / 3600)
+                h_wr     = herois[main].get("winrate", "?")
+                texto   += f" Main: {main.capitalize()} ({h_horas}h, {h_wr}% winrate)."
+
+        return texto
+
+    except Exception as e:
+        return f"Erro ao consultar Overwatch: {e}"
 
 
 #================================================================
@@ -735,11 +926,9 @@ def executar_analise_aba():
     contexto = obter_contexto_navegador()
     if isinstance(contexto, dict):
         relatorio = (
-            f"SISTEMA: O Fábio está olhando para a seguinte tela agora:\n"
-            f"TÍTULO: {contexto.get('titulo', 'Desconhecido')}\n"
+            f"Título: {contexto.get('titulo', 'Desconhecido')}\n"
             f"URL: {contexto.get('url', 'Desconhecida')}\n"
-            f"CONTEÚDO:\n{contexto.get('texto', '')}\n\n"
-            "Fale algo em uma frase."
+            f"Conteúdo: {contexto.get('texto', '')}"
         )
         return relatorio
     return contexto
@@ -763,7 +952,7 @@ ferramentas_disponiveis = [
                 "type": "object",
                 "properties": {
                     "resumo": {"type": "string"},
-                    "data_hora_iso": {"type": "string"}
+                    "data_hora_iso": {"type": "string", "description": "Data e hora no formato ISO 8601 (YYYY-MM-DDTHH:MM:SS). Use o ano e mês atuais informados no contexto; nunca invente o ano."}
                 },
                 "required": ["resumo", "data_hora_iso"]
             }
@@ -791,28 +980,13 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "pesquisar_web",
-            "description": "Use esta ferramenta SEMPRE que você precisar de informações atualizadas.",
+            "description": "Use quando o usuário pedir explicitamente uma pesquisa, ou quando a pergunta envolver eventos recentes, preços, notícias ou fatos que você claramente não sabe. NÃO use para perguntas gerais de conhecimento.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "pergunta": {"type": "string"}
                 },
                 "required": ["pergunta"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "enviar_whatsapp",
-            "description": "Use para enviar uma mensagem de WhatsApp para alguém.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "destinatario": {"type": "string"},
-                    "mensagem": {"type": "string"}
-                },
-                "required": ["destinatario", "mensagem"]
             }
         }
     },
@@ -867,26 +1041,9 @@ ferramentas_disponiveis = [
             }
         }
     },
-    {
-        "type": "function",
-        "function": {
-            "name": "matar_processo",
-            "description": "Força o fechamento de um programa que travou ou que está pesando no PC.",
-            "parameters": {
-                "type": "object",
-                "properties": {"nome_processo": {"type": "string"}},
-                "required": ["nome_processo"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "ver_tela",
-            "description": "Captura a tela atual do usuário.",
-            "parameters": {"type": "object", "properties": {}, "required": []}
-        }
-    },
+    # ver_tela removida do catálogo do roteador — o screenshot deve ser capturado
+    # ANTES do terminal imprimir qualquer coisa (via ATIVAR_VER_TELA em main.py).
+    # Se o roteador chamar ver_tela, ele fotografa o próprio terminal da Luna.
     {
         "type": "function",
         "function": {
@@ -911,7 +1068,7 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "ler_agenda_google",
-            "description": "Lê os eventos e compromissos que o Fábio já tem agendados para hoje.",
+            "description": "Lê os eventos e compromissos agendados nos próximos 10 dias.",
             "parameters": {"type": "object", "properties": {}, "required": []}
         }
     },
@@ -921,6 +1078,61 @@ ferramentas_disponiveis = [
             "name": "obter_clima",
             "description": "Obtém a previsão do tempo e a temperatura atual.",
             "parameters": {"type": "object", "properties": {}}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "definir_lembrete",
+            "description": "Define um lembrete com timer. A Luna vai avisar o Fábio em voz alta após o tempo especificado.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "mensagem": {"type": "string", "description": "O que lembrar ao Fábio"},
+                    "minutos": {"type": "number", "description": "Tempo em minutos para o lembrete disparar"}
+                },
+                "required": ["mensagem", "minutos"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "alternar_mute",
+            "description": "Muta ou desmuta o volume do sistema Windows.",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "consultar_overwatch",
+            "description": "Consulta o perfil, rank, winrate, KDA e herói main do Fábio no Overwatch. Use quando ele perguntar sobre as próprias stats, rank, ou desempenho no Overwatch.",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "resumir_site",
+            "description": "Resume o conteúdo de um site ou artigo. Use quando o usuário pedir para ler, resumir ou explicar um site/link/artigo/página. A URL é obtida automaticamente do Firefox ou do clipboard.",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "listar_capacidades",
+            "description": "Use SOMENTE quando o usuário perguntar o que a Luna consegue fazer, quais são suas capacidades, habilidades ou funções disponíveis.",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "ver_tela",
+            "description": "Tira um print da tela atual do PC do Fábio e descreve o que está nela. Use quando ele pedir para ver/olhar a tela, tirar um print, ou ajuda com algo que está na tela.",
+            "parameters": {"type": "object", "properties": {}, "required": []}
         }
     },
 ]
