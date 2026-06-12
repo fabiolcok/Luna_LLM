@@ -494,6 +494,43 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
 # LLM ROTEADORA
 # ==========================================
 
+_GATILHOS_AUTORRETRATO = (
+    "me desenh", "desenha eu", "desenhe eu", "me retrat", "meu retrato",
+    "como eu sou", "como sou", "que eu sou", "como vc acha que eu",
+    "como você acha que eu", "como voce acha que eu", "quem eu sou",
+)
+
+def _montar_prompt_imagem(pedido_usuario: str, dica: str = "") -> str:
+    """Decide o prompt da imagem. Para pedidos de autorretrato ('me desenhe'), monta
+    direto da memória permanente (aparência + estilo preferido), de forma determinística.
+    Para pedidos explícitos (ex: 'gato astronauta'), mantém o que o roteador gerou."""
+    pedido_low = (pedido_usuario or "").lower()
+    if not any(g in pedido_low for g in _GATILHOS_AUTORRETRATO):
+        return dica or pedido_usuario   # pedido explícito — o roteador já resolve bem
+
+    from modulos.memoria import _carregar_memoria_permanente
+    dados = _carregar_memoria_permanente()
+
+    aparencia, estilo = "", ""
+    for chave, info in dados.items():
+        valor = info.get("valor", "") if isinstance(info, dict) else str(info)
+        contexto = (chave + " " + valor).lower()
+        if not aparencia and any(k in contexto for k in ("aparen", "aparê", "rosto", "cabelo", "barba", "pele", "olhos")):
+            aparencia = valor
+        if not estilo and any(k in contexto for k in ("estilo", "desenh", "style", "art", "ghibli", "anime")):
+            estilo = valor
+
+    if not aparencia and not estilo:
+        return dica or pedido_usuario   # sem fatos visuais — não há o que montar
+
+    partes = ["portrait of a person"]
+    if aparencia:
+        partes.append(aparencia)
+    if estilo:
+        partes.append(estilo)
+    return ", ".join(partes)
+
+
 def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True, salvar=True, modo_memoria=False, max_tokens=800, responder_completo=False):
     global _imagem_pendente
     if responder_completo:
@@ -600,6 +637,11 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                     resultado_ferramenta = analisar_imagem_gemini(imagem_b64, prompt_usuario)
                     cor.amarelo(f"[🖥️ Gemini ver_tela retornou: {str(resultado_ferramenta)[:200]}]")
                 else:
+                    if nome_funcao == "desenhar_imagem":
+                        # Reescreve o prompt da imagem com a memória (evita o roteador reusar desenhos antigos)
+                        argumentos_dit["prompt_imagem"] = _montar_prompt_imagem(
+                            prompt_usuario, argumentos_dit.get("prompt_imagem", "")
+                        )
                     if argumentos_dit:
                         cor.amarelo(f"[Argumentos enviados: {argumentos_dit}]")
                     resultado_ferramenta = FUNCOES_DISPONIVEIS[nome_funcao](**argumentos_dit)
