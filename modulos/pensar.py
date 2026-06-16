@@ -19,7 +19,7 @@ from modulos.habilidades import (
     obter_contexto_navegador, listar_processos_pesados, abrir_programa, matar_processo,
     obter_janela_em_foco, analisar_imagem_gemini, capturar_tela_base64, ler_texto_selecionado,
     desenhar_imagem, executar_analise_aba, definir_lembrete, alternar_mute,
-    ler_url_especifica, ler_link_copiado, consultar_overwatch,
+    ler_url_especifica, ler_link_copiado, consultar_overwatch, consultar_jogo_steam,
     ferramentas_disponiveis, GEMINI_API_KEY, GROQ_API_KEY)
 from modulos.memoria import (
     buscar_contexto_relevante, salvar_conversa,
@@ -191,7 +191,8 @@ def _listar_capacidades():
         "checar emails não lidos, adicionar e ler eventos da agenda Google, "
         "controlar o Spotify, ver e analisar sua tela, ler texto selecionado, "
         "abrir e fechar programas, verificar o clima, definir lembretes, "
-        "mutar/desmutar o som, consultar suas stats do Overwatch, gerar imagens, "
+        "mutar/desmutar o som, consultar suas stats do Overwatch, consultar jogos na Steam "
+        "(preço, promoção e descrição), gerar imagens, "
         "controlar o Firefox e listar processos pesados do PC."
     )
 
@@ -217,6 +218,7 @@ FUNCOES_DISPONIVEIS = {
     "definir_lembrete": definir_lembrete,
     "alternar_mute": alternar_mute,
     "consultar_overwatch": consultar_overwatch,
+    "consultar_jogo_steam": consultar_jogo_steam,
 }
 
 
@@ -352,15 +354,17 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             )
     else:
         user_msg = (
-            f"O usuário disse: '{prompt_usuario}'.{anti_rep}\n"
-            f"Nenhuma ferramenta foi consultada. Se a resposta exige dados externos, diga que não verificou."
+            f"O usuário disse: '{prompt_usuario}'\n"
+            f"Responda de forma natural, usando o contexto da conversa anterior e o que você já sabe. "
+            f"Se for uma pergunta de acompanhamento, conecte com o que já foi falado. "
+            f"Só diga que não tem a informação se ela realmente exigir dados externos que você não consultou.{anti_rep}"
         )
 
     try:
         if provedor == "gemini":
             cliente_gemini = genai.Client(api_key=GEMINI_API_KEY)
             contents = []
-            for msg in historico[-4:]:
+            for msg in historico[-8:]:
                 role = "user" if msg["role"] == "user" else "model"
                 contents.append(genai_types.Content(
                     role=role,
@@ -396,7 +400,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
                 api_key=GROQ_API_KEY,
             )
             msgs = [{"role": "system", "content": prompt_sistema}]
-            msgs.extend(historico[-4:])
+            msgs.extend(historico[-8:])
             msgs.append({"role": "user", "content": user_msg})
             _t0 = time.time()
             resposta = cliente_groq.chat.completions.create(
@@ -417,7 +421,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
 
         else:  # local — LM Studio
             msgs = [{"role": "system", "content": prompt_sistema}]
-            msgs.extend(historico[-4:])
+            msgs.extend(historico[-8:])
             msgs.append({"role": "user", "content": user_msg})
             _t0 = time.time()
             resposta = cliente.chat.completions.create(
@@ -700,8 +704,8 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
         historico.append({"role": "user", "content": prompt_usuario})
         historico.append({"role": "assistant", "content": texto_resposta})
 
-        if len(historico) > 6:
-            del historico[:-6]   # corta in-place — reatribuir não cortaria a lista do chamador
+        if len(historico) > 12:
+            del historico[:-12]   # corta in-place — reatribuir não cortaria a lista do chamador
 
         tokens_gerados = resposta_ferramenta.usage.completion_tokens
         segundos = fim - inicio

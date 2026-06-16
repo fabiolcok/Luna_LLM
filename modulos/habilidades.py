@@ -919,6 +919,63 @@ def consultar_overwatch() -> str:
 
 
 #================================================================
+#          FERRAMENTA CONSULTAR JOGO NA STEAM
+#================================================================
+
+def consultar_jogo_steam(nome_jogo):
+    """Busca um jogo na loja da Steam pelo nome e retorna ficha:
+    preço, desconto, descrição curta, gênero, lançamento e Metacritic."""
+    try:
+        busca = requests.get(
+            "https://store.steampowered.com/api/storesearch/",
+            params={"term": nome_jogo, "cc": "br", "l": "portuguese"},
+            timeout=10,
+        )
+        itens = busca.json().get("items", []) if busca.status_code == 200 else []
+        if not itens:
+            return f"Não encontrei nenhum jogo chamado '{nome_jogo}' na Steam."
+
+        appid = itens[0]["id"]
+        det = requests.get(
+            "https://store.steampowered.com/api/appdetails",
+            params={"appids": appid, "cc": "br", "l": "portuguese"},
+            timeout=10,
+        )
+        info = det.json().get(str(appid), {})
+        if not info.get("success"):
+            return f"Encontrei '{itens[0].get('name', nome_jogo)}' na Steam, mas não consegui pegar os detalhes."
+        d = info.get("data", {})
+
+        nome = d.get("name", nome_jogo)
+        desc = (d.get("short_description") or "").strip()
+        generos = ", ".join(g.get("description", "") for g in d.get("genres", []))
+        lancamento = d.get("release_date", {}).get("date", "")
+        metacritic = d.get("metacritic", {}).get("score")
+
+        if d.get("is_free"):
+            preco = "Gratuito"
+        else:
+            po = d.get("price_overview")
+            if po and po.get("discount_percent"):
+                preco = f"{po.get('final_formatted')} ({po.get('discount_percent')}% de desconto, de {po.get('initial_formatted')})"
+            elif po:
+                preco = po.get("final_formatted", "preço indisponível")
+            else:
+                preco = "preço indisponível (sem página de venda)"
+
+        partes = [f"{nome} (Steam)."]
+        if desc:       partes.append(desc)
+        if generos:    partes.append(f"Gênero: {generos}.")
+        if lancamento: partes.append(f"Lançamento: {lancamento}.")
+        partes.append(f"Preço: {preco}.")
+        if metacritic: partes.append(f"Metacritic: {metacritic}.")
+        return " ".join(partes)
+
+    except Exception as e:
+        return f"Erro ao consultar a Steam: {e}"
+
+
+#================================================================
 #          CATÁLOGO DE FERRAMENTAS (SCHEMAS E MAPA DE FUNÇÕES)
 #================================================================
 
@@ -1133,6 +1190,18 @@ ferramentas_disponiveis = [
             "name": "ver_tela",
             "description": "Tira um print da tela atual do PC do Fábio e descreve o que está nela. Use quando ele pedir para ver/olhar a tela, tirar um print, ou ajuda com algo que está na tela.",
             "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "consultar_jogo_steam",
+            "description": "Consulta um jogo na loja da Steam: preço, desconto, do que se trata (descrição), gênero e data de lançamento. Use quando o Fábio perguntar sobre um jogo específico — quanto custa, se está em promoção, se vale a pena, do que se trata.",
+            "parameters": {
+                "type": "object",
+                "properties": {"nome_jogo": {"type": "string"}},
+                "required": ["nome_jogo"]
+            }
         }
     },
 ]
