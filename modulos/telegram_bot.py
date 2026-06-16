@@ -41,7 +41,7 @@ def iniciar_bot_telegram():
 
         import modelos.cores as cor
         cor.azul(f"[📱 Telegram] {texto}")
-        _log.info(f"Telegram: {texto}")
+        _log.info(f"[Telegram] Usuário: {texto}")
 
         try:
             from modulos.pensar import gerar_resposta, obter_e_limpar_imagem_pendente
@@ -71,7 +71,7 @@ def iniciar_bot_telegram():
                         foto = imagem["dado"]
                     bot.send_photo(TELEGRAM_CHAT_ID, foto, caption=(resposta_limpa[:1024] or None))
                     cor.ciano(f"[📱 Telegram Luna 📷] {resposta_limpa[:80]}")
-                    _log.info(f"Telegram Luna [foto]: {resposta_limpa[:100]}")
+                    _log.info(f"[Telegram] Luna [foto]: {resposta_limpa[:100]}")
                 except Exception as e:
                     _log.exception(f"Erro ao enviar foto Telegram: {e}")
                     if resposta_limpa:
@@ -79,7 +79,7 @@ def iniciar_bot_telegram():
             elif resposta_limpa:
                 bot.send_message(TELEGRAM_CHAT_ID, resposta_limpa)
                 cor.ciano(f"[📱 Telegram Luna] {resposta_limpa}")
-                _log.info(f"Telegram Luna: {resposta_limpa[:100]}")
+                _log.info(f"[Telegram] Luna: {resposta_limpa[:100]}")
         except Exception as e:
             _log.exception(f"Erro Telegram: {e}")
             bot.send_message(TELEGRAM_CHAT_ID, "Deu um erro aqui, tenta de novo.")

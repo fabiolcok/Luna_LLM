@@ -171,7 +171,7 @@ def loop_voz():
 
             try:
                 cor.azul(f"Você: {texto_usuario}\n")
-                _log.info(f"Usuário: {texto_usuario}")
+                _log.info(f"[PC] Usuário: {texto_usuario}")
 
                 # 2. INTERCEPTADOR DE HABILIDADES POR PALAVRAS DE ATIVAÇÃO
                 texto_lower = texto_usuario.lower()
@@ -240,6 +240,8 @@ def loop_voz():
 
                 resposta_luna = gerar_resposta(texto_usuario, historico, imagem_base64=imagem_tela)
                 atualizar_legenda(resposta_luna)
+                if resposta_luna and resposta_luna.strip():
+                    _log.info(f"[PC] Luna: {resposta_luna[:200]}")
 
                 if "Contexto cheio" in resposta_luna:
                     falar_texto(resposta_luna)
