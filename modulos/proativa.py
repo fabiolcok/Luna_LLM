@@ -589,41 +589,49 @@ def _tarefa_checar_agenda():
         dados_agenda = ler_agenda_google()
         if not dados_agenda or "nenhum" in dados_agenda.lower(): return
 
-        # 1. O Python caça as datas na string devolvida pela API do Google
-        padrao_data = r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}"
-        datas_encontradas = re.findall(padrao_data, dados_agenda)
-        
-        tem_evento_urgente = False
         agora = datetime.datetime.now()
-        
-        # 2. Fazemos a matemática do relógio fora da LLM
-        if datas_encontradas:
-            for data_str in datas_encontradas:
+        limite_min = cfg['antecedencia_aviso_minutos']
+        urgentes = []
+
+        # Analisa linha a linha ("- Nome | data"). Distingue evento com hora de evento de dia inteiro.
+        for linha in dados_agenda.splitlines():
+            if "|" not in linha:
+                continue
+            nome, _, data_str = linha.partition("|")
+            nome = nome.strip(" -\t")
+            data_str = data_str.strip()
+
+            m_hora = re.search(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", data_str)
+            if m_hora:
+                # Evento com hora marcada: urgente só se faltar <= antecedência (ex: 30 min)
                 try:
-                    data_limpa = data_str[:19] # Corta o fuso horário final
-                    data_evento = datetime.datetime.strptime(data_limpa, "%Y-%m-%dT%H:%M:%S")
-                    minutos_restantes = (data_evento - agora).total_seconds() / 60
-                    
-                    # Acorda a LLM apenas se faltar menos do que a antecedência configurada (ex: 30 min)
-                    if 0 <= minutos_restantes <= cfg['antecedencia_aviso_minutos']:
-                        tem_evento_urgente = True
-                        break
-                except:
+                    data_evento = datetime.datetime.strptime(m_hora.group()[:19], "%Y-%m-%dT%H:%M:%S")
+                except ValueError:
                     continue
-        else:
-            # Se for evento de "dia inteiro" (sem hora exata na string), nós deixamos alertar
-            tem_evento_urgente = True
+                minutos = (data_evento - agora).total_seconds() / 60
+                if 0 <= minutos <= limite_min:
+                    urgentes.append(f"{nome} (em {int(minutos)} min)")
+            else:
+                # Evento de dia inteiro (só data): urgente APENAS se for hoje
+                m_dia = re.search(r"\d{4}-\d{2}-\d{2}", data_str)
+                if not m_dia:
+                    continue
+                try:
+                    dia_evento = datetime.datetime.strptime(m_dia.group(), "%Y-%m-%d").date()
+                except ValueError:
+                    continue
+                if dia_evento == agora.date():
+                    urgentes.append(f"{nome} (hoje)")
 
-        # 3. O SILÊNCIO ABSOLUTO (Se não tem evento próximo, a função morre aqui. Zero gasto de VRAM!)
-        if not tem_evento_urgente:
-            return 
+        # Silêncio absoluto se nada está realmente próximo
+        if not urgentes:
+            return
 
-        # 4. A PATADA (Só chega aqui e chama o Qwen se o evento estiver de fato estourando)
         prompt = (
-            f"Faltam menos de {cfg['antecedencia_aviso_minutos']} minutos para este evento: {dados_agenda}. "
-            f"Avise-o de forma seca e direta. {REGRA_PERSONA}"
+            f"Estes compromissos estão próximos AGORA: {'; '.join(urgentes)}. "
+            f"Avise o Fábio de forma seca e direta, mencionando só esses. {REGRA_PERSONA}"
         )
-        
+
         fala = _gerar_fala_proativa(prompt, "checar_agenda")
         if fala:
             _falar_proativamente(fala)

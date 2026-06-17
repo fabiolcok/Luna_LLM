@@ -153,6 +153,11 @@ def limpar_texto_para_voz(texto):
     texto = re.sub(r'^\s*\d+\.\s+', '', texto, flags=re.MULTILINE)
     texto = re.sub(r'^\s*-{3,}\s*$', '', texto, flags=re.MULTILINE)  # Remove --- horizontal rule
 
+    # Números/símbolos que o Supertonic lê mal (ex: "51.95%" -> "51 vírgula 95 por cento")
+    texto = re.sub(r'(\d+)[.,](\d+)\s*%', r'\1 vírgula \2 por cento', texto)
+    texto = re.sub(r'(\d+)\s*%', r'\1 por cento', texto)
+    texto = re.sub(r'(?<=\d)\.(?=\d)', ' vírgula ', texto)   # decimal solto: 3.5 -> 3 vírgula 5
+
     texto = re.sub(r'\n{2,}', '\n', texto)
     texto = texto.strip()
 
