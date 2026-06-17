@@ -98,7 +98,7 @@ CONFIGURACAO = {
     },
     "lembrete_pausa": {
         "ativo": True,
-        "intervalo_minutos": 90,
+        "intervalo_minutos": 150,
     },
     "Lista_Steam": {
         "ativo": True,
@@ -135,8 +135,9 @@ DESCONTO_MINIMO  = 50
 # REGRAS DE PERSONA (Injetado nos prompts proativos)
 # ============================================================
 REGRA_PERSONA = (
-    "Responda em português do Brasil. Tom frio e observacional, sem elogios e sem crueldade. "
-    "Fale diretamente com o Fábio (use 'você'). Sem emojis, sem asteriscos. Máximo 2 frases."
+    "Responda em português do Brasil, com tom leve e amigável, como uma amiga falando com o Fábio (use 'você'). "
+    "Pode ter bom humor, mas seja breve e natural — nada de robótica nem de bajulação. "
+    "Você é amiga dele, não namorada nem esposa. Sem emojis, sem asteriscos. Máximo 2 frases."
 )
 # ============================================================
 # ESTADO GLOBAL

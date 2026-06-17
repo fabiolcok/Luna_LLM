@@ -1081,14 +1081,6 @@ ferramentas_disponiveis = [
     {
         "type": "function",
         "function": {
-            "name": "listar_processos_pesados",
-            "description": "Lista os 5 programas que mais estão consumindo memória RAM no PC do Fábio agora.",
-            "parameters": {"type": "object", "properties": {}, "required": []}
-        }
-    },
-    {
-        "type": "function",
-        "function": {
             "name": "abrir_programa",
             "description": "Abre um programa ou jogo no computador do Fábio.",
             "parameters": {
@@ -1096,17 +1088,6 @@ ferramentas_disponiveis = [
                 "properties": {"nome_programa": {"type": "string"}},
                 "required": ["nome_programa"]
             }
-        }
-    },
-    # ver_tela removida do catálogo do roteador — o screenshot deve ser capturado
-    # ANTES do terminal imprimir qualquer coisa (via ATIVAR_VER_TELA em main.py).
-    # Se o roteador chamar ver_tela, ele fotografa o próprio terminal da Luna.
-    {
-        "type": "function",
-        "function": {
-            "name": "ler_selecionado",
-            "description": "Use SEMPRE que o Fábio pedir para ler texto selecionado.",
-            "parameters": {"type": "object", "properties": {}, "required": []}
         }
     },
     {

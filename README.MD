@@ -95,17 +95,19 @@ pesquisar_web        — DuckDuckGo, lê conteúdo dos 3 primeiros resultados
 checar_emails        — IMAP Gmail, retorna remetente + assunto dos não lidos
 controlar_navegador  — controla Firefox via extensão WebSocket (abrir URL, etc.)
 analisar_aba_atual   — lê e resume o conteúdo da aba ativa do Firefox
-ver_tela             — screenshot → Gemini analisa e descreve
-ler_selecionado      — lê texto selecionado (Ctrl+C automático via pyperclip)
+ver_tela             — screenshot → Gemini analisa e descreve (e envia a foto no Telegram)
 desenhar_imagem      — gera imagem via Hugging Face (FLUX.1-schnell), abre no navegador e envia foto no Telegram
-listar_processos_pesados — top 5 processos por RAM/CPU
 abrir_programa       — abre jogos ou aplicativos por nome
-matar_processo       — força fechamento de processo travado
 obter_clima          — previsão do tempo via Open-Meteo (sem chave)
 definir_lembrete     — timer em background que dispara falar_texto após X minutos
 alternar_mute        — muta/desmuta volume do sistema via pycaw
 consultar_overwatch  — perfil, rank, winrate, KDA e herói main via OverFast API
+consultar_jogo_steam — preço, desconto, descrição, gênero e Metacritic de um jogo na Steam
 listar_capacidades   — retorna lista do que Luna consegue fazer (auto-gerada do código)
+
+Fora do catálogo do roteador (existem como função, mas não são acionadas por chat):
+  ler_selecionado    — usada só pelo interceptador de "traduz isso" (main.py)
+  listar_processos_pesados, matar_processo — podadas para reduzir tool calling errado
 
 Desativado (comentado no código):
   enviar_whatsapp    — pywhatkit (instável)
@@ -219,16 +221,20 @@ Steam:
 ================================================================================
 11. PERSONAS (pensar.py)
 ================================================================================
-Dois prompts mínimos — o comportamento é ditado pelo modelo, não por regras no prompt.
-Filosofia: menos amarras = respostas mais naturais.
+Tom de AMIGA próxima — leve, animada, bem-humorada, calorosa e direta.
+IMPORTANTE: Luna é amiga/parceira, NUNCA namorada ou esposa (a esposa do Fábio é a
+Keila). Modelos pequenos tendem a "virar esposa" se o papel não for explícito — por
+isso o prompt deixa o limite claro.
 
-PROMPT_LUNA_PERSONA_LOCAL (provedor = "local"):
-  "Você é a Luna, companheira do Fábio. Responda sempre em português do Brasil.
+PROMPT_LUNA_PERSONA_LOCAL e PROMPT_LUNA_PERSONA_CLOUD (idênticos):
+  "Você é a Luna, a IA pessoal e amiga próxima do Fábio. Fale sempre em PT-BR.
+   - Tom leve, animado e bem-humorado, como uma amiga de verdade — calorosa e direta.
+   - Amiga e parceira de PC; a esposa do Fábio é a Keila; NÃO é namorada nem esposa.
+   - Respostas curtas e naturais (1 a 3 frases). Pode brincar.
    - Sem emojis, asteriscos ou markdown.
-   - OBRIGATÓRIO: toda resposta termina com [gif:termo] em inglês. Exemplo: [gif:happy]"
+   - OBRIGATÓRIO: termina com [gif:termo] em inglês (meme/cultura internet)."
 
-PROMPT_LUNA_PERSONA_CLOUD (provedor = "groq" ou "gemini"):
-  Idêntico ao LOCAL — mesmo modelo de prompt mínimo para ambos os provedores.
+O proativo usa REGRA_PERSONA (proativa.py) com o mesmo tom amigável.
 
 GIF:
   Extraído com regex flexível de [gif:termo] ou <gif:termo>
