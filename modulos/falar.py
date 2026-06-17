@@ -1,7 +1,10 @@
+import logging
 import numpy as np
 import sounddevice as sd
 from supertonic import TTS
 import modelos.cores as cor
+
+_log = logging.getLogger("luna.falar")
 
 
 """
@@ -94,6 +97,7 @@ def falar_texto(texto, voz=None, velocidade=None, ao_iniciar=None, ao_terminar=N
 
     except Exception as e:
         print(f"Erro ao gerar/tocar fala no Supertonic: {e}")
+        _log.exception(f"Erro no TTS Supertonic ao falar '{texto[:80]}': {e}")
         if ao_terminar:
             ao_terminar()
 
@@ -157,6 +161,21 @@ def limpar_texto_para_voz(texto):
     texto = re.sub(r'(\d+)[.,](\d+)\s*%', r'\1 vírgula \2 por cento', texto)
     texto = re.sub(r'(\d+)\s*%', r'\1 por cento', texto)
     texto = re.sub(r'(?<=\d)\.(?=\d)', ' vírgula ', texto)   # decimal solto: 3.5 -> 3 vírgula 5
+
+    # Remove emojis e pictogramas (o TTS engasga neles). Tags <sigh>/<laugh> são ASCII e sobrevivem.
+    texto = re.sub(
+        "["
+        "\U0001F300-\U0001FAFF"   # símbolos, emoticons, pictogramas estendidos
+        "\U00002600-\U000027BF"   # símbolos diversos e dingbats
+        "\U0001F1E6-\U0001F1FF"   # bandeiras
+        "\U0000FE00-\U0000FE0F"   # seletores de variação
+        "\U00002190-\U000021FF"   # setas
+        "\U00002B00-\U00002BFF"   # símbolos e setas diversos
+        "]+",
+        "",
+        texto,
+    )
+    texto = re.sub(r'[ \t]{2,}', ' ', texto)   # colapsa espaços deixados pelos emojis
 
     texto = re.sub(r'\n{2,}', '\n', texto)
     texto = texto.strip()
