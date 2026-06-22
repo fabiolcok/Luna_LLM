@@ -238,6 +238,29 @@
         #metricas-bar span { transition: color 0.4s; }
         #metricas-bar span.ativo { color: #3a3a5a; }
 
+        /* Avaliação 👍/👎 */
+        #avaliacao-bar {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-aval {
+            background: #11111a;
+            border: 1px solid #1e1e2e;
+            color: #565f89;
+            width: 40px;
+            height: 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            opacity: 0.45;
+            transition: opacity 0.15s, border-color 0.15s, transform 0.1s;
+        }
+        .btn-aval:hover  { opacity: 1; border-color: #565f89; }
+        .btn-aval:active { transform: scale(0.92); }
+        .btn-aval.bom    { opacity: 1; border-color: #9ece6a; }
+        .btn-aval.ruim   { opacity: 1; border-color: #f7768e; }
+
         /* History button */
         #btn-historico {
             position: fixed;
@@ -754,6 +777,11 @@
             <div id="luna-texto">—</div>
         </div>
 
+        <div id="avaliacao-bar">
+            <button class="btn-aval" data-rating="bom"  title="Resposta boa">👍</button>
+            <button class="btn-aval" data-rating="ruim" title="Resposta ruim">👎</button>
+        </div>
+
         <div id="metricas-bar">
             <span id="met-roteador">Roteador —</span>
             <span id="met-persona">Persona —</span>
@@ -1010,6 +1038,20 @@
             });
         });
 
+        // Avaliação 👍/👎
+        const botoesAval = document.querySelectorAll('.btn-aval');
+        function limparAval() {
+            botoesAval.forEach(b => b.classList.remove('bom', 'ruim'));
+        }
+        botoesAval.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const r = this.dataset.rating;
+                socket.send(JSON.stringify({ comando: 'avaliar', rating: r }));
+                limparAval();
+                this.classList.add(r);
+            });
+        });
+
         // Speed slider
         const velSlider = document.getElementById('cfg-velocidade');
         const velValor  = document.getElementById('cfg-velocidade-valor');
@@ -1075,7 +1117,10 @@
             }
             if (dados.legenda !== undefined) {
                 typewriter('luna-texto', dados.legenda || '—', 18, 'luna');
-                if (dados.legenda) anexoBar.classList.remove('ativo'); // arquivo foi consumido
+                if (dados.legenda) {
+                    anexoBar.classList.remove('ativo'); // arquivo foi consumido
+                    limparAval();                       // reseta avaliação para a nova resposta
+                }
             }
             if (dados.usuario !== undefined)
                 typewriter('usuario-texto', dados.usuario || 'Aguardando...', 18, 'voce');

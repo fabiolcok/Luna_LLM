@@ -41,6 +41,7 @@ PyWhatKit_DB.txt
 
 # Logs
 *.log
+logs/avaliacoes.jsonl
 
 # VSCode
 .vscode/

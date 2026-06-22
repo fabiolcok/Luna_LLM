@@ -174,6 +174,8 @@ def websocket(ws):
                 elif dados.get('comando') == 'limpar_historico':
                     _historico_web.clear()
                     _broadcast({"tipo": "historico_completo", "turnos": []})
+                elif dados.get('comando') == 'avaliar':
+                    _registrar_avaliacao(dados.get('rating', ''))
                 elif dados.get('config'):
                     _aplicar_config(dados)
     except Exception:
@@ -220,6 +222,26 @@ def obter_e_limpar_arquivo():
     return arq
 
 # --- FUNÇÕES PARA VOCÊ USAR NO MAIN.PY ---
+
+def _registrar_avaliacao(rating: str):
+    """Grava a avaliação (👍/👎) da última resposta para análise posterior."""
+    if rating not in ("bom", "ruim"):
+        return
+    import datetime
+    try:
+        os.makedirs("logs", exist_ok=True)
+        registro = {
+            "tempo": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "rating": rating,
+            "usuario": _ultima_fala_usuario,
+            "luna": _ultima_fala_luna,
+        }
+        with open("logs/avaliacoes.jsonl", "a", encoding="utf-8") as f:
+            f.write(json.dumps(registro, ensure_ascii=False) + "\n")
+        cor_rating = "👍" if rating == "bom" else "👎"
+        print(f"[{cor_rating} Avaliação registrada: {rating}]")
+    except Exception:
+        pass
 
 def _registrar_turno(usuario: str, luna: str):
     import datetime
