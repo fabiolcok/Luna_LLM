@@ -261,6 +261,40 @@
         .btn-aval.bom    { opacity: 1; border-color: #9ece6a; }
         .btn-aval.ruim   { opacity: 1; border-color: #f7768e; }
 
+        /* Caixa do motivo do 👎 */
+        #aval-motivo {
+            display: none;
+            gap: 6px;
+            justify-content: center;
+            margin-top: 8px;
+        }
+        #aval-motivo.ativo { display: flex; }
+        #aval-motivo-input {
+            flex: 1;
+            max-width: 420px;
+            background: #11111a;
+            border: 1px solid #2a1a1a;
+            border-radius: 6px;
+            color: #cfc9c2;
+            padding: 8px 10px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            outline: none;
+        }
+        #aval-motivo-input:focus { border-color: #f7768e; }
+        #aval-motivo-enviar {
+            background: #1a1010;
+            border: 1px solid #f7768e;
+            color: #f7768e;
+            border-radius: 6px;
+            padding: 0 14px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-family: inherit;
+            transition: background 0.15s;
+        }
+        #aval-motivo-enviar:hover { background: #2a1414; }
+
         /* History button */
         #btn-historico {
             position: fixed;
@@ -781,6 +815,10 @@
             <button class="btn-aval" data-rating="bom"  title="Resposta boa">👍</button>
             <button class="btn-aval" data-rating="ruim" title="Resposta ruim">👎</button>
         </div>
+        <div id="aval-motivo">
+            <input type="text" id="aval-motivo-input" placeholder="O que não funcionou? (opcional, Enter envia)" maxlength="200">
+            <button id="aval-motivo-enviar">Enviar</button>
+        </div>
 
         <div id="metricas-bar">
             <span id="met-roteador">Roteador —</span>
@@ -1040,16 +1078,34 @@
 
         // Avaliação 👍/👎
         const botoesAval = document.querySelectorAll('.btn-aval');
+        const avalMotivo = document.getElementById('aval-motivo');
+        const avalMotivoInput = document.getElementById('aval-motivo-input');
         function limparAval() {
             botoesAval.forEach(b => b.classList.remove('bom', 'ruim'));
+            avalMotivo.classList.remove('ativo');
+            avalMotivoInput.value = '';
+        }
+        function enviarMotivo() {
+            socket.send(JSON.stringify({ comando: 'avaliar', rating: 'ruim', motivo: avalMotivoInput.value }));
+            avalMotivo.classList.remove('ativo');
+            avalMotivoInput.value = '';
         }
         botoesAval.forEach(btn => {
             btn.addEventListener('click', function() {
                 const r = this.dataset.rating;
-                socket.send(JSON.stringify({ comando: 'avaliar', rating: r }));
                 limparAval();
                 this.classList.add(r);
+                if (r === 'bom') {
+                    socket.send(JSON.stringify({ comando: 'avaliar', rating: 'bom' }));
+                } else {
+                    avalMotivo.classList.add('ativo');   // 👎 abre a caixa do motivo
+                    avalMotivoInput.focus();
+                }
             });
+        });
+        document.getElementById('aval-motivo-enviar').onclick = enviarMotivo;
+        avalMotivoInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); enviarMotivo(); }
         });
 
         // Speed slider
