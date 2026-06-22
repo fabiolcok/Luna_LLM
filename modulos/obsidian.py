@@ -10,12 +10,13 @@ import unicodedata
 
 _VAULT = (os.getenv("OBSIDIAN_VAULT", "") or r"G:\Projetos\obisidian\Fabio").strip()
 
-# Trechos de caminho que a Luna NÃO lê (notas meta/dev e internas do Obsidian)
+# A Luna lê TUDO, menos: pastas internas do Obsidian e a pasta de ignorados (você controla).
+# Jogue em "0 Pasta ignorada" qualquer coisa que ela NÃO deva ler.
+_PASTA_IGNORADA = "0 Pasta ignorada"
 _IGNORAR = (
     f"{os.sep}.obsidian{os.sep}",
     f"{os.sep}.trash{os.sep}",
-    f"{os.sep}Luna{os.sep}Criar{os.sep}",
-    f"{os.sep}Luna{os.sep}Talvez{os.sep}",
+    f"{os.sep}{_PASTA_IGNORADA}{os.sep}",
 )
 
 
