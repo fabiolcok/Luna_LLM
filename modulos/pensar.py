@@ -515,6 +515,12 @@ _GATILHOS_AUTORRETRATO = (
     "como você acha que eu", "como voce acha que eu", "quem eu sou",
 )
 
+def _extrair_url_youtube(texto: str):
+    """Extrai uma URL do YouTube de um texto (para o guard do resumir_youtube)."""
+    m = re.search(r'https?://[^\s]*(?:youtube\.com|youtu\.be)/[^\s]+', texto or "")
+    return m.group(0) if m else None
+
+
 def _montar_prompt_imagem(pedido_usuario: str, dica: str = "") -> str:
     """Decide o prompt da imagem. Para pedidos de autorretrato ('me desenhe'), monta
     direto da memória permanente (aparência + estilo preferido), de forma determinística.
@@ -657,6 +663,11 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                         argumentos_dit["prompt_imagem"] = _montar_prompt_imagem(
                             prompt_usuario, argumentos_dit.get("prompt_imagem", "")
                         )
+                    if nome_funcao == "resumir_youtube" and not argumentos_dit.get("url"):
+                        # Guard: se o usuário mandou um link e o roteador esqueceu de passar, injeta na mão
+                        _yt = _extrair_url_youtube(prompt_usuario)
+                        if _yt:
+                            argumentos_dit["url"] = _yt
                     if argumentos_dit:
                         cor.amarelo(f"[Argumentos enviados: {argumentos_dit}]")
                     resultado_ferramenta = FUNCOES_DISPONIVEIS[nome_funcao](**argumentos_dit)
