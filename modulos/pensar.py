@@ -499,6 +499,19 @@ def _extrair_url(texto: str):
     return m.group(0) if m else None
 
 
+# Verbos que indicam pedido de AÇÃO (mapeiam a ferramentas). Usado para impedir alucinação:
+# se o usuário pede uma ação e o roteador NÃO aciona ferramenta, não deixamos a persona
+# inventar resposta a partir da memória — devolvemos uma resposta honesta.
+_PADRAO_ACAO = re.compile(
+    r'\b(resum|transcrev|pesquis|busca|busque|procur|abr[ae]|abrir|'
+    r'toc[ae]|toque|desenh|consult|qual o (?:preço|valor|custo)|quanto custa)',
+    re.IGNORECASE,
+)
+
+def _parece_pedido_de_acao(texto: str) -> bool:
+    return bool(_PADRAO_ACAO.search(texto or ""))
+
+
 def _montar_prompt_imagem(pedido_usuario: str, dica: str = "") -> str:
     """Decide o prompt da imagem. Para pedidos de autorretrato ('me desenhe'), monta
     direto da memória permanente (aparência + estilo preferido), de forma determinística.
@@ -688,7 +701,6 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             except Exception:
                 pass
 
-            cor.amarelo("[🎭 Passando para LLM persona...]")
             eh_ver_tela = getattr(mensagem_modelo, 'tool_calls', None) and mensagem_modelo.tool_calls[0].function.name == "ver_tela"
             resultado_str = str(resultado_ferramenta)
 
@@ -696,7 +708,13 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             eh_documento = (ferramenta_chamada and nome_funcao in ("resumir_youtube", "resumir_site")
                             and not resultado_str.startswith(("SISTEMA:", "ERRO", "Erro")))
 
-            if eh_documento:
+            if (not ferramenta_chamada) and _parece_pedido_de_acao(prompt_usuario):
+                # Pedido de ação que o roteador NÃO roteou: resposta honesta determinística,
+                # sem deixar a persona inventar a partir da memória recuperada (anti-alucinação).
+                cor.vermelho("[⚠️ Pedido de ação sem ferramenta acionada — resposta honesta]")
+                texto_resposta = "Hmm, não consegui fazer isso agora. Pode reformular o pedido, ou me mandar o link/detalhe direto?"
+            elif eh_documento:
+                cor.amarelo("[🎭 Passando para LLM persona...]")
                 if re.search(r'transcre', prompt_usuario, re.IGNORECASE):
                     tarefa = "Organize e devolva o que foi dito de forma limpa e fiel, sem resumir."
                 else:
@@ -712,6 +730,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 )
                 lembranca_oculta = ""   # não guarda o texto cru (transcrição/artigo) na memória
             else:
+                cor.amarelo("[🎭 Passando para LLM persona...]")
                 texto_resposta = _reescrever_como_luna(resultado_str, prompt_usuario, historico, max_tokens, forcar_incluir=eh_ver_tela, responder_completo=responder_completo)
 
                 # Extrai primeira frase da persona (garante UMA frase, descarta garbage após ponto final).
