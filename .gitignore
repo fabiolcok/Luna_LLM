@@ -26,6 +26,7 @@ modelos/memoria_permanente.json
 modelos/estado_proativo.json
 modelos/estado_luna.json
 modelos/vistos.json
+modelos/config_luna.json
 modelos/manifests/
 chroma_db/
 *.db

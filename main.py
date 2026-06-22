@@ -32,7 +32,7 @@ from servidor import (
     atualizar_estado_rosto, atualizar_legenda,
     atualizar_usuario, registrar_callback_interrupcao,
     iniciar_servidor, registrar_config_handler, sincronizar_config,
-    obter_e_limpar_arquivo
+    obter_e_limpar_arquivo, carregar_e_aplicar_config
 )
 
 from pynput import keyboard as kb
@@ -321,6 +321,7 @@ def main():
     registrar_config_handler("voz", lambda v: configurar_voz(voz=v))
     registrar_config_handler("velocidade", lambda v: configurar_voz(velocidade=float(v)))
     registrar_config_handler("tarefa", configurar_tarefa)
+    carregar_e_aplicar_config()   # aplica voz/velocidade/proativo/tarefas salvos
     iniciar_servidor()
     iniciar_bot_telegram()
     threading.Thread(target=loop_voz, daemon=True).start()

@@ -55,11 +55,49 @@ _config_handlers = {}
 _estado_config = {
     "proativo": True,
     "memoria": False,
-    "tarefas": {"jogos": True, "emails": True, "agenda": True,
-                "pausa": True, "clima": True, "bom_dia": True, "steam": True},
+    "tarefas": {"jogos": True, "emails": True, "agenda": True, "pausa": True,
+                "clima": True, "bom_dia": True, "steam": True, "navegador": True},
     "voz": "F1",
     "velocidade": 1.2,
 }
+
+_CAMINHO_CONFIG = "modelos/config_luna.json"
+
+def _salvar_config():
+    """Persiste o estado de config no disco para sobreviver a reinicializações."""
+    try:
+        os.makedirs("modelos", exist_ok=True)
+        with open(_CAMINHO_CONFIG, "w", encoding="utf-8") as f:
+            json.dump(_estado_config, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+def carregar_e_aplicar_config():
+    """Lê a config salva e aplica via os handlers já registrados.
+    Deve ser chamada no main.py DEPOIS de registrar todos os handlers."""
+    if os.path.exists(_CAMINHO_CONFIG):
+        try:
+            with open(_CAMINHO_CONFIG, "r", encoding="utf-8") as f:
+                salvo = json.load(f)
+            for k, v in salvo.items():
+                if k == "tarefas" and isinstance(v, dict):
+                    _estado_config.setdefault("tarefas", {}).update(v)
+                else:
+                    _estado_config[k] = v
+        except Exception:
+            pass
+
+    # Aplica os valores carregados nos módulos reais
+    for chave in ("proativo", "memoria", "voz", "velocidade"):
+        fn = _config_handlers.get(chave)
+        if fn and chave in _estado_config:
+            try: fn(_estado_config[chave])
+            except Exception: pass
+    fn_tarefa = _config_handlers.get("tarefa")
+    if fn_tarefa:
+        for nome, val in _estado_config.get("tarefas", {}).items():
+            try: fn_tarefa(nome, val)
+            except Exception: pass
 
 def registrar_callback_interrupcao(fn):
     global _callback_interrupcao
@@ -68,6 +106,7 @@ def registrar_callback_interrupcao(fn):
 def sincronizar_config(chave: str, valor):
     """Atualiza o estado de config e faz broadcast sem chamar os handlers Python."""
     _estado_config[chave] = valor
+    _salvar_config()
     _broadcast({"tipo": "config_estado", "estado": _estado_config.copy()})
 
 def registrar_config_handler(chave: str, fn):
@@ -92,6 +131,7 @@ def _aplicar_config(dados: dict):
             try: fn(valor)
             except Exception: pass
         _estado_config[chave] = valor
+    _salvar_config()
     _broadcast({"tipo": "config_estado", "estado": _estado_config.copy()})
 
 @app.route('/')

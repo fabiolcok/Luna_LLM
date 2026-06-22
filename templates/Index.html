@@ -1061,12 +1061,14 @@
             if (dados.tipo === 'metricas') {
                 if (dados.roteador) {
                     const el = document.getElementById('met-roteador');
-                    el.textContent = `Roteador  ${dados.roteador.tps} tok/s`;
+                    const s = dados.roteador.segundos !== undefined ? ` · ${dados.roteador.segundos}s` : '';
+                    el.textContent = `Roteador  ${dados.roteador.tps} tok/s${s}`;
                     el.classList.add('ativo');
                 }
                 if (dados.persona) {
                     const el = document.getElementById('met-persona');
-                    el.textContent = `Persona  ${dados.persona.tps} tok/s`;
+                    const s = dados.persona.segundos !== undefined ? ` · ${dados.persona.segundos}s` : '';
+                    el.textContent = `Persona  ${dados.persona.tps} tok/s${s}`;
                     el.classList.add('ativo');
                 }
                 return;
