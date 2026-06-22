@@ -9,8 +9,9 @@ _log = logging.getLogger("luna.falar")
 
 
 def periodo_atual():
-    """Retorna (nome, descrição de tom para a persona, fator de velocidade) conforme a hora.
-    Fator multiplica a velocidade configurada — de madrugada/noite fala um pouco mais devagar."""
+    """Retorna (nome, descrição de tom para a persona, fator) conforme a hora.
+    O tom (índice 1) é injetado no prompt da persona. O fator de velocidade NÃO é mais
+    aplicado — baixar a velocidade fazia o Supertonic 'comer palavras'. Mantido só por compat."""
     h = datetime.datetime.now().hour
     if 0 <= h < 6:
         return ("madrugada", "Agora é madrugada: fale bem tranquila e baixo, frases curtas e suaves.", 0.88)
@@ -77,7 +78,6 @@ def falar_texto(texto, voz=None, velocidade=None, ao_iniciar=None, ao_terminar=N
 
     voz_usada = voz if voz is not None else _voz_padrao
     velocidade_usada = velocidade if velocidade is not None else _velocidade_padrao
-    velocidade_usada = round(velocidade_usada * periodo_atual()[2], 2)   # nudge por hora do dia
 
     try:
         texto_limpo = limpar_texto_para_voz(texto)
