@@ -25,7 +25,7 @@ from modulos.memoria import (
     buscar_contexto_relevante, salvar_conversa,
     ler_memoria_permanente, analisar_e_salvar_fato, ler_estado_luna
 )
-from modulos.falar import limpar_texto_para_voz
+from modulos.falar import limpar_texto_para_voz, periodo_atual
 import subprocess
 import httpx
 
@@ -261,7 +261,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     persona_prompt = PROMPT_LUNA_PERSONA_LOCAL if provedor == "local" else PROMPT_LUNA_PERSONA_CLOUD
 
     prompt_sistema = (
-        f"Hoje é {data_hoje}.\n"
+        f"Hoje é {data_hoje}. {periodo_atual()[1]}\n"
         f"Contexto atual: {contexto_situacional}.\n"
         f"Memória: {memoria_permanente}\n"
         f"Conversas anteriores: {contexto_db}\n\n"

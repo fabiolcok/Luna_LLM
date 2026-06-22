@@ -1,10 +1,24 @@
 import logging
+import datetime
 import numpy as np
 import sounddevice as sd
 from supertonic import TTS
 import modelos.cores as cor
 
 _log = logging.getLogger("luna.falar")
+
+
+def periodo_atual():
+    """Retorna (nome, descrição de tom para a persona, fator de velocidade) conforme a hora.
+    Fator multiplica a velocidade configurada — de madrugada/noite fala um pouco mais devagar."""
+    h = datetime.datetime.now().hour
+    if 0 <= h < 6:
+        return ("madrugada", "Agora é madrugada: fale bem tranquila e baixo, frases curtas e suaves.", 0.88)
+    if 6 <= h < 12:
+        return ("manhã", "Agora é de manhã: tom disposto e animado.", 1.0)
+    if 12 <= h < 18:
+        return ("tarde", "Agora é de tarde: tom normal e leve.", 1.0)
+    return ("noite", "Agora é de noite: tom mais calmo e relaxado, sem empolgação.", 0.95)
 
 
 """
@@ -63,6 +77,7 @@ def falar_texto(texto, voz=None, velocidade=None, ao_iniciar=None, ao_terminar=N
 
     voz_usada = voz if voz is not None else _voz_padrao
     velocidade_usada = velocidade if velocidade is not None else _velocidade_padrao
+    velocidade_usada = round(velocidade_usada * periodo_atual()[2], 2)   # nudge por hora do dia
 
     try:
         texto_limpo = limpar_texto_para_voz(texto)
