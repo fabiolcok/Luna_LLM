@@ -685,9 +685,14 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
 
             if eh_documento:
                 if re.search(r'transcre', prompt_usuario, re.IGNORECASE):
-                    tarefa = "Organize e devolva o que foi dito no vídeo de forma limpa e fiel, sem resumir demais."
+                    tarefa = "Organize e devolva o que foi dito de forma limpa e fiel, sem resumir."
                 else:
-                    tarefa = "Resuma o conteúdo em até 4 frases naturais e diretas, em português do Brasil."
+                    tarefa = (
+                        "Atenda exatamente ao que o Fábio pediu, com base no conteúdo. "
+                        "Se ele pediu detalhes (receita, passo a passo, ingredientes COM as quantidades, dados), "
+                        "inclua-os fielmente e por completo. Se pediu só um resumo, aí sim seja conciso. "
+                        "Nunca invente o que não está no conteúdo."
+                    )
                 texto_resposta = _reescrever_como_luna(
                     resultado_str, prompt_usuario, historico, max_tokens,
                     tarefa_documento=tarefa, responder_completo=responder_completo,
