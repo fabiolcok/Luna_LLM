@@ -25,7 +25,17 @@ from flask_sock import Sock
 import threading
 import json
 import os
+import re
 import httpx
+
+# Tags de expressão do Supertonic (<sigh>, <laugh>...) são só para a VOZ.
+# No texto (web/histórico) aparecem literais ou somem no innerHTML — então removemos.
+_TAGS_VOZ = re.compile(r'</?(?:laugh|breath|sigh|surprise|scream|throatclear|sad|angry|cough|yawn)>', re.IGNORECASE)
+
+def _remover_tags_voz(texto: str) -> str:
+    if not texto:
+        return texto
+    return _TAGS_VOZ.sub('', texto).strip()
 
 app  = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -187,6 +197,7 @@ def _registrar_turno(usuario: str, luna: str):
 
 def atualizar_legenda(texto: str):
     global _ultima_fala_luna
+    texto = _remover_tags_voz(texto)   # voz fica com os tags; texto exibido não
     _ultima_fala_luna = texto
     _broadcast({'legenda': texto})
     if texto:

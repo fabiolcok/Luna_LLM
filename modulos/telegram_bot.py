@@ -18,6 +18,8 @@ _historico_telegram = []
 def _limpar_resposta(texto: str) -> str:
     texto = re.sub(r'\[gif:[^\]]*\]', '', texto)   # [gif:termo]
     texto = re.sub(r'\[[^\]]{1,40}\]', '', texto)  # [streak], [thinking emoji], etc.
+    # Tags de voz do Supertonic (<sigh>, <laugh>...) não fazem sentido no texto
+    texto = re.sub(r'</?(?:laugh|breath|sigh|surprise|scream|throatclear|sad|angry|cough|yawn)>', '', texto, flags=re.IGNORECASE)
     return texto.strip()
 
 
