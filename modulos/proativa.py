@@ -4,6 +4,7 @@ import os
 import time
 import threading
 import datetime
+import random
 import requests
 import ctypes
 from modulos.habilidades import checar_emails_nao_lidos, ler_agenda_google, obter_previsao_tempo, obter_janela_em_foco, controlar_firefox_via_extensao
@@ -226,13 +227,30 @@ def _falar_proativamente(texto_resposta):
         pass
     falar_texto(texto_resposta)
 
-def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150):
+# Abordagens sorteadas para o proativo não ficar repetitivo (variar=True)
+_ABORDAGENS = [
+    "um comentário curto e direto",
+    "uma pergunta casual pro Fábio",
+    "uma curiosidade ou observação leve sobre o assunto",
+    "uma provocação leve e bem-humorada (sem ofender)",
+]
+# Últimas falas proativas, para evitar repetir tema/palavras
+_falas_recentes = []
+
+def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150, variar=True):
     global _historico_proativo
 
     cor.amarelo(f"[🌚 Proativo: {tarefa}]")
 
     if len(prompt_sistema) > 1500:
         prompt_sistema = prompt_sistema[:1500] + "... [texto cortado]"
+
+    # Variedade + anti-repetição (adicionados após o corte, para nunca serem truncados)
+    if variar:
+        prompt_sistema += f"\nDesta vez, faça isso como {random.choice(_ABORDAGENS)}."
+    if _falas_recentes:
+        prompt_sistema += ("\nVocê já falou isto há pouco — NÃO repita o tema nem as mesmas palavras: "
+                           + " / ".join(_falas_recentes[-3:]))
 
     try:
         resposta = gerar_resposta(
@@ -243,6 +261,10 @@ def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150):
             max_tokens=max_tokens
         )
         _historico_proativo = []
+        if resposta:
+            _falas_recentes.append(resposta.strip()[:120])
+            if len(_falas_recentes) > 5:
+                _falas_recentes.pop(0)
         return resposta
     except Exception as e:
         cor.vermelho(f"[Erro na geração proativa: {e}]")
@@ -578,7 +600,7 @@ def _tarefa_checar_emails():
         for n in novos: _emails_vistos.add(n)
         if not novos or "não há novos" in resultado.lower(): return
         prompt = f"O Fábio tem {len(novos)} emails novos. Remetentes: {' | '.join(novos[:5])}. Avise-o. {REGRA_PERSONA}"
-        _falar_proativamente(_gerar_fala_proativa(prompt, "checar_emails"))
+        _falar_proativamente(_gerar_fala_proativa(prompt, "checar_emails", variar=False))
         registrar_tentativa()
     except Exception as e: cor.vermelho(f"[Erro emails: {e}]")
 
@@ -633,7 +655,7 @@ def _tarefa_checar_agenda():
             f"Avise o Fábio de forma seca e direta, mencionando só esses. {REGRA_PERSONA}"
         )
 
-        fala = _gerar_fala_proativa(prompt, "checar_agenda")
+        fala = _gerar_fala_proativa(prompt, "checar_agenda", variar=False)
         if fala:
             _falar_proativamente(fala)
             registrar_tentativa()
@@ -728,7 +750,7 @@ DADOS DA CAIXA DE EMAIL:{dados_email}.
 
 Dê um 'bom dia' usando sua personalidade {REGRA_PERSONA}. Informe o que tem na agenda e quantos emails há, com o assunto deles. Máximo de 5 frases."""
 
-            texto = _gerar_fala_proativa(prompt_matinal, "bom_dia", max_tokens=400)
+            texto = _gerar_fala_proativa(prompt_matinal, "bom_dia", max_tokens=400, variar=False)
             
             if texto:
                 _falar_proativamente(texto)
