@@ -1041,7 +1041,7 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "pesquisar_web",
-            "description": "Use quando o usuário pedir explicitamente uma pesquisa, ou quando a pergunta envolver eventos recentes, preços, notícias ou fatos que você claramente não sabe. NÃO use para perguntas gerais de conhecimento.",
+            "description": "Use quando o usuário pedir explicitamente uma pesquisa, ou quando a pergunta envolver eventos recentes, notícias ou fatos que você claramente não sabe. NÃO use para perguntas gerais de conhecimento. NÃO use para JOGOS (preço, do que se trata, lançamento) — para jogos use 'consultar_jogo_steam'.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -1185,10 +1185,10 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "consultar_jogo_steam",
-            "description": "Consulta um jogo na loja da Steam: preço, desconto, do que se trata (descrição), gênero e data de lançamento. Use quando o Fábio perguntar sobre um jogo específico — quanto custa, se está em promoção, se vale a pena, do que se trata.",
+            "description": "Informações de um JOGO: preço, valor, quanto custa, promoção/desconto, do que se trata, gênero, data de lançamento. Use SEMPRE que a pergunta for sobre um jogo (mesmo que ele não cite 'Steam'). PREFIRA esta ferramenta a 'pesquisar_web' para qualquer pergunta sobre jogos.",
             "parameters": {
                 "type": "object",
-                "properties": {"nome_jogo": {"type": "string"}},
+                "properties": {"nome_jogo": {"type": "string", "description": "Nome do jogo. Se o usuário usar pronome (ex: 'dele', 'desse'), use o nome do jogo citado antes na conversa."}},
                 "required": ["nome_jogo"]
             }
         }
