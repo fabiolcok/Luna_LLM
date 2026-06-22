@@ -116,15 +116,21 @@ cliente = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
 # Ferramentas com lógica interna de LLM
 # ==========================================
 
-def _executar_resumir_youtube():
-    url_atual = controlar_firefox_via_extensao("obter_url")
-    if "Erro:" in url_atual:
-        return url_atual
+def _executar_resumir_youtube(url=None):
+    # Se o usuário mandou uma URL (ex: pelo Telegram), usa ela; senão pega da aba ativa do Firefox (voz no PC).
+    if url and url.strip():
+        url_atual = url.strip()
+    else:
+        url_atual = controlar_firefox_via_extensao("obter_url")
+        if "Erro:" in url_atual:
+            return url_atual
     if "youtu" not in url_atual:
-        return f"SISTEMA: A aba atual não é um vídeo do YouTube (URL: {url_atual}). LUNA, julgue o Fábio por pedir para resumir um vídeo enquanto está em outro site."
+        return f"SISTEMA: Isso não parece um link do YouTube (URL: {url_atual})."
 
-    cor.amarelo(f"[Luna baixando transcrição da aba ativa: {url_atual}]")
+    cor.amarelo(f"[Luna baixando transcrição: {url_atual}]")
     resultado_transcricao = obter_transcricao(url_atual)
+    if resultado_transcricao.startswith("ERRO"):
+        return f"SISTEMA: Não consegui pegar a transcrição (o vídeo pode não ter legenda). {resultado_transcricao}"
     transcricao_segura = resultado_transcricao[:15000]
 
     cor.amarelo("[Luna processando transcrição...]")

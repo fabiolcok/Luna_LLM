@@ -996,8 +996,12 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "resumir_youtube",
-            "description": "Resume o vídeo do YouTube que o Fábio está assistindo AGORA na aba ativa do Firefox.",
-            "parameters": {"type": "object", "properties": {}, "required": []}
+            "description": "Resume um vídeo do YouTube. Se o Fábio mandar um link (ex: pelo Telegram), passe-o em 'url'. Se ele não mandar link (ex: pedindo por voz no PC), deixe 'url' vazio para usar a aba ativa do Firefox.",
+            "parameters": {
+                "type": "object",
+                "properties": {"url": {"type": "string", "description": "URL do vídeo do YouTube, se o usuário tiver fornecido. Caso contrário, omita."}},
+                "required": []
+            }
         }
     },
     {
