@@ -26,6 +26,7 @@ from modulos.memoria import (
     ler_memoria_permanente, analisar_e_salvar_fato, ler_estado_luna
 )
 from modulos.falar import limpar_texto_para_voz, periodo_atual
+from modulos import obsidian
 import subprocess
 import httpx
 
@@ -154,12 +155,16 @@ def _executar_resumir_url(url=None):
     return conteudo
 
 
+def _executar_ler_obsidian(assunto=""):
+    # Fetch-only: acha a nota no vault e devolve o conteúdo cru; a persona processa.
+    return obsidian.buscar_nota(assunto)
+
 def _listar_capacidades():
     return (
         "O que consigo fazer: "
         "resumir vídeos do YouTube, resumir sites e links, pesquisar na web, "
         "checar emails não lidos, adicionar e ler eventos da agenda Google, "
-        "controlar o Spotify, ver e analisar sua tela, "
+        "controlar o Spotify, ver e analisar sua tela, ler suas anotações do Obsidian, "
         "abrir programas, verificar o clima, definir lembretes, "
         "mutar/desmutar o som, consultar suas stats do Overwatch, consultar jogos na Steam "
         "(preço, promoção e descrição), gerar imagens e controlar o Firefox."
@@ -188,6 +193,7 @@ FUNCOES_DISPONIVEIS = {
     "alternar_mute": alternar_mute,
     "consultar_overwatch": consultar_overwatch,
     "consultar_jogo_steam": consultar_jogo_steam,
+    "ler_obsidian": _executar_ler_obsidian,
 }
 
 
@@ -233,7 +239,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     resposta_tecnica = re.sub(r'<think>.*?</think>', '', resposta_tecnica, flags=re.DOTALL).strip()
 
     data_hoje = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
-    memoria_permanente = ler_memoria_permanente()
+    memoria_permanente = obsidian.ler_perfil() or ler_memoria_permanente()   # perfil.md é o núcleo
     contexto_db = buscar_contexto_relevante(prompt_usuario)
 
     estado = ler_estado_luna()
@@ -520,17 +526,20 @@ def _montar_prompt_imagem(pedido_usuario: str, dica: str = "") -> str:
     if not any(g in pedido_low for g in _GATILHOS_AUTORRETRATO):
         return dica or pedido_usuario   # pedido explícito — o roteador já resolve bem
 
-    from modulos.memoria import _carregar_memoria_permanente
-    dados = _carregar_memoria_permanente()
+    # Fonte primária: seções do perfil.md (Obsidian). Fallback: JSON antigo.
+    aparencia = obsidian.secao_perfil("Aparência")
+    estilo = obsidian.secao_perfil("Estilo de desenho")
 
-    aparencia, estilo = "", ""
-    for chave, info in dados.items():
-        valor = info.get("valor", "") if isinstance(info, dict) else str(info)
-        contexto = (chave + " " + valor).lower()
-        if not aparencia and any(k in contexto for k in ("aparen", "aparê", "rosto", "cabelo", "barba", "pele", "olhos")):
-            aparencia = valor
-        if not estilo and any(k in contexto for k in ("estilo", "desenh", "style", "art", "ghibli", "anime")):
-            estilo = valor
+    if not (aparencia or estilo):
+        from modulos.memoria import _carregar_memoria_permanente
+        dados = _carregar_memoria_permanente()
+        for chave, info in dados.items():
+            valor = info.get("valor", "") if isinstance(info, dict) else str(info)
+            contexto = (chave + " " + valor).lower()
+            if not aparencia and any(k in contexto for k in ("aparen", "aparê", "rosto", "cabelo", "barba", "pele", "olhos")):
+                aparencia = valor
+            if not estilo and any(k in contexto for k in ("estilo", "desenh", "style", "art", "ghibli", "anime")):
+                estilo = valor
 
     if not aparencia and not estilo:
         return dica or pedido_usuario   # sem fatos visuais — não há o que montar
@@ -586,6 +595,14 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 "Acione ferramenta SOMENTE se o usuário pediu uma ação ou informação específica. "
                 "Se nenhuma ferramenta for necessária, retorne um texto vazio."
             )
+
+            _idx_obsidian = obsidian.indice_notas()
+            if _idx_obsidian:
+                prompt_ferramenta += (
+                    f"\nNotas do Fábio no Obsidian: {_idx_obsidian}. "
+                    "Se ele pedir para ler/ver algo que esteja nessas notas (receita, lista, etc.), "
+                    "use a ferramenta 'ler_obsidian' com o assunto."
+                )
 
         if prompt_usuario.startswith('[Arquivo:'):
             prompt_ferramenta += (
@@ -705,7 +722,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             resultado_str = str(resultado_ferramenta)
 
             # Ferramentas de conteúdo: a persona processa o texto cru (transcrição/artigo) conforme o pedido.
-            eh_documento = (ferramenta_chamada and nome_funcao in ("resumir_youtube", "resumir_site")
+            eh_documento = (ferramenta_chamada and nome_funcao in ("resumir_youtube", "resumir_site", "ler_obsidian")
                             and not resultado_str.startswith(("SISTEMA:", "ERRO", "Erro")))
 
             if (not ferramenta_chamada) and _parece_pedido_de_acao(prompt_usuario):

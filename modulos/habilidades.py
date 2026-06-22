@@ -1193,4 +1193,16 @@ ferramentas_disponiveis = [
             }
         }
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "ler_obsidian",
+            "description": "Lê uma nota das ANOTAÇÕES PESSOAIS do Fábio (Obsidian) — receitas, listas, coisas que ele salvou. Use quando ele pedir algo das 'minhas notas/anotações', ou algo que esteja na lista de notas informada no contexto. NÃO use para a web (isso é pesquisar_web) nem para links (resumir_site).",
+            "parameters": {
+                "type": "object",
+                "properties": {"assunto": {"type": "string", "description": "Do que é a nota que ele quer (ex: 'receita do biscoito', 'contas do mês')."}},
+                "required": ["assunto"]
+            }
+        }
+    },
 ]
