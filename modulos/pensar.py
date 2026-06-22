@@ -128,31 +128,11 @@ def _executar_resumir_youtube(url=None):
         return f"SISTEMA: Isso não parece um link do YouTube (URL: {url_atual})."
 
     cor.amarelo(f"[Luna baixando transcrição: {url_atual}]")
-    resultado_transcricao = obter_transcricao(url_atual)
-    if resultado_transcricao.startswith("ERRO"):
-        return f"SISTEMA: Não consegui pegar a transcrição (o vídeo pode não ter legenda). {resultado_transcricao}"
-    transcricao_segura = resultado_transcricao[:15000]
-
-    cor.amarelo("[Luna processando transcrição...]")
-    try:
-        resumo = cliente.chat.completions.create(
-            model=MODELO_ROTEADOR,
-            messages=[{
-                "role": "user",
-                "content": (
-                    "Faça um resumo EXCLUSIVAMENTE EM PORTUGUÊS DO BRASIL sobre o conteúdo abaixo. "
-                    "Use no máximo 3 frases objetivas. TRADUZA TODO O CONTEÚDO. "
-                    "Sem introdução, sem conclusão, apenas os pontos principais.\n\n"
-                    f"{transcricao_segura}"
-                )
-            }],
-            temperature=0.0,
-            max_tokens=800,
-        )
-        return resumo.choices[0].message.content or transcricao_segura[:1500]
-    except Exception as e:
-        cor.vermelho(f"[Erro ao resumir transcrição: {e}]")
-        return transcricao_segura[:1500]
+    transcricao = obter_transcricao(url_atual)
+    if transcricao.startswith("ERRO"):
+        return f"SISTEMA: Não consegui pegar a transcrição (o vídeo pode não ter legenda). {transcricao}"
+    # Fetch-only: devolve a transcrição crua. Quem resume/transforma é a persona (ver gerar_resposta).
+    return transcricao
 
 
 def _executar_resumir_url():
@@ -167,27 +147,8 @@ def _executar_resumir_url():
     conteudo = ler_url_especifica(url)
     if conteudo.startswith("Erro"):
         return conteudo
-
-    cor.amarelo("[Luna processando conteúdo do site...]")
-    try:
-        resumo = cliente.chat.completions.create(
-            model=MODELO_ROTEADOR,
-            messages=[{
-                "role": "user",
-                "content": (
-                    "Faça um resumo EXCLUSIVAMENTE EM PORTUGUÊS DO BRASIL sobre o conteúdo abaixo. "
-                    "Use no máximo 3 frases objetivas. "
-                    "Sem introdução, sem conclusão, apenas os pontos principais.\n\n"
-                    f"{conteudo}"
-                )
-            }],
-            temperature=0.0,
-            max_tokens=800,
-        )
-        return resumo.choices[0].message.content or conteudo[:1500]
-    except Exception as e:
-        cor.vermelho(f"[Erro ao resumir site: {e}]")
-        return conteudo[:1500]
+    # Fetch-only: devolve o conteúdo cru. Quem resume/transforma é a persona.
+    return conteudo
 
 
 def _listar_capacidades():
@@ -263,7 +224,7 @@ def obter_e_limpar_imagem_pendente():
     return img
 
 
-def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico: list, max_tokens=300, forcar_incluir=False, responder_completo=False) -> str:
+def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico: list, max_tokens=300, forcar_incluir=False, responder_completo=False, tarefa_documento=None) -> str:
     global PROVEDOR_PERSONA, MODELO_PERSONA
 
     resposta_tecnica = re.sub(r'<think>.*?</think>', '', resposta_tecnica, flags=re.DOTALL).strip()
@@ -316,7 +277,15 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         if len(primeira) > 15:
             anti_rep = f" [não repita: '{primeira[:80]}']"
 
-    if is_proativo:
+    if tarefa_documento:
+        # Ferramenta de conteúdo (YouTube/site): a persona processa o texto cru diretamente.
+        user_msg = (
+            f"O Fábio pediu: '{prompt_usuario}'\n\n"
+            f"Conteúdo obtido (use só isto, não invente):\n\"\"\"\n{resposta_tecnica[:6000]}\n\"\"\"\n\n"
+            f"Tarefa: {tarefa_documento}\n"
+            f"Responda na sua voz, em português do Brasil, de forma natural.{anti_rep}"
+        )
+    elif is_proativo:
         user_msg = (
             f"MODO AUTÔNOMO — você está falando por iniciativa própria, o usuário não pediu nada.\n"
             f"Instrução: {resposta_tecnica}\n"
@@ -709,17 +678,33 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             cor.amarelo("[🎭 Passando para LLM persona...]")
             eh_ver_tela = getattr(mensagem_modelo, 'tool_calls', None) and mensagem_modelo.tool_calls[0].function.name == "ver_tela"
             resultado_str = str(resultado_ferramenta)
-            texto_resposta = _reescrever_como_luna(resultado_str, prompt_usuario, historico, max_tokens, forcar_incluir=eh_ver_tela, responder_completo=responder_completo)
 
-            # Extrai primeira frase da persona (garante UMA frase, descarta garbage após ponto final).
-            # Pulado em responder_completo (Telegram): lá a persona já resume os dados por inteiro.
-            if ferramenta_chamada and not eh_ver_tela and not responder_completo:
-                match = re.search(r'[^.!?]*[.!?]+', texto_resposta)
-                frase_luna = match.group(0).strip() if match and len(match.group(0).strip()) > 10 else texto_resposta.split('\n')[0]
-                if len(resultado_str) > 200:
-                    texto_resposta = frase_luna + "\n\n" + resultado_str
+            # Ferramentas de conteúdo: a persona processa o texto cru (transcrição/artigo) conforme o pedido.
+            eh_documento = (ferramenta_chamada and nome_funcao in ("resumir_youtube", "resumir_site")
+                            and not resultado_str.startswith(("SISTEMA:", "ERRO", "Erro")))
+
+            if eh_documento:
+                if re.search(r'transcre', prompt_usuario, re.IGNORECASE):
+                    tarefa = "Organize e devolva o que foi dito no vídeo de forma limpa e fiel, sem resumir demais."
                 else:
-                    texto_resposta = frase_luna
+                    tarefa = "Resuma o conteúdo em até 4 frases naturais e diretas, em português do Brasil."
+                texto_resposta = _reescrever_como_luna(
+                    resultado_str, prompt_usuario, historico, max_tokens,
+                    tarefa_documento=tarefa, responder_completo=responder_completo,
+                )
+                lembranca_oculta = ""   # não guarda o texto cru (transcrição/artigo) na memória
+            else:
+                texto_resposta = _reescrever_como_luna(resultado_str, prompt_usuario, historico, max_tokens, forcar_incluir=eh_ver_tela, responder_completo=responder_completo)
+
+                # Extrai primeira frase da persona (garante UMA frase, descarta garbage após ponto final).
+                # Pulado em responder_completo (Telegram): lá a persona já resume os dados por inteiro.
+                if ferramenta_chamada and not eh_ver_tela and not responder_completo:
+                    match = re.search(r'[^.!?]*[.!?]+', texto_resposta)
+                    frase_luna = match.group(0).strip() if match and len(match.group(0).strip()) > 10 else texto_resposta.split('\n')[0]
+                    if len(resultado_str) > 200:
+                        texto_resposta = frase_luna + "\n\n" + resultado_str
+                    else:
+                        texto_resposta = frase_luna
 
         texto_para_memoria = texto_resposta + lembranca_oculta
 
