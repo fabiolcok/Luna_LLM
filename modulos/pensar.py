@@ -135,11 +135,14 @@ def _executar_resumir_youtube(url=None):
     return transcricao
 
 
-def _executar_resumir_url():
-    # Tenta pegar URL do Firefox; se falhar, usa o clipboard
-    url = controlar_firefox_via_extensao("obter_url")
-    if "Erro:" in url or not url.startswith("http"):
-        url = ler_link_copiado().strip()
+def _executar_resumir_url(url=None):
+    # Se o usuário mandou um link (ex: pelo Telegram), usa ele; senão pega do Firefox e, por fim, do clipboard.
+    if url and url.strip().startswith("http"):
+        url = url.strip()
+    else:
+        url = controlar_firefox_via_extensao("obter_url")
+        if "Erro:" in url or not url.startswith("http"):
+            url = ler_link_copiado().strip()
     if not url.startswith("http"):
         return "SISTEMA: Nenhuma URL válida encontrada na aba ativa nem no clipboard. LUNA, peça ao Fábio para copiar o link ou abrir o site no Firefox."
 
@@ -490,6 +493,12 @@ def _extrair_url_youtube(texto: str):
     return m.group(0) if m else None
 
 
+def _extrair_url(texto: str):
+    """Extrai qualquer URL http(s) de um texto (para o guard do resumir_site)."""
+    m = re.search(r'https?://[^\s]+', texto or "")
+    return m.group(0) if m else None
+
+
 def _montar_prompt_imagem(pedido_usuario: str, dica: str = "") -> str:
     """Decide o prompt da imagem. Para pedidos de autorretrato ('me desenhe'), monta
     direto da memória permanente (aparência + estilo preferido), de forma determinística.
@@ -637,6 +646,10 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                         _yt = _extrair_url_youtube(prompt_usuario)
                         if _yt:
                             argumentos_dit["url"] = _yt
+                    if nome_funcao == "resumir_site" and not argumentos_dit.get("url"):
+                        _u = _extrair_url(prompt_usuario)
+                        if _u:
+                            argumentos_dit["url"] = _u
                     if argumentos_dit:
                         cor.amarelo(f"[Argumentos enviados: {argumentos_dit}]")
                     resultado_ferramenta = FUNCOES_DISPONIVEIS[nome_funcao](**argumentos_dit)

@@ -1157,8 +1157,12 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "resumir_site",
-            "description": "Resume o conteúdo de um site ou artigo. Use quando o usuário pedir para ler, resumir ou explicar um site/link/artigo/página. A URL é obtida automaticamente do Firefox ou do clipboard.",
-            "parameters": {"type": "object", "properties": {}, "required": []}
+            "description": "Lê/resume um site ou artigo. Se o Fábio mandar um link (ex: pelo Telegram), passe-o em 'url'. Se ele não mandar link (ex: por voz no PC), deixe 'url' vazio para usar a aba do Firefox ou o clipboard.",
+            "parameters": {
+                "type": "object",
+                "properties": {"url": {"type": "string", "description": "URL do site/artigo, se o usuário tiver fornecido. Caso contrário, omita."}},
+                "required": []
+            }
         }
     },
     {
