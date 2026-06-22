@@ -79,6 +79,15 @@ def indice_notas() -> str:
     return ", ".join(titulos)
 
 
+def _limpar_md(texto: str) -> str:
+    """Remove ruído do Obsidian que não serve pra leitura (embeds de imagem/vídeo, wikilinks)."""
+    texto = re.sub(r'!\[\[[^\]]*\]\]', '', texto)              # ![[imagem.png]] (embed do Obsidian)
+    texto = re.sub(r'!\[[^\]]*\]\([^)]*\)', '', texto)         # ![alt](img.png) (markdown)
+    texto = re.sub(r'\[\[(?:[^\]|]*\|)?([^\]]*)\]\]', r'\1', texto)  # [[nota|texto]] -> texto
+    texto = re.sub(r'\n{3,}', '\n\n', texto)                   # colapsa linhas em branco sobrando
+    return texto.strip()
+
+
 def buscar_nota(assunto: str) -> str:
     """Acha a nota cujo nome melhor casa com 'assunto' e devolve o conteúdo (fetch-only)."""
     notas = _listar_notas()
@@ -97,6 +106,6 @@ def buscar_nota(assunto: str) -> str:
         return f"SISTEMA: Não achei nenhuma nota sobre '{assunto}' nas suas anotações."
     try:
         with open(melhor, encoding="utf-8") as f:
-            return f.read().strip()
+            return _limpar_md(f.read())
     except Exception as e:
         return f"SISTEMA: Erro ao ler a nota: {e}"
