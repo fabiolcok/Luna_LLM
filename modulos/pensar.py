@@ -518,31 +518,28 @@ def _parece_pedido_de_acao(texto: str) -> bool:
     return bool(_PADRAO_ACAO.search(texto or ""))
 
 
+def _carregar_perfil_desenho():
+    """Lê aparência/estilo do Fábio para autorretratos (config da ferramenta de desenho).
+    Fica em modelos/desenho.json — fora do perfil de conversa e fora do git (privado)."""
+    try:
+        with open("modelos/desenho.json", encoding="utf-8") as f:
+            d = json.load(f)
+        return d.get("aparencia", ""), d.get("estilo", "")
+    except Exception:
+        return "", ""
+
+
 def _montar_prompt_imagem(pedido_usuario: str, dica: str = "") -> str:
-    """Decide o prompt da imagem. Para pedidos de autorretrato ('me desenhe'), monta
-    direto da memória permanente (aparência + estilo preferido), de forma determinística.
-    Para pedidos explícitos (ex: 'gato astronauta'), mantém o que o roteador gerou."""
+    """Decide o prompt da imagem. Para autorretrato ('me desenhe'), monta a partir da
+    config de desenho (aparência + estilo). Para pedidos explícitos (ex: 'gato astronauta'),
+    mantém o que o roteador gerou."""
     pedido_low = (pedido_usuario or "").lower()
     if not any(g in pedido_low for g in _GATILHOS_AUTORRETRATO):
         return dica or pedido_usuario   # pedido explícito — o roteador já resolve bem
 
-    # Fonte primária: seções do perfil.md (Obsidian). Fallback: JSON antigo.
-    aparencia = obsidian.secao_perfil("Aparência")
-    estilo = obsidian.secao_perfil("Estilo de desenho")
-
-    if not (aparencia or estilo):
-        from modulos.memoria import _carregar_memoria_permanente
-        dados = _carregar_memoria_permanente()
-        for chave, info in dados.items():
-            valor = info.get("valor", "") if isinstance(info, dict) else str(info)
-            contexto = (chave + " " + valor).lower()
-            if not aparencia and any(k in contexto for k in ("aparen", "aparê", "rosto", "cabelo", "barba", "pele", "olhos")):
-                aparencia = valor
-            if not estilo and any(k in contexto for k in ("estilo", "desenh", "style", "art", "ghibli", "anime")):
-                estilo = valor
-
+    aparencia, estilo = _carregar_perfil_desenho()
     if not aparencia and not estilo:
-        return dica or pedido_usuario   # sem fatos visuais — não há o que montar
+        return dica or pedido_usuario   # sem config de aparência — não há o que montar
 
     partes = ["portrait of a person"]
     if aparencia:
