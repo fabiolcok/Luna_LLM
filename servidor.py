@@ -223,8 +223,9 @@ def obter_e_limpar_arquivo():
 
 # --- FUNÇÕES PARA VOCÊ USAR NO MAIN.PY ---
 
-def _registrar_avaliacao(rating: str, motivo: str = ""):
-    """Grava a avaliação (👍/👎) da última resposta para análise posterior."""
+def _registrar_avaliacao(rating: str, motivo: str = "", usuario=None, luna=None, canal="web"):
+    """Grava a avaliação (👍/👎) de uma resposta para análise posterior.
+    usuario/luna: se None, usa a última fala (web). canal: 'web' | 'telegram'."""
     if rating not in ("bom", "ruim"):
         return
     import datetime
@@ -232,15 +233,15 @@ def _registrar_avaliacao(rating: str, motivo: str = ""):
         os.makedirs("logs", exist_ok=True)
         registro = {
             "tempo": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "canal": canal,
             "rating": rating,
             "motivo": (motivo or "").strip(),
-            "usuario": _ultima_fala_usuario,
-            "luna": _ultima_fala_luna,
+            "usuario": usuario if usuario is not None else _ultima_fala_usuario,
+            "luna": luna if luna is not None else _ultima_fala_luna,
         }
         with open("logs/avaliacoes.jsonl", "a", encoding="utf-8") as f:
             f.write(json.dumps(registro, ensure_ascii=False) + "\n")
-        cor_rating = "👍" if rating == "bom" else "👎"
-        print(f"[{cor_rating} Avaliação registrada: {rating}]")
+        print(f"[{'👍' if rating == 'bom' else '👎'} Avaliação ({canal}): {rating}]")
     except Exception:
         pass
 

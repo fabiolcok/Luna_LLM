@@ -5,6 +5,7 @@ import re
 import threading
 import logging
 import telebot
+from telebot import types
 
 _log = logging.getLogger("luna.telegram")
 logging.getLogger("TeleBot").setLevel(logging.CRITICAL)  # suprime tracebacks de rede
@@ -14,6 +15,11 @@ TELEGRAM_CHAT_ID = int(os.getenv("TELEGRAM_CHAT_ID", "0"))
 
 _historico_telegram = []
 
+# Avaliação 👍/👎: guarda exchanges recentes e o reply pendente de motivo
+_avaliacoes = {}        # aid -> (usuario, luna)
+_aval_seq = 0
+_motivo_por_msg = {}    # message_id do pedido de motivo -> aid
+
 
 def _limpar_resposta(texto: str) -> str:
     texto = re.sub(r'\[gif:[^\]]*\]', '', texto)   # [gif:termo]
@@ -21,6 +27,26 @@ def _limpar_resposta(texto: str) -> str:
     # Tags de voz do Supertonic (<sigh>, <laugh>...) não fazem sentido no texto
     texto = re.sub(r'</?(?:laugh|breath|sigh|surprise|scream|throatclear|sad|angry|cough|yawn)>', '', texto, flags=re.IGNORECASE)
     return texto.strip()
+
+
+def _registrar_exchange(usuario: str, luna: str) -> str:
+    """Guarda o par pergunta/resposta e devolve um id, para os botões de avaliação."""
+    global _aval_seq
+    _aval_seq += 1
+    aid = str(_aval_seq)
+    _avaliacoes[aid] = (usuario, luna)
+    if len(_avaliacoes) > 40:
+        _avaliacoes.pop(next(iter(_avaliacoes)))
+    return aid
+
+
+def _teclado_aval(aid: str):
+    kb = types.InlineKeyboardMarkup()
+    kb.add(
+        types.InlineKeyboardButton("👍", callback_data=f"av|bom|{aid}"),
+        types.InlineKeyboardButton("👎", callback_data=f"av|ruim|{aid}"),
+    )
+    return kb
 
 
 def iniciar_bot_telegram():
@@ -41,13 +67,23 @@ def iniciar_bot_telegram():
         if not texto:
             return
 
+        import servidor as _srv
         import modelos.cores as cor
+
+        # É uma resposta (reply) dando o motivo de um 👎?
+        reply = getattr(message, "reply_to_message", None)
+        if reply and reply.message_id in _motivo_por_msg:
+            aid = _motivo_por_msg.pop(reply.message_id)
+            u, l = _avaliacoes.get(aid, ("", ""))
+            _srv._registrar_avaliacao("ruim", texto, u, l, canal="telegram")
+            bot.send_message(TELEGRAM_CHAT_ID, "Anotado, valeu! 🙏")
+            return
+
         cor.azul(f"[📱 Telegram] {texto}")
         _log.info(f"[Telegram] Usuário: {texto}")
 
         try:
             from modulos.pensar import gerar_resposta, obter_e_limpar_imagem_pendente
-            import servidor as _srv
             # Bloqueia broadcast de GIF para não consumir cota desnecessariamente
             _gif_original = _srv.atualizar_gif
             _srv.atualizar_gif = lambda termo: None
@@ -58,6 +94,11 @@ def iniciar_bot_telegram():
             _srv.atualizar_gif = _gif_original  # restaura
 
             resposta_limpa = _limpar_resposta(resposta)
+            if not resposta_limpa and not imagem:
+                return
+
+            aid = _registrar_exchange(texto, resposta_limpa)
+            teclado = _teclado_aval(aid)
 
             if imagem:
                 try:
@@ -71,20 +112,44 @@ def iniciar_bot_telegram():
                         foto.name = "luna.png"
                     else:  # 'url' (fallback)
                         foto = imagem["dado"]
-                    bot.send_photo(TELEGRAM_CHAT_ID, foto, caption=(resposta_limpa[:1024] or None))
+                    bot.send_photo(TELEGRAM_CHAT_ID, foto, caption=(resposta_limpa[:1024] or None), reply_markup=teclado)
                     cor.ciano(f"[📱 Telegram Luna 📷] {resposta_limpa[:80]}")
                     _log.info(f"[Telegram] Luna [foto]: {resposta_limpa[:100]}")
                 except Exception as e:
                     _log.exception(f"Erro ao enviar foto Telegram: {e}")
                     if resposta_limpa:
-                        bot.send_message(TELEGRAM_CHAT_ID, resposta_limpa)
+                        bot.send_message(TELEGRAM_CHAT_ID, resposta_limpa, reply_markup=teclado)
             elif resposta_limpa:
-                bot.send_message(TELEGRAM_CHAT_ID, resposta_limpa)
+                bot.send_message(TELEGRAM_CHAT_ID, resposta_limpa, reply_markup=teclado)
                 cor.ciano(f"[📱 Telegram Luna] {resposta_limpa}")
                 _log.info(f"[Telegram] Luna: {resposta_limpa[:100]}")
         except Exception as e:
             _log.exception(f"Erro Telegram: {e}")
             bot.send_message(TELEGRAM_CHAT_ID, "Deu um erro aqui, tenta de novo.")
+
+    @bot.callback_query_handler(func=lambda c: (c.data or "").startswith("av|"))
+    def handle_aval(c):
+        import servidor as _srv
+        try:
+            _, rating, aid = c.data.split("|", 2)
+            u, l = _avaliacoes.get(aid, ("", ""))
+            if rating == "bom":
+                _srv._registrar_avaliacao("bom", "", u, l, canal="telegram")
+                bot.answer_callback_query(c.id, "👍 valeu!")
+            else:
+                _srv._registrar_avaliacao("ruim", "", u, l, canal="telegram")  # registra já; motivo é opcional
+                bot.answer_callback_query(c.id, "👎 anotado")
+                msg = bot.send_message(TELEGRAM_CHAT_ID, "O que não funcionou? Responda ESTA mensagem (ou ignore).")
+                _motivo_por_msg[msg.message_id] = aid
+                if len(_motivo_por_msg) > 20:
+                    _motivo_por_msg.pop(next(iter(_motivo_por_msg)))
+        except Exception as e:
+            _log.exception(f"Erro avaliação Telegram: {e}")
+        # remove os botões pra não avaliar duas vezes
+        try:
+            bot.edit_message_reply_markup(c.message.chat.id, c.message.message_id, reply_markup=None)
+        except Exception:
+            pass
 
     def _rodar():
         print("[📱 Bot Telegram: aguardando mensagens]")
