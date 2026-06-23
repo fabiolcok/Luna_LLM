@@ -81,10 +81,13 @@ def indice_notas() -> str:
 
 
 def _limpar_md(texto: str) -> str:
-    """Remove ruído do Obsidian que não serve pra leitura (embeds de imagem/vídeo, wikilinks)."""
+    """Remove ruído do Obsidian e torna explícito o que o modelo fraco não interpreta."""
     texto = re.sub(r'!\[\[[^\]]*\]\]', '', texto)              # ![[imagem.png]] (embed do Obsidian)
     texto = re.sub(r'!\[[^\]]*\]\([^)]*\)', '', texto)         # ![alt](img.png) (markdown)
     texto = re.sub(r'\[\[(?:[^\]|]*\|)?([^\]]*)\]\]', r'\1', texto)  # [[nota|texto]] -> texto
+    # Checkboxes -> texto explícito (o modelo não entende [x]/[ ] de forma confiável)
+    texto = re.sub(r'(?m)^(\s*)[-*]\s*\[[xX]\]\s*(.+)$', r'\1- \2 (concluído)', texto)
+    texto = re.sub(r'(?m)^(\s*)[-*]\s*\[\s*\]\s*(.+)$', r'\1- \2 (pendente)', texto)
     texto = re.sub(r'\n{3,}', '\n\n', texto)                   # colapsa linhas em branco sobrando
     return texto.strip()
 
