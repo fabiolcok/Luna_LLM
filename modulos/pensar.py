@@ -269,8 +269,10 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     prompt_sistema = (
         f"Hoje é {data_hoje}. {periodo_atual()[1]}\n"
         f"Contexto atual: {contexto_situacional}.\n"
-        f"IMPORTANTE: quem está falando com você AGORA é o próprio Fábio. "
-        f"Quando ele diz 'eu', 'meu', 'comigo', é sobre ele mesmo. Tudo abaixo é sobre ele:\n"
+        f"PERFIL DO FÁBIO (a pessoa que você acompanha e com quem conversa). Estes dados são DELE, "
+        f"NÃO seus — você é a Luna, uma amiga IA: você NÃO tem esposa, filhas, trabalho nem casa. "
+        f"Refira-se a essas coisas como dele ('suas filhas', 'seu trabalho'), NUNCA como suas "
+        f"('nossas filhas', 'meu trabalho', 'querido'). Quando o Fábio diz 'eu/meu', é sobre ele:\n"
         f"{memoria_permanente}\n"
         f"Conversas anteriores: {contexto_db}\n\n"
         f"{persona_prompt}"

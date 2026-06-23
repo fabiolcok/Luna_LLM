@@ -14,12 +14,12 @@ def periodo_atual():
     aplicado — baixar a velocidade fazia o Supertonic 'comer palavras'. Mantido só por compat."""
     h = datetime.datetime.now().hour
     if 0 <= h < 6:
-        return ("madrugada", "Agora é madrugada: fale bem tranquila e baixo, frases curtas e suaves.", 0.88)
+        return ("madrugada", "Agora é MADRUGADA (se for cumprimentar, use 'boa noite'): fale bem tranquila e baixo, frases curtas.", 0.88)
     if 6 <= h < 12:
-        return ("manhã", "Agora é de manhã: tom disposto e animado.", 1.0)
+        return ("manhã", "Agora é MANHÃ (cumprimento correto: 'bom dia'): tom disposto e animado.", 1.0)
     if 12 <= h < 18:
-        return ("tarde", "Agora é de tarde: tom normal e leve.", 1.0)
-    return ("noite", "Agora é de noite: tom mais calmo e relaxado, sem empolgação.", 0.95)
+        return ("tarde", "Agora é TARDE (cumprimento correto: 'boa tarde'): tom normal e leve.", 1.0)
+    return ("noite", "Agora é NOITE (cumprimento correto: 'boa noite'): tom mais calmo e relaxado, sem empolgação.", 0.95)
 
 
 """
