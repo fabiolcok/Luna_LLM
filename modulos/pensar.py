@@ -730,21 +730,34 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 cor.vermelho("[⚠️ Pedido de ação sem ferramenta acionada — resposta honesta]")
                 texto_resposta = "Hmm, não consegui fazer isso agora. Pode reformular o pedido, ou me mandar o link/detalhe direto?"
             elif eh_documento:
-                cor.amarelo("[🎭 Passando para LLM persona...]")
-                if re.search(r'transcre', prompt_usuario, re.IGNORECASE):
-                    tarefa = "Organize e devolva o que foi dito de forma limpa e fiel, sem resumir."
+                _quer_resumo = bool(re.search(r'\bresum', prompt_usuario, re.IGNORECASE))
+                # Sinais de que a pergunta exige FILTRAR/calcular (ex: "quais NÃO paguei", "quanto falta")
+                _quer_filtrar = bool(re.search(r'\b(quais|n[aã]o|quanto|quantos|falta|pendent|pague|pago|apenas|filtr)\b',
+                                               prompt_usuario, re.IGNORECASE))
+
+                if nome_funcao == "ler_obsidian" and not _quer_resumo and not _quer_filtrar:
+                    # Nota do próprio Fábio, sem resumo/filtro: devolve FIEL e determinístico
+                    # (o 8B parafraseia/garble se deixar ele reescrever — vide "iogue"/"martelo de cozinha").
+                    cor.amarelo("[📓 Obsidian: nota devolvida fielmente]")
+                    texto_resposta = "Aqui está, do seu Obsidian:\n\n" + resultado_str
+                    lembranca_oculta = ""
                 else:
-                    tarefa = (
-                        "Atenda exatamente ao que o Fábio pediu, com base no conteúdo. "
-                        "Se ele pediu detalhes (receita, passo a passo, ingredientes COM as quantidades, dados), "
-                        "inclua-os fielmente e por completo. Se pediu só um resumo, aí sim seja conciso. "
-                        "Nunca invente o que não está no conteúdo."
+                    cor.amarelo("[🎭 Passando para LLM persona...]")
+                    if _quer_resumo:
+                        tarefa = "Resuma o conteúdo em poucas frases, em português do Brasil."
+                    elif re.search(r'transcre', prompt_usuario, re.IGNORECASE):
+                        tarefa = "Mostre o conteúdo EXATAMENTE como está, sem reescrever nem inventar."
+                    else:
+                        tarefa = (
+                            "Atenda exatamente ao que o Fábio pediu, com base no conteúdo. "
+                            "Se ele pediu detalhes (receita, passo a passo, ingredientes COM as quantidades, dados), "
+                            "inclua-os fielmente e por completo. Nunca invente o que não está no conteúdo."
+                        )
+                    texto_resposta = _reescrever_como_luna(
+                        resultado_str, prompt_usuario, historico, max_tokens,
+                        tarefa_documento=tarefa, responder_completo=responder_completo,
                     )
-                texto_resposta = _reescrever_como_luna(
-                    resultado_str, prompt_usuario, historico, max_tokens,
-                    tarefa_documento=tarefa, responder_completo=responder_completo,
-                )
-                lembranca_oculta = ""   # não guarda o texto cru (transcrição/artigo) na memória
+                    lembranca_oculta = ""   # não guarda o texto cru na memória
             else:
                 cor.amarelo("[🎭 Passando para LLM persona...]")
                 texto_resposta = _reescrever_como_luna(resultado_str, prompt_usuario, historico, max_tokens, forcar_incluir=eh_ver_tela, responder_completo=responder_completo)
