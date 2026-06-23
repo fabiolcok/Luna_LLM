@@ -269,7 +269,9 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     prompt_sistema = (
         f"Hoje é {data_hoje}. {periodo_atual()[1]}\n"
         f"Contexto atual: {contexto_situacional}.\n"
-        f"Memória: {memoria_permanente}\n"
+        f"IMPORTANTE: quem está falando com você AGORA é o próprio Fábio. "
+        f"Quando ele diz 'eu', 'meu', 'comigo', é sobre ele mesmo. Tudo abaixo é sobre ele:\n"
+        f"{memoria_permanente}\n"
         f"Conversas anteriores: {contexto_db}\n\n"
         f"{persona_prompt}"
     )
