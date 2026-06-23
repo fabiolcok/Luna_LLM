@@ -870,8 +870,11 @@ Máximo 2 frases. SEM EMOJIS."""
 
 
 
+# Sites onde a Luna fica calada: scroll passivo (redes) e ferramentas de trabalho
+# (ex: chat de suporte do plantão — não cabe comentário e não pode atrapalhar).
 _DOMINIOS_IGNORAR = ("reddit.com", "twitter.com", "x.com", "facebook.com",
-                     "instagram.com", "tiktok.com", "twitch.tv")
+                     "instagram.com", "tiktok.com", "twitch.tv",
+                     "chatmobi.com.br")
 
 def _tarefa_contexto_navegador():
     global _nav_url_atual, _nav_url_desde, _nav_ultimo_comentario_url
