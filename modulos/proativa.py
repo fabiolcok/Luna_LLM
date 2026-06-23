@@ -920,8 +920,12 @@ def _tarefa_contexto_navegador():
         )
     # Outros sites de conteúdo (artigo, doc, notícia)
     else:
-        titulo = controlar_firefox_via_extensao("obter_titulo") or ""
-        if not titulo or "Erro:" in titulo or len(titulo.strip()) < 8:
+        titulo = (controlar_firefox_via_extensao("obter_titulo") or "").strip()
+        # Barra qualquer resposta de sistema/erro da extensão (ex: "Comando desconhecido")
+        if (not titulo or len(titulo) < 8
+                or titulo.upper().startswith("SISTEMA:")
+                or "desconhecid" in titulo.lower()
+                or "Erro" in titulo):
             return
         prompt = (
             f"O Fábio está nessa página há {int(minutos_na_url)} minutos: '{titulo}'. "

@@ -33,7 +33,12 @@ function executarComando(acao, parametro) {
         browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
             socket.send(tabs[0].url);
         });
-    } 
+    }
+    else if (acao === "obter_titulo") {
+        browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+            socket.send(tabs[0].title || "");
+        });
+    }
     
     if (acao === "contexto_total") {
         browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
