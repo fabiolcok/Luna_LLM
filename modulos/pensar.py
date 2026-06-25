@@ -70,7 +70,7 @@ PROVEDOR_PERSONA = "local"   # "groq" | "gemini" | "local"
 
 # True  = 2 LLMs: roteador leve detecta ferramentas, persona gera a resposta
 # False = 1 LLM: MODELO_PERSONA faz tudo (mais confiável em tool calling, mais lento no roteamento)
-MODO_DUAL_LLM = True
+MODO_DUAL_LLM = False
 
 # True  = analisa conversas e salva fatos na memória permanente em background
 # False = desativa completamente (útil enquanto o modelo estiver salvando lixo)
