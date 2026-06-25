@@ -65,7 +65,7 @@ Prompts disponíveis:
 """
 
 MODELO_ROTEADOR  = "nvidia/nemotron-3-nano-4b"
-MODELO_PERSONA   = "dolphin3.0-llama3.1-8b"
+MODELO_PERSONA   = "ministral-3-14b-reasoning-2512"
 PROVEDOR_PERSONA = "local"   # "groq" | "gemini" | "local"
 
 # True  = 2 LLMs: roteador leve detecta ferramentas, persona gera a resposta
