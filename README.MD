@@ -99,7 +99,6 @@ ver_tela             — screenshot → Gemini analisa e descreve (e envia a fot
 desenhar_imagem      — gera imagem via Hugging Face (FLUX.1-schnell), abre no navegador e envia foto no Telegram
 abrir_programa       — abre jogos ou aplicativos por nome
 obter_clima          — previsão do tempo via Open-Meteo (sem chave)
-definir_lembrete     — timer em background que dispara falar_texto após X minutos
 alternar_mute        — muta/desmuta volume do sistema via pycaw
 consultar_overwatch  — perfil, rank, winrate, KDA e herói main via OverFast API
 consultar_jogo_steam — preço, desconto, descrição, gênero e Metacritic de um jogo na Steam

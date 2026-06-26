@@ -18,7 +18,7 @@ from modulos.habilidades import (
     enviar_mensagem_whatsapp, checar_emails_nao_lidos, controlar_firefox_via_extensao,
     obter_contexto_navegador, listar_processos_pesados, abrir_programa, matar_processo,
     obter_janela_em_foco, analisar_imagem_gemini, capturar_tela_base64, ler_texto_selecionado,
-    desenhar_imagem, executar_analise_aba, definir_lembrete, alternar_mute,
+    desenhar_imagem, executar_analise_aba, alternar_mute,
     ler_url_especifica, ler_link_copiado, consultar_overwatch, consultar_jogo_steam,
     ferramentas_disponiveis, GEMINI_API_KEY, GROQ_API_KEY)
 from modulos.memoria import (
@@ -197,7 +197,6 @@ FUNCOES_DISPONIVEIS = {
     "desenhar_imagem": desenhar_imagem,
     "ler_agenda_google": ler_agenda_google,
     "obter_clima": obter_previsao_tempo,
-    "definir_lembrete": definir_lembrete,
     "alternar_mute": alternar_mute,
     "consultar_overwatch": consultar_overwatch,
     "consultar_jogo_steam": consultar_jogo_steam,

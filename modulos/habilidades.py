@@ -79,7 +79,6 @@ Funções Disponíveis:
 - matar_processo(nome_processo): Permite a Luna forçar o fechamento de um programa que travou.
 - obter_janela_em_foco(): Descobre qual programa ou janela está em primeiro plano no Windows do Fábio.
 - desenhar_imagem(prompt_imagem): Gera uma imagem baseada na descrição da Luna e abre no navegador do Fábio.
-- definir_lembrete(mensagem, minutos): Cria um timer em background que dispara falar_texto após X minutos.
 - alternar_mute(): Muta ou desmuta o volume do sistema via pycaw (Windows).
 - ler_url_especifica(url): Faz fetch de uma URL, extrai parágrafos com BeautifulSoup e retorna até 15000 chars de texto limpo.
 
@@ -814,29 +813,6 @@ def desenhar_imagem(prompt_imagem):
 #          FERRAMENTA LEMBRETE COM TIMER
 #================================================================
 
-def definir_lembrete(mensagem, minutos):
-    """Cria um timer em background que avisa o Fábio com voz após X minutos."""
-    minutos = float(minutos)
-    if minutos <= 0 or minutos > 1440:
-        return "Tempo inválido. Use entre 1 e 1440 minutos."
-
-    def _disparar():
-        time.sleep(minutos * 60)
-        from modulos.falar import falar_texto as _falar
-        cor.amarelo(f"[⏰ LEMBRETE DISPARADO: {mensagem}]")
-        _falar(f"Lembrete: {mensagem}")
-
-    threading.Thread(target=_disparar, daemon=True).start()
-
-    if minutos < 60:
-        tempo_str = f"{int(minutos)} minuto{'s' if minutos != 1 else ''}"
-    else:
-        horas = minutos / 60
-        tempo_str = f"{horas:.1f} hora{'s' if horas != 1.0 else ''}"
-
-    return f"Lembrete definido: vou te avisar em {tempo_str}. '{mensagem}'"
-
-
 #================================================================
 #          FERRAMENTA MUTE DO SISTEMA
 #================================================================
@@ -1019,7 +995,7 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "adicionar_agenda",
-            "description": "Cria um NOVO evento na agenda. NUNCA use esta ferramenta para consultar ou ler a agenda.",
+            "description": "Cria um NOVO evento na agenda Google. Use para compromissos COM data e hora marcadas (ex: 'dentista quinta às 15h', 'reunião dia 10'). Para recado/ideia SEM data e hora, use salvar_obsidian. NUNCA use esta ferramenta para consultar ou ler a agenda.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -1136,21 +1112,6 @@ ferramentas_disponiveis = [
     {
         "type": "function",
         "function": {
-            "name": "definir_lembrete",
-            "description": "Define um lembrete com timer. A Luna vai avisar o Fábio em voz alta após o tempo especificado.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "mensagem": {"type": "string", "description": "O que lembrar ao Fábio"},
-                    "minutos": {"type": "number", "description": "Tempo em minutos para o lembrete disparar"}
-                },
-                "required": ["mensagem", "minutos"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
             "name": "alternar_mute",
             "description": "Muta ou desmuta o volume do sistema Windows.",
             "parameters": {"type": "object", "properties": {}, "required": []}
@@ -1220,7 +1181,7 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "salvar_obsidian",
-            "description": "Anota/salva um lembrete ou recado nas notas do Fábio (Obsidian). Use quando ele disser 'anota', 'salva isso', 'registra', 'guarda', 'lembra que', 'toma nota' seguido do que deve ser guardado. NÃO use para LER nota (isso é ler_obsidian).",
+            "description": "Anota/salva um recado, ideia ou lembrete SEM data e hora marcadas nas notas do Fábio (Obsidian). Use quando ele disser 'anota', 'salva isso', 'registra', 'guarda', 'lembra que', 'toma nota' seguido do que guardar (ex: 'anota que preciso renovar o seguro'). Se for compromisso COM dia e hora, use adicionar_agenda. NÃO use para LER nota (isso é ler_obsidian).",
             "parameters": {
                 "type": "object",
                 "properties": {
