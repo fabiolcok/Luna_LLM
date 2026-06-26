@@ -203,3 +203,57 @@ def salvar_nota(conteudo: str, titulo: str = None, origem: str = "") -> str:
         return f"SISTEMA: Nota salva no Obsidian (Luna/Inbox): '{titulo}'."
     except Exception as e:
         return f"SISTEMA: Erro ao salvar a nota: {e}"
+
+
+def salvar_foto(dados_imagem: bytes, legenda: str = "", origem: str = "", ext: str = "jpg") -> str:
+    """Arquiva uma imagem em Luna/Inbox/anexos e cria uma nota que a embute, usando a
+    legenda como descrição. NÃO usa visão — é arquivamento puro (a legenda já descreve)."""
+    if not dados_imagem:
+        return "SISTEMA: Erro — imagem vazia."
+    if not os.path.isdir(_VAULT):
+        return "SISTEMA: Erro — vault do Obsidian não encontrado."
+
+    pasta = os.path.join(_VAULT, *_PASTA_INBOX)
+    pasta_anexos = os.path.join(pasta, "anexos")
+    os.makedirs(pasta_anexos, exist_ok=True)
+
+    agora = datetime.datetime.now()
+    ext = (ext or "jpg").lstrip(".")
+    legenda = (legenda or "").strip()
+    titulo = (legenda.splitlines()[0].strip() if legenda else f"Foto {agora:%d-%m %H:%M}")[:80]
+    base = f"{agora:%Y-%m-%d %H%M} - {_slug(titulo)}"
+
+    nome_img = f"{base}.{ext}"
+    caminho_img = os.path.join(pasta_anexos, nome_img)
+    n = 2
+    while os.path.exists(caminho_img):
+        nome_img = f"{base} ({n}).{ext}"
+        caminho_img = os.path.join(pasta_anexos, nome_img)
+        n += 1
+
+    caminho_nota = os.path.join(pasta, base + ".md")
+    n = 2
+    while os.path.exists(caminho_nota):
+        caminho_nota = os.path.join(pasta, f"{base} ({n}).md")
+        n += 1
+
+    fm_origem = f"origem: {origem}\n" if origem else ""
+    corpo = (
+        f"---\n"
+        f"criado: {agora:%Y-%m-%d %H:%M}\n"
+        f"{fm_origem}"
+        f"tags: [luna, foto]\n"
+        f"---\n\n"
+        f"# {titulo}\n\n"
+        f"![[{nome_img}]]\n"
+    )
+    if legenda and legenda != titulo:   # evita repetir a legenda quando ela já é o título
+        corpo += f"\n{legenda}\n"
+    try:
+        with open(caminho_img, "wb") as f:
+            f.write(dados_imagem)
+        with open(caminho_nota, "w", encoding="utf-8") as f:
+            f.write(corpo)
+        return f"SISTEMA: Foto salva no Obsidian (Luna/Inbox): '{titulo}'."
+    except Exception as e:
+        return f"SISTEMA: Erro ao salvar a foto: {e}"

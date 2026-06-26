@@ -2,6 +2,7 @@
 
 import os
 import re
+import random
 import threading
 import logging
 import telebot
@@ -126,6 +127,43 @@ def iniciar_bot_telegram():
         except Exception as e:
             _log.exception(f"Erro Telegram: {e}")
             bot.send_message(TELEGRAM_CHAT_ID, "Deu um erro aqui, tenta de novo.")
+
+    @bot.message_handler(content_types=['photo'])
+    def handle_photo(message):
+        # Caminho A (arquivar): salva a foto + legenda no Inbox, SEM Gemini.
+        # A legenda é a descrição; análise por visão fica para o Caminho B.
+        if message.from_user.id != TELEGRAM_CHAT_ID:
+            return
+
+        import modelos.cores as cor
+        from modulos import obsidian
+
+        legenda = (message.caption or "").strip()
+        cor.azul(f"[📱 Telegram 📷] foto recebida — legenda: '{legenda or '(sem legenda)'}'")
+        _log.info(f"[Telegram] Usuário [foto]: {legenda or '(sem legenda)'}")
+
+        try:
+            info = bot.get_file(message.photo[-1].file_id)   # [-1] = maior resolução
+            dados = bot.download_file(info.file_path)
+            resultado = obsidian.salvar_foto(dados, legenda, origem="telegram", ext="jpg")
+
+            if resultado.startswith("SISTEMA: Foto salva"):
+                m = re.search(r"Inbox\): '(.+)'", resultado)
+                t = (m.group(1) if m else (legenda or "a foto")).strip()
+                conf = random.choice([
+                    f'Salvei a foto no seu Inbox: "{t}". 📷',
+                    f'Prontinho, guardei a foto "{t}" nas suas notas.',
+                    f'Foto arquivada no seu Obsidian: "{t}".',
+                ])
+                cor.ciano(f"[📱 Telegram Luna] {conf}")
+                _log.info(f"[Telegram] Luna [foto salva]: {t}")
+            else:
+                conf = "Não consegui salvar a foto agora, tenta de novo?"
+                _log.warning(f"[Telegram] falha ao salvar foto: {resultado}")
+            bot.send_message(TELEGRAM_CHAT_ID, conf)
+        except Exception as e:
+            _log.exception(f"Erro ao salvar foto Telegram: {e}")
+            bot.send_message(TELEGRAM_CHAT_ID, "Deu erro ao salvar a foto, tenta de novo.")
 
     @bot.callback_query_handler(func=lambda c: (c.data or "").startswith("av|"))
     def handle_aval(c):
