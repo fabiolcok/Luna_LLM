@@ -169,8 +169,8 @@ def _listar_capacidades():
         "O que consigo fazer: "
         "resumir vídeos do YouTube, resumir sites e links, pesquisar na web, "
         "checar emails não lidos, adicionar e ler eventos da agenda Google, "
-        "controlar o Spotify, ver e analisar sua tela, ler suas anotações do Obsidian, "
-        "abrir programas, verificar o clima, definir lembretes, "
+        "controlar o Spotify, ver e analisar sua tela, ler e anotar nas suas notas do Obsidian (inclusive guardar fotos que você manda no Telegram), "
+        "abrir programas, verificar o clima, "
         "mutar/desmutar o som, consultar suas stats do Overwatch, consultar jogos na Steam "
         "(preço, promoção e descrição), gerar imagens e controlar o Firefox."
     )
