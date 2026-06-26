@@ -926,11 +926,19 @@
             if (!file) return;
             const isPDF  = file.name.toLowerCase().endsWith('.pdf');
             const isText = TIPOS_TEXTO.test(file.name);
-            if (!isPDF && !isText) return;
+            const isImg  = /\.(jpe?g|png|webp|gif|bmp)$/i.test(file.name);
+            if (!isPDF && !isText && !isImg) return;
             const reader = new FileReader();
             if (isPDF) {
                 reader.onload = (ev) => socket.send(JSON.stringify({
                     tipo: 'arquivo', nome: file.name, formato: 'pdf',
+                    conteudo: ev.target.result.split(',')[1]
+                }));
+                reader.readAsDataURL(file);
+            } else if (isImg) {
+                // Imagem: manda os bytes (base64) para arquivar no Obsidian, sem virar texto.
+                reader.onload = (ev) => socket.send(JSON.stringify({
+                    tipo: 'arquivo', nome: file.name, formato: 'imagem',
                     conteudo: ev.target.result.split(',')[1]
                 }));
                 reader.readAsDataURL(file);

@@ -32,7 +32,7 @@ from servidor import (
     atualizar_estado_rosto, atualizar_legenda,
     atualizar_usuario, registrar_callback_interrupcao,
     iniciar_servidor, registrar_config_handler, sincronizar_config,
-    obter_e_limpar_arquivo, carregar_e_aplicar_config
+    obter_e_limpar_arquivo, obter_e_limpar_imagem_anexada, carregar_e_aplicar_config
 )
 
 from pynput import keyboard as kb
@@ -229,6 +229,39 @@ def loop_voz():
                     continue
 
                 # 3. PENSAR
+                # Imagem anexada no web → arquiva direto no Obsidian (Caminho A, sem visão).
+                # A fala vira a legenda; tiramos o comando ("salva isso com o assunto") do começo.
+                imagem_anexada = obter_e_limpar_imagem_anexada()
+                if imagem_anexada:
+                    import re as _re, random as _rnd
+                    from modulos import obsidian
+                    legenda = texto_usuario.strip()
+                    legenda = _re.sub(r'^\s*(salva|guarda|anota|registra|arquiva)\w*', '', legenda, flags=_re.I)
+                    legenda = _re.sub(r'^\s*(isso|a[íi]|essa imagem|essa foto|esse print|a imagem|o print)', '', legenda, flags=_re.I)
+                    legenda = _re.sub(r'^\s*(com\s+o?\s*assunto|sobre|como|de)\b', '', legenda, flags=_re.I)
+                    legenda = _re.sub(r'^[\s:,\.-]+', '', legenda).strip()
+                    cor.ciano(f"[📎🖼️ Imagem anexada: {imagem_anexada['nome']} → legenda: '{legenda or '(sem)'}']")
+                    res = obsidian.salvar_foto(imagem_anexada["dados"], legenda,
+                                               origem="web", ext=imagem_anexada.get("ext", "jpg"))
+                    if res.startswith("SISTEMA: Foto salva"):
+                        m = _re.search(r"Inbox\): '(.+)'", res)
+                        t = (m.group(1) if m else (legenda or "a imagem")).strip()
+                        resposta_luna = _rnd.choice([
+                            f'Salvei a imagem no seu Inbox: "{t}".',
+                            f'Prontinho, guardei "{t}" nas suas notas.',
+                            f'Imagem arquivada no seu Obsidian: "{t}".',
+                        ])
+                    else:
+                        resposta_luna = "Não consegui salvar a imagem agora, tenta de novo?"
+                    atualizar_legenda(resposta_luna)
+                    _log.info(f"[PC] Luna [imagem web]: {resposta_luna}")
+                    falar_texto(
+                        resposta_luna,
+                        ao_iniciar  = lambda: atualizar_estado_rosto("falando"),
+                        ao_terminar = lambda: atualizar_estado_rosto("dormindo"),
+                    )
+                    continue
+
                 arquivo = obter_e_limpar_arquivo()
                 if arquivo:
                     cor.ciano(f"[📎 Arquivo injetado: {arquivo['nome']} ({len(arquivo['conteudo'])} chars)]")

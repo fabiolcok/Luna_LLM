@@ -50,6 +50,7 @@ _ultimo_pensamento   = ""
 _historico_web       = []   # lista de {usuario, luna, tempo}
 
 _arquivo_pendente = None  # {"nome": str, "conteudo": str}
+_imagem_anexada_pendente = None  # {"nome": str, "dados": bytes, "ext": str} — imagem anexada no web p/ arquivar
 
 _config_handlers = {}
 _estado_config = {
@@ -166,11 +167,22 @@ def websocket(ws):
                 elif dados.get('comando') == 'fechar':
                     os._exit(0)
                 elif dados.get('tipo') == 'arquivo':
-                    global _arquivo_pendente
-                    _arquivo_pendente = _processar_arquivo(dados)
-                    _broadcast({"tipo": "arquivo_confirmado", "nome": _arquivo_pendente["nome"]})
+                    global _arquivo_pendente, _imagem_anexada_pendente
+                    if dados.get('formato') == 'imagem':
+                        import base64
+                        nome = dados.get('nome', 'imagem')
+                        _imagem_anexada_pendente = {
+                            "nome": nome,
+                            "dados": base64.b64decode(dados.get('conteudo', '')),
+                            "ext": (os.path.splitext(nome)[1].lstrip('.') or 'jpg').lower(),
+                        }
+                        _broadcast({"tipo": "arquivo_confirmado", "nome": nome})
+                    else:
+                        _arquivo_pendente = _processar_arquivo(dados)
+                        _broadcast({"tipo": "arquivo_confirmado", "nome": _arquivo_pendente["nome"]})
                 elif dados.get('tipo') == 'limpar_arquivo':
                     _arquivo_pendente = None
+                    _imagem_anexada_pendente = None
                 elif dados.get('comando') == 'limpar_historico':
                     _historico_web.clear()
                     _broadcast({"tipo": "historico_completo", "turnos": []})
@@ -220,6 +232,12 @@ def obter_e_limpar_arquivo():
     arq = _arquivo_pendente
     _arquivo_pendente = None
     return arq
+
+def obter_e_limpar_imagem_anexada():
+    global _imagem_anexada_pendente
+    img = _imagem_anexada_pendente
+    _imagem_anexada_pendente = None
+    return img
 
 # --- FUNÇÕES PARA VOCÊ USAR NO MAIN.PY ---
 
