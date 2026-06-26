@@ -243,10 +243,10 @@ GIF:
 ================================================================================
 12. CONFIGURAÇÕES RÁPIDAS (pensar.py, topo do arquivo)
 ================================================================================
-MODELO_ROTEADOR        = "nvidia/nemotron-3-nano-4b"       # LM Studio, tool calling (só usado se MODO_DUAL_LLM=True)
-MODELO_PERSONA         = "ministral-3-14b-reasoning-2512" # atual: local; faz roteio + persona no modo single
+MODELO_ROTEADOR        = "nvidia/nemotron-3-nano-4b"       # LM Studio, tool calling (roteia ferramentas)
+MODELO_PERSONA         = "ministral-3-14b-instruct-2512"  # local; gera a resposta com persona
 PROVEDOR_PERSONA       = "local"   # "groq" | "gemini" | "local"
-MODO_DUAL_LLM          = False     # False = só o Ministral 14B faz tudo (roteio + persona). True = Nemotron roteia + persona separada
+MODO_DUAL_LLM          = True      # True = Nemotron roteia (rápido/disciplinado) + Ministral 14B na persona. False = só o Ministral faz tudo (roteio aleatório e lento no backend Vulkan da AMD)
 ATIVAR_MEMORIA_PERMANENTE = False  # True = LLM extrai e salva fatos em background
 
 ================================================================================

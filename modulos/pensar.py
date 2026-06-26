@@ -65,12 +65,12 @@ Prompts disponíveis:
 """
 
 MODELO_ROTEADOR  = "nvidia/nemotron-3-nano-4b"
-MODELO_PERSONA   = "ministral-3-14b-reasoning-2512"
+MODELO_PERSONA   = "ministral-3-14b-instruct-2512"
 PROVEDOR_PERSONA = "local"   # "groq" | "gemini" | "local"
 
 # True  = 2 LLMs: roteador leve detecta ferramentas, persona gera a resposta
 # False = 1 LLM: MODELO_PERSONA faz tudo (mais confiável em tool calling, mais lento no roteamento)
-MODO_DUAL_LLM = False
+MODO_DUAL_LLM = True
 
 # True  = analisa conversas e salva fatos na memória permanente em background
 # False = desativa completamente (útil enquanto o modelo estiver salvando lixo)
