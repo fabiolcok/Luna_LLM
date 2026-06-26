@@ -160,12 +160,9 @@ def _executar_ler_obsidian(assunto=""):
     return obsidian.buscar_nota(assunto)
 
 def _executar_salvar_obsidian(conteudo="", titulo="", origem=""):
-    # Create-only em Luna/Inbox. Conteúdo literal (o roteador repassa o que o Fábio ditou);
-    # a persona só confirma depois. Quem decide pasta/template/nome é o código.
-    resultado = obsidian.salvar_nota(conteudo, titulo or None, origem)
-    if resultado.startswith("SISTEMA: Nota salva"):
-        resultado += " LUNA, confirme pro Fábio de forma curta e natural que você anotou isso."
-    return resultado
+    # Create-only em Luna/Inbox. A confirmação é determinística (ver gerar_resposta) —
+    # não passa pela persona, então é rápida e à prova do modelo inventar bobagem.
+    return obsidian.salvar_nota(conteudo, titulo or None, origem)
 
 def _listar_capacidades():
     return (
@@ -772,6 +769,23 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                         tarefa_documento=tarefa, responder_completo=responder_completo,
                     )
                     lembranca_oculta = ""   # não guarda o texto cru na memória
+            elif ferramenta_chamada and nome_funcao == "salvar_obsidian":
+                # Confirmação determinística. O resultado começa com "SISTEMA:", que o
+                # detector de falha (_falhou) confundiria com erro — e aí o 8B viajava.
+                if resultado_str.startswith("SISTEMA: Nota salva"):
+                    import random
+                    _m = re.search(r"Inbox\): '(.+)'", resultado_str)
+                    _t = (_m.group(1) if _m else "isso").strip()
+                    texto_resposta = random.choice([
+                        f'Anotei aí no seu Inbox: "{_t}".',
+                        f'Prontinho, guardei "{_t}" nas suas notas.',
+                        f'Salvo! "{_t}" tá no seu Obsidian.',
+                        f'Feito, anotei "{_t}" pra você não esquecer.',
+                    ])
+                    cor.amarelo("[📝 Obsidian: nota salva — confirmação determinística]")
+                else:
+                    texto_resposta = "Hmm, não consegui anotar isso agora. Pode tentar de novo?"
+                lembranca_oculta = ""
             else:
                 cor.amarelo("[🎭 Passando para LLM persona...]")
                 texto_resposta = _reescrever_como_luna(resultado_str, prompt_usuario, historico, max_tokens, forcar_incluir=eh_ver_tela, responder_completo=responder_completo)
