@@ -192,7 +192,7 @@ def salvar_nota(conteudo: str, titulo: str = None, origem: str = "") -> str:
         f"---\n"
         f"criado: {agora:%Y-%m-%d %H:%M}\n"
         f"{fm_origem}"
-        f"tags: [captura]\n"
+        f"tags: [luna]\n"
         f"---\n\n"
         f"# {titulo}\n\n"
         f"{conteudo}\n"
