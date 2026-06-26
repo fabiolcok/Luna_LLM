@@ -846,8 +846,14 @@ def alternar_mute():
     try:
         from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
         from ctypes import cast, POINTER
-        from comtypes import CLSCTX_ALL
+        from comtypes import CLSCTX_ALL, CoInitialize, CoUninitialize
+    except ImportError:
+        return "Erro: pycaw não instalado. Execute: pip install pycaw"
 
+    # Inicializa o COM NESTA thread. Sem isso, os objetos COM podem ser liberados
+    # depois, por GC em outra thread/após o COM já fechar -> access violation no __del__.
+    CoInitialize()
+    try:
         device = AudioUtilities.GetSpeakers()
         # GetSpeakers() retorna AudioDevice wrapper — o COM object real fica em ._dev
         interface = device._dev.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
@@ -855,11 +861,16 @@ def alternar_mute():
 
         mute_atual = volume.GetMute()
         volume.SetMute(not mute_atual, None)
-        return "Volume mutado." if not mute_atual else "Volume desmutado."
-    except ImportError:
-        return "Erro: pycaw não instalado. Execute: pip install pycaw"
+        resultado = "Volume mutado." if not mute_atual else "Volume desmutado."
+
+        # Libera os ponteiros COM agora, enquanto o COM ainda está vivo nesta thread
+        # (em vez de deixar pro GC liberar depois e estourar access violation).
+        del volume, interface, device
+        return resultado
     except Exception as e:
         return f"Erro ao controlar volume: {e}"
+    finally:
+        CoUninitialize()
 
 
 #================================================================
