@@ -242,6 +242,11 @@ def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150, variar=True)
     global _historico_proativo
 
     cor.amarelo(f"[🌚 Proativo: {tarefa}]")
+    try:
+        import servidor as _srv
+        _srv.atualizar_status(f"🌚 Proativo: {tarefa}")
+    except Exception:
+        pass
 
     if len(prompt_sistema) > 1500:
         prompt_sistema = prompt_sistema[:1500] + "... [texto cortado]"
@@ -967,6 +972,12 @@ def _loop_proativo():
             _tarefa_monitorar_jogos()
 
         if not esta_suspensa() and minutos_afk <= 5:
+            if _ja_imprimiu_suspensa:   # estava suspensa e acordou agora
+                try:
+                    import servidor as _srv
+                    _srv.atualizar_status("🌚 Por aqui")
+                except Exception:
+                    pass
             _ja_imprimiu_suspensa = False
 
             jogando_agora = any(ESTADO_JOGOS.values())
@@ -992,6 +1003,12 @@ def _loop_proativo():
                 else:
                     cor.verde("[🌑 Luna suspensa — aguardando interação]")
                 _ja_imprimiu_suspensa = True
+                try:
+                    import servidor as _srv
+                    _srv.atualizar_status("🌑 Suspensa — aguardando interação")
+                    _srv.atualizar_gif("desligando")
+                except Exception:
+                    pass
                 
         time.sleep(30)
 

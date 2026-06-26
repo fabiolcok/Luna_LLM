@@ -47,6 +47,7 @@ _callback_interrupcao = None
 _ultima_fala_usuario = "Aguardando áudio..."
 _ultima_fala_luna    = "Zzz... dormindo."
 _ultimo_pensamento   = ""
+_ultimo_status       = "🌚 Por aqui"   # o que a Luna está fazendo agora (linha de status do web)
 _historico_web       = []   # lista de {usuario, luna, tempo}
 
 _arquivo_pendente = None  # {"nome": str, "conteudo": str}
@@ -154,6 +155,7 @@ def websocket(ws):
         ws.send(boas_vindas)
         ws.send(json.dumps({"tipo": "config_estado", "estado": _estado_config.copy()}))
         ws.send(json.dumps({"tipo": "historico_completo", "turnos": list(_historico_web)}))
+        ws.send(json.dumps({"tipo": "status", "texto": _ultimo_status}))
     except:
         pass
 
@@ -329,6 +331,12 @@ def atualizar_pensamento(texto: str):
     global _ultimo_pensamento
     _ultimo_pensamento = texto
     _broadcast({"pensamento": texto})
+
+def atualizar_status(texto: str):
+    """Linha de status do web: o que a Luna está fazendo agora (proativo, ferramenta, suspensa)."""
+    global _ultimo_status
+    _ultimo_status = texto or "🌚 Por aqui"
+    _broadcast({"tipo": "status", "texto": _ultimo_status})
 
 def atualizar_gif(termo: str):
     """Busca um GIF no Giphy para o termo e faz broadcast — chamada não bloqueia."""

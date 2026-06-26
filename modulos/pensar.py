@@ -648,6 +648,11 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             nome_funcao = tool_call.function.name
             _log.info(f"Ferramenta: {nome_funcao}")
             cor.amarelo(f"[🌚⚙️ Motor Lógico ativando habilidade: {nome_funcao}]")
+            try:
+                import servidor as _srv
+                _srv.atualizar_status(f"⚙️ Usando: {nome_funcao}")
+            except Exception:
+                pass
 
             if nome_funcao in FUNCOES_DISPONIVEIS:
                 argumentos_json = tool_call.function.arguments
