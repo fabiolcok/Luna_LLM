@@ -1216,4 +1216,19 @@ ferramentas_disponiveis = [
             }
         }
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "salvar_obsidian",
+            "description": "Anota/salva um lembrete ou recado nas notas do Fábio (Obsidian). Use quando ele disser 'anota', 'salva isso', 'registra', 'guarda', 'lembra que', 'toma nota' seguido do que deve ser guardado. NÃO use para LER nota (isso é ler_obsidian).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "conteudo": {"type": "string", "description": "O que deve ser anotado, exatamente como o Fábio quer guardar (ex: 'renovar o seguro do carro esse mês')."},
+                    "titulo": {"type": "string", "description": "Título curto opcional (ex: 'Seguro do carro'). Se não souber, deixe vazio."}
+                },
+                "required": ["conteudo"]
+            }
+        }
+    },
 ]

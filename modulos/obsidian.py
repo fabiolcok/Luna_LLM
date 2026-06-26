@@ -6,6 +6,7 @@
 
 import os
 import re
+import datetime
 import unicodedata
 
 _VAULT = (os.getenv("OBSIDIAN_VAULT", "") or r"G:\Projetos\obisidian\Fabio").strip()
@@ -29,6 +30,12 @@ def _stem(p: str) -> str:
     """Stem mínimo: remove 's' final de plurais (ovos->ovo, contas->conta).
     Não é linguístico, só ajuda a busca por conteúdo a não errar por plural."""
     return p[:-1] if len(p) > 3 and p.endswith("s") else p
+
+
+def _slug(texto: str, limite: int = 50) -> str:
+    """Transforma um título em pedaço seguro de nome de arquivo (sem acento/pontuação)."""
+    s = re.sub(r"\s+", "-", _norm(texto).strip())
+    return s[:limite].strip("-") or "nota"
 
 
 # Palavras vazias / de pergunta — ignoradas na busca por CONTEÚDO pra não casar à toa.
@@ -149,3 +156,50 @@ def buscar_nota(assunto: str) -> str:
             return _limpar_md(f.read())
     except Exception as e:
         return f"SISTEMA: Erro ao ler a nota: {e}"
+
+
+# Pasta de ESCRITA da Luna. Ela só CRIA notas aqui — nunca edita nota existente,
+# nunca toca no perfil.md nem no resto do vault. É a "caixa de entrada" dela.
+_PASTA_INBOX = ("Luna", "Inbox")
+
+
+def salvar_nota(conteudo: str, titulo: str = None, origem: str = "") -> str:
+    """Cria (nunca sobrescreve) uma nota em Luna/Inbox com o conteúdo dado.
+    Retorna mensagem SISTEMA: de sucesso ou erro. O código decide pasta/template/nome;
+    a LLM só fornece conteudo/titulo."""
+    conteudo = (conteudo or "").strip()
+    if not conteudo:
+        return "SISTEMA: Erro — não havia conteúdo para anotar."
+    if not os.path.isdir(_VAULT):
+        return "SISTEMA: Erro — vault do Obsidian não encontrado."
+
+    pasta = os.path.join(_VAULT, *_PASTA_INBOX)
+    os.makedirs(pasta, exist_ok=True)
+
+    agora = datetime.datetime.now()
+    titulo = (titulo or "").strip() or conteudo.splitlines()[0].strip()
+    titulo = titulo[:80]
+
+    nome_base = f"{agora:%Y-%m-%d %H%M} - {_slug(titulo)}"
+    caminho = os.path.join(pasta, nome_base + ".md")
+    n = 2  # se já existir nota no mesmo minuto com mesmo título, não sobrescreve
+    while os.path.exists(caminho):
+        caminho = os.path.join(pasta, f"{nome_base} ({n}).md")
+        n += 1
+
+    fm_origem = f"origem: {origem}\n" if origem else ""
+    corpo = (
+        f"---\n"
+        f"criado: {agora:%Y-%m-%d %H:%M}\n"
+        f"{fm_origem}"
+        f"tags: [captura]\n"
+        f"---\n\n"
+        f"# {titulo}\n\n"
+        f"{conteudo}\n"
+    )
+    try:
+        with open(caminho, "w", encoding="utf-8") as f:
+            f.write(corpo)
+        return f"SISTEMA: Nota salva no Obsidian (Luna/Inbox): '{titulo}'."
+    except Exception as e:
+        return f"SISTEMA: Erro ao salvar a nota: {e}"

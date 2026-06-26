@@ -65,7 +65,7 @@ Prompts disponíveis:
 """
 
 MODELO_ROTEADOR  = "nvidia/nemotron-3-nano-4b"
-MODELO_PERSONA   = "ministral-3-14b-instruct-2512"
+MODELO_PERSONA   = "ministral-3-8b-instruct-2512"
 PROVEDOR_PERSONA = "local"   # "groq" | "gemini" | "local"
 
 # True  = 2 LLMs: roteador leve detecta ferramentas, persona gera a resposta
@@ -159,6 +159,14 @@ def _executar_ler_obsidian(assunto=""):
     # Fetch-only: acha a nota no vault e devolve o conteúdo cru; a persona processa.
     return obsidian.buscar_nota(assunto)
 
+def _executar_salvar_obsidian(conteudo="", titulo="", origem=""):
+    # Create-only em Luna/Inbox. Conteúdo literal (o roteador repassa o que o Fábio ditou);
+    # a persona só confirma depois. Quem decide pasta/template/nome é o código.
+    resultado = obsidian.salvar_nota(conteudo, titulo or None, origem)
+    if resultado.startswith("SISTEMA: Nota salva"):
+        resultado += " LUNA, confirme pro Fábio de forma curta e natural que você anotou isso."
+    return resultado
+
 def _listar_capacidades():
     return (
         "O que consigo fazer: "
@@ -194,6 +202,7 @@ FUNCOES_DISPONIVEIS = {
     "consultar_overwatch": consultar_overwatch,
     "consultar_jogo_steam": consultar_jogo_steam,
     "ler_obsidian": _executar_ler_obsidian,
+    "salvar_obsidian": _executar_salvar_obsidian,
 }
 
 
@@ -683,6 +692,8 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                         _u = _extrair_url(prompt_usuario)
                         if _u:
                             argumentos_dit["url"] = _u
+                    if nome_funcao == "salvar_obsidian":
+                        argumentos_dit["origem"] = "telegram" if responder_completo else "voz"
                     if argumentos_dit:
                         cor.amarelo(f"[Argumentos enviados: {argumentos_dit}]")
                     resultado_ferramenta = FUNCOES_DISPONIVEIS[nome_funcao](**argumentos_dit)
