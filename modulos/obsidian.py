@@ -25,6 +25,21 @@ def _norm(s: str) -> str:
     return re.sub(r"[^a-z0-9 ]", " ", s)
 
 
+def _stem(p: str) -> str:
+    """Stem mínimo: remove 's' final de plurais (ovos->ovo, contas->conta).
+    Não é linguístico, só ajuda a busca por conteúdo a não errar por plural."""
+    return p[:-1] if len(p) > 3 and p.endswith("s") else p
+
+
+# Palavras vazias / de pergunta — ignoradas na busca por CONTEÚDO pra não casar à toa.
+_STOPWORDS = {
+    "de", "da", "do", "das", "dos", "na", "no", "nas", "nos", "em", "com", "por",
+    "para", "pra", "e", "ou", "um", "uma", "uns", "umas", "que", "qual", "quais",
+    "quanto", "quantos", "quanta", "quantas", "me", "meu", "minha", "seu", "sua",
+    "tem", "ter", "ali", "aqui", "isso", "essa", "esse", "esta", "este",
+}
+
+
 def _caminho_perfil() -> str:
     return os.path.join(_VAULT, "Luna", "perfil.md")
 
@@ -93,11 +108,16 @@ def _limpar_md(texto: str) -> str:
 
 
 def buscar_nota(assunto: str) -> str:
-    """Acha a nota cujo nome melhor casa com 'assunto' e devolve o conteúdo (fetch-only)."""
+    """Acha a nota mais relevante para 'assunto' e devolve o conteúdo (fetch-only).
+    Estratégia em 2 etapas:
+      1. Casa pelo NOME do arquivo (mais confiável e barato — comportamento de sempre).
+      2. Fallback: se nenhum nome casar, procura as palavras no CORPO das notas.
+    O fallback só entra quando o nome falha, então não muda o que já funcionava."""
     notas = _listar_notas()
     if not notas:
         return "SISTEMA: Não há notas acessíveis no Obsidian (vault vazio ou caminho errado)."
 
+    # Etapa 1 — nome do arquivo
     alvo = set(_norm(assunto).split())
     melhor, melhor_score = None, 0
     for c in notas:
@@ -106,7 +126,23 @@ def buscar_nota(assunto: str) -> str:
         if score > melhor_score:
             melhor, melhor_score = c, score
 
-    if not melhor or melhor_score == 0:
+    # Etapa 2 — fallback no corpo (só palavras de conteúdo, sem stopwords).
+    # Aplica um stem simples (tira 's' do plural) pra "ovos" casar com "ovo".
+    if not melhor:
+        alvo_corpo = {_stem(p) for p in alvo if len(p) >= 3 and p not in _STOPWORDS}
+        if alvo_corpo:
+            melhor_corpo = 0
+            for c in notas:
+                try:
+                    with open(c, encoding="utf-8") as f:
+                        corpo = {_stem(t) for t in _norm(f.read()).split() if len(t) >= 3}
+                except Exception:
+                    continue
+                score = len(alvo_corpo & corpo)
+                if score > melhor_corpo:
+                    melhor, melhor_corpo = c, score
+
+    if not melhor:
         return f"SISTEMA: Não achei nenhuma nota sobre '{assunto}' nas suas anotações."
     try:
         with open(melhor, encoding="utf-8") as f:
