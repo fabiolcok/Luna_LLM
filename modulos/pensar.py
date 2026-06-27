@@ -428,13 +428,18 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             _user_final = user_msg + (" /no_think" if "qwen" in MODELO_PERSONA.lower() else "")
             msgs.append({"role": "user", "content": _user_final})
             _t0 = time.time()
+            # Modelos "thinking" (Qwen3, Gemma reasoning) gastam centenas de tokens pensando
+            # ANTES de responder. Damos um teto generoso pra eles TERMINAREM o raciocínio e
+            # ainda escreverem a resposta. Modelos instruct param cedo, então isso não os deixa
+            # verbosos — é só um teto, não um alvo.
+            _max_persona = max(max_tokens, 2500)
             resposta = cliente.chat.completions.create(
                 model=MODELO_PERSONA,
                 messages=msgs,
                 temperature=0.65,
                 presence_penalty=0.3,
                 frequency_penalty=0.3,
-                max_tokens=max_tokens,
+                max_tokens=_max_persona,
             )
             _dur = time.time() - _t0
             _msg_persona = resposta.choices[0].message
