@@ -625,7 +625,9 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 "NÃO converse. NÃO assuma persona. NÃO justifique. "
                 "REGRA CRÍTICA: Estados emocionais ('estou cansado', 'estou entediado'), saudações e comentários genéricos NÃO ativam ferramentas. "
                 "Acione ferramenta SOMENTE se o usuário pediu uma ação ou informação específica. "
-                "Se nenhuma ferramenta for necessária, retorne um texto vazio."
+                "Se nenhuma ferramenta for necessária (saudação, papo, desabafo): apenas NÃO chame ferramenta nenhuma. "
+                "Não produzir saída é o comportamento CORRETO e esperado — não pondere sobre o formato da resposta vazia, "
+                "não tente conversar. Outro modelo cuida da conversa."
             )
 
             _idx_obsidian = obsidian.indice_notas()
