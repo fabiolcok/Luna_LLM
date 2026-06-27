@@ -65,7 +65,7 @@ Prompts disponíveis:
 """
 
 MODELO_ROTEADOR  = "nvidia/nemotron-3-nano-4b"
-MODELO_PERSONA   = "qwen/qwen3.5-9b"
+MODELO_PERSONA   = "gemma-4-e4b-it-qat"
 PROVEDOR_PERSONA = "local"   # "groq" | "gemini" | "local"
 
 # True  = 2 LLMs: roteador leve detecta ferramentas, persona gera a resposta
@@ -455,6 +455,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             try:
                 _tk = resposta.usage.completion_tokens
                 if _dur > 0 and _tk:
+                    print(f"[🎭 Persona: {_tk} tokens em {_dur:.1f}s = {_tk/_dur:.1f} tok/s]")
                     import servidor as _srv
                     _srv.atualizar_metricas(persona={"tokens": _tk, "tps": round(_tk / _dur, 1), "segundos": round(_dur, 1)})
             except Exception:
