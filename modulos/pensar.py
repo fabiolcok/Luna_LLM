@@ -365,6 +365,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         )
 
     try:
+        _metrica_persona_str = ""
         if provedor == "gemini":
             cliente_gemini = genai.Client(api_key=GEMINI_API_KEY)
             contents = []
@@ -457,7 +458,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             try:
                 _tk = resposta.usage.completion_tokens
                 if _dur > 0 and _tk:
-                    print(f"[🎭 Persona: {_tk} tokens em {_dur:.1f}s = {_tk/_dur:.1f} tok/s]")
+                    _metrica_persona_str = f"[🎭 Persona: {_tk} tokens em {_dur:.1f}s = {_tk/_dur:.1f} tok/s]"
                     import servidor as _srv
                     _srv.atualizar_metricas(persona={"tokens": _tk, "tps": round(_tk / _dur, 1), "segundos": round(_dur, 1)})
             except Exception:
@@ -498,6 +499,9 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
                 _srv.atualizar_gif(gif_termo)
             except Exception:
                 pass
+
+        if _metrica_persona_str:   # métrica da persona por último, depois do GIF
+            print(_metrica_persona_str)
 
         return limpar_texto_para_voz(texto_luna)
 
@@ -660,6 +664,18 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             max_tokens=max_tokens
         )
         fim = time.time()
+
+        # Imprime a métrica do roteador AGORA (ele rodou primeiro) — ordem de leitura natural.
+        try:
+            tokens_gerados = resposta_ferramenta.usage.completion_tokens
+            segundos = fim - inicio
+            if segundos > 0:
+                tps_r = tokens_gerados / segundos
+                print(f"[⚡ Roteador: {tokens_gerados} tokens em {segundos:.1f}s = {tps_r:.1f} tok/s]")
+                import servidor as _srv
+                _srv.atualizar_metricas(roteador={"tokens": tokens_gerados, "tps": round(tps_r, 1), "segundos": round(segundos, 1)})
+        except Exception:
+            pass
 
         mensagem_modelo = resposta_ferramenta.choices[0].message
         lembranca_oculta = ""
@@ -840,17 +856,6 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
 
         if len(historico) > 12:
             del historico[:-12]   # corta in-place — reatribuir não cortaria a lista do chamador
-
-        tokens_gerados = resposta_ferramenta.usage.completion_tokens
-        segundos = fim - inicio
-        if segundos > 0:
-            tps_r = tokens_gerados / segundos
-            print(f"[⚡ Roteador: {tokens_gerados} tokens em {segundos:.1f}s = {tps_r:.1f} tok/s]")
-            try:
-                import servidor as _srv
-                _srv.atualizar_metricas(roteador={"tokens": tokens_gerados, "tps": round(tps_r, 1), "segundos": round(segundos, 1)})
-            except Exception:
-                pass
 
         _log.info(f"Luna: {texto_resposta[:200]}")
         if salvar:
