@@ -424,7 +424,9 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         else:  # local — LM Studio
             msgs = [{"role": "system", "content": prompt_sistema}]
             msgs.extend(historico[-8:])
-            msgs.append({"role": "user", "content": user_msg})
+            # Qwen3 costuma honrar o /no_think melhor na mensagem do usuário do que no system.
+            _user_final = user_msg + (" /no_think" if "qwen" in MODELO_PERSONA.lower() else "")
+            msgs.append({"role": "user", "content": _user_final})
             _t0 = time.time()
             resposta = cliente.chat.completions.create(
                 model=MODELO_PERSONA,
@@ -435,7 +437,16 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
                 max_tokens=max_tokens,
             )
             _dur = time.time() - _t0
-            texto_luna = resposta.choices[0].message.content or ""
+            _msg_persona = resposta.choices[0].message
+            texto_luna = _msg_persona.content or ""
+            # DIAGNÓSTICO: se veio vazio, revela a causa — pensou escondido (reasoning_content)
+            # ou foi cortado pelo limite (finish_reason=length).
+            if not texto_luna.strip():
+                _rc = getattr(_msg_persona, 'reasoning_content', None) or ""
+                _fr = getattr(resposta.choices[0], 'finish_reason', '?')
+                cor.vermelho(f"[⚠️ Persona VAZIA — finish_reason={_fr} | reasoning_content={len(_rc)} chars]")
+                if _rc:
+                    cor.amarelo(f"[🧠 (pensamento escondido): {_rc[:160]}...]")
             try:
                 _tk = resposta.usage.completion_tokens
                 if _dur > 0 and _tk:
