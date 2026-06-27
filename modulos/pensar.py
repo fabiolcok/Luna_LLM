@@ -65,7 +65,7 @@ Prompts disponíveis:
 """
 
 MODELO_ROTEADOR  = "nvidia/nemotron-3-nano-4b"
-MODELO_PERSONA   = "ministral-3-8b-instruct-2512"
+MODELO_PERSONA   = "qwen/qwen3.5-9b"
 PROVEDOR_PERSONA = "local"   # "groq" | "gemini" | "local"
 
 # True  = 2 LLMs: roteador leve detecta ferramentas, persona gera a resposta
@@ -284,6 +284,8 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         f"Conversas anteriores: {contexto_db}\n\n"
         f"{persona_prompt}"
     )
+    if "qwen" in MODELO_PERSONA.lower():
+        prompt_sistema += "\n/no_think"   # Qwen3 pensa por padrão e estouraria o orçamento de tokens da persona
 
     is_proativo = (prompt_usuario == "")
     resultado_longo = len(resposta_tecnica) > 200 and not is_proativo and not forcar_incluir
@@ -441,6 +443,11 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
                     _srv.atualizar_metricas(persona={"tokens": _tk, "tps": round(_tk / _dur, 1), "segundos": round(_dur, 1)})
             except Exception:
                 pass
+
+        # Rede de segurança: remove blocos de raciocínio que modelos "thinking"
+        # (Qwen3, etc.) às vezes vazam mesmo com /no_think.
+        texto_luna = re.sub(r'<think>.*?</think>', '', texto_luna, flags=re.DOTALL | re.IGNORECASE).strip()
+        texto_luna = re.sub(r'</?think>', '', texto_luna, flags=re.IGNORECASE).strip()
 
         if texto_luna.startswith("Luna:"):
             texto_luna = texto_luna[5:].lstrip()
