@@ -365,7 +365,6 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         )
 
     try:
-        _metrica_persona_str = ""
         if provedor == "gemini":
             cliente_gemini = genai.Client(api_key=GEMINI_API_KEY)
             contents = []
@@ -458,7 +457,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             try:
                 _tk = resposta.usage.completion_tokens
                 if _dur > 0 and _tk:
-                    _metrica_persona_str = f"[🎭 Persona: {_tk} tokens em {_dur:.1f}s = {_tk/_dur:.1f} tok/s]"
+                    print(f"[🎭 Persona: {_tk} tokens em {_dur:.1f}s = {_tk/_dur:.1f} tok/s]")
                     import servidor as _srv
                     _srv.atualizar_metricas(persona={"tokens": _tk, "tps": round(_tk / _dur, 1), "segundos": round(_dur, 1)})
             except Exception:
@@ -499,9 +498,6 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
                 _srv.atualizar_gif(gif_termo)
             except Exception:
                 pass
-
-        if _metrica_persona_str:   # métrica da persona por último, depois do GIF
-            print(_metrica_persona_str)
 
         return limpar_texto_para_voz(texto_luna)
 
