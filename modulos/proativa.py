@@ -11,6 +11,7 @@ from modulos.habilidades import checar_emails_nao_lidos, ler_agenda_google, obte
 from modulos.pensar import gerar_resposta
 from modulos.falar import falar_texto
 from modulos.memoria import carregar_vistos, salvar_vistos, atualizar_estado_luna
+from modulos import obsidian
 import modelos.cores as cor
 import psutil
 import re
@@ -110,6 +111,11 @@ CONFIGURACAO = {
         "horario_falar": (8, 11),  # Vai falar entre 08:00 e 10:59
         "ultimo_dia_falado": None  # Guarda o dia do mês para resetar sozinho
     },
+    "Radar_RSS": {
+        "ativo": True,
+        "intervalo_minutos": 30,
+        "horario_silencio": (0, 7),   # não checa de madrugada
+    },
 }
 
 # Jogos para ser monitorados.
@@ -160,7 +166,8 @@ _sessao_inicio: float = 0.0
 _proativo_ativo = True
 TAREFAS_ATIVAS = {
     "jogos": True, "emails": True, "agenda": True,
-    "pausa": True, "clima": True, "bom_dia": True, "steam": True, "navegador": True
+    "pausa": True, "clima": True, "bom_dia": True, "steam": True, "navegador": True,
+    "radar_rss": True
 }
 
 # Estado interno da tarefa de contexto de navegação
@@ -721,6 +728,60 @@ def _tarefa_steam_wishlist():
         _falar_proativamente(_gerar_fala_proativa(prompt, "steam_wishlist"))
         registrar_tentativa()
 
+def _tarefa_radar_rss():
+    """Radar Geek: lê feeds RSS (config em Luna/radar_rss.md), escreve os itens
+    novos em Novidades.md (B) e dá uma campainha curta na voz (A). Determinístico:
+    item inédito = novidade. Feed recém-adicionado é 'semeado' em silêncio (não
+    despeja o histórico todo na 1a vez)."""
+    cfg = CONFIGURACAO["Radar_RSS"]
+    if not cfg["ativo"] or _em_horario_silencio(*cfg["horario_silencio"]) or not _passou_intervalo("radar_rss", cfg["intervalo_minutos"]):
+        return
+    feeds = obsidian.ler_feeds_radar()
+    if not feeds:
+        return
+    try:
+        import feedparser
+    except ImportError:
+        cor.vermelho("[📡 Radar: feedparser não instalado — pip install feedparser]")
+        return
+
+    vistos = carregar_vistos()
+    itens_vistos = vistos.get("radar", {})          # id_do_item -> True
+    feeds_semeados = vistos.get("radar_feeds", [])  # feeds cujo baseline já foi marcado
+    novos = []
+    for url in feeds:
+        try:
+            d = feedparser.parse(url, agent="LunaRadar/1.0 (+local companion)")
+        except Exception:
+            continue
+        fonte = (d.feed.get("title") or url)[:40]
+        feed_novo = url not in feeds_semeados       # 1a vez vendo esse feed?
+        for entry in d.entries[:15]:
+            link = entry.get("link", "")
+            eid = entry.get("id") or link
+            if not eid or itens_vistos.get(eid):
+                continue
+            itens_vistos[eid] = True
+            if not feed_novo:   # feed já conhecido: é novidade de verdade
+                novos.append((entry.get("title", "(sem título)").strip(), link, fonte))
+            # feed novo: só marca como visto (semeia baseline), sem anunciar
+        if feed_novo:
+            feeds_semeados.append(url)
+    vistos["radar"] = itens_vistos
+    vistos["radar_feeds"] = feeds_semeados
+    salvar_vistos(vistos)
+
+    if novos:
+        obsidian.adicionar_novidades(novos)
+        n = len(novos)
+        cor.amarelo(f"[📡 Radar: {n} novidade(s) → Novidades.md]")
+        prompt = (
+            f"Você encontrou {n} novidade(s) nos feeds que o Fábio acompanha e já anotou na nota 'Novidades' dele. "
+            f"Avise em 1 frase curta que tem {n} novidade(s) no radar pra ele dar uma olhada — NÃO liste os títulos. {REGRA_PERSONA}"
+        )
+        _falar_proativamente(_gerar_fala_proativa(prompt, "radar_rss"))
+        registrar_tentativa()
+
 def _tarefa_bom_dia():
     cfg = CONFIGURACAO["bom_dia"]
     if not cfg["ativo"]: return
@@ -994,6 +1055,7 @@ def _loop_proativo():
                 if TAREFAS_ATIVAS.get("steam", True): _tarefa_steam_wishlist()
                 if TAREFAS_ATIVAS.get("bom_dia", True): _tarefa_bom_dia()
                 if TAREFAS_ATIVAS.get("navegador", True): _tarefa_contexto_navegador()
+                if TAREFAS_ATIVAS.get("radar_rss", True): _tarefa_radar_rss()
             else:
                 if not _ja_imprimiu_jogando:
                     cor.amarelo("[🔇 Modo Não Perturbe Ativado — Aguardando o fim da partida]")

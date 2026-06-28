@@ -257,3 +257,43 @@ def salvar_foto(dados_imagem: bytes, legenda: str = "", origem: str = "", ext: s
         return f"SISTEMA: Foto salva no Obsidian (Luna/Inbox): '{titulo}'."
     except Exception as e:
         return f"SISTEMA: Erro ao salvar a foto: {e}"
+
+
+# ── RADAR (feeds RSS configurados pelo Fábio no Obsidian) ──
+def ler_feeds_radar() -> list:
+    """Lê as URLs de RSS dos BULLETS da nota Luna/radar_rss.md. Só linhas que
+    começam com '-' ou '*' contam — assim a dica com link de exemplo é ignorada."""
+    caminho = os.path.join(_VAULT, "Luna", "radar_rss.md")
+    feeds = []
+    try:
+        with open(caminho, encoding="utf-8") as f:
+            for linha in f:
+                if linha.lstrip().startswith(("-", "*")):
+                    m = re.search(r'https?://[^\s`)\]>]+', linha)
+                    if m:
+                        feeds.append(m.group(0).rstrip('.,`'))
+    except Exception:
+        return []
+    return feeds
+
+
+def adicionar_novidades(itens: list) -> None:
+    """Prepende um bloco datado de novidades em Novidades.md (raiz do vault).
+    itens = lista de (titulo, link, fonte). Mais recentes no topo. A Luna só
+    escreve nesse arquivo dedicado — nunca toca em notas suas."""
+    if not itens or not os.path.isdir(_VAULT):
+        return
+    caminho = os.path.join(_VAULT, "Novidades.md")
+    agora = datetime.datetime.now()
+    bloco = f"## {agora:%Y-%m-%d %H:%M}\n" + "".join(
+        f"- [{t}]({l}) — {fonte}\n" for t, l, fonte in itens
+    )
+    try:
+        antigo = ""
+        if os.path.exists(caminho):
+            with open(caminho, encoding="utf-8") as f:
+                antigo = f.read().strip()
+        with open(caminho, "w", encoding="utf-8") as f:
+            f.write(bloco + ("\n\n" + antigo if antigo else "") + "\n")
+    except Exception:
+        pass
