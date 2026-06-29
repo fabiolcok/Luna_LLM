@@ -748,11 +748,23 @@ def _tarefa_radar_rss():
     vistos = carregar_vistos()
     itens_vistos = vistos.get("radar", {})          # id_do_item -> True
     feeds_semeados = vistos.get("radar_feeds", [])  # feeds cujo baseline já foi marcado
+
+    # Rodízio: o Reddit dá 429 se martelar vários feeds numa janela curta. Então
+    # cada rodada checa só uns poucos, alternando — bem mais gentil no rate-limit.
+    POR_RODADA = 3
+    idx = vistos.get("radar_idx", 0) % max(len(feeds), 1)
+    feeds_rodada = feeds[idx:idx + POR_RODADA]
+    vistos["radar_idx"] = (idx + POR_RODADA) % max(len(feeds), 1)
+
     novos = []
-    for url in feeds:
+    for i, url in enumerate(feeds_rodada):
+        if i > 0:
+            time.sleep(3)   # espaça os requests dentro da rodada (Reddit dá 429 em rajada)
         try:
             d = feedparser.parse(url, agent="LunaRadar/1.0 (+local companion)")
         except Exception:
+            continue
+        if not d.entries:   # 429, feed fora do ar ou vazio — pula SEM marcar como semeado (tenta de novo depois)
             continue
         fonte = (d.feed.get("title") or url)[:40]
         feed_novo = url not in feeds_semeados       # 1a vez vendo esse feed?
