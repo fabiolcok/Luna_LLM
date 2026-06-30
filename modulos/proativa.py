@@ -728,6 +728,14 @@ def _tarefa_steam_wishlist():
         _falar_proativamente(_gerar_fala_proativa(prompt, "steam_wishlist"))
         registrar_tentativa()
 
+def _limpar_resumo(html_txt, limite=280):
+    """Tira o HTML do resumo do feed e corta num tamanho legível pro Obsidian."""
+    import html as _html
+    txt = re.sub(r'<[^>]+>', ' ', html_txt or '')
+    txt = _html.unescape(txt)
+    txt = re.sub(r'\s+', ' ', txt).strip()
+    return (txt[:limite].rstrip() + '…') if len(txt) > limite else txt
+
 def _tarefa_radar_rss():
     """Radar Geek: lê feeds RSS (config em Luna/radar_rss.md), escreve os itens
     novos em Novidades.md (B) e dá uma campainha curta na voz (A). Determinístico:
@@ -775,7 +783,8 @@ def _tarefa_radar_rss():
                 continue
             itens_vistos[eid] = True
             if not feed_novo:   # feed já conhecido: é novidade de verdade
-                novos.append((entry.get("title", "(sem título)").strip(), link, fonte))
+                resumo = _limpar_resumo(entry.get("summary", "") or entry.get("description", ""))
+                novos.append((entry.get("title", "(sem título)").strip(), link, fonte, resumo))
             # feed novo: só marca como visto (semeia baseline), sem anunciar
         if feed_novo:
             feeds_semeados.append(url)

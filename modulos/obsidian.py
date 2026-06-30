@@ -279,15 +279,21 @@ def ler_feeds_radar() -> list:
 
 def adicionar_novidades(itens: list) -> None:
     """Prepende um bloco datado de novidades em Novidades.md (raiz do vault).
-    itens = lista de (titulo, link, fonte). Mais recentes no topo. A Luna só
-    escreve nesse arquivo dedicado — nunca toca em notas suas."""
+    itens = lista de (titulo, link, fonte[, resumo]). Mais recentes no topo. A
+    Luna só escreve nesse arquivo dedicado — nunca toca em notas suas."""
     if not itens or not os.path.isdir(_VAULT):
         return
     caminho = os.path.join(_VAULT, "Novidades.md")
     agora = datetime.datetime.now()
-    bloco = f"## {agora:%Y-%m-%d %H:%M}\n" + "".join(
-        f"- [{t}]({l}) — {fonte}\n" for t, l, fonte in itens
-    )
+    linhas = [f"## {agora:%Y-%m-%d %H:%M}\n"]
+    for item in itens:
+        t, l, fonte = item[0], item[1], item[2]
+        resumo = item[3] if len(item) > 3 else ""
+        linhas.append(f"**[{t}]({l})** — {fonte}\n")
+        if resumo:
+            linhas.append(f"> {resumo}\n")
+        linhas.append("\n")
+    bloco = "".join(linhas)
     try:
         antigo = ""
         if os.path.exists(caminho):
