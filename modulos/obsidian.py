@@ -277,10 +277,29 @@ def ler_feeds_radar() -> list:
     return feeds
 
 
-def adicionar_novidades(itens: list) -> None:
+def _trim_novidades(conteudo: str, max_horas: int) -> str:
+    """Mantém só os blocos '## data hora' dentro de max_horas; descarta os mais velhos
+    (janela rolante — a nota não cresce sem limite)."""
+    limite = datetime.datetime.now() - datetime.timedelta(hours=max_horas)
+    blocos = re.split(r'(?m)^(?=## \d{4}-\d{2}-\d{2} \d{2}:\d{2})', conteudo)
+    mantidos = []
+    for b in blocos:
+        m = re.match(r'## (\d{4}-\d{2}-\d{2} \d{2}:\d{2})', b)
+        if not m:
+            continue
+        try:
+            dt = datetime.datetime.strptime(m.group(1), '%Y-%m-%d %H:%M')
+        except ValueError:
+            continue
+        if dt >= limite:
+            mantidos.append(b.strip())
+    return "\n\n".join(mantidos)
+
+
+def adicionar_novidades(itens: list, max_horas: int = 72) -> None:
     """Prepende um bloco datado de novidades em Novidades.md (raiz do vault).
-    itens = lista de (titulo, link, fonte[, resumo]). Mais recentes no topo. A
-    Luna só escreve nesse arquivo dedicado — nunca toca em notas suas."""
+    itens = lista de (titulo, link, fonte[, resumo[, imagem]]). Mantém só os blocos
+    das últimas max_horas (janela rolante). A Luna só escreve nesse arquivo dedicado."""
     if not itens or not os.path.isdir(_VAULT):
         return
     caminho = os.path.join(_VAULT, "Novidades.md")
@@ -289,7 +308,10 @@ def adicionar_novidades(itens: list) -> None:
     for item in itens:
         t, l, fonte = item[0], item[1], item[2]
         resumo = item[3] if len(item) > 3 else ""
+        imagem = item[4] if len(item) > 4 else ""
         linhas.append(f"**[{t}]({l})** — {fonte}\n")
+        if imagem:
+            linhas.append(f"![]({imagem})\n")
         if resumo:
             linhas.append(f"> {resumo}\n")
         linhas.append("\n")
@@ -298,8 +320,9 @@ def adicionar_novidades(itens: list) -> None:
         antigo = ""
         if os.path.exists(caminho):
             with open(caminho, encoding="utf-8") as f:
-                antigo = f.read().strip()
+                antigo = f.read()
+        conteudo = _trim_novidades(bloco + "\n" + antigo, max_horas)
         with open(caminho, "w", encoding="utf-8") as f:
-            f.write(bloco + ("\n\n" + antigo if antigo else "") + "\n")
+            f.write(conteudo + "\n")
     except Exception:
         pass

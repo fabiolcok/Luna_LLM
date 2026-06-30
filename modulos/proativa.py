@@ -736,6 +736,18 @@ def _limpar_resumo(html_txt, limite=280):
     txt = re.sub(r'\s+', ' ', txt).strip()
     return (txt[:limite].rstrip() + '…') if len(txt) > limite else txt
 
+def _extrair_imagem(entry):
+    """Acha a thumbnail do item do feed (media:thumbnail, media:content, enclosure
+    ou o 1o <img> do resumo). Retorna '' se não houver."""
+    if entry.get("media_thumbnail"):
+        return entry.media_thumbnail[0].get("url", "")
+    if entry.get("media_content"):
+        return entry.media_content[0].get("url", "")
+    if entry.get("enclosures"):
+        return entry.enclosures[0].get("href", "")
+    m = re.search(r'<img[^>]+src=["\']([^"\']+)', entry.get("summary", ""))
+    return m.group(1) if m else ""
+
 def _tarefa_radar_rss():
     """Radar Geek: lê feeds RSS (config em Luna/radar_rss.md), escreve os itens
     novos em Novidades.md (B) e dá uma campainha curta na voz (A). Determinístico:
@@ -784,7 +796,8 @@ def _tarefa_radar_rss():
             itens_vistos[eid] = True
             if not feed_novo:   # feed já conhecido: é novidade de verdade
                 resumo = _limpar_resumo(entry.get("summary", "") or entry.get("description", ""))
-                novos.append((entry.get("title", "(sem título)").strip(), link, fonte, resumo))
+                imagem = _extrair_imagem(entry)
+                novos.append((entry.get("title", "(sem título)").strip(), link, fonte, resumo, imagem))
             # feed novo: só marca como visto (semeia baseline), sem anunciar
         if feed_novo:
             feeds_semeados.append(url)
