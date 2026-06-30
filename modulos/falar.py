@@ -69,6 +69,16 @@ def configurar_voz(voz=None, velocidade=None):
         _velocidade_padrao = float(velocidade)
 
 
+def _enfase_pontuacao(texto):
+    """Ênfase só na FALA: '!' e '?' (1 ou 2) viram '!!!' e '???' — o Supertonic só
+    muda a entonação com pontuação tripla. Não toca no que já é triplo. Aplicada
+    apenas no áudio (dentro de falar_texto), então NÃO altera o texto exibido."""
+    import re
+    texto = re.sub(r'(?<![!?])!{1,2}(?![!?])', '!!!', texto)
+    texto = re.sub(r'(?<![!?])\?{1,2}(?![!?])', '???', texto)
+    return texto
+
+
 # ==========================================
 # Função Principal
 # ==========================================
@@ -88,10 +98,12 @@ def falar_texto(texto, voz=None, velocidade=None, ao_iniciar=None, ao_terminar=N
         cor.ciano(f"[🌚💬 Luna falando ] '{texto_limpo}'")
         print("===================================")
 
+        # Ênfase só no ÁUDIO: ! e ? viram !!! e ??? (o texto exibido/log fica com 1).
+        texto_falar = _enfase_pontuacao(texto_limpo)
         estilo_voz = tts_motor.get_voice_style(voice_name=voz_usada)
 
         wav, duration = tts_motor.synthesize(
-            texto_limpo,
+            texto_falar,
             voice_style=estilo_voz,
             total_steps=15,
             lang="pt",
