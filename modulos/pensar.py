@@ -173,6 +173,17 @@ _RE_TIRA_CMD_SALVAR = re.compile(
 def _conteudo_para_anotar(prompt):
     return _RE_TIRA_CMD_SALVAR.sub('', prompt or '').strip()
 
+def _confirmar_salvamento(res, conteudo, prompt_usuario, historico, max_tokens, responder_completo):
+    """Confirma um save de nota: salvou → a persona confirma COMENTANDO o assunto (rico),
+    já sabendo que guardou — não pode mentir, o save já é fato. Falhou → mensagem honesta."""
+    if not res.startswith("SISTEMA: Nota salva"):
+        return "Hmm, não consegui anotar isso. Tenta de novo, ou cola direto no Obsidian?"
+    tarefa = ("Você ACABOU de guardar esta anotação nas notas do Fábio (Obsidian) — já está salva. "
+              "Confirme que guardou, de forma curta e natural, e faça um comentário leve sobre o "
+              "ASSUNTO da nota, se couber. Não invente que fez outra coisa além de guardar.")
+    return _reescrever_como_luna(conteudo, prompt_usuario, historico, max_tokens,
+                                 tarefa_documento=tarefa, responder_completo=responder_completo)
+
 def _listar_capacidades():
     return (
         "O que consigo fazer: "
@@ -799,18 +810,8 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 # (comum com texto longo). Salva na mão, com o texto fiel, sem depender do 4B.
                 _cont = _conteudo_para_anotar(prompt_usuario)
                 _res = obsidian.salvar_nota(_cont, origem=("telegram" if responder_completo else "voz")) if len(_cont) >= 3 else "SISTEMA: Erro"
-                if _res.startswith("SISTEMA: Nota salva"):
-                    import random as _rnd
-                    _mm = re.search(r"Inbox\): '(.+)'", _res)
-                    _tt = (_mm.group(1) if _mm else "isso").strip()
-                    texto_resposta = _rnd.choice([
-                        f'Anotei aí no seu Inbox: "{_tt}".',
-                        f'Prontinho, guardei "{_tt}" nas suas notas.',
-                        f'Salvo! "{_tt}" tá no seu Obsidian.',
-                    ])
-                    cor.amarelo("[📝 Obsidian: salvo pela rede de segurança (roteador não firou)]")
-                else:
-                    texto_resposta = "Hmm, não consegui anotar isso. Tenta de novo, ou cola direto no Obsidian?"
+                cor.amarelo("[📝 Obsidian: salvo pela rede de segurança (roteador não firou)]")
+                texto_resposta = _confirmar_salvamento(_res, _cont, prompt_usuario, historico, max_tokens, responder_completo)
                 lembranca_oculta = ""
             elif (not ferramenta_chamada) and _parece_pedido_de_acao(prompt_usuario):
                 # Pedido de ação que o roteador NÃO roteou: resposta honesta determinística,
@@ -847,21 +848,10 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                     )
                     lembranca_oculta = ""   # não guarda o texto cru na memória
             elif ferramenta_chamada and nome_funcao == "salvar_obsidian":
-                # Confirmação determinística. O resultado começa com "SISTEMA:", que o
-                # detector de falha (_falhou) confundiria com erro — e aí o 8B viajava.
-                if resultado_str.startswith("SISTEMA: Nota salva"):
-                    import random
-                    _m = re.search(r"Inbox\): '(.+)'", resultado_str)
-                    _t = (_m.group(1) if _m else "isso").strip()
-                    texto_resposta = random.choice([
-                        f'Anotei aí no seu Inbox: "{_t}".',
-                        f'Prontinho, guardei "{_t}" nas suas notas.',
-                        f'Salvo! "{_t}" tá no seu Obsidian.',
-                        f'Feito, anotei "{_t}" pra você não esquecer.',
-                    ])
-                    cor.amarelo("[📝 Obsidian: nota salva — confirmação determinística]")
-                else:
-                    texto_resposta = "Hmm, não consegui anotar isso agora. Pode tentar de novo?"
+                # O save já aconteceu (determinístico). A persona confirma COMENTANDO o
+                # assunto — rico, mas sem poder mentir (o save é fato, não invenção).
+                _cont_salvo = _conteudo_para_anotar(prompt_usuario)
+                texto_resposta = _confirmar_salvamento(resultado_str, _cont_salvo, prompt_usuario, historico, max_tokens, responder_completo)
                 lembranca_oculta = ""
             else:
                 cor.amarelo("[🎭 Passando para LLM persona...]")
