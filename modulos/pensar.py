@@ -164,6 +164,15 @@ def _executar_salvar_obsidian(conteudo="", titulo="", origem=""):
     # não passa pela persona, então é rápida e à prova do modelo inventar bobagem.
     return obsidian.salvar_nota(conteudo, titulo or None, origem)
 
+# Detecta "anota/salva/..." no começo da mensagem e extrai o conteúdo (texto ORIGINAL,
+# fiel — não a reprodução do roteador 4B, que mangla textos longos).
+_RE_INICIO_SALVAR = re.compile(r'^\s*(anota|salva|registra|guarda|arquiva|toma\s+nota|lembra(r)?(\s+que)?)\b', re.IGNORECASE)
+_RE_TIRA_CMD_SALVAR = re.compile(
+    r'^\s*(anota|salva|registra|guarda|arquiva|toma\s+nota|lembra(r)?(\s+que)?)\w*\s*'
+    r'(isso|a[íi]|aqui|essa\s+nota|pra\s+mim|no\s+obsidian)?\s*[:,\-–]?\s*', re.IGNORECASE)
+def _conteudo_para_anotar(prompt):
+    return _RE_TIRA_CMD_SALVAR.sub('', prompt or '').strip()
+
 def _listar_capacidades():
     return (
         "O que consigo fazer: "
@@ -735,6 +744,11 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                             argumentos_dit["url"] = _u
                     if nome_funcao == "salvar_obsidian":
                         argumentos_dit["origem"] = "telegram" if responder_completo else "voz"
+                        # Usa o texto ORIGINAL do Fábio como conteúdo (fiel), não a
+                        # reprodução do roteador — que trunca/parafraseia textos longos.
+                        _bruto = _conteudo_para_anotar(prompt_usuario)
+                        if len(_bruto) >= 3:
+                            argumentos_dit["conteudo"] = _bruto
                     if argumentos_dit:
                         cor.amarelo(f"[Argumentos enviados: {argumentos_dit}]")
                     resultado_ferramenta = FUNCOES_DISPONIVEIS[nome_funcao](**argumentos_dit)
@@ -780,7 +794,25 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             eh_documento = (ferramenta_chamada and nome_funcao in ("resumir_youtube", "resumir_site", "ler_obsidian")
                             and not resultado_str.startswith(("SISTEMA:", "ERRO", "Erro")))
 
-            if (not ferramenta_chamada) and _parece_pedido_de_acao(prompt_usuario):
+            if (not ferramenta_chamada) and (not modo_memoria) and _RE_INICIO_SALVAR.match(prompt_usuario or ""):
+                # O Fábio claramente pediu pra ANOTAR, mas o roteador não firou salvar_obsidian
+                # (comum com texto longo). Salva na mão, com o texto fiel, sem depender do 4B.
+                _cont = _conteudo_para_anotar(prompt_usuario)
+                _res = obsidian.salvar_nota(_cont, origem=("telegram" if responder_completo else "voz")) if len(_cont) >= 3 else "SISTEMA: Erro"
+                if _res.startswith("SISTEMA: Nota salva"):
+                    import random as _rnd
+                    _mm = re.search(r"Inbox\): '(.+)'", _res)
+                    _tt = (_mm.group(1) if _mm else "isso").strip()
+                    texto_resposta = _rnd.choice([
+                        f'Anotei aí no seu Inbox: "{_tt}".',
+                        f'Prontinho, guardei "{_tt}" nas suas notas.',
+                        f'Salvo! "{_tt}" tá no seu Obsidian.',
+                    ])
+                    cor.amarelo("[📝 Obsidian: salvo pela rede de segurança (roteador não firou)]")
+                else:
+                    texto_resposta = "Hmm, não consegui anotar isso. Tenta de novo, ou cola direto no Obsidian?"
+                lembranca_oculta = ""
+            elif (not ferramenta_chamada) and _parece_pedido_de_acao(prompt_usuario):
                 # Pedido de ação que o roteador NÃO roteou: resposta honesta determinística,
                 # sem deixar a persona inventar a partir da memória recuperada (anti-alucinação).
                 cor.vermelho("[⚠️ Pedido de ação sem ferramenta acionada — resposta honesta]")
