@@ -64,8 +64,19 @@ Prompts disponíveis:
   PROMPT_LUNA_PERSONA_CLOUD  — prompt mínimo para APIs externas (Groq/Gemini)
 """
 
-MODELO_ROTEADOR  = "nvidia/nemotron-3-nano-4b"
-MODELO_PERSONA   = "gemma-4-e4b-it-qat"
+# Servidor local de inferência: "turbollm" (rápido, auto-tune, ~5x) ou "lmstudio".
+# Trocar esta palavra alterna endpoint + nomes dos modelos. Totalmente reversível.
+SERVIDOR_LOCAL = "turbollm"   # "turbollm" | "lmstudio"
+
+if SERVIDOR_LOCAL == "turbollm":
+    BASE_URL_LOCAL  = "http://127.0.0.1:6996/v1"
+    MODELO_ROTEADOR = "NVIDIA-Nemotron-3-Nano-4B-Q4_K_M.gguf"
+    MODELO_PERSONA  = "gemma-4-E4B-it-QAT-Q4_0.gguf"
+else:  # lmstudio
+    BASE_URL_LOCAL  = "http://localhost:1234/v1"
+    MODELO_ROTEADOR = "nvidia/nemotron-3-nano-4b"
+    MODELO_PERSONA  = "gemma-4-e4b-it-qat"
+
 PROVEDOR_PERSONA = "local"   # "groq" | "gemini" | "local"
 
 # True  = 2 LLMs: roteador leve detecta ferramentas, persona gera a resposta
@@ -82,35 +93,41 @@ def configurar_memoria(ativo: bool):
 
 
 def garantir_modelos_lm_studio():
-    # Só carrega modelos locais — Gemini e Groq são APIs externas
-    modelos_locais = [MODELO_ROTEADOR] if MODO_DUAL_LLM else []
+    # Só modelos locais — Gemini e Groq são APIs externas
+    modelos = [MODELO_ROTEADOR] if MODO_DUAL_LLM else []
     if PROVEDOR_PERSONA == "local":
-        modelos_locais.append(MODELO_PERSONA)
-    modelos = modelos_locais
+        modelos.append(MODELO_PERSONA)
 
+    if SERVIDOR_LOCAL == "turbollm":
+        # O gateway do TurboLLM auto-carrega o modelo no 1o request e mantém até 4
+        # quentes (pool LRU). Um warm-up leve já deixa os dois residentes na largada.
+        for modelo in modelos:
+            try:
+                httpx.post(f"{BASE_URL_LOCAL}/chat/completions", timeout=90,
+                           json={"model": modelo, "messages": [{"role": "user", "content": "oi"}], "max_tokens": 1})
+                print(f"[✅ {modelo} aquecido no TurboLLM]")
+            except Exception:
+                print(f"[⚠️ Não aqueci {modelo} — o TurboLLM está ligado? (npx turbollm)]")
+        return
+
+    # lmstudio: usa o CLI 'lms' pra carregar
     try:
-        r = httpx.get("http://localhost:1234/v1/models", timeout=4)
+        r = httpx.get(f"{BASE_URL_LOCAL}/models", timeout=4)
         ativos = [m["id"] for m in r.json().get("data", [])]
     except Exception:
         ativos = []
-
     for modelo in modelos:
         if any(modelo in ativo for ativo in ativos):
             print(f"[✅ {modelo} já está carregado]")
             continue
-
         print(f"[⏳ Carregando {modelo}...]")
-        subprocess.Popen(
-            ["lms", "load", modelo, "--gpu", "max"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
-
+        subprocess.Popen(["lms", "load", modelo, "--gpu", "max"],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if len(ativos) < len(modelos):
         time.sleep(5)
 
 garantir_modelos_lm_studio()
-cliente = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+cliente = OpenAI(base_url=BASE_URL_LOCAL, api_key="local")
 
 
 # ==========================================
