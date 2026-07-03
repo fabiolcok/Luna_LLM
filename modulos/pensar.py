@@ -64,17 +64,21 @@ Prompts disponíveis:
   PROMPT_LUNA_PERSONA_CLOUD  — prompt mínimo para APIs externas (Groq/Gemini)
 """
 
-# Servidor local de inferência: "turbollm" (rápido, auto-tune, ~5x) ou "lmstudio".
-# Trocar esta palavra alterna endpoint + nomes dos modelos. Totalmente reversível.
-SERVIDOR_LOCAL = "turbollm"   # "turbollm" | "lmstudio"
+# Servidor local. "hibrido" = roteador no LM Studio (tool-calling robusto) + persona no
+# TurboLLM (rápido, ROCm). "turbollm" = tudo no TurboLLM. "lmstudio" = tudo no LM Studio.
+SERVIDOR_LOCAL = "hibrido"   # "hibrido" | "turbollm" | "lmstudio"
 
 if SERVIDOR_LOCAL == "turbollm":
-    BASE_URL_LOCAL  = "http://127.0.0.1:6996/v1"
-    # Nomes CURTOS: o fuzzy-match do TurboLLM tropeça no filename cheio (underscores).
+    BASE_ROTEADOR = BASE_PERSONA = "http://127.0.0.1:6996/v1"
     MODELO_ROTEADOR = "Nemotron"
     MODELO_PERSONA  = "gemma-4-E4B"
+elif SERVIDOR_LOCAL == "hibrido":
+    BASE_ROTEADOR   = "http://localhost:1234/v1"       # LM Studio: tool-calling confiável
+    MODELO_ROTEADOR = "nvidia/nemotron-3-nano-4b"
+    BASE_PERSONA    = "http://127.0.0.1:6996/v1"        # TurboLLM: persona rápida (ROCm)
+    MODELO_PERSONA  = "gemma-4-E4B-it-QAT-Q4_0.gguf"    # nome cheio (carregado manual no TurboLLM)
 else:  # lmstudio
-    BASE_URL_LOCAL  = "http://localhost:1234/v1"
+    BASE_ROTEADOR = BASE_PERSONA = "http://localhost:1234/v1"
     MODELO_ROTEADOR = "nvidia/nemotron-3-nano-4b"
     MODELO_PERSONA  = "gemma-4-e4b-it-qat"
 
@@ -93,45 +97,43 @@ def configurar_memoria(ativo: bool):
     ATIVAR_MEMORIA_PERMANENTE = bool(ativo)
 
 
+def _garantir_um(modelo, base):
+    """Garante um modelo no servidor certo: TurboLLM (6996) = warm-up via API;
+    LM Studio (1234) = 'lms load' se ainda não estiver carregado."""
+    if "6996" in base:   # TurboLLM
+        try:
+            r = httpx.post(f"{base}/chat/completions", timeout=120,
+                           json={"model": modelo, "messages": [{"role": "user", "content": "oi"}], "max_tokens": 1})
+            if r.status_code == 200:
+                print(f"[✅ {modelo} pronto no TurboLLM]")
+            else:
+                print(f"[⚠️ {modelo}: TurboLLM {r.status_code} — carregue esse modelo na UI do TurboLLM. {r.text[:90]}]")
+        except Exception as e:
+            print(f"[⚠️ Não aqueci {modelo} no TurboLLM — ligado? (npx turbollm)  {e}]")
+    else:                # LM Studio
+        try:
+            r = httpx.get(f"{base}/models", timeout=4)
+            ativos = [m["id"] for m in r.json().get("data", [])]
+        except Exception:
+            ativos = []
+        if any(modelo in a for a in ativos):
+            print(f"[✅ {modelo} já carregado (LM Studio)]")
+        else:
+            print(f"[⏳ Carregando {modelo} no LM Studio...]")
+            subprocess.Popen(["lms", "load", modelo, "--gpu", "max"],
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(5)
+
 def garantir_modelos_lm_studio():
-    # Só modelos locais — Gemini e Groq são APIs externas
-    modelos = [MODELO_ROTEADOR] if MODO_DUAL_LLM else []
+    if MODO_DUAL_LLM:
+        _garantir_um(MODELO_ROTEADOR, BASE_ROTEADOR)
     if PROVEDOR_PERSONA == "local":
-        modelos.append(MODELO_PERSONA)
-
-    if SERVIDOR_LOCAL == "turbollm":
-        # O gateway do TurboLLM auto-carrega o modelo no 1o request e mantém até 4
-        # quentes (pool LRU). Um warm-up leve já deixa os dois residentes na largada.
-        for modelo in modelos:
-            try:
-                r = httpx.post(f"{BASE_URL_LOCAL}/chat/completions", timeout=120,
-                               json={"model": modelo, "messages": [{"role": "user", "content": "oi"}], "max_tokens": 1})
-                if r.status_code == 200:
-                    print(f"[✅ {modelo} aquecido no TurboLLM]")
-                else:
-                    print(f"[⚠️ {modelo}: TurboLLM respondeu {r.status_code} — carregue esse modelo na UI do TurboLLM. {r.text[:100]}]")
-            except Exception as e:
-                print(f"[⚠️ Não aqueci {modelo} — o TurboLLM está ligado? (npx turbollm)  {e}]")
-        return
-
-    # lmstudio: usa o CLI 'lms' pra carregar
-    try:
-        r = httpx.get(f"{BASE_URL_LOCAL}/models", timeout=4)
-        ativos = [m["id"] for m in r.json().get("data", [])]
-    except Exception:
-        ativos = []
-    for modelo in modelos:
-        if any(modelo in ativo for ativo in ativos):
-            print(f"[✅ {modelo} já está carregado]")
-            continue
-        print(f"[⏳ Carregando {modelo}...]")
-        subprocess.Popen(["lms", "load", modelo, "--gpu", "max"],
-                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    if len(ativos) < len(modelos):
-        time.sleep(5)
+        _garantir_um(MODELO_PERSONA, BASE_PERSONA)
 
 garantir_modelos_lm_studio()
-cliente = OpenAI(base_url=BASE_URL_LOCAL, api_key="local")
+cliente_roteador = OpenAI(base_url=BASE_ROTEADOR, api_key="local")
+cliente_persona  = OpenAI(base_url=BASE_PERSONA, api_key="local")
+cliente = cliente_roteador   # legado: pré-resumo de YouTube/site usa o MODELO_ROTEADOR
 
 
 # ==========================================
@@ -476,7 +478,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             # ainda escreverem a resposta. Modelos instruct param cedo, então isso não os deixa
             # verbosos — é só um teto, não um alvo.
             _max_persona = max(max_tokens, 2500)
-            resposta = cliente.chat.completions.create(
+            resposta = cliente_persona.chat.completions.create(
                 model=MODELO_PERSONA,
                 messages=msgs,
                 temperature=0.65,
@@ -693,7 +695,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
         mensagens_ferramenta.append({"role": "user", "content": prompt_usuario})
 
         modelo_roteamento = MODELO_ROTEADOR if MODO_DUAL_LLM else MODELO_PERSONA
-        resposta_ferramenta = cliente.chat.completions.create(
+        resposta_ferramenta = cliente_roteador.chat.completions.create(
             model=modelo_roteamento,
             messages=mensagens_ferramenta,
             temperature=0.0,
