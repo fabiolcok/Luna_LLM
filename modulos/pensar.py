@@ -70,8 +70,9 @@ SERVIDOR_LOCAL = "turbollm"   # "turbollm" | "lmstudio"
 
 if SERVIDOR_LOCAL == "turbollm":
     BASE_URL_LOCAL  = "http://127.0.0.1:6996/v1"
-    MODELO_ROTEADOR = "NVIDIA-Nemotron-3-Nano-4B-Q4_K_M.gguf"
-    MODELO_PERSONA  = "gemma-4-E4B-it-QAT-Q4_0.gguf"
+    # Nomes CURTOS: o fuzzy-match do TurboLLM tropeça no filename cheio (underscores).
+    MODELO_ROTEADOR = "Nemotron"
+    MODELO_PERSONA  = "gemma-4-E4B"
 else:  # lmstudio
     BASE_URL_LOCAL  = "http://localhost:1234/v1"
     MODELO_ROTEADOR = "nvidia/nemotron-3-nano-4b"
@@ -103,11 +104,14 @@ def garantir_modelos_lm_studio():
         # quentes (pool LRU). Um warm-up leve já deixa os dois residentes na largada.
         for modelo in modelos:
             try:
-                httpx.post(f"{BASE_URL_LOCAL}/chat/completions", timeout=90,
-                           json={"model": modelo, "messages": [{"role": "user", "content": "oi"}], "max_tokens": 1})
-                print(f"[✅ {modelo} aquecido no TurboLLM]")
-            except Exception:
-                print(f"[⚠️ Não aqueci {modelo} — o TurboLLM está ligado? (npx turbollm)]")
+                r = httpx.post(f"{BASE_URL_LOCAL}/chat/completions", timeout=120,
+                               json={"model": modelo, "messages": [{"role": "user", "content": "oi"}], "max_tokens": 1})
+                if r.status_code == 200:
+                    print(f"[✅ {modelo} aquecido no TurboLLM]")
+                else:
+                    print(f"[⚠️ {modelo}: TurboLLM respondeu {r.status_code} — carregue esse modelo na UI do TurboLLM. {r.text[:100]}]")
+            except Exception as e:
+                print(f"[⚠️ Não aqueci {modelo} — o TurboLLM está ligado? (npx turbollm)  {e}]")
         return
 
     # lmstudio: usa o CLI 'lms' pra carregar
