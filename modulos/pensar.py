@@ -66,7 +66,7 @@ Prompts disponíveis:
 
 # Servidor local. "hibrido" = roteador no LM Studio (tool-calling robusto) + persona no
 # TurboLLM (rápido, ROCm). "turbollm" = tudo no TurboLLM. "lmstudio" = tudo no LM Studio.
-SERVIDOR_LOCAL = "hibrido"   # "hibrido" | "turbollm" | "lmstudio"
+SERVIDOR_LOCAL = "lmstudio"   # "hibrido" | "turbollm" | "lmstudio"
 
 if SERVIDOR_LOCAL == "turbollm":
     BASE_ROTEADOR = BASE_PERSONA = "http://127.0.0.1:6996/v1"
