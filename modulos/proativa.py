@@ -831,8 +831,7 @@ def _tarefa_autoconhecimento():
     import modulos.pensar as _p   # introspecção: lê os próprios modelos/ferramentas
     horas = (time.time() - _sessao_inicio) / 3600 if _sessao_inicio else 0
     fatos = [
-        f"a minha personalidade roda no modelo local {_p.MODELO_PERSONA}",
-        f"quem decide qual ferramenta eu uso é o roteador {_p.MODELO_ROTEADOR}",
+        f"eu rodo num modelo local só, o {_p.MODELO_PERSONA}, que faz tanto a minha personalidade quanto decidir qual ferramenta eu uso",
         f"eu tenho {len(_p.FUNCOES_DISPONIVEIS)} ferramentas à disposição",
     ]
     if horas >= 0.5:

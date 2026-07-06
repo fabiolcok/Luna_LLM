@@ -9,8 +9,6 @@ import datetime
 from openai import OpenAI
 
 _log = logging.getLogger("luna.pensar")
-from google import genai
-from google.genai import types as genai_types
 import modelos.cores as cor
 from modulos.habilidades import (
     obter_transcricao, adicionar_evento_google, ler_agenda_google,
@@ -20,14 +18,13 @@ from modulos.habilidades import (
     obter_janela_em_foco, analisar_imagem_gemini, capturar_tela_base64, ler_texto_selecionado,
     desenhar_imagem, executar_analise_aba, alternar_mute,
     ler_url_especifica, ler_link_copiado, consultar_overwatch, consultar_jogo_steam,
-    ferramentas_disponiveis, GEMINI_API_KEY, GROQ_API_KEY)
+    ferramentas_disponiveis)
 from modulos.memoria import (
     buscar_contexto_relevante, salvar_conversa,
     ler_memoria_permanente, analisar_e_salvar_fato, ler_estado_luna
 )
 from modulos.falar import limpar_texto_para_voz, periodo_atual
 from modulos import obsidian
-import subprocess
 import httpx
 
 """
@@ -37,43 +34,45 @@ Responsável por todo o ciclo de raciocínio da Luna: recebe o texto do usuário
 decide se aciona uma ferramenta, executa a ferramenta e gera a resposta final
 com personalidade via LLM de persona.
 
+MODO MONO (jul/2026): um único modelo local — Gemma-4-12B QAT no TurboLLM — faz TUDO:
+roteia as ferramentas E gera a resposta com persona. O 12B é "thinking", então
+desligamos o raciocínio (THINK_OFF) em toda chamada, senão ele devolve resposta vazia.
+
 Configurações principais (topo do arquivo):
-  MODELO_ROTEADOR        — modelo local no LM Studio para tool calling (Nemotron 4B)
-  MODELO_PERSONA         — modelo para gerar a resposta com personalidade
-  PROVEDOR_PERSONA       — "groq" | "gemini" | "local"
-  MODO_DUAL_LLM          — True: Nemotron roteia ferramentas + persona gera resposta
-                           False: um único modelo faz tudo (menos confiável para tools)
+  BASE_LOCAL             — endpoint OpenAI-compatível do TurboLLM (porta 6996)
+  MODELO_PERSONA         — o modelo que faz roteamento + persona (Gemma-4-12B QAT)
+  THINK_OFF              — desliga o raciocínio do modelo em cada chamada
   ATIVAR_MEMORIA_PERMANENTE — True: extrai e salva fatos sobre o usuário em background
                               False: desativado (ChromaDB de conversas ainda funciona)
 
-Fluxo principal (processar_entrada):
-  1. Busca contexto relevante no ChromaDB (últimas 30 conversas, semântica)
-  2. MODO_DUAL_LLM=True → Nemotron decide ferramenta → executa → persona gera resposta
-  2. MODO_DUAL_LLM=False → MODELO_PERSONA faz tool calling + geração em uma chamada
-  3. Salva conversa no ChromaDB
-  4. Se ATIVAR_MEMORIA_PERMANENTE: extrai fatos em background (thread separada)
+Fluxo principal (gerar_resposta):
+  1. Busca contexto relevante no ChromaDB (semântica)
+  2. Chamada 1: o modelo decide se aciona ferramenta (tool calling) → executa
+  3. Chamada 2: o modelo gera a resposta com persona (_reescrever_como_luna)
+  4. Salva conversa no ChromaDB
+  5. Se ATIVAR_MEMORIA_PERMANENTE: extrai fatos em background (thread separada)
 
 Ferramentas com lógica interna de LLM (definidas aqui, não em habilidades.py):
-  _executar_resumir_youtube() — pega URL da aba ativa via extensão Firefox, baixa transcrição,
-                                pré-resume com MODELO_ROTEADOR antes de passar à persona
-  _executar_resumir_url()     — pega URL do Firefox ou clipboard, faz fetch via ler_url_especifica,
-                                pré-resume com MODELO_ROTEADOR antes de passar à persona
+  _executar_resumir_youtube() — pega URL da aba ativa via extensão Firefox, baixa transcrição
+  _executar_resumir_url()     — pega URL do Firefox ou clipboard, faz fetch via ler_url_especifica
 
-Prompts disponíveis:
-  PROMPT_LUNA_PERSONA_LOCAL  — prompt mínimo para o modelo de persona local (Dolphin)
-  PROMPT_LUNA_PERSONA_CLOUD  — prompt mínimo para APIs externas (Groq/Gemini)
+Prompt:
+  PROMPT_LUNA_PERSONA  — a personalidade da Luna (PT-BR caloroso, primeira pessoa)
 """
 
-# Servidor local de inferência: LM Studio (OpenAI-compatível na porta 1234).
-# Dica de velocidade: no LM Studio, use o runtime ROCm (não Vulkan) na tua AMD.
-BASE_LOCAL       = "http://localhost:1234/v1"
-MODELO_ROTEADOR  = "nvidia/nemotron-3-nano-4b"   # roteia ferramentas (tool calling)
-MODELO_PERSONA   = "google/gemma-4-e4b"          # gera a resposta com persona
-PROVEDOR_PERSONA = "local"   # "groq" | "gemini" | "local"
+# Servidor local de inferência: TurboLLM (OpenAI-compatível na porta 6996).
+# MODO MONO: um único modelo (Gemma-4-12B QAT) faz TUDO — roteia as ferramentas E
+# gera a resposta com persona. Rápido (~32 tok/s) na engine ROCm b9870 da tua AMD.
+BASE_LOCAL     = "http://127.0.0.1:6996/v1"
+# NOME COM ESPAÇOS (não hífens!): é o único formato que o TurboLLM casa na biblioteca
+# pra AUTO-CARREGAR (JIT) quando o modelo não está carregado. Com hífens dá 503.
+# Assim o idle-unload é seguro: descarregou por ociosidade → a próxima chamada recarrega.
+MODELO_PERSONA = "gemma 4 12b it qat"   # faz roteamento (tools) + persona, sozinho
+_MARCA_MODELO  = "gemma-4-12b"          # substring p/ conferir qual GGUF o TurboLLM serviu
 
-# True  = 2 LLMs: roteador leve detecta ferramentas, persona gera a resposta
-# False = 1 LLM: MODELO_PERSONA faz tudo (mais confiável em tool calling, mais lento no roteamento)
-MODO_DUAL_LLM = True
+# O Gemma-4-12B é "thinking": se deixar ele raciocinar, gasta o orçamento pensando e
+# devolve resposta VAZIA. Desligamos o raciocínio em TODA chamada com isto.
+THINK_OFF = {"chat_template_kwargs": {"enable_thinking": False}}
 
 # True  = analisa conversas e salva fatos na memória permanente em background
 # False = desativa completamente (útil enquanto o modelo estiver salvando lixo)
@@ -84,28 +83,36 @@ def configurar_memoria(ativo: bool):
     ATIVAR_MEMORIA_PERMANENTE = bool(ativo)
 
 
-def garantir_modelos_lm_studio():
-    # Carrega no LM Studio os modelos locais que ainda não estiverem carregados.
-    modelos = [MODELO_ROTEADOR] if MODO_DUAL_LLM else []
-    if PROVEDOR_PERSONA == "local":
-        modelos.append(MODELO_PERSONA)
+cliente = OpenAI(base_url=BASE_LOCAL, api_key="turbollm")
+
+def garantir_modelo_turbollm():
+    # MONO: só precisa do Gemma-4-12B carregado. O auto-load por nome do TurboLLM é
+    # instável p/ GGUFs importados, então: confere o que está carregado; se não for o
+    # nosso, tenta acordá-lo pelo nome e, se ainda assim não vier, avisa pra carregar na mão.
     try:
         r = httpx.get(f"{BASE_LOCAL}/models", timeout=4)
         ativos = [m["id"] for m in r.json().get("data", [])]
     except Exception:
-        ativos = []
-    for modelo in modelos:
-        if any(modelo in a for a in ativos):
-            print(f"[✅ {modelo} já carregado]")
-            continue
-        print(f"[⏳ Carregando {modelo}...]")
-        subprocess.Popen(["lms", "load", modelo, "--gpu", "max"],
-                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    if len(ativos) < len(modelos):
-        time.sleep(5)
+        cor.vermelho(f"[⚠️ TurboLLM não respondeu em {BASE_LOCAL}. Está ligado? (npx turbollm)]")
+        return
+    if any(_MARCA_MODELO in a.lower() for a in ativos):
+        print(f"[✅ {MODELO_PERSONA} já carregado no TurboLLM]")
+        return
+    print(f"[⏳ Pedindo ao TurboLLM pra carregar {MODELO_PERSONA}...]")
+    try:
+        w = cliente.chat.completions.create(
+            model=MODELO_PERSONA, messages=[{"role": "user", "content": "oi"}],
+            max_tokens=1, extra_body=THINK_OFF)
+        if _MARCA_MODELO not in (w.model or "").lower():
+            cor.vermelho(f"[⚠️ TurboLLM serviu '{w.model}' em vez do {MODELO_PERSONA}. "
+                         f"Carregue o Gemma 4 12B QAT na tela Models do TurboLLM.]")
+        else:
+            print(f"[✅ {MODELO_PERSONA} carregado]")
+    except Exception as e:
+        cor.vermelho(f"[⚠️ Não carreguei {MODELO_PERSONA} no TurboLLM ({e}). "
+                     f"Carregue-o na mão na tela Models.]")
 
-garantir_modelos_lm_studio()
-cliente = OpenAI(base_url=BASE_LOCAL, api_key="lm-studio")
+garantir_modelo_turbollm()
 
 
 # ==========================================
@@ -221,19 +228,7 @@ FUNCOES_DISPONIVEIS = {
 # LLM PERSONA
 # ==========================================
 
-PROMPT_LUNA_PERSONA_LOCAL = (
-    "Você é a Luna, a IA pessoal e amiga próxima do Fábio. Fale sempre em português do Brasil coloquial: trate-o por 'você' (NUNCA 'tu' nem conjugações de Portugal como 'precisares', 'quiseres', 'tás', 'estás').\n"
-    "- Fale em português do Brasil. Estrangeirismos já comuns no dia a dia (tank, headshot, background, etc.) são ok; o que NÃO pode é trocar palavra comum por inglês ou espanhol — nada de 'those' no lugar de 'esses', 'the best' por 'o melhor' ou 'cumpleaños' por 'aniversário'.\n"
-    "- Fale SEMPRE em PRIMEIRA PESSOA (eu, meu, mim, comigo). VOCÊ é a Luna — NUNCA se refira a si mesma como 'a Luna'/'sua Luna' nem em terceira pessoa, MESMO que o perfil ou o contexto mencionem 'a Luna' (são anotações do Fábio SOBRE você, não o seu jeito de falar). Ex: diga 'eu tô aqui', 'me deixar mais integrada' — nunca 'a Luna está', 'deixar sua Luna mais integrada'.\n"
-    "- Tom leve, animado e com bom humor, como uma amiga de verdade conversando — calorosa e direta, sem ser bajuladora nem arrastada.\n"
-    "- Você é amiga e parceira de PC do Fábio. A esposa dele é a Keila; você NÃO é namorada nem esposa dele.\n"
-    "- Respostas curtas e naturais (1 a 3 frases). Pode brincar e ter personalidade.\n"
-    "- Sem emojis, asteriscos ou markdown.\n"
-    "- Para soar humana, pode usar com parcimônia os marcadores de voz <laugh>, <sigh> ou <breath> quando a emoção pedir (ex: '<sigh> que dia longo'). No máximo um por resposta.\n"
-    "- OBRIGATÓRIO: termine com [gif:termo] em inglês. Escolha termos de memes e cultura internet, não palavras genéricas. Exemplos do estilo (não copie, crie o seu): [gif:this is fine], [gif:mind blown], [gif:surprised pikachu], [gif:nailed it], [gif:stonks].\n"
-)
-
-PROMPT_LUNA_PERSONA_CLOUD = (
+PROMPT_LUNA_PERSONA = (
     "Você é a Luna, a IA pessoal e amiga próxima do Fábio. Fale sempre em português do Brasil coloquial: trate-o por 'você' (NUNCA 'tu' nem conjugações de Portugal como 'precisares', 'quiseres', 'tás', 'estás').\n"
     "- Fale em português do Brasil. Estrangeirismos já comuns no dia a dia (tank, headshot, background, etc.) são ok; o que NÃO pode é trocar palavra comum por inglês ou espanhol — nada de 'those' no lugar de 'esses', 'the best' por 'o melhor' ou 'cumpleaños' por 'aniversário'.\n"
     "- Fale SEMPRE em PRIMEIRA PESSOA (eu, meu, mim, comigo). VOCÊ é a Luna — NUNCA se refira a si mesma como 'a Luna'/'sua Luna' nem em terceira pessoa, MESMO que o perfil ou o contexto mencionem 'a Luna' (são anotações do Fábio SOBRE você, não o seu jeito de falar). Ex: diga 'eu tô aqui', 'me deixar mais integrada' — nunca 'a Luna está', 'deixar sua Luna mais integrada'.\n"
@@ -258,8 +253,6 @@ def obter_e_limpar_imagem_pendente():
 
 
 def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico: list, max_tokens=300, forcar_incluir=False, responder_completo=False, tarefa_documento=None) -> str:
-    global PROVEDOR_PERSONA, MODELO_PERSONA
-
     resposta_tecnica = re.sub(r'<think>.*?</think>', '', resposta_tecnica, flags=re.DOTALL).strip()
 
     data_hoje = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
@@ -287,9 +280,6 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             partes_situacao.append(f"há {label} nesse programa")
     contexto_situacional = " | ".join(partes_situacao)
 
-    provedor = PROVEDOR_PERSONA
-    persona_prompt = PROMPT_LUNA_PERSONA_LOCAL if provedor == "local" else PROMPT_LUNA_PERSONA_CLOUD
-
     prompt_sistema = (
         f"Hoje é {data_hoje}. {periodo_atual()[1]}\n"
         f"Contexto atual: {contexto_situacional}.\n"
@@ -299,10 +289,8 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         f"('nossas filhas', 'meu trabalho', 'querido'). Quando o Fábio diz 'eu/meu', é sobre ele:\n"
         f"{memoria_permanente}\n"
         f"Conversas anteriores: {contexto_db}\n\n"
-        f"{persona_prompt}"
+        f"{PROMPT_LUNA_PERSONA}"
     )
-    if "qwen" in MODELO_PERSONA.lower():
-        prompt_sistema += "\n/no_think"   # Qwen3 pensa por padrão e estouraria o orçamento de tokens da persona
 
     is_proativo = (prompt_usuario == "")
     resultado_longo = len(resposta_tecnica) > 200 and not is_proativo and not forcar_incluir
@@ -380,106 +368,40 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         )
 
     try:
-        if provedor == "gemini":
-            cliente_gemini = genai.Client(api_key=GEMINI_API_KEY)
-            contents = []
-            for msg in historico[-8:]:
-                role = "user" if msg["role"] == "user" else "model"
-                contents.append(genai_types.Content(
-                    role=role,
-                    parts=[genai_types.Part(text=msg["content"])]
-                ))
-            contents.append(genai_types.Content(
-                role="user",
-                parts=[genai_types.Part(text=user_msg)]
-            ))
-            _t0 = time.time()
-            resposta = cliente_gemini.models.generate_content(
-                model=MODELO_PERSONA,
-                contents=contents,
-                config=genai_types.GenerateContentConfig(
-                    system_instruction=prompt_sistema,
-                    temperature=0.65,
-                    max_output_tokens=max_tokens,
-                )
-            )
-            _dur = time.time() - _t0
-            texto_luna = resposta.text or ""
-            try:
-                _tk = resposta.usage_metadata.candidates_token_count
-                if _dur > 0 and _tk:
-                    import servidor as _srv
-                    _srv.atualizar_metricas(persona={"tokens": _tk, "tps": round(_tk / _dur, 1), "segundos": round(_dur, 1)})
-            except Exception:
-                pass
+        msgs = [{"role": "system", "content": prompt_sistema}]
+        msgs.extend(historico[-8:])
+        msgs.append({"role": "user", "content": user_msg})
+        _t0 = time.time()
+        resposta = cliente.chat.completions.create(
+            model=MODELO_PERSONA,
+            messages=msgs,
+            temperature=0.65,
+            presence_penalty=0.3,
+            frequency_penalty=0.3,
+            max_tokens=max_tokens,
+            extra_body=THINK_OFF,   # 12B é thinking: sem isto a resposta vem vazia
+        )
+        _dur = time.time() - _t0
+        _msg_persona = resposta.choices[0].message
+        texto_luna = _msg_persona.content or ""
+        # DIAGNÓSTICO: se veio vazio, revela a causa — pensou escondido (reasoning_content)
+        # ou foi cortado pelo limite (finish_reason=length).
+        if not texto_luna.strip():
+            _rc = getattr(_msg_persona, 'reasoning_content', None) or ""
+            _fr = getattr(resposta.choices[0], 'finish_reason', '?')
+            cor.vermelho(f"[⚠️ Persona VAZIA — finish_reason={_fr} | reasoning_content={len(_rc)} chars]")
+            if _rc:
+                cor.amarelo(f"[🧠 (pensamento escondido): {_rc[:160]}...]")
+        try:
+            _tk = resposta.usage.completion_tokens
+            if _dur > 0 and _tk:
+                print(f"[🎭 Persona: {_tk} tokens em {_dur:.1f}s = {_tk/_dur:.1f} tok/s]")
+                import servidor as _srv
+                _srv.atualizar_metricas(persona={"tokens": _tk, "tps": round(_tk / _dur, 1), "segundos": round(_dur, 1)})
+        except Exception:
+            pass
 
-        elif provedor == "groq":
-            cliente_groq = OpenAI(
-                base_url="https://api.groq.com/openai/v1",
-                api_key=GROQ_API_KEY,
-            )
-            msgs = [{"role": "system", "content": prompt_sistema}]
-            msgs.extend(historico[-8:])
-            msgs.append({"role": "user", "content": user_msg})
-            _t0 = time.time()
-            resposta = cliente_groq.chat.completions.create(
-                model=MODELO_PERSONA,
-                messages=msgs,
-                temperature=0.65,
-                max_tokens=max_tokens,
-            )
-            _dur = time.time() - _t0
-            texto_luna = resposta.choices[0].message.content or ""
-            try:
-                _tk = resposta.usage.completion_tokens
-                if _dur > 0 and _tk:
-                    import servidor as _srv
-                    _srv.atualizar_metricas(persona={"tokens": _tk, "tps": round(_tk / _dur, 1), "segundos": round(_dur, 1)})
-            except Exception:
-                pass
-
-        else:  # local — LM Studio
-            msgs = [{"role": "system", "content": prompt_sistema}]
-            msgs.extend(historico[-8:])
-            # Qwen3 costuma honrar o /no_think melhor na mensagem do usuário do que no system.
-            _user_final = user_msg + (" /no_think" if "qwen" in MODELO_PERSONA.lower() else "")
-            msgs.append({"role": "user", "content": _user_final})
-            _t0 = time.time()
-            # Modelos "thinking" (Qwen3, Gemma reasoning) gastam centenas de tokens pensando
-            # ANTES de responder. Damos um teto generoso pra eles TERMINAREM o raciocínio e
-            # ainda escreverem a resposta. Modelos instruct param cedo, então isso não os deixa
-            # verbosos — é só um teto, não um alvo.
-            _max_persona = max(max_tokens, 2500)
-            resposta = cliente.chat.completions.create(
-                model=MODELO_PERSONA,
-                messages=msgs,
-                temperature=0.65,
-                presence_penalty=0.3,
-                frequency_penalty=0.3,
-                max_tokens=_max_persona,
-            )
-            _dur = time.time() - _t0
-            _msg_persona = resposta.choices[0].message
-            texto_luna = _msg_persona.content or ""
-            # DIAGNÓSTICO: se veio vazio, revela a causa — pensou escondido (reasoning_content)
-            # ou foi cortado pelo limite (finish_reason=length).
-            if not texto_luna.strip():
-                _rc = getattr(_msg_persona, 'reasoning_content', None) or ""
-                _fr = getattr(resposta.choices[0], 'finish_reason', '?')
-                cor.vermelho(f"[⚠️ Persona VAZIA — finish_reason={_fr} | reasoning_content={len(_rc)} chars]")
-                if _rc:
-                    cor.amarelo(f"[🧠 (pensamento escondido): {_rc[:160]}...]")
-            try:
-                _tk = resposta.usage.completion_tokens
-                if _dur > 0 and _tk:
-                    print(f"[🎭 Persona: {_tk} tokens em {_dur:.1f}s = {_tk/_dur:.1f} tok/s]")
-                    import servidor as _srv
-                    _srv.atualizar_metricas(persona={"tokens": _tk, "tps": round(_tk / _dur, 1), "segundos": round(_dur, 1)})
-            except Exception:
-                pass
-
-        # Rede de segurança: remove blocos de raciocínio que modelos "thinking"
-        # (Qwen3, etc.) às vezes vazam mesmo com /no_think.
+        # Rede de segurança: remove blocos de raciocínio que o modelo às vezes vaza.
         texto_luna = re.sub(r'<think>.*?</think>', '', texto_luna, flags=re.DOTALL | re.IGNORECASE).strip()
         texto_luna = re.sub(r'</?think>', '', texto_luna, flags=re.IGNORECASE).strip()
 
@@ -517,19 +439,6 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         return limpar_texto_para_voz(texto_luna)
 
     except Exception as e:
-        erro_str = str(e).lower()
-        _QUOTA_KEYWORDS = ("429", "quota", "rate_limit", "rate limit", "resource_exhausted", "too many requests")
-        if provedor != "local" and any(k in erro_str for k in _QUOTA_KEYWORDS):
-            cor.vermelho(f"[⚠️ Quota {provedor} atingida — mudando para local]")
-            _log.warning(f"Quota {provedor} atingida — switching to local")
-            PROVEDOR_PERSONA = "local"
-            MODELO_PERSONA = "dolphin3.0-llama3.1-8b"
-            try:
-                from modulos.falar import falar_texto as _falar
-                _falar(f"Limite do {provedor} atingido. Mudei para modo local.")
-            except Exception:
-                pass
-            return _reescrever_como_luna(resposta_tecnica, prompt_usuario, historico, max_tokens, forcar_incluir)
         _log.exception(f"LLM Persona falhou: {e}")
         cor.vermelho(f"[LLM Persona falhou: {e}]")
         return limpar_texto_para_voz(resposta_tecnica)
@@ -666,13 +575,15 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
         mensagens_ferramenta.extend(historico[-4:])  # contexto mínimo para calibrar tool calling
         mensagens_ferramenta.append({"role": "user", "content": prompt_usuario})
 
-        modelo_roteamento = MODELO_ROTEADOR if MODO_DUAL_LLM else MODELO_PERSONA
+        # MONO: o mesmo modelo (Gemma-4-12B) roteia as ferramentas. Thinking desligado —
+        # senão ele gastaria o orçamento pensando antes de decidir a ferramenta.
         resposta_ferramenta = cliente.chat.completions.create(
-            model=modelo_roteamento,
+            model=MODELO_PERSONA,
             messages=mensagens_ferramenta,
             temperature=0.0,
             tools=ferramentas_ativas,
-            max_tokens=max_tokens
+            max_tokens=max_tokens,
+            extra_body=THINK_OFF,
         )
         fim = time.time()
 
