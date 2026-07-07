@@ -776,10 +776,15 @@ def _tarefa_radar_rss():
 
     # Rodízio: o Reddit dá 429 se martelar vários feeds numa janela curta. Então
     # cada rodada checa só uns poucos, alternando — bem mais gentil no rate-limit.
+    # A janela DÁ A VOLTA na lista: com o slice simples feeds[idx:idx+N], quando idx>0
+    # o feeds[0] nunca era checado (slice não wrapa) e o radar_idx podia travar, deixando
+    # um feed eternamente de fora.
     POR_RODADA = 3
-    idx = vistos.get("radar_idx", 0) % max(len(feeds), 1)
-    feeds_rodada = feeds[idx:idx + POR_RODADA]
-    vistos["radar_idx"] = (idx + POR_RODADA) % max(len(feeds), 1)
+    n_feeds = len(feeds)
+    quantos = min(POR_RODADA, n_feeds)
+    idx = vistos.get("radar_idx", 0) % n_feeds
+    feeds_rodada = [feeds[(idx + k) % n_feeds] for k in range(quantos)]
+    vistos["radar_idx"] = (idx + quantos) % n_feeds
 
     novos = []
     for i, url in enumerate(feeds_rodada):
