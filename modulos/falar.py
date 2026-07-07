@@ -1,4 +1,5 @@
 import logging
+import re
 import datetime
 import numpy as np
 import sounddevice as sd
@@ -79,6 +80,25 @@ def _enfase_pontuacao(texto):
     return texto
 
 
+# Dicionário de pronúncia: palavras que o Supertonic lê ERRADO -> grafia que ele ACERTA.
+# Aplicado SÓ no áudio (como o _enfase_pontuacao), então NÃO altera o texto exibido/logado:
+# a Luna continua ESCREVENDO certo ("Poxa") e só PRONUNCIA melhor ("Pôxa").
+# Cresce conforme o Fábio for achando palavras mal ditas (via avaliação).
+_PRONUNCIA = {
+    "poxa": "pôxa",   # sem o acento o Supertonic diz "pocsa" (lê o x como /ks/)
+}
+_RE_PRONUNCIA = re.compile(r'\b(' + '|'.join(map(re.escape, _PRONUNCIA)) + r')\b', re.IGNORECASE)
+
+def _corrigir_pronuncia(texto):
+    """Troca palavras mal pronunciadas pela grafia que o Supertonic acerta.
+    Preserva a inicial maiúscula. Só no áudio — o texto exibido fica igual."""
+    def _sub(m):
+        orig = m.group(0)
+        novo = _PRONUNCIA[orig.lower()]
+        return novo[:1].upper() + novo[1:] if orig[:1].isupper() else novo
+    return _RE_PRONUNCIA.sub(_sub, texto)
+
+
 # ==========================================
 # Função Principal
 # ==========================================
@@ -98,8 +118,9 @@ def falar_texto(texto, voz=None, velocidade=None, ao_iniciar=None, ao_terminar=N
         cor.ciano(f"[🌚💬 Luna falando ] '{texto_limpo}'")
         print("===================================")
 
-        # Ênfase só no ÁUDIO: ! e ? viram !!! e ??? (o texto exibido/log fica com 1).
+        # Ênfase + correção de pronúncia, SÓ no ÁUDIO (o texto exibido/log fica original).
         texto_falar = _enfase_pontuacao(texto_limpo)
+        texto_falar = _corrigir_pronuncia(texto_falar)
         estilo_voz = tts_motor.get_voice_style(voice_name=voz_usada)
 
         wav, duration = tts_motor.synthesize(
