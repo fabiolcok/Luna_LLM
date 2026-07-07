@@ -266,6 +266,20 @@
             50%       { opacity: 0.2; transform: scale(0.5); }
         }
 
+        /* Letreiro de dicas — combina com o respiro suave do "Aguardando" */
+        #dica-ticker {
+            text-align: center;
+            font-size: 0.9rem;
+            letter-spacing: 0.3px;
+            color: #a6a6d0;
+            min-height: 18px;
+            margin-top: 6px;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+            pointer-events: none;
+            user-select: none;
+        }
+
         /* Métricas */
         #metricas-bar {
             display: flex;
@@ -835,6 +849,9 @@
             <span id="status-mic-texto">Aguardando... Segure Ctrl+Alt+F8 para falar</span>
         </div>
 
+        <!-- Letreiro de dicas — rotativo, só no ocioso -->
+        <div id="dica-ticker"></div>
+
         <!-- Fábio -->
         <div id="usuario-bloco" class="caixa-texto">
             <label>Você</label>
@@ -943,6 +960,54 @@
                 };
             }, 250);
         }
+
+        // === Letreiro de dicas (rotativo, só quando ociosa) ===
+        const DICAS = [
+            '"Resume esse vídeo do YouTube"',
+            '"Resume esse site pra mim"',
+            '"Toca Djavan no Spotify"',
+            '"Como tá o tempo amanhã?"',
+            '"Tem email novo?"',
+            '"Como tô no Overwatch?"',
+            '"Anota isso pra mim"',
+            '"Desenha um gato astronauta"',
+            '"Pesquisa na web sobre isso"',
+            '"Quanto custa Elden Ring na Steam?"',
+            '"O que você tá vendo na minha tela?"',
+            '"O que tem na minha agenda?"',
+            '"Abre o Discord"',
+            '"O que você consegue fazer?"',
+        ];
+        let dicaIdx = 0, dicaTimer = null;
+
+        function mostrarProximaDica() {
+            const el = document.getElementById('dica-ticker');
+            el.style.opacity = '0';                       // fade out
+            setTimeout(() => {
+                el.textContent = '💡 ' + DICAS[dicaIdx];
+                dicaIdx = (dicaIdx + 1) % DICAS.length;
+                el.style.opacity = '0.95';                 // fade in
+            }, 600);
+        }
+
+        function iniciarDicas() {
+            if (dicaTimer) return;                        // já rodando
+            dicaIdx = Math.floor(Math.random() * DICAS.length);   // começa variado
+            const el = document.getElementById('dica-ticker');
+            el.textContent = '💡 ' + DICAS[dicaIdx];
+            dicaIdx = (dicaIdx + 1) % DICAS.length;
+            el.style.opacity = '0.7';
+            dicaTimer = setInterval(mostrarProximaDica, 5500);
+        }
+
+        function pararDicas() {
+            if (dicaTimer) { clearInterval(dicaTimer); dicaTimer = null; }
+            document.getElementById('dica-ticker').style.opacity = '0';
+        }
+
+        // Estado inicial da página é "aguardando" → já começa a rodar
+        if (document.getElementById('status-mic').classList.contains('aguardando'))
+            iniciarDicas();
 
         document.getElementById('btn-interromper').onclick = function() {
             socket.send(JSON.stringify({ comando: 'interromper' }));
@@ -1211,6 +1276,7 @@
                     processando:  'Processando áudio...',
                 };
                 txt.textContent = textos[dados.status] || '';
+                if (dados.status === 'aguardando') iniciarDicas(); else pararDicas();
                 return;
             }
             if (dados.tipo === 'metricas') {
