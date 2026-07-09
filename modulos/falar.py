@@ -61,6 +61,7 @@ except Exception as e:
 
 _voz_padrao = "F1"
 _velocidade_padrao = 1.2
+_ultima_fala_wav = None   # último áudio gerado — pro botão "repetir" do web
 
 def configurar_voz(voz=None, velocidade=None):
     global _voz_padrao, _velocidade_padrao
@@ -133,6 +134,8 @@ def falar_texto(texto, voz=None, velocidade=None, ao_iniciar=None, ao_terminar=N
         )
 
         wav_achatado = np.squeeze(wav)
+        global _ultima_fala_wav
+        _ultima_fala_wav = wav_achatado   # guarda pro botão "repetir" do web
 
         if ao_iniciar:
             ao_iniciar()
@@ -148,6 +151,20 @@ def falar_texto(texto, voz=None, velocidade=None, ao_iniciar=None, ao_terminar=N
         _log.exception(f"Erro no TTS Supertonic ao falar '{texto[:80]}': {e}")
         if ao_terminar:
             ao_terminar()
+
+
+def repetir_ultima_fala():
+    """Toca de novo o último áudio que a Luna falou (botão 'repetir' do web).
+    Reusa o WAV já gerado — não re-sintetiza. Retorna True se havia algo pra repetir."""
+    if _ultima_fala_wav is None or tts_motor is None:
+        return False
+    try:
+        sd.stop()                                      # corta o que estiver tocando
+        sd.play(_ultima_fala_wav, tts_motor.sample_rate)
+        return True
+    except Exception as e:
+        _log.exception(f"Erro ao repetir a fala: {e}")
+        return False
 
 
 def limpar_texto_para_voz(texto):

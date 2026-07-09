@@ -190,6 +190,12 @@ def websocket(ws):
                     _broadcast({"tipo": "historico_completo", "turnos": []})
                 elif dados.get('comando') == 'avaliar':
                     _registrar_avaliacao(dados.get('rating', ''), dados.get('motivo', ''))
+                elif dados.get('comando') == 'repetir_fala':
+                    try:
+                        from modulos import falar
+                        falar.repetir_ultima_fala()
+                    except Exception:
+                        pass
                 elif dados.get('config'):
                     _aplicar_config(dados)
     except Exception:

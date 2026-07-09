@@ -874,6 +874,7 @@
         </div>
 
         <div id="avaliacao-bar">
+            <button class="btn-aval" id="btn-repetir" title="Ouvir de novo">▶️</button>
             <button class="btn-aval" data-rating="bom"  title="Resposta boa">👍</button>
             <button class="btn-aval" data-rating="ruim" title="Resposta ruim">👎</button>
         </div>
@@ -984,7 +985,7 @@
             const el = document.getElementById('dica-ticker');
             el.style.opacity = '0';                       // fade out
             setTimeout(() => {
-                el.textContent = '💡 ' + DICAS[dicaIdx];
+                el.textContent = DICAS[dicaIdx];
                 dicaIdx = (dicaIdx + 1) % DICAS.length;
                 el.style.opacity = '0.95';                 // fade in
             }, 600);
@@ -994,7 +995,7 @@
             if (dicaTimer) return;                        // já rodando
             dicaIdx = Math.floor(Math.random() * DICAS.length);   // começa variado
             const el = document.getElementById('dica-ticker');
-            el.textContent = '💡 ' + DICAS[dicaIdx];
+            el.textContent = DICAS[dicaIdx];
             dicaIdx = (dicaIdx + 1) % DICAS.length;
             el.style.opacity = '0.7';
             dicaTimer = setInterval(mostrarProximaDica, 5500);
@@ -1199,7 +1200,7 @@
         });
 
         // Avaliação 👍/👎
-        const botoesAval = document.querySelectorAll('.btn-aval');
+        const botoesAval = document.querySelectorAll('.btn-aval[data-rating]');
         const avalMotivo = document.getElementById('aval-motivo');
         const avalMotivoInput = document.getElementById('aval-motivo-input');
         function limparAval() {
@@ -1229,6 +1230,12 @@
         avalMotivoInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') { e.preventDefault(); enviarMotivo(); }
         });
+        // 🔊 Repetir a última fala da Luna (toca de novo o áudio, sem re-sintetizar)
+        document.getElementById('btn-repetir').onclick = function() {
+            socket.send(JSON.stringify({ comando: 'repetir_fala' }));
+            this.style.opacity = '1';
+            setTimeout(() => { this.style.opacity = ''; }, 200);
+        };
 
         // Speed slider
         const velSlider = document.getElementById('cfg-velocidade');
