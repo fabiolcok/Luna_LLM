@@ -311,7 +311,9 @@ def adicionar_novidades(itens: list, max_horas: int = 72) -> None:
         imagem = item[4] if len(item) > 4 else ""
         linhas.append(f"**[{t}]({l})** — {fonte}\n")
         if imagem:
-            linhas.append(f"![]({imagem})\n")
+            # |200 = miniatura (largura em px). Sem isso o Obsidian renderiza a
+            # imagem em largura cheia e "polui" a leitura da notícia.
+            linhas.append(f"![|200]({imagem})\n")
         if resumo:
             linhas.append(f"> {resumo}\n")
         linhas.append("\n")
