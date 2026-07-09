@@ -309,7 +309,7 @@ def _buscar_gif(termo: str) -> str:
     try:
         r = httpx.get(
             "https://api.giphy.com/v1/gifs/search",
-            params={"api_key": api_key, "q": termo, "limit": 5, "rating": "g", "lang": "en"},
+            params={"api_key": api_key, "q": termo, "limit": 5, "rating": "r", "lang": "en"},
             timeout=5,
         )
         gifs = r.json().get("data", [])
