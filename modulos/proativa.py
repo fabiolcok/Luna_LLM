@@ -137,6 +137,16 @@ ESTADO_JOGOS = {
     "Deadlock" :False
 }
 
+# Estado da sessão Steam GENÉRICA (qualquer jogo da biblioteca, sem API dedicada).
+# Complementa ESTADO_JOGOS: os jogos com tratamento próprio ficam com aquele handler.
+_STEAM_SESSAO = {
+    "appid": None,        # appid do jogo aberto agora (None = nenhum)
+    "nome": None,         # nome do jogo aberto agora
+    "inicio": 0.0,        # timestamp de abertura da sessão
+    "conq_inicio": None,  # (feitas, total) de conquistas na abertura — pra diferença no fim
+}
+_STEAM_JOGANDO_AGORA = False  # alimenta o "não perturbe" pra QUALQUER jogo Steam
+
 
 
 STEAM_API_KEY    = os.getenv("STEAM_API_KEY", "")
@@ -172,7 +182,7 @@ _proativo_ativo = True
 TAREFAS_ATIVAS = {
     "jogos": True, "emails": True, "agenda": True,
     "pausa": True, "clima": True, "bom_dia": True, "steam": True, "navegador": True,
-    "radar_rss": True, "autoconhecimento": True
+    "radar_rss": True, "autoconhecimento": True, "steam_jogo": True
 }
 
 # Estado interno da tarefa de contexto de navegação
@@ -355,6 +365,99 @@ def _pegar_preco(appid):
         }
     except:
         return None
+
+# ------------------------------------------------------------
+# STEAM AO VIVO — o que o Fábio está jogando AGORA (genérico)
+# ------------------------------------------------------------
+def _steam_cliente_aberto():
+    """True se o cliente Steam (steam.exe) está rodando. Checagem local barata:
+    se o Steam nem está aberto, não há jogo Steam possível — poupa a chamada à API."""
+    try:
+        for p in psutil.process_iter(['name']):
+            if (p.info.get('name') or '').lower() == 'steam.exe':
+                return True
+    except Exception:
+        return True  # na dúvida, deixa a API decidir
+    return False
+
+def _steam_status_atual():
+    """Pergunta pro Steam o que o Fábio está jogando neste momento.
+    Retorna (appid:str, nome:str) ou (None, None) se não estiver jogando."""
+    if not STEAM_API_KEY or not STEAM_ID:
+        return None, None
+    url = (f"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/"
+           f"?key={STEAM_API_KEY}&steamids={STEAM_ID}")
+    try:
+        r = requests.get(url, timeout=10)
+        if r.status_code != 200:
+            return None, None
+        players = r.json().get("response", {}).get("players", [])
+        if not players:
+            return None, None
+        p = players[0]
+        nome = p.get("gameextrainfo")
+        appid = p.get("gameid")
+        if nome and appid:
+            return str(appid), nome
+        return None, None
+    except Exception:
+        return None, None
+
+def _steam_conquistas(appid):
+    """(feitas, total) de conquistas do jogo. None se o jogo não tem achievements
+    ou os dados estão indisponíveis."""
+    if not appid:
+        return None
+    url = (f"https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/"
+           f"?appid={appid}&key={STEAM_API_KEY}&steamid={STEAM_ID}")
+    try:
+        resp = requests.get(url, timeout=10).json().get("playerstats", {})
+        if not resp.get("success"):
+            return None
+        achs = resp.get("achievements", [])
+        if not achs:
+            return None
+        feitas = sum(1 for a in achs if a.get("achieved"))
+        return feitas, len(achs)
+    except Exception:
+        return None
+
+def _steam_horas(appid):
+    """Horas totais nesse jogo (via jogos recentes). 0.0 se não encontrar."""
+    if not appid:
+        return 0.0
+    url = (f"https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v1/"
+           f"?key={STEAM_API_KEY}&steamid={STEAM_ID}")
+    try:
+        jogos = requests.get(url, timeout=10).json().get("response", {}).get("games", [])
+        for g in jogos:
+            if str(g.get("appid")) == str(appid):
+                return round(g.get("playtime_forever", 0) / 60, 1)
+    except Exception:
+        pass
+    return 0.0
+
+def _steam_info_jogo(appid):
+    """Descrição curta + gênero do jogo, pra Luna comentar sobre ele. '' se falhar."""
+    if not appid:
+        return ""
+    url = (f"https://store.steampowered.com/api/appdetails"
+           f"?appids={appid}&cc=br&l=portuguese&filters=basic,genres")
+    try:
+        dados = requests.get(url, timeout=10).json().get(str(appid), {})
+        if not dados.get("success"):
+            return ""
+        data = dados.get("data", {})
+        desc = (data.get("short_description") or "").strip()
+        generos = ", ".join(g.get("description", "") for g in data.get("genres", []))
+        partes = []
+        if generos:
+            partes.append(f"Gênero: {generos}.")
+        if desc:
+            partes.append(desc)
+        return " ".join(partes)[:400]
+    except Exception:
+        return ""
 
 # ============================================================
 # APIS JOGOS
@@ -1005,6 +1108,101 @@ Máximo 2 frases. SEM EMOJIS."""
             if texto: _falar_proativamente(texto)
 
 
+def _tarefa_monitorar_steam():
+    """Detecta início/fim de QUALQUER jogo da Steam, de forma genérica, via API.
+    Complementa _tarefa_monitorar_jogos: os jogos com API dedicada
+    (Overwatch/LoL/Deadlock) continuam sendo tratados lá e são ignorados aqui.
+    Puxa tempo de sessão, horas totais e conquistas destravadas na sessão."""
+    global _STEAM_SESSAO, _STEAM_JOGANDO_AGORA
+
+    if not STEAM_API_KEY or not STEAM_ID:
+        return
+    # Intervalo adaptativo: sem jogo, checa devagar (não tem pressa pra dar oi);
+    # com jogo aberto, checa mais amiúde pra pegar logo a hora do fim da sessão.
+    intervalo = 1.5 if _STEAM_SESSAO["appid"] else 3.0
+    if not _passou_intervalo("steam_status", intervalo):
+        return
+
+    # Só consulta a API se o cliente Steam estiver aberto (senão: 0 chamadas).
+    # Se o Steam foi fechado com um jogo em sessão, appid=None cai no CASO 2 (fim).
+    if _steam_cliente_aberto():
+        appid, nome = _steam_status_atual()
+    else:
+        appid, nome = None, None
+
+    # Jogos que já têm tratamento dedicado ficam com o outro handler
+    if nome and nome in set(PROCESSOS_JOGOS.values()):
+        appid, nome = None, None
+
+    appid_antes = _STEAM_SESSAO["appid"]
+
+    # CASO 1: abriu um jogo (não havia nada rodando antes)
+    if appid and not appid_antes:
+        conq = _steam_conquistas(appid)
+        _STEAM_SESSAO.update({
+            "appid": appid, "nome": nome,
+            "inicio": time.time(), "conq_inicio": conq,
+        })
+        _STEAM_JOGANDO_AGORA = True
+        registrar_interacao()  # usuário ativo — reseta suspensão
+        atualizar_estado_luna("jogo_ativo", nome)
+        print(f"[🎮 Steam: {nome} aberto]")
+
+        horas = _steam_horas(appid)
+        info = _steam_info_jogo(appid)
+        partes = [f"Jogo: {nome}."]
+        if horas:
+            partes.append(f"Você já tem {horas}h totais nele.")
+        if conq:
+            partes.append(f"Conquistas: {conq[0]} de {conq[1]} destravadas.")
+        if info:
+            partes.append(f"Sobre o jogo: {info}")
+        dados = " ".join(partes)
+
+        prompt = (
+            f"O Fábio acabou de abrir {nome} na Steam.\n"
+            f"DADOS: {dados}\n"
+            f"Comente a abertura da sessão de forma leve e amigável: cite 1 dado marcante "
+            f"(horas ou conquistas) e/ou um toque sobre o jogo. {REGRA_PERSONA} 1 a 2 frases."
+        )
+        texto = _gerar_fala_proativa(prompt, f"steam_abriu_{nome}")
+        if texto: _falar_proativamente(texto)
+
+    # CASO 2: fechou (ou trocou de jogo) — havia algo antes e agora é outra coisa
+    elif appid_antes and appid != appid_antes:
+        nome_antes = _STEAM_SESSAO["nome"]
+        inicio = _STEAM_SESSAO["inicio"]
+        conq_inicio = _STEAM_SESSAO["conq_inicio"]
+
+        dur_min = int((time.time() - inicio) / 60) if inicio else 0
+        conq_fim = _steam_conquistas(appid_antes)
+        novas = 0
+        if conq_inicio and conq_fim:
+            novas = max(0, conq_fim[0] - conq_inicio[0])
+
+        print(f"[🚫 Steam: {nome_antes} fechado — {dur_min}min, +{novas} conquistas]")
+
+        # zera a sessão ANTES de qualquer coisa (evita reprocessar)
+        _STEAM_SESSAO.update({"appid": None, "nome": None, "inicio": 0.0, "conq_inicio": None})
+        _STEAM_JOGANDO_AGORA = False
+        atualizar_estado_luna("jogo_ativo", None)
+
+        if dur_min >= 2:  # ignora aberturas acidentais de poucos segundos
+            partes = [f"Duração da sessão: {dur_min} minutos."]
+            if novas > 0:
+                partes.append(f"Conquistas destravadas nesta sessão: {novas}.")
+            elif conq_inicio:
+                partes.append("Nenhuma conquista nova nesta sessão.")
+            dados = " ".join(partes)
+            prompt = (
+                f"O Fábio acabou de fechar {nome_antes} (Steam).\n"
+                f"DADOS DA SESSÃO: {dados}\n"
+                f"Feche a sessão de forma leve: comente o tempo jogado e, se houve, as conquistas novas. "
+                f"{REGRA_PERSONA} 1 a 2 frases."
+            )
+            texto = _gerar_fala_proativa(prompt, f"steam_fechou_{nome_antes}", max_tokens=300)
+            if texto: _falar_proativamente(texto)
+
 
 # Sites onde a Luna fica calada: scroll passivo (redes) e ferramentas de trabalho
 # (ex: chat de suporte do plantão — não cabe comentário e não pode atrapalhar).
@@ -1101,6 +1299,8 @@ def _loop_proativo():
         # Camada 1 — sempre ativa, independente de suspensão ou AFK
         if TAREFAS_ATIVAS.get("jogos", True):
             _tarefa_monitorar_jogos()
+        if TAREFAS_ATIVAS.get("steam_jogo", True):
+            _tarefa_monitorar_steam()
 
         if not esta_suspensa() and minutos_afk <= 5:
             if _ja_imprimiu_suspensa:   # estava suspensa e acordou agora
@@ -1111,7 +1311,7 @@ def _loop_proativo():
                     pass
             _ja_imprimiu_suspensa = False
 
-            jogando_agora = any(ESTADO_JOGOS.values())
+            jogando_agora = any(ESTADO_JOGOS.values()) or _STEAM_JOGANDO_AGORA
 
             # O MODO "NÃO PERTURBE"
             if not jogando_agora:
