@@ -3,7 +3,6 @@ import re
 import datetime
 import numpy as np
 import sounddevice as sd
-from supertonic import TTS
 import modelos.cores as cor
 
 _log = logging.getLogger("luna.falar")
@@ -11,8 +10,8 @@ _log = logging.getLogger("luna.falar")
 
 def periodo_atual():
     """Retorna (nome, descrição de tom para a persona, fator) conforme a hora.
-    O tom (índice 1) é injetado no prompt da persona. O fator de velocidade NÃO é mais
-    aplicado — baixar a velocidade fazia o Supertonic 'comer palavras'. Mantido só por compat."""
+    O tom (índice 1) é injetado no prompt da persona. O fator de velocidade é só
+    informativo/compat — a velocidade real vem da config."""
     h = datetime.datetime.now().hour
     if 0 <= h < 6:
         return ("madrugada", "Agora é MADRUGADA (se for cumprimentar, use 'boa noite'): fale bem tranquila e baixo, frases curtas.", 0.88)
@@ -26,73 +25,98 @@ def periodo_atual():
 """
 MÓDULO DE FALA DA LUNA (TTS)
 ---------------------------------------------------------
-Transforma texto em fala usando o Supertonic v1.2.1 (PT-BR, voz F1, velocidade 1.2x).
-Roda localmente via sounddevice — sem API externa.
+Transforma texto em fala usando o Kokoro-82M (pt-BR, lang_code='p'), rodando
+localmente na CPU via sounddevice — sem API externa.
+
+Por que Kokoro: prosódia natural de ? e ! (entonação de pergunta/exclamação),
+qualidade boa e leve na CPU (RTF ~0.3). O Supertonic ficou como plano B
+arquivado (ver G:\\Projetos\\TTS_teste), pra retomar fácil se sair um v4.
+
+Vozes disponíveis (timbre; a pronúncia é sempre pt-BR):
+  jf_alpha  — feminina (japonesa lendo pt-BR, com charme de sotaque) [padrão]
+  af_bella  — feminina (americana)
+  af_nicole — feminina (americana, tom mais sussurrado)
 
 Funções principais:
   falar_texto(texto, voz, velocidade, ao_iniciar, ao_terminar)
-      Motor TTS principal. Chama limpar_texto_para_voz antes de sintetizar.
-      Callbacks ao_iniciar/ao_terminar permitem controle externo (ex: mute mic).
-
+      Motor TTS principal. Limpa o texto, corrige pronúncia e sintetiza.
   limpar_texto_para_voz(texto)
-      Remove markdown, tokens de modelo, artefatos de tool result e alucinações
-      de training data antes de mandar para o TTS. Preserva '...', '!!!' e '??'
-      que o Supertonic usa para pausas e ênfase dramática.
+      Remove markdown, tokens de modelo, tags de voz e artefatos antes do TTS.
+  configurar_voz(voz, velocidade)
+      Troca a voz/velocidade padrão (usado pela config do web).
+  repetir_ultima_fala()
+      Toca de novo o último áudio (botão ▶️ do web), sem re-sintetizar.
 """
 
 
-
 # ==========================================
-# Inicialização do Motor Supertonic
+# Vozes e padrões
 # ==========================================
-try:
-    # auto_download=True fará o download do modelo na primeira vez que rodar
-    tts_motor = TTS(auto_download=True)
-    
-    # Se der algum erro nas bibliotecas da placa de vídeo (RX 9060 XT), 
-    # você pode forçar a rodar no Ryzen 5 alterando a linha acima para:
-    # tts_motor = TTS(auto_download=True, device="cpu")
+SAMPLE_RATE = 24000                       # Kokoro sempre gera a 24 kHz
+_VOZES_VALIDAS = {"jf_alpha", "af_bella", "af_nicole"}
+_VOZ_FALLBACK  = "jf_alpha"
 
-    print("Motor Supertonic carregado com sucesso!")
-except Exception as e:
-    print(f"Erro ao inicializar o Supertonic: {e}")
-    tts_motor = None
-
-
-_voz_padrao = "F1"
-_velocidade_padrao = 1.2
+_voz_padrao = "jf_alpha"
+_velocidade_padrao = 0.9
 _ultima_fala_wav = None   # último áudio gerado — pro botão "repetir" do web
 
+
+# ==========================================
+# Inicialização do Motor Kokoro (pt-BR)
+# ==========================================
+try:
+    # O pt-BR converte texto->fonemas via espeak-ng, que vem embutido no pacote
+    # espeakng-loader (nada pra instalar no Windows).
+    import espeakng_loader
+    from phonemizer.backend.espeak.wrapper import EspeakWrapper
+    EspeakWrapper.set_library(espeakng_loader.get_library_path())
+    try:
+        EspeakWrapper.set_data_path(espeakng_loader.get_data_path())
+    except Exception:
+        pass
+
+    from kokoro import KPipeline
+    _pipe = KPipeline(lang_code='p')      # 'p' = português do Brasil
+    print("Motor Kokoro (pt-BR) carregado com sucesso!")
+except Exception as e:
+    print(f"Erro ao inicializar o Kokoro: {e}")
+    _pipe = None
+
+
 def configurar_voz(voz=None, velocidade=None):
+    """Troca voz/velocidade padrão. Voz inválida (ex: config antiga do Supertonic
+    'F1'/'M1') cai no fallback jf_alpha, pra não quebrar."""
     global _voz_padrao, _velocidade_padrao
     if voz is not None:
-        _voz_padrao = str(voz)
+        v = str(voz)
+        if v not in _VOZES_VALIDAS:
+            cor.amarelo(f"[voz '{v}' não é do Kokoro; usando {_VOZ_FALLBACK}]")
+            v = _VOZ_FALLBACK
+        _voz_padrao = v
     if velocidade is not None:
         _velocidade_padrao = float(velocidade)
 
 
-def _enfase_pontuacao(texto):
-    """Ênfase só na FALA: '!' e '?' (1 ou 2) viram '!!!' e '???' — o Supertonic só
-    muda a entonação com pontuação tripla. Não toca no que já é triplo. Aplicada
-    apenas no áudio (dentro de falar_texto), então NÃO altera o texto exibido."""
-    import re
-    texto = re.sub(r'(?<![!?])!{1,2}(?![!?])', '!!!', texto)
-    texto = re.sub(r'(?<![!?])\?{1,2}(?![!?])', '???', texto)
-    return texto
-
-
-# Dicionário de pronúncia: palavras que o Supertonic lê ERRADO -> grafia que ele ACERTA.
-# Aplicado SÓ no áudio (como o _enfase_pontuacao), então NÃO altera o texto exibido/logado:
-# a Luna continua ESCREVENDO certo ("Poxa") e só PRONUNCIA melhor ("Pôxa").
-# Cresce conforme o Fábio for achando palavras mal ditas (via avaliação).
+# ==========================================
+# Dicionário de pronúncia (fácil de crescer)
+# ==========================================
+# Se o Kokoro falar uma palavra ERRADO, é só mapear aqui a grafia que ele ACERTA.
+# Afeta SÓ o ÁUDIO — a Luna continua ESCREVENDO certo, só PRONUNCIA melhor.
+# Preserva a inicial maiúscula automaticamente. Exemplo de como adicionar:
+#     "puxar": "puchar",     # se ela diz "pucsar", força a grafia que soa certo
+#     "poxa":  "pôxa",
 _PRONUNCIA = {
-    "poxa": "pôxa",   # sem o acento o Supertonic diz "pocsa" (lê o x como /ks/)
 }
-_RE_PRONUNCIA = re.compile(r'\b(' + '|'.join(map(re.escape, _PRONUNCIA)) + r')\b', re.IGNORECASE)
+_RE_PRONUNCIA = (
+    re.compile(r'\b(' + '|'.join(map(re.escape, _PRONUNCIA)) + r')\b', re.IGNORECASE)
+    if _PRONUNCIA else None
+)
 
 def _corrigir_pronuncia(texto):
-    """Troca palavras mal pronunciadas pela grafia que o Supertonic acerta.
+    """Troca palavras mal pronunciadas pela grafia que o Kokoro acerta.
     Preserva a inicial maiúscula. Só no áudio — o texto exibido fica igual."""
+    if not _RE_PRONUNCIA:
+        return texto
     def _sub(m):
         orig = m.group(0)
         novo = _PRONUNCIA[orig.lower()]
@@ -106,8 +130,15 @@ def _corrigir_pronuncia(texto):
 def falar_texto(texto, voz=None, velocidade=None, ao_iniciar=None, ao_terminar=None):
     if not texto or not texto.strip():
         return
+    if _pipe is None:
+        _log.warning("Kokoro indisponível; não há como falar.")
+        if ao_terminar:
+            ao_terminar()
+        return
 
     voz_usada = voz if voz is not None else _voz_padrao
+    if voz_usada not in _VOZES_VALIDAS:
+        voz_usada = _VOZ_FALLBACK
     velocidade_usada = velocidade if velocidade is not None else _velocidade_padrao
 
     try:
@@ -119,36 +150,32 @@ def falar_texto(texto, voz=None, velocidade=None, ao_iniciar=None, ao_terminar=N
         cor.ciano(f"[🌚💬 Luna falando ] '{texto_limpo}'")
         print("===================================")
 
-        # Ênfase + correção de pronúncia, SÓ no ÁUDIO (o texto exibido/log fica original).
-        texto_falar = _enfase_pontuacao(texto_limpo)
-        texto_falar = _corrigir_pronuncia(texto_falar)
-        estilo_voz = tts_motor.get_voice_style(voice_name=voz_usada)
+        # Correção de pronúncia SÓ no áudio (o texto exibido/log fica original).
+        texto_falar = _corrigir_pronuncia(texto_limpo)
 
-        wav, duration = tts_motor.synthesize(
-            texto_falar,
-            voice_style=estilo_voz,
-            total_steps=15,
-            lang="pt",
-            speed=velocidade_usada,
-            silence_duration=0.5
-        )
-
+        partes = [a for _, _, a in _pipe(texto_falar, voice=voz_usada, speed=velocidade_usada)]
+        if not partes:
+            if ao_terminar:
+                ao_terminar()
+            return
+        wav = np.concatenate([a if hasattr(a, 'shape') else a.numpy() for a in partes])
         wav_achatado = np.squeeze(wav)
+
         global _ultima_fala_wav
         _ultima_fala_wav = wav_achatado   # guarda pro botão "repetir" do web
 
         if ao_iniciar:
             ao_iniciar()
 
-        sd.play(wav_achatado, tts_motor.sample_rate)
+        sd.play(wav_achatado, SAMPLE_RATE)
         sd.wait()
 
         if ao_terminar:
             ao_terminar()
 
     except Exception as e:
-        print(f"Erro ao gerar/tocar fala no Supertonic: {e}")
-        _log.exception(f"Erro no TTS Supertonic ao falar '{texto[:80]}': {e}")
+        print(f"Erro ao gerar/tocar fala no Kokoro: {e}")
+        _log.exception(f"Erro no TTS Kokoro ao falar '{texto[:80]}': {e}")
         if ao_terminar:
             ao_terminar()
 
@@ -156,11 +183,11 @@ def falar_texto(texto, voz=None, velocidade=None, ao_iniciar=None, ao_terminar=N
 def repetir_ultima_fala():
     """Toca de novo o último áudio que a Luna falou (botão 'repetir' do web).
     Reusa o WAV já gerado — não re-sintetiza. Retorna True se havia algo pra repetir."""
-    if _ultima_fala_wav is None or tts_motor is None:
+    if _ultima_fala_wav is None or _pipe is None:
         return False
     try:
         sd.stop()                                      # corta o que estiver tocando
-        sd.play(_ultima_fala_wav, tts_motor.sample_rate)
+        sd.play(_ultima_fala_wav, SAMPLE_RATE)
         return True
     except Exception as e:
         _log.exception(f"Erro ao repetir a fala: {e}")
@@ -184,9 +211,11 @@ def limpar_texto_para_voz(texto):
     # Remove descrições brutas do Gemini (ver_tela) que o modelo ecoa na resposta
     texto = re.sub(r'(?i)^\[?(?:capturando tela|tela mostra|a tela (?:mostra|exibe|apresenta)).*$', '', texto, flags=re.MULTILINE).strip()
     texto = re.sub(r'\[[^\]]{50,}\]', '', texto)  # Remove blocos longos entre colchetes
-    # Remove tokens de modelos fine-tuned (<|im_end|> etc). NÃO afeta expression tags do Supertonic
-    # (<breath>, <sigh>, <throatclear>, ...) — esses são processados pelo ONNX e devem passar intactos.
+    # Remove tokens de modelos fine-tuned (<|im_end|> etc).
     texto = re.sub(r'<\|[^|>]*\|+>?', '', texto)
+    # Kokoro NÃO usa as tags de expressão do Supertonic (<laugh>, <sigh>, <breath>...):
+    # remove pra não serem lidas em voz alta nem exibidas.
+    texto = re.sub(r'</?(?:laugh|breath|sigh|surprise|scream|throatclear|sad|angry|cough|yawn)>', '', texto, flags=re.IGNORECASE)
     # Remove aspas duplas que envolvem o texto inteiro (artefato do completion-style)
     texto = re.sub(r'^"(.*)"$', r'\1', texto, flags=re.DOTALL)
     # Remove artifacts de modelos fine-tuned (Dolphin etc) que simulam blocos de tool result
@@ -222,12 +251,12 @@ def limpar_texto_para_voz(texto):
     texto = re.sub(r'^\s*\d+\.\s+', '', texto, flags=re.MULTILINE)
     texto = re.sub(r'^\s*-{3,}\s*$', '', texto, flags=re.MULTILINE)  # Remove --- horizontal rule
 
-    # Números/símbolos que o Supertonic lê mal (ex: "51.95%" -> "51 vírgula 95 por cento")
+    # Números/símbolos que o TTS lê mal (ex: "51.95%" -> "51 vírgula 95 por cento")
     texto = re.sub(r'(\d+)[.,](\d+)\s*%', r'\1 vírgula \2 por cento', texto)
     texto = re.sub(r'(\d+)\s*%', r'\1 por cento', texto)
     texto = re.sub(r'(?<=\d)\.(?=\d)', ' vírgula ', texto)   # decimal solto: 3.5 -> 3 vírgula 5
 
-    # Remove emojis e pictogramas (o TTS engasga neles). Tags <sigh>/<laugh> são ASCII e sobrevivem.
+    # Remove emojis e pictogramas (o TTS engasga neles).
     texto = re.sub(
         "["
         "\U0001F300-\U0001FAFF"   # símbolos, emoticons, pictogramas estendidos

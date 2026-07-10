@@ -59,8 +59,8 @@ _estado_config = {
     "memoria": False,
     "tarefas": {"jogos": True, "emails": True, "agenda": True, "pausa": True,
                 "clima": True, "bom_dia": True, "steam": True, "navegador": True},
-    "voz": "F1",
-    "velocidade": 1.2,
+    "voz": "jf_alpha",
+    "velocidade": 0.9,
 }
 
 _CAMINHO_CONFIG = "modelos/config_luna.json"
