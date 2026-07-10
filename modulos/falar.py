@@ -16,10 +16,10 @@ def periodo_atual():
     if 0 <= h < 6:
         return ("madrugada", "Agora é MADRUGADA (se for cumprimentar, use 'boa noite'): fale bem tranquila e baixo, frases curtas.", 0.88)
     if 6 <= h < 12:
-        return ("manhã", "Agora é MANHÃ (cumprimento correto: 'bom dia'): tom disposto e animado.", 1.0)
+        return ("manhã", "Agora é MANHÃ: tom disposto e animado. SÓ SE for cumprimentar, a saudação certa é 'bom dia'.", 1.0)
     if 12 <= h < 18:
-        return ("tarde", "Agora é TARDE (cumprimento correto: 'boa tarde'): tom normal e leve.", 1.0)
-    return ("noite", "Agora é NOITE (cumprimento correto: 'boa noite'): tom mais calmo e relaxado, sem empolgação.", 0.95)
+        return ("tarde", "Agora é TARDE: tom normal e leve. SÓ SE for cumprimentar, a saudação certa é 'boa tarde'.", 1.0)
+    return ("noite", "Agora é NOITE: tom mais calmo e relaxado, sem empolgação. SÓ SE for cumprimentar, a saudação certa é 'boa noite'.", 0.95)
 
 
 """
