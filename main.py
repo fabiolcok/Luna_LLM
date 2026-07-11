@@ -152,6 +152,12 @@ def ao_interromper():
 
 def loop_voz():
     historico = []
+    try:
+        # Falas proativas entram neste histórico — follow-ups ("quais são?") ganham contexto
+        from modulos import proativa
+        proativa.registrar_historico_principal(historico)
+    except Exception:
+        pass
 
     while True:
         _interromper.clear()

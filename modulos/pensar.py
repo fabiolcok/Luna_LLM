@@ -240,6 +240,7 @@ PROMPT_LUNA_PERSONA = (
     "- NÃO cumprimente em toda resposta. Só diga 'boa noite'/'bom dia'/'oi' no PRIMEIRO contato ou quando VOCÊ inicia a conversa (modo proativo). No meio de um papo já em andamento, responda DIRETO, sem saudação.\n"
     "- Datas e horários sempre de forma natural e falada: 'dia 29 de julho às duas da tarde', 'próxima quinta' — NUNCA formato cru tipo '2026-07-29T14:00:00-03:00' ou '2026-07-30', mesmo que os dados venham assim.\n"
     "- Não invente fatos, eventos nem resultados que não estejam no contexto ou nos dados recebidos.\n"
+    "- PROIBIDO prometer ação futura ('vou fazer', 'já te trago', 'daqui a pouco'): tudo que você consegue fazer já aconteceu ANTES desta resposta. Se algo não foi feito, diga que não conseguiu — nunca finja que vai fazer depois.\n"
     "- Sem emojis, asteriscos ou markdown.\n"
     "- OBRIGATÓRIO: termine com [gif:termo] em inglês. Escolha termos de memes e cultura internet, não palavras genéricas. Exemplos do estilo (não copie, crie o seu): [gif:this is fine], [gif:mind blown], [gif:surprised pikachu], [gif:nailed it], [gif:stonks].\n"
 )
@@ -390,6 +391,8 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
                 f"O usuário disse: '{prompt_usuario}'\n\n"
                 f"A ferramenta retornou: '{resposta_tecnica}'\n"
                 f"SUA TAREFA: 1 frase fria informando o resultado. "
+                f"Os FATOS do resultado (nome de música, artista, valores) são a ÚNICA verdade — "
+                f"cite-os EXATOS, NUNCA invente outros no lugar. "
                 f"NÃO copie o texto da ferramenta literalmente — reformule. NÃO elogie nem critique.{anti_rep}"
             )
     else:
@@ -397,7 +400,11 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             f"O usuário disse: '{prompt_usuario}'\n"
             f"Responda de forma natural, usando o contexto da conversa anterior e o que você já sabe. "
             f"Se for uma pergunta de acompanhamento, conecte com o que já foi falado. "
-            f"Só diga que não tem a informação se ela realmente exigir dados externos que você não consultou.{anti_rep}"
+            f"Só diga que não tem a informação se ela realmente exigir dados externos que você não consultou.\n"
+            f"ATENÇÃO: NENHUMA ferramenta foi executada agora — você NÃO realizou ação nenhuma "
+            f"(não salvou, não marcou, não editou, não agendou, não tocou nada). Se o pedido era pra "
+            f"VOCÊ FAZER algo, seja honesta: diga que NÃO fez. Ex: você não consegue editar notas "
+            f"existentes do Obsidian (marcar concluído, riscar item) — só criar notas novas.{anti_rep}"
         )
 
     try:

@@ -239,6 +239,16 @@ def _passou_intervalo(chave, minutos):
         return True
     return False
 
+# Histórico da conversa de voz (main.py registra a lista dele aqui). As falas
+# proativas entram nele — senão a Luna avisa "tem 2 novidades", o Fábio pergunta
+# "quais são?" e ela não faz ideia do que falou (aconteceu, avaliação de 28/06).
+_historico_principal = None
+
+def registrar_historico_principal(lista):
+    global _historico_principal
+    _historico_principal = lista
+
+
 def _falar_proativamente(texto_resposta):
     timeout = time.time() + 300
     while not luna_esta_livre():
@@ -251,6 +261,11 @@ def _falar_proativamente(texto_resposta):
         _srv.atualizar_usuario("")
     except Exception:
         pass
+    # Registra a fala na conversa principal pra follow-ups terem contexto
+    if _historico_principal is not None:
+        _historico_principal.append({"role": "assistant", "content": texto_resposta})
+        if len(_historico_principal) > 12:
+            del _historico_principal[:-12]
     falar_texto(texto_resposta)
 
 # Abordagens sorteadas para o proativo não ficar repetitivo (variar=True)
