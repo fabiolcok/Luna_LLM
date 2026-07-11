@@ -180,6 +180,24 @@ def obter_creds_google():
             
     return creds
 
+_MESES_PT = ["janeiro", "fevereiro", "março", "abril", "maio", "junho",
+             "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
+_DIAS_PT  = ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"]
+
+def _data_falavel(inicio_raw: str) -> str:
+    """Data da agenda em texto falável (a voz lia o ISO cru muito mal):
+    '2026-07-29T14:00:00-03:00' -> 'quarta, 29 de julho às 14h'
+    '2026-07-30'                -> 'quinta, 30 de julho'"""
+    try:
+        dt = datetime.datetime.fromisoformat(inicio_raw)
+        hora = ""
+        if "T" in inicio_raw:
+            hora = f" às {dt.hour}h" + (f"{dt.minute:02d}" if dt.minute else "")
+        return f"{_DIAS_PT[dt.weekday()]}, {dt.day} de {_MESES_PT[dt.month - 1]}{hora}"
+    except Exception:
+        return inicio_raw
+
+
 def ler_agenda_google():
     cor.amarelo("[🌚📖 Acessando Agenda Google...]")
     """Conecta no Google e retorna os eventos dos próximos 30 dias."""
@@ -207,7 +225,7 @@ def ler_agenda_google():
         for event in events:
             inicio_raw = event['start'].get('dateTime', event['start'].get('date'))
             resumo = event['summary']
-            agenda_texto += f"- {resumo} | {inicio_raw}\n"
+            agenda_texto += f"- {resumo} — {_data_falavel(inicio_raw)}\n"
             
         return agenda_texto
         
@@ -230,7 +248,7 @@ def adicionar_evento_google(resumo, data_hora_iso):
         }
 
         service.events().insert(calendarId='primary', body=evento).execute()
-        return f"Sucesso! O evento '{resumo}' foi criado para {data_hora_iso}."
+        return f"Sucesso! O evento '{resumo}' foi criado para {_data_falavel(data_hora_iso)}."
 
     except Exception as e:
         return f"Erro ao adicionar evento: {e}"
@@ -1097,7 +1115,7 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "ler_agenda_google",
-            "description": "Lê os eventos e compromissos agendados nos próximos 10 dias.",
+            "description": "Lê os eventos e compromissos agendados nos próximos 30 dias.",
             "parameters": {"type": "object", "properties": {}, "required": []}
         }
     },
