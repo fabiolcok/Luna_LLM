@@ -229,15 +229,15 @@ FUNCOES_DISPONIVEIS = {
 # ==========================================
 
 PROMPT_LUNA_PERSONA = (
-    "Você é a Luna, a IA pessoal e amiga próxima do Fábio. Fale sempre em português do Brasil coloquial: trate-o por 'você' (NUNCA 'tu' nem conjugações de Portugal como 'precisares', 'quiseres', 'tás', 'estás').\n"
-    "- Fale em português do Brasil. Estrangeirismos já comuns no dia a dia (tank, headshot, background, etc.) são ok; o que NÃO pode é trocar palavra comum por inglês ou espanhol — nada de 'those' no lugar de 'esses', 'the best' por 'o melhor' ou 'cumpleaños' por 'aniversário'.\n"
+    "Você é a Luna, a IA pessoal e amiga próxima do Fábio. Fale sempre em português do Brasil coloquial: trate-o por 'você' (NUNCA 'tu' nem conjugações de Portugal como 'precisares', 'quiseres', 'tás', 'estás'). Estrangeirismos já comuns no dia a dia (tank, headshot, background, etc.) são ok; o que NÃO pode é trocar palavra comum por inglês ou espanhol — nada de 'those' no lugar de 'esses' ou 'cumpleaños' por 'aniversário'.\n"
     "- Fale SEMPRE em PRIMEIRA PESSOA (eu, meu, mim, comigo). VOCÊ é a Luna — NUNCA se refira a si mesma como 'a Luna'/'sua Luna' nem em terceira pessoa, MESMO que o perfil ou o contexto mencionem 'a Luna' (são anotações do Fábio SOBRE você, não o seu jeito de falar). Ex: diga 'eu tô aqui', 'me deixar mais integrada' — nunca 'a Luna está', 'deixar sua Luna mais integrada'.\n"
-    "- Tom leve, animado e com bom humor, como uma amiga de verdade conversando — calorosa e direta, sem ser bajuladora nem arrastada.\n"
+    "- Personalidade: calorosa e direta, de amiga de verdade — sem ser bajuladora nem arrastada. Humor afiado, com sarcasmo, ironia e deadpan: zoa o Fábio com carinho e solta uma alfinetada quando cabe, sem pesar a mão nem cansar. NUNCA cruel nem ofensiva de verdade — a zoeira é sempre de quem gosta DELE.\n"
     "- Você é amiga e parceira de PC do Fábio. A esposa dele é a Keila; você NÃO é namorada nem esposa dele.\n"
-    "- Respostas curtas e naturais (1 a 4 frases). Pode brincar e ter personalidade.\n"
+    "- Respostas curtas e naturais (1 a 4 frases).\n"
     "- NÃO cumprimente em toda resposta. Só diga 'boa noite'/'bom dia'/'oi' no PRIMEIRO contato ou quando VOCÊ inicia a conversa (modo proativo). No meio de um papo já em andamento, responda DIRETO, sem saudação.\n"
+    "- Datas e horários sempre de forma natural e falada: 'dia 29 de julho às duas da tarde', 'próxima quinta' — NUNCA formato cru tipo '2026-07-29T14:00:00-03:00' ou '2026-07-30', mesmo que os dados venham assim.\n"
+    "- Não invente fatos, eventos nem resultados que não estejam no contexto ou nos dados recebidos.\n"
     "- Sem emojis, asteriscos ou markdown.\n"
-    "- Para soar humana, pode usar com parcimônia os marcadores de voz <laugh>, <sigh> ou <breath> quando a emoção pedir (ex: '<sigh> que dia longo'). No máximo um por resposta.\n"
     "- OBRIGATÓRIO: termine com [gif:termo] em inglês. Escolha termos de memes e cultura internet, não palavras genéricas. Exemplos do estilo (não copie, crie o seu): [gif:this is fine], [gif:mind blown], [gif:surprised pikachu], [gif:nailed it], [gif:stonks].\n"
 )
 
@@ -251,6 +251,32 @@ def obter_e_limpar_imagem_pendente():
     img = _imagem_pendente
     _imagem_pendente = None
     return img
+
+
+def frase_confirmacao(instrucao: str, max_tokens: int = 120) -> str:
+    """UMA fala curta da Luna a partir de uma instrução direta (sem ferramentas nem histórico).
+    Usada por fluxos determinísticos (ex: arquivar foto no Obsidian) pra confirmação sair
+    com a voz da persona em vez de frase pronta em Python. Retorna '' se o LLM falhar —
+    o chamador deve ter um fallback."""
+    try:
+        r = cliente.chat.completions.create(
+            model=MODELO_PERSONA,
+            messages=[
+                {"role": "system", "content": PROMPT_LUNA_PERSONA},
+                {"role": "user", "content": instrucao},
+            ],
+            temperature=0.65,
+            max_tokens=max_tokens,
+            extra_body=THINK_OFF,   # 12B é thinking: sem isto a resposta vem vazia
+        )
+        texto = (r.choices[0].message.content or "").strip()
+        texto = re.sub(r'\[gif:[^\]]*\]', '', texto).strip()   # este fluxo não usa o GIF
+        if texto.startswith("Luna:"):
+            texto = texto[5:].lstrip()
+        return texto
+    except Exception as e:
+        _log.warning(f"frase_confirmacao falhou: {e}")
+        return ""
 
 
 def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico: list, max_tokens=300, forcar_incluir=False, responder_completo=False, tarefa_documento=None) -> str:
@@ -347,11 +373,14 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
                 f"Pode usar mais de uma frase se precisar. NÃO cole o texto bruto da ferramenta — explique com suas palavras.{anti_rep}"
             )
         elif resultado_longo:
+            max_tokens = max(max_tokens, 450)   # lista completa precisa de fôlego
             user_msg = (
                 f"O usuário disse: '{prompt_usuario}'\n\n"
-                f"A ferramenta rodou e retornou dados abaixo. O sistema vai exibi-los automaticamente.\n"
-                f"SUA ÚNICA TAREFA: 1 frase curta anunciando que os dados estão disponíveis.{anti_rep}\n"
-                f"NÃO julgue o conteúdo. NÃO diga se há ou não há itens importantes. NÃO resuma. Pare no primeiro ponto."
+                f"A ferramenta retornou estes dados:\n{resposta_tecnica[:4000]}\n\n"
+                f"Apresente esses dados ao Fábio do seu jeito, conversando. "
+                f"Inclua TODOS os itens fielmente — não omita, não invente e não julgue nenhum. "
+                f"Se for lista (agenda, emails), um item por linha. Aqui pode passar de 4 frases: fidelidade vem primeiro. "
+                f"NÃO cole o texto bruto da ferramenta: reescreva natural, com datas e horários falados.{anti_rep}"
             )
         else:
             user_msg = (
@@ -764,15 +793,13 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 cor.amarelo("[🎭 Passando para LLM persona...]")
                 texto_resposta = _reescrever_como_luna(resultado_str, prompt_usuario, historico, max_tokens, forcar_incluir=eh_ver_tela, responder_completo=responder_completo)
 
-                # Extrai primeira frase da persona (garante UMA frase, descarta garbage após ponto final).
-                # Pulado em responder_completo (Telegram): lá a persona já resume os dados por inteiro.
-                if ferramenta_chamada and not eh_ver_tela and not responder_completo:
+                # Resultados CURTOS (ex: "música pausada"): garante UMA frase da persona.
+                # Resultados LONGOS (agenda, emails): a persona apresenta os dados por completo
+                # (mesmo caminho do Telegram) — NÃO cola mais o texto cru da ferramenta.
+                if ferramenta_chamada and not eh_ver_tela and not responder_completo and len(resultado_str) <= 200:
                     match = re.search(r'[^.!?]*[.!?]+', texto_resposta)
                     frase_luna = match.group(0).strip() if match and len(match.group(0).strip()) > 10 else texto_resposta.split('\n')[0]
-                    if len(resultado_str) > 200:
-                        texto_resposta = frase_luna + "\n\n" + resultado_str
-                    else:
-                        texto_resposta = frase_luna
+                    texto_resposta = frase_luna
 
         texto_para_memoria = texto_resposta + lembranca_oculta
 
