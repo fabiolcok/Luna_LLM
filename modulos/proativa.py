@@ -943,6 +943,13 @@ def _tarefa_autoconhecimento():
         f"eu rodo num modelo local só, o {_p.MODELO_PERSONA}, que faz tanto a minha personalidade quanto decidir qual ferramenta eu uso",
         f"eu tenho {len(_p.FUNCOES_DISPONIVEIS)} ferramentas à disposição",
     ]
+    try:   # voz atual — lida ao vivo do falar.py (fica certa mesmo se trocar de novo)
+        from modulos import falar as _f
+        fatos.append(f"minha voz é a {_f._voz_padrao} do Kokoro, sintetizada na CPU do teu PC")
+    except Exception:
+        pass
+    ativas = sum(1 for v in TAREFAS_ATIVAS.values() if v)
+    fatos.append(f"eu tenho {ativas} tarefas proativas ligadas agora — jogos, radar de notícias, clima, essas coisas")
     if horas >= 0.5:
         fatos.append(f"tô ligada há {horas:.1f} horas nessa sessão")
     fato = random.choice(fatos)

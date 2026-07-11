@@ -194,7 +194,10 @@ def _listar_capacidades():
         "controlar o Spotify, ver e analisar sua tela, ler e anotar nas suas notas do Obsidian (inclusive guardar fotos que você manda no Telegram), "
         "abrir programas, verificar o clima, "
         "mutar/desmutar o som, consultar suas stats do Overwatch, consultar jogos na Steam "
-        "(preço, promoção e descrição), gerar imagens e controlar o Firefox."
+        "(preço, promoção e descrição), gerar imagens e controlar o Firefox. "
+        "E por conta própria (proativo): comento quando você abre ou fecha seus jogos (Steam, Overwatch, LoL), "
+        "aviso promoção na sua wishlist da Steam, acompanho seus feeds RSS e anoto as novidades no Obsidian, "
+        "e te dou bom dia com agenda, emails e clima."
     )
 
 FUNCOES_DISPONIVEIS = {

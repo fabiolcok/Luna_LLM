@@ -8,6 +8,20 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 11/07/2026
+
+- ✨ **Luna com humor mais afiado.** Sarcasmo, ironia e alfinetadas carinhosas
+  entraram na personalidade — sempre do lado de quem gosta, nunca cruel.
+- 🔧 **Agenda e emails agora são apresentados pela Luna de verdade** — ela conta
+  os compromissos conversando ("quarta, 29 de julho às duas da tarde"), em vez de
+  cuspir o texto cru da ferramenta com datas em formato de robô.
+- 🔧 **Confirmação de foto salva no Obsidian com a voz dela** (web e Telegram) —
+  antes era uma frase pronta sorteada pelo código.
+- 🔧 **Proativo dos jogos alinhado ao humor novo** — fim do "analista frio";
+  na Steam ela fala "2 horas e 12 minutos" em vez de "132 minutos".
+- 🔧 **Autoconhecimento atualizado** — ela agora sabe da própria voz nova
+  (Kokoro) e das tarefas proativas que estão ligadas.
+
 ## 09/07/2026
 
 - ✨ **Voz nova!** A Luna trocou o motor de voz (do Supertonic pro **Kokoro**).
