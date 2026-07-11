@@ -10,6 +10,16 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 11/07/2026
 
+- 🔧 **"Troca de música" agora funciona de verdade.** A Luna toca a música com o
+  álbum na fila (sempre tem próxima, sempre do artista certo), confere o que
+  realmente ficou tocando antes de confirmar, e foi proibida de escolher sempre
+  Blinding Lights quando a escolha é livre.
+- 🔧 **Honestidade reforçada** (vinda das suas avaliações 👎): ela não alega mais
+  ações que não fez ("já marquei o IPTU" sem conseguir editar notas), não promete
+  "vou fazer", e cita os fatos exatos das ferramentas.
+- 🔧 **Follow-up do proativo**: quando ela avisa algo por conta própria ("tem 2
+  novidades no radar"), agora dá pra perguntar "quais são?" que ela sabe do que
+  se trata.
 - ✨ **Mensagem de voz no Telegram!** Agora dá pra mandar áudio pra Luna — ela
   transcreve local (Whisper, o mesmo ouvido do PC), mostra o que entendeu
   (🎤 "...") e responde normal. Áudio de +2min ela pede um mais curto.
