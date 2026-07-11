@@ -246,7 +246,13 @@ def loop_voz():
                     if res.startswith("SISTEMA: Foto salva"):
                         m = _re.search(r"Inbox\): '(.+)'", res)
                         t = (m.group(1) if m else (legenda or "a imagem")).strip()
-                        resposta_luna = _rnd.choice([
+                        # Confirmação com a voz da persona; frases prontas só como fallback.
+                        from modulos.pensar import frase_confirmacao
+                        resposta_luna = frase_confirmacao(
+                            f"Você acabou de arquivar no Inbox do Obsidian do Fábio uma imagem que ele "
+                            f"te mandou, com o título '{t}'. Confirme pra ele em 1 frase curta, do seu "
+                            f"jeito, citando o título."
+                        ) or _rnd.choice([
                             f'Salvei a imagem no seu Inbox: "{t}".',
                             f'Prontinho, guardei "{t}" nas suas notas.',
                             f'Imagem arquivada no seu Obsidian: "{t}".',

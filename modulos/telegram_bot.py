@@ -150,7 +150,13 @@ def iniciar_bot_telegram():
             if resultado.startswith("SISTEMA: Foto salva"):
                 m = re.search(r"Inbox\): '(.+)'", resultado)
                 t = (m.group(1) if m else (legenda or "a foto")).strip()
-                conf = random.choice([
+                # Confirmação com a voz da persona; frases prontas só como fallback.
+                from modulos.pensar import frase_confirmacao
+                conf = frase_confirmacao(
+                    f"Você acabou de arquivar no Inbox do Obsidian do Fábio uma foto que ele "
+                    f"te mandou pelo Telegram, com o título '{t}'. Confirme pra ele em 1 frase "
+                    f"curta, do seu jeito, citando o título."
+                ) or random.choice([
                     f'Salvei a foto no seu Inbox: "{t}". 📷',
                     f'Prontinho, guardei a foto "{t}" nas suas notas.',
                     f'Foto arquivada no seu Obsidian: "{t}".',
