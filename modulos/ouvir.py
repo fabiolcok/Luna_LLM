@@ -1,6 +1,7 @@
 #ouvir.py
 
 import time
+import threading
 import sounddevice as sd
 import numpy as np
 from faster_whisper import WhisperModel
@@ -30,6 +31,40 @@ Funções principais:
 
 
 modelo_whisper = WhisperModel("small", device="cpu", compute_type="int8")
+
+# O PTT do PC e o áudio do Telegram podem chegar ao mesmo tempo (threads diferentes)
+# — o lock garante uma transcrição por vez no mesmo modelo.
+_whisper_lock = threading.Lock()
+
+# Alucinações conhecidas do Whisper (áudio ambiente, silêncio, créditos de vídeos)
+_ALUCINACOES_WHISPER = {
+    "amara.org", "legendas pela comunidade", "transcrições por",
+    "subtitles by", "subtitle by", "legendado por", "traduzido por",
+    "obrigado por assistir", "inscreva-se no canal",
+}
+
+def _eh_alucinacao(texto: str) -> bool:
+    t = texto.lower()
+    return any(a in t for a in _ALUCINACOES_WHISPER)
+
+
+def transcrever_bytes(dados: bytes) -> str:
+    """Transcreve um áudio recebido como bytes (ex: voice OGG/Opus do Telegram).
+    O PyAV (dependência do faster-whisper) decodifica OGG/MP3/WAV direto do buffer.
+    Reusa o mesmo modelo e o mesmo filtro de alucinação do PTT do PC."""
+    import io
+    try:
+        with _whisper_lock:
+            segmentos, _ = modelo_whisper.transcribe(io.BytesIO(dados), language="pt", beam_size=5)
+            # itera DENTRO do lock: o transcribe é preguiçoso, decodifica na iteração
+            texto = "".join(s.text for s in segmentos).strip()
+        if _eh_alucinacao(texto):
+            cor.cinza(f"[🔇 Alucinação Whisper descartada: '{texto[:60]}']")
+            return ""
+        return texto
+    except Exception as e:
+        cor.vermelho(f"Erro na transcrição de áudio (bytes): {e}")
+        return ""
 
 
 
@@ -105,17 +140,11 @@ def escutar_usuario():
         return ""
 
     try:
-        segmentos, _ = modelo_whisper.transcribe(audio_1d, language="pt", beam_size=5)
-        texto_final = "".join([segmento.text for segmento in segmentos]).strip()
+        with _whisper_lock:
+            segmentos, _ = modelo_whisper.transcribe(audio_1d, language="pt", beam_size=5)
+            texto_final = "".join([segmento.text for segmento in segmentos]).strip()
 
-        # Filtrar alucinações conhecidas do Whisper (áudio ambiente, silêncio, vídeos)
-        _ALUCINACOES_WHISPER = {
-            "amara.org", "legendas pela comunidade", "transcrições por",
-            "subtitles by", "subtitle by", "legendado por", "traduzido por",
-            "obrigado por assistir", "inscreva-se no canal",
-        }
-        texto_lower = texto_final.lower()
-        if any(a in texto_lower for a in _ALUCINACOES_WHISPER):
+        if _eh_alucinacao(texto_final):
             cor.cinza(f"[🔇 Alucinação Whisper descartada: '{texto_final[:60]}']")
             return ""
 

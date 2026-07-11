@@ -57,32 +57,11 @@ def iniciar_bot_telegram():
 
     bot = telebot.TeleBot(TELEGRAM_TOKEN, parse_mode=None)
 
-    @bot.message_handler(func=lambda m: True)
-    def handle_message(message):
-        global _historico_telegram
-
-        if message.from_user.id != TELEGRAM_CHAT_ID:
-            return
-
-        texto = (message.text or "").strip()
-        if not texto:
-            return
-
+    def _responder_como_luna(texto: str):
+        """Fluxo comum de resposta (texto digitado OU áudio transcrito):
+        gera a resposta da Luna e envia, com foto e botões de avaliação."""
         import servidor as _srv
         import modelos.cores as cor
-
-        # É uma resposta (reply) dando o motivo de um 👎?
-        reply = getattr(message, "reply_to_message", None)
-        if reply and reply.message_id in _motivo_por_msg:
-            aid = _motivo_por_msg.pop(reply.message_id)
-            u, l = _avaliacoes.get(aid, ("", ""))
-            _srv._registrar_avaliacao("ruim", texto, u, l, canal="telegram")
-            bot.send_message(TELEGRAM_CHAT_ID, "Anotado, valeu! 🙏")
-            return
-
-        cor.azul(f"[📱 Telegram] {texto}")
-        _log.info(f"[Telegram] Usuário: {texto}")
-
         try:
             from modulos.pensar import gerar_resposta, obter_e_limpar_imagem_pendente
             # Bloqueia broadcast de GIF para não consumir cota desnecessariamente
@@ -127,6 +106,62 @@ def iniciar_bot_telegram():
         except Exception as e:
             _log.exception(f"Erro Telegram: {e}")
             bot.send_message(TELEGRAM_CHAT_ID, "Deu um erro aqui, tenta de novo.")
+
+    @bot.message_handler(func=lambda m: True)
+    def handle_message(message):
+        if message.from_user.id != TELEGRAM_CHAT_ID:
+            return
+
+        texto = (message.text or "").strip()
+        if not texto:
+            return
+
+        import servidor as _srv
+        import modelos.cores as cor
+
+        # É uma resposta (reply) dando o motivo de um 👎?
+        reply = getattr(message, "reply_to_message", None)
+        if reply and reply.message_id in _motivo_por_msg:
+            aid = _motivo_por_msg.pop(reply.message_id)
+            u, l = _avaliacoes.get(aid, ("", ""))
+            _srv._registrar_avaliacao("ruim", texto, u, l, canal="telegram")
+            bot.send_message(TELEGRAM_CHAT_ID, "Anotado, valeu! 🙏")
+            return
+
+        cor.azul(f"[📱 Telegram] {texto}")
+        _log.info(f"[Telegram] Usuário: {texto}")
+        _responder_como_luna(texto)
+
+    @bot.message_handler(content_types=['voice', 'audio'])
+    def handle_voice(message):
+        # Modo STT: áudio/voice vira texto (Whisper local) e segue o fluxo normal.
+        if message.from_user.id != TELEGRAM_CHAT_ID:
+            return
+
+        import modelos.cores as cor
+        arq = message.voice or message.audio
+        if getattr(arq, "duration", 0) > 120:
+            bot.reply_to(message, "Áudio muito longo (mais de 2 minutos) — manda um mais curtinho?")
+            return
+
+        try:
+            info = bot.get_file(arq.file_id)
+            dados = bot.download_file(info.file_path)
+
+            from modulos.ouvir import transcrever_bytes
+            texto = transcrever_bytes(dados)
+            if not texto:
+                bot.reply_to(message, "Não consegui entender o áudio, pode repetir?")
+                return
+
+            # Mostra o que foi entendido (colado no áudio) — ajuda a conferir a transcrição
+            bot.reply_to(message, f'🎤 "{texto}"')
+            cor.azul(f"[📱 Telegram 🎤] {texto}")
+            _log.info(f"[Telegram] Usuário [voz]: {texto}")
+            _responder_como_luna(texto)
+        except Exception as e:
+            _log.exception(f"Erro no áudio Telegram: {e}")
+            bot.send_message(TELEGRAM_CHAT_ID, "Deu erro ao processar o áudio, tenta de novo.")
 
     @bot.message_handler(content_types=['photo'])
     def handle_photo(message):
