@@ -156,13 +156,14 @@ DESCONTO_MINIMO  = 50
 # ============================================================
 # REGRAS DE PERSONA (Injetado nos prompts proativos)
 # ============================================================
+# Só o que é ESPECÍFICO do proativo: falar em 2ª pessoa e ser breve.
+# Idioma, personalidade, sarcasmo e "amiga-não-esposa" já vêm do PROMPT_LUNA_PERSONA
+# (pensar.py), aplicado como sistema em toda chamada — repetir aqui só duplicava/conflitava.
 REGRA_PERSONA = (
-    "Responda em português do Brasil coloquial, com tom leve e amigável, como uma amiga falando DIRETAMENTE com o Fábio. "
-    "Fale com ele em SEGUNDA pessoa (você, seu, te). Mesmo que a instrução mencione 'o Fábio' ou 'dele' (é só o contexto te informando), "
-    "NUNCA fale dele em terceira pessoa: diga 'seus stats', 'você está em Gold', nunca 'os stats dele' ou 'ele está'. "
-    "NÃO use 'tu' nem formas de Portugal ('precisares'/'tás'). "
-    "Pode ter bom humor, mas seja breve e natural — nada de robótica nem de bajulação. "
-    "Você é amiga dele, não namorada nem esposa. Sem emojis, sem asteriscos. Máximo 2 frases."
+    "Fale DIRETAMENTE com o Fábio, em SEGUNDA pessoa (você, seu, te). Mesmo que a instrução "
+    "mencione 'o Fábio' ou 'dele' (é só o contexto te informando), NUNCA fale dele em terceira "
+    "pessoa: diga 'seus stats', 'você está em Gold' — nunca 'os stats dele'. "
+    "Seja breve e natural: máximo 2 frases."
 )
 # ============================================================
 # ESTADO GLOBAL
@@ -1022,7 +1023,7 @@ def _tarefa_monitorar_jogos():
                 prompt = (
                     f"O Fábio acabou de abrir Overwatch.\n"
                     f"DADOS ATUAIS DA CONTA: {dados_abertura}\n"
-                    f"Faça um briefing de sessão frio e direto: rank atual + uma observação analítica sobre tendência de desempenho. "
+                    f"Faça um briefing de sessão direto, do seu jeito: rank atual + uma observação sobre tendência de desempenho. "
                     f"{REGRA_PERSONA} Máximo 2 frases."
                 )
             elif nome_jogo == "Deadlock":
@@ -1031,11 +1032,11 @@ def _tarefa_monitorar_jogos():
                 prompt = (
                     f"O Fábio acabou de abrir Deadlock.\n"
                     f"DADOS DA CONTA: {dados_abertura}\n"
-                    f"Faça um briefing de sessão frio: winrate atual + observação sobre tendência. "
+                    f"Faça um briefing de sessão direto: winrate atual + observação sobre tendência. "
                     f"{REGRA_PERSONA} Máximo 2 frases."
                 )
             else:
-                prompt = f"O Fábio acabou de abrir o {nome_jogo}. Registre o início da sessão de forma fria e direta. {REGRA_PERSONA} 1 frase."
+                prompt = f"O Fábio acabou de abrir o {nome_jogo}. Comente o início da sessão do seu jeito. {REGRA_PERSONA} 1 frase."
 
             texto = _gerar_fala_proativa(prompt, f"jogo_aberto_{nome_jogo}")
             if texto: _falar_proativamente(texto)
@@ -1048,7 +1049,7 @@ def _tarefa_monitorar_jogos():
             
             # Dados padrão se o jogo não tiver API
             dados_extras = "Sem dados de API no momento."
-            instrucao_especifica = f"Registre o encerramento da sessão de {nome_jogo} de forma factual e direta, sem zombaria."
+            instrucao_especifica = f"Registre o encerramento da sessão de {nome_jogo} de forma factual e direta."
             
             # ==========================================
             # ROTEAMENTO DE APIS E DEBOCHES ESPECÍFICOS
@@ -1058,12 +1059,12 @@ def _tarefa_monitorar_jogos():
                 dados_extras = _buscar_dados_overwatch()
                
                 if dados_extras == "ERRO_DE_CONEXAO":
-                    instrucao_especifica = "Ocorreu um erro de rede ao buscar os dados dele. Zombe da internet de padaria dele ou diga que os servidores da Blizzard se recusaram a processar um perfil tão medíocre."
+                    instrucao_especifica = "Deu erro de rede ao buscar os dados. Registre o fim da sessão e pode soltar uma alfinetada leve na internet ou nos servidores da Blizzard — nunca no Fábio."
                 else:
                     instrucao_especifica = (
                         "Use os dados como observação factual. "
                         "1 frase com o dado mais relevante (rank ou winrate). "
-                        "1 frase de análise de padrão — sem zombaria, sem crueldade, apenas exatidão."
+                        "1 frase de análise de padrão — precisa; uma alfinetada leve cabe, crueldade não."
                     )
             
             elif nome_jogo == "League of Legends":
@@ -1077,19 +1078,19 @@ def _tarefa_monitorar_jogos():
                     instrucao_especifica = (
                         "Use os dados como observação factual. "
                         "1 frase com o resultado da partida e o KDA. "
-                        "1 frase de análise de padrão (ex: impacto do KDA no resultado) — sem zombaria, sem crueldade, apenas exatidão."
+                        "1 frase de análise de padrão (ex: impacto do KDA no resultado) — precisa; uma alfinetada leve cabe, crueldade não."
                     )
                 
             elif nome_jogo == "Deadlock":
                 print("[🔎 Buscando estatísticas da conta de Deadlock...]")
                 dados_extras = _buscar_dados_deadlock()
                 if dados_extras.startswith("ERRO"):
-                    instrucao_especifica = "Erro ao buscar dados. Comente sobre o fato de que nem a API conseguiu registrar o desempenho dele."
+                    instrucao_especifica = "Erro ao buscar dados. Registre o fim da sessão e pode alfinetar de leve que nem a API quis colaborar hoje."
                 else:
                     instrucao_especifica = (
                         "Use os dados como observação factual. "
                         "1 frase com o resultado da partida e KDA. "
-                        "1 frase sobre winrate ou padrão de desempenho — sem zombaria, apenas análise fria."
+                        "1 frase sobre winrate ou padrão de desempenho — análise direta; alfinetada leve cabe."
                     )
 
             # ==========================================
@@ -1106,6 +1107,16 @@ Máximo 2 frases. SEM EMOJIS."""
 
             texto = _gerar_fala_proativa(prompt, f"jogo_fechado_{nome_jogo}", max_tokens=300)
             if texto: _falar_proativamente(texto)
+
+
+def _fmt_duracao(minutos: int) -> str:
+    """Duração falável pra voz: 132 -> '2 horas e 12 minutos' (nunca número quebrado)."""
+    if minutos < 60:
+        return f"{minutos} minuto" + ("s" if minutos > 1 else "")
+    h, m = divmod(minutos, 60)
+    horas_txt = f"{h} hora" + ("s" if h > 1 else "")
+    min_txt = f"{m} minuto" + ("s" if m > 1 else "")
+    return f"{horas_txt} e {min_txt}" if m else horas_txt
 
 
 def _tarefa_monitorar_steam():
@@ -1151,8 +1162,9 @@ def _tarefa_monitorar_steam():
         horas = _steam_horas(appid)
         info = _steam_info_jogo(appid)
         partes = [f"Jogo: {nome}."]
-        if horas:
-            partes.append(f"Você já tem {horas}h totais nele.")
+        if horas >= 1:
+            # horas inteiras: '642.4h' vira '642 horas' (a voz lê número quebrado mal)
+            partes.append(f"Você já tem {int(round(horas))} horas totais nele.")
         if conq:
             partes.append(f"Conquistas: {conq[0]} de {conq[1]} destravadas.")
         if info:
@@ -1188,7 +1200,7 @@ def _tarefa_monitorar_steam():
         atualizar_estado_luna("jogo_ativo", None)
 
         if dur_min >= 2:  # ignora aberturas acidentais de poucos segundos
-            partes = [f"Duração da sessão: {dur_min} minutos."]
+            partes = [f"Duração da sessão: {_fmt_duracao(dur_min)}."]
             if novas > 0:
                 partes.append(f"Conquistas destravadas nesta sessão: {novas}.")
             elif conq_inicio:
