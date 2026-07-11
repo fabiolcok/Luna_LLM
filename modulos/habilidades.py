@@ -337,8 +337,19 @@ def tocar_musica_spotify(nome_musica):
             id_dispositivo = dispositivos['devices'][0]['id']
             cor.amarelo(f"[Forçando reprodução no dispositivo: {dispositivos['devices'][0]['name']}]")
 
-        # 4. PASSA O device_id NO PLAY
-        sp.start_playback(device_id=id_dispositivo, uris=[uri_musica])
+        # 4. PLAY com o CONTEXTO DO ÁLBUM: a música pedida toca agora e o resto do
+        #    álbum vira a fila natural — "próxima" sempre funciona, sempre do artista.
+        #    (top-tracks dá 403 em apps novos e o search por artista é fuzzy demais.)
+        try:
+            sp.start_playback(device_id=id_dispositivo,
+                              context_uri=musica['album']['uri'],
+                              offset={'uri': uri_musica})
+            modo_fila = "resto do álbum na fila"
+        except Exception:
+            sp.start_playback(device_id=id_dispositivo, uris=[uri_musica])  # fallback: avulsa
+            modo_fila = "sem fila (avulsa)"
+
+        cor.amarelo(f"[🎵 Spotify: tocando '{musica['name']} - {musica['artists'][0]['name']}' | {modo_fila}]")
         return f"Tocando agora: {musica['name']} - {musica['artists'][0]['name']}"
         
     except Exception as e:
@@ -353,11 +364,34 @@ def pausar_spotify():
     except Exception as e: return f"Erro ao pausar: {e}"
 
 def proxima_musica_spotify():
-    """Pula para a próxima música no Spotify"""
+    """Pula para a próxima música e CONFERE o que ficou tocando — o resultado
+    devolvido é a VERDADE (nada de 'pulei' sem ter pulado)."""
     try:
-        sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id=SPOTIPY_CLIENT_ID, client_secret=SPOTIPY_CLIENT_SECRET, redirect_uri=SPOTIPY_REDIRECT_URI, scope="user-modify-playback-state",cache_path=r"G:\Projetos\Luna_LLM\modelos\spotify_cache"))
+        sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
+            client_id=SPOTIPY_CLIENT_ID, client_secret=SPOTIPY_CLIENT_SECRET,
+            redirect_uri=SPOTIPY_REDIRECT_URI,
+            scope="user-modify-playback-state,user-read-playback-state",
+            cache_path=r"G:\Projetos\Luna_LLM\modelos\spotify_cache"))
+
+        def _tocando_agora():
+            try:
+                pb = sp.current_playback()
+                if pb and pb.get('item'):
+                    return pb['item']['name'], pb['item']['artists'][0]['name']
+            except Exception:
+                pass
+            return None, None
+
+        antes, _ = _tocando_agora()
         sp.next_track()
-        return "Pulando para a próxima música."
+        time.sleep(1.5)                      # dá tempo do Spotify efetivar o skip
+        agora, artista = _tocando_agora()
+
+        if agora and agora != antes:
+            cor.amarelo(f"[🎵 Spotify: pulou para '{agora} - {artista}']")
+            return f"Pulei para a próxima: {agora} - {artista}."
+        cor.amarelo(f"[🎵 Spotify: skip NÃO mudou a música (antes='{antes}', agora='{agora}')]")
+        return "SISTEMA: Não consegui pular — não havia próxima música na fila."
     except Exception as e: return f"Erro ao pular música: {e}"
 
 def gerenciador_spotify(acao, nome_musica=""):
@@ -1028,17 +1062,17 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "controlar_spotify",
-            "description": "Use para tocar músicas no Spotify. IMPORTANTE: Se o usuário pedir 'qualquer música' ou NÃO especificar o nome, você TEM PERMISSÃO para escolher o nome de uma música famosa aleatória por conta própria.",
+            "description": "Controla o Spotify: tocar uma música ('tocar'), pausar ('pausar') ou pular/trocar de música ('proxima'). 'Troca/pula/passa a música' = acao 'proxima'. IMPORTANTE: Se o usuário pedir 'qualquer música' ou NÃO especificar o nome, você TEM PERMISSÃO para escolher uma música famosa por conta própria — mas VARIE DE VERDADE: gênero e artista DIFERENTES a cada escolha (rock, MPB, eletrônica, rap, anos 80...). PROIBIDO escolher 'Blinding Lights' ou repetir artista que você já escolheu nesta conversa.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "acao": {"type": "string", "enum": ["tocar"]},
+                    "acao": {"type": "string", "enum": ["tocar", "pausar", "proxima"]},
                     "nome_musica": {
                         "type": "string",
-                        "description": "O nome da música. Se o usuário não disse qual, invente uma música popular e coloque aqui."
+                        "description": "Só para acao 'tocar': o nome da música. Se o usuário não disse qual, invente uma música popular e coloque aqui."
                     }
                 },
-                "required": ["acao", "nome_musica"]
+                "required": ["acao"]
             }
         }
     },
@@ -1187,7 +1221,7 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "ler_obsidian",
-            "description": "Lê uma nota das ANOTAÇÕES PESSOAIS do Fábio (Obsidian) — receitas, listas, coisas que ele salvou. Use quando ele pedir algo das 'minhas notas/anotações', ou algo que esteja na lista de notas informada no contexto. NÃO use para a web (isso é pesquisar_web) nem para links (resumir_site).",
+            "description": "Lê uma nota das ANOTAÇÕES PESSOAIS do Fábio (Obsidian) — receitas, listas, coisas que ele salvou, e a nota 'Novidades' (onde o radar de notícias anota as novidades dos feeds dele). Use quando ele pedir algo das 'minhas notas/anotações' ou perguntar 'quais são as novidades'. NÃO use para a web (isso é pesquisar_web) nem para links (resumir_site). NÃO use se ele perguntar o que ACABOU de salvar nesta conversa — isso você responde de memória, pela própria conversa.",
             "parameters": {
                 "type": "object",
                 "properties": {"assunto": {"type": "string", "description": "Do que é a nota que ele quer (ex: 'receita do biscoito', 'contas do mês')."}},
@@ -1199,7 +1233,7 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "salvar_obsidian",
-            "description": "Anota/salva um recado, ideia ou lembrete SEM data e hora marcadas nas notas do Fábio (Obsidian). Use quando ele disser 'anota', 'salva isso', 'registra', 'guarda', 'lembra que', 'toma nota' seguido do que guardar (ex: 'anota que preciso renovar o seguro'). Se for compromisso COM dia e hora, use adicionar_agenda. NÃO use para LER nota (isso é ler_obsidian).",
+            "description": "Anota/salva um recado, ideia ou lembrete SEM data e hora marcadas nas notas do Fábio (Obsidian) — sempre cria uma nota NOVA. Use quando ele disser 'anota', 'salva isso', 'registra', 'guarda', 'lembra que', 'toma nota' seguido do que guardar (ex: 'anota que preciso renovar o seguro'). Se for compromisso COM dia e hora, use adicionar_agenda. NÃO use para LER nota (isso é ler_obsidian). NÃO use para EDITAR nota existente (marcar como concluído, riscar item, alterar linha) — você NÃO consegue editar notas; nesse caso NÃO use ferramenta nenhuma e avise honestamente que não consegue.",
             "parameters": {
                 "type": "object",
                 "properties": {
