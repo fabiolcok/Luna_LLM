@@ -10,6 +10,9 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 11/07/2026
 
+- ✨ **Mensagem de voz no Telegram!** Agora dá pra mandar áudio pra Luna — ela
+  transcreve local (Whisper, o mesmo ouvido do PC), mostra o que entendeu
+  (🎤 "...") e responde normal. Áudio de +2min ela pede um mais curto.
 - ✨ **Luna com humor mais afiado.** Sarcasmo, ironia e alfinetadas carinhosas
   entraram na personalidade — sempre do lado de quem gosta, nunca cruel.
 - 🔧 **Agenda e emails agora são apresentados pela Luna de verdade** — ela conta
