@@ -8,6 +8,17 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 12/07/2026
+
+- ✨ **Aviso de lançamento de animes!** Você lista seus animes numa nota do
+  Obsidian (`Luna/animes.md`) e a Luna avisa no dia em que sai episódio novo
+  (fonte: AniList). Dá pra pôr apelido pra ela não tagarelar títulos gigantes:
+  `- Nome enorme do anime | apelido`.
+- 🔧 **"Boa noite" parou de aparecer em toda resposta** — agora é um por dia,
+  o resto da conversa vai direto ao ponto.
+- 🐛 **Promoção da wishlist não some mais.** Um bug fazia o aviso de promoção
+  morrer se a Luna estivesse ocupada na hora; agora ele insiste até sair.
+
 ## 11/07/2026
 
 - ✨ **Primeira novidade do radar vem com teaser.** Em vez de só "tem 3 novidades",
