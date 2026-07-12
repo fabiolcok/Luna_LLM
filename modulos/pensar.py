@@ -235,15 +235,21 @@ PROMPT_LUNA_PERSONA = (
     "Você é a Luna, a IA pessoal e amiga próxima do Fábio. Fale sempre em português do Brasil coloquial: trate-o por 'você' (NUNCA 'tu' nem conjugações de Portugal como 'precisares', 'quiseres', 'tás', 'estás'). Estrangeirismos já comuns no dia a dia (tank, headshot, background, etc.) são ok; o que NÃO pode é trocar palavra comum por inglês ou espanhol — nada de 'those' no lugar de 'esses' ou 'cumpleaños' por 'aniversário'.\n"
     "- Fale SEMPRE em PRIMEIRA PESSOA (eu, meu, mim, comigo). VOCÊ é a Luna — NUNCA se refira a si mesma como 'a Luna'/'sua Luna' nem em terceira pessoa, MESMO que o perfil ou o contexto mencionem 'a Luna' (são anotações do Fábio SOBRE você, não o seu jeito de falar). Ex: diga 'eu tô aqui', 'me deixar mais integrada' — nunca 'a Luna está', 'deixar sua Luna mais integrada'.\n"
     "- Personalidade: calorosa e direta, de amiga de verdade — sem ser bajuladora nem arrastada. Humor afiado, com sarcasmo, ironia e deadpan: zoa o Fábio com carinho e solta uma alfinetada quando cabe, sem pesar a mão nem cansar. NUNCA cruel nem ofensiva de verdade — a zoeira é sempre de quem gosta DELE.\n"
-    "- Você é amiga e parceira de PC do Fábio. A esposa dele é a Keila; você NÃO é namorada nem esposa dele.\n"
+    "- A esposa dele é a Keila; você NÃO é namorada nem esposa dele.\n"
     "- Respostas curtas e naturais (1 a 4 frases).\n"
-    "- NÃO cumprimente em toda resposta. Só diga 'boa noite'/'bom dia'/'oi' no PRIMEIRO contato ou quando VOCÊ inicia a conversa (modo proativo). No meio de um papo já em andamento, responda DIRETO, sem saudação.\n"
     "- Datas e horários sempre de forma natural e falada: 'dia 29 de julho às duas da tarde', 'próxima quinta' — NUNCA formato cru tipo '2026-07-29T14:00:00-03:00' ou '2026-07-30', mesmo que os dados venham assim.\n"
     "- Não invente fatos, eventos nem resultados que não estejam no contexto ou nos dados recebidos.\n"
     "- PROIBIDO prometer ação futura ('vou fazer', 'já te trago', 'daqui a pouco'): tudo que você consegue fazer já aconteceu ANTES desta resposta. Se algo não foi feito, diga que não conseguiu — nunca finja que vai fazer depois.\n"
     "- Sem emojis, asteriscos ou markdown.\n"
     "- OBRIGATÓRIO: termine com [gif:termo] em inglês. Escolha termos de memes e cultura internet, não palavras genéricas. Exemplos do estilo (não copie, crie o seu): [gif:this is fine], [gif:mind blown], [gif:surprised pikachu], [gif:nailed it], [gif:stonks].\n"
 )
+
+# Anti-"boa noite" em toda resposta: o prompt sozinho não segura (o 12B não sabe
+# o que é "primeiro contato"). Rastreamos QUANDO a Luna cumprimentou por último e,
+# se foi há menos de _JANELA_SAUDACAO_H horas, o prompt PROÍBE saudar de novo.
+_ultima_saudacao_ts = 0.0
+_JANELA_SAUDACAO_H = 6
+_RE_SAUDACAO = re.compile(r'\b(bom dia|boa tarde|boa noite|ol[áa])\b|(?:^|[.!?]\s*)oi\b', re.IGNORECASE)
 
 # Imagem produzida por uma ferramenta para canais que enviam mídia (ex: Telegram).
 # Só é populada quando responder_completo=True, evitando vazamento entre canais (voz/web não usam).
@@ -284,6 +290,7 @@ def frase_confirmacao(instrucao: str, max_tokens: int = 120) -> str:
 
 
 def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico: list, max_tokens=300, forcar_incluir=False, responder_completo=False, tarefa_documento=None) -> str:
+    global _ultima_saudacao_ts
     resposta_tecnica = re.sub(r'<think>.*?</think>', '', resposta_tecnica, flags=re.DOTALL).strip()
 
     data_hoje = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
@@ -311,6 +318,14 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             partes_situacao.append(f"há {label} nesse programa")
     contexto_situacional = " | ".join(partes_situacao)
 
+    # Já cumprimentou nas últimas horas? Então é PROIBIDO saudar de novo (determinístico).
+    aviso_saudacao = ""
+    if _ultima_saudacao_ts and (time.time() - _ultima_saudacao_ts) < _JANELA_SAUDACAO_H * 3600:
+        aviso_saudacao = (
+            "\n- ATENÇÃO: você JÁ cumprimentou o Fábio há pouco. PROIBIDO qualquer saudação agora "
+            "('boa noite', 'bom dia', 'boa tarde', 'oi', 'olá') — comece a resposta DIRETO no assunto."
+        )
+
     prompt_sistema = (
         f"Hoje é {data_hoje}. {periodo_atual()[1]}\n"
         f"Contexto atual: {contexto_situacional}.\n"
@@ -320,7 +335,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         f"('nossas filhas', 'meu trabalho', 'querido'). Quando o Fábio diz 'eu/meu', é sobre ele:\n"
         f"{memoria_permanente}\n"
         f"Conversas anteriores: {contexto_db}\n\n"
-        f"{PROMPT_LUNA_PERSONA}"
+        f"{PROMPT_LUNA_PERSONA}{aviso_saudacao}"
     )
 
     is_proativo = (prompt_usuario == "")
@@ -475,6 +490,11 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
                 _srv.atualizar_gif(gif_termo)
             except Exception:
                 pass
+
+        # Saiu saudação na resposta? Marca o relógio — as próximas ficam proibidas
+        # de cumprimentar pelas próximas horas (ver _JANELA_SAUDACAO_H).
+        if _RE_SAUDACAO.search(texto_luna):
+            _ultima_saudacao_ts = time.time()
 
         return limpar_texto_para_voz(texto_luna)
 

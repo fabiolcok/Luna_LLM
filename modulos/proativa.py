@@ -1039,7 +1039,7 @@ def _tarefa_bom_dia():
 DADOS DA AGENDA PARA HOJE: {dados_agenda}.
 DADOS DA CAIXA DE EMAIL:{dados_email}.
 
-Dê um 'bom dia' usando sua personalidade {REGRA_PERSONA}. Informe o que tem na agenda e quantos emails há, com o assunto deles. Máximo de 5 frases."""
+Dê um 'bom dia' usando sua personalidade {REGRA_PERSONA} EXCEÇÃO ao limite de frases: aqui, informe o que tem na agenda e quantos emails há (com o assunto deles) em até 5 frases."""
 
             texto = _gerar_fala_proativa(prompt_matinal, "bom_dia", max_tokens=400, variar=False)
             
@@ -1074,7 +1074,7 @@ def _tarefa_monitorar_jogos():
                     f"O Fábio acabou de abrir Overwatch.\n"
                     f"DADOS ATUAIS DA CONTA: {dados_abertura}\n"
                     f"Faça um briefing de sessão direto, do seu jeito: rank atual + uma observação sobre tendência de desempenho. "
-                    f"{REGRA_PERSONA} Máximo 2 frases."
+                    f"{REGRA_PERSONA}"
                 )
             elif nome_jogo == "Deadlock":
                 print("[📊 Buscando dados para briefing de sessão Deadlock...]")
@@ -1083,7 +1083,7 @@ def _tarefa_monitorar_jogos():
                     f"O Fábio acabou de abrir Deadlock.\n"
                     f"DADOS DA CONTA: {dados_abertura}\n"
                     f"Faça um briefing de sessão direto: winrate atual + observação sobre tendência. "
-                    f"{REGRA_PERSONA} Máximo 2 frases."
+                    f"{REGRA_PERSONA}"
                 )
             else:
                 prompt = f"O Fábio acabou de abrir o {nome_jogo}. Comente o início da sessão do seu jeito. {REGRA_PERSONA} 1 frase."
@@ -1230,7 +1230,7 @@ def _tarefa_monitorar_steam():
             f"O Fábio acabou de abrir {nome} na Steam.\n"
             f"DADOS: {dados}\n"
             f"Comente a abertura da sessão de forma leve e amigável: cite 1 dado marcante "
-            f"(horas ou conquistas) e/ou um toque sobre o jogo. {REGRA_PERSONA} 1 a 2 frases."
+            f"(horas ou conquistas) e/ou um toque sobre o jogo. {REGRA_PERSONA}"
         )
         texto = _gerar_fala_proativa(prompt, f"steam_abriu_{nome}")
         if texto: _falar_proativamente(texto)
@@ -1265,7 +1265,7 @@ def _tarefa_monitorar_steam():
                 f"O Fábio acabou de fechar {nome_antes} (Steam).\n"
                 f"DADOS DA SESSÃO: {dados}\n"
                 f"Feche a sessão de forma leve: comente o tempo jogado e, se houve, as conquistas novas. "
-                f"{REGRA_PERSONA} 1 a 2 frases."
+                f"{REGRA_PERSONA}"
             )
             texto = _gerar_fala_proativa(prompt, f"steam_fechou_{nome_antes}", max_tokens=300)
             if texto: _falar_proativamente(texto)
