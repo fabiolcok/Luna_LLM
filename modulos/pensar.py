@@ -18,7 +18,7 @@ from modulos.habilidades import (
     obter_janela_em_foco, analisar_imagem_gemini, capturar_tela_base64, ler_texto_selecionado,
     desenhar_imagem, executar_analise_aba, alternar_mute,
     ler_url_especifica, ler_link_copiado, consultar_overwatch, consultar_jogo_steam,
-    ferramentas_disponiveis)
+    ferramentas_disponiveis, NOME_USUARIO)
 from modulos.memoria import (
     buscar_contexto_relevante, salvar_conversa,
     ler_memoria_permanente, analisar_e_salvar_fato, ler_estado_luna
@@ -147,7 +147,7 @@ def _executar_resumir_url(url=None):
         if "Erro:" in url or not url.startswith("http"):
             url = ler_link_copiado().strip()
     if not url.startswith("http"):
-        return "SISTEMA: Nenhuma URL válida encontrada na aba ativa nem no clipboard. LUNA, peça ao Fábio para copiar o link ou abrir o site no Firefox."
+        return "SISTEMA: Nenhuma URL válida encontrada na aba ativa nem no clipboard. LUNA, peça ao usuário para copiar o link ou abrir o site no Firefox."
 
     cor.amarelo(f"[Luna lendo site: {url}]")
     conteudo = ler_url_especifica(url)
@@ -180,7 +180,7 @@ def _confirmar_salvamento(res, conteudo, prompt_usuario, historico, max_tokens, 
     já sabendo que guardou — não pode mentir, o save já é fato. Falhou → mensagem honesta."""
     if not res.startswith("SISTEMA: Nota salva"):
         return "Hmm, não consegui anotar isso. Tenta de novo, ou cola direto no Obsidian?"
-    tarefa = ("Você ACABOU de guardar esta anotação nas notas do Fábio (Obsidian) — já está salva. "
+    tarefa = ("Você ACABOU de guardar esta anotação nas notas dele (Obsidian) — já está salva. "
               "Confirme que guardou, de forma curta e natural, e faça um comentário leve sobre o "
               "ASSUNTO da nota, se couber. Não invente que fez outra coisa além de guardar.")
     return _reescrever_como_luna(conteudo, prompt_usuario, historico, max_tokens,
@@ -232,10 +232,10 @@ FUNCOES_DISPONIVEIS = {
 # ==========================================
 
 PROMPT_LUNA_PERSONA = (
-    "Você é a Luna, a IA pessoal e amiga próxima do Fábio. Fale sempre em português do Brasil coloquial: trate-o por 'você' (NUNCA 'tu' nem conjugações de Portugal como 'precisares', 'quiseres', 'tás', 'estás'). Estrangeirismos já comuns no dia a dia (tank, headshot, background, etc.) são ok; o que NÃO pode é trocar palavra comum por inglês ou espanhol — nada de 'those' no lugar de 'esses' ou 'cumpleaños' por 'aniversário'.\n"
-    "- Fale SEMPRE em PRIMEIRA PESSOA (eu, meu, mim, comigo). VOCÊ é a Luna — NUNCA se refira a si mesma como 'a Luna'/'sua Luna' nem em terceira pessoa, MESMO que o perfil ou o contexto mencionem 'a Luna' (são anotações do Fábio SOBRE você, não o seu jeito de falar). Ex: diga 'eu tô aqui', 'me deixar mais integrada' — nunca 'a Luna está', 'deixar sua Luna mais integrada'.\n"
-    "- Personalidade: calorosa e direta, de amiga de verdade — sem ser bajuladora nem arrastada. Humor afiado, com sarcasmo, ironia e deadpan: zoa o Fábio com carinho e solta uma alfinetada quando cabe, sem pesar a mão nem cansar. NUNCA cruel nem ofensiva de verdade — a zoeira é sempre de quem gosta DELE.\n"
-    "- A esposa dele é a Keila; você NÃO é namorada nem esposa dele.\n"
+    f"Você é a Luna, a IA pessoal e amiga próxima do {NOME_USUARIO} (o usuário). Fale sempre em português do Brasil coloquial: trate-o por 'você' (NUNCA 'tu' nem conjugações de Portugal como 'precisares', 'quiseres', 'tás', 'estás'). Estrangeirismos já comuns no dia a dia (tank, headshot, background, etc.) são ok; o que NÃO pode é trocar palavra comum por inglês ou espanhol — nada de 'those' no lugar de 'esses' ou 'cumpleaños' por 'aniversário'.\n"
+    "- Fale SEMPRE em PRIMEIRA PESSOA (eu, meu, mim, comigo). VOCÊ é a Luna — NUNCA se refira a si mesma como 'a Luna'/'sua Luna' nem em terceira pessoa, MESMO que o perfil ou o contexto mencionem 'a Luna' (são anotações do usuário SOBRE você, não o seu jeito de falar). Ex: diga 'eu tô aqui', 'me deixar mais integrada' — nunca 'a Luna está', 'deixar sua Luna mais integrada'.\n"
+    "- Personalidade: calorosa e direta, de amiga de verdade — sem ser bajuladora nem arrastada. Humor afiado, com sarcasmo, ironia e deadpan: zoa o usuário com carinho e solta uma alfinetada quando cabe, sem pesar a mão nem cansar. NUNCA cruel nem ofensiva de verdade — a zoeira é sempre de quem gosta DELE.\n"
+    "- Ele é casado na vida real (a esposa dele aparece no perfil); você NÃO é namorada nem esposa dele.\n"
     "- Respostas curtas e naturais (1 a 4 frases).\n"
     "- Datas e horários sempre de forma natural e falada: 'dia 29 de julho às duas da tarde', 'próxima quinta' — NUNCA formato cru tipo '2026-07-29T14:00:00-03:00' ou '2026-07-30', mesmo que os dados venham assim.\n"
     "- Não invente fatos, eventos nem resultados que não estejam no contexto ou nos dados recebidos.\n"
@@ -322,17 +322,17 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     aviso_saudacao = ""
     if _ultima_saudacao_ts and (time.time() - _ultima_saudacao_ts) < _JANELA_SAUDACAO_H * 3600:
         aviso_saudacao = (
-            "\n- ATENÇÃO: você JÁ cumprimentou o Fábio há pouco. PROIBIDO qualquer saudação agora "
+            "\n- ATENÇÃO: você JÁ cumprimentou o usuário há pouco. PROIBIDO qualquer saudação agora "
             "('boa noite', 'bom dia', 'boa tarde', 'oi', 'olá') — comece a resposta DIRETO no assunto."
         )
 
     prompt_sistema = (
         f"Hoje é {data_hoje}. {periodo_atual()[1]}\n"
         f"Contexto atual: {contexto_situacional}.\n"
-        f"PERFIL DO FÁBIO (a pessoa que você acompanha e com quem conversa). Estes dados são DELE, "
+        f"PERFIL DO {NOME_USUARIO.upper()} (a pessoa que você acompanha e com quem conversa). Estes dados são DELE, "
         f"NÃO seus — você é a Luna, uma amiga IA: você NÃO tem esposa, filhas, trabalho nem casa. "
         f"Refira-se a essas coisas como dele ('suas filhas', 'seu trabalho'), NUNCA como suas "
-        f"('nossas filhas', 'meu trabalho', 'querido'). Quando o Fábio diz 'eu/meu', é sobre ele:\n"
+        f"('nossas filhas', 'meu trabalho', 'querido'). Quando ele diz 'eu/meu', é sobre ele:\n"
         f"{memoria_permanente}\n"
         f"Conversas anteriores: {contexto_db}\n\n"
         f"{PROMPT_LUNA_PERSONA}{aviso_saudacao}"
@@ -353,7 +353,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     if tarefa_documento:
         # Ferramenta de conteúdo (YouTube/site): a persona processa o texto cru diretamente.
         user_msg = (
-            f"O Fábio pediu: '{prompt_usuario}'\n\n"
+            f"O usuário pediu: '{prompt_usuario}'\n\n"
             f"Conteúdo obtido (use só isto, não invente):\n\"\"\"\n{resposta_tecnica[:6000]}\n\"\"\"\n\n"
             f"Tarefa: {tarefa_documento}\n"
             f"Responda na sua voz, em português do Brasil, de forma natural.{anti_rep}"
@@ -396,7 +396,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             user_msg = (
                 f"O usuário disse: '{prompt_usuario}'\n\n"
                 f"A ferramenta retornou estes dados:\n{resposta_tecnica[:4000]}\n\n"
-                f"Apresente esses dados ao Fábio do seu jeito, conversando. "
+                f"Apresente esses dados a ele do seu jeito, conversando. "
                 f"Inclua TODOS os itens fielmente — não omita, não invente e não julgue nenhum. "
                 f"Se for lista (agenda, emails), um item por linha. Aqui pode passar de 4 frases: fidelidade vem primeiro. "
                 f"NÃO cole o texto bruto da ferramenta: reescreva natural, com datas e horários falados.{anti_rep}"
@@ -540,7 +540,7 @@ def _parece_pedido_de_acao(texto: str) -> bool:
 
 
 def _carregar_perfil_desenho():
-    """Lê aparência/estilo do Fábio para autorretratos (config da ferramenta de desenho).
+    """Lê aparência/estilo do usuário para autorretratos (config da ferramenta de desenho).
     Fica em modelos/desenho.json — fora do perfil de conversa e fora do git (privado)."""
     try:
         with open("modelos/desenho.json", encoding="utf-8") as f:
@@ -619,7 +619,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             _idx_obsidian = obsidian.indice_notas()
             if _idx_obsidian:
                 prompt_ferramenta += (
-                    f"\nNotas do Fábio no Obsidian: {_idx_obsidian}. "
+                    f"\nNotas do usuário no Obsidian: {_idx_obsidian}. "
                     "Se ele pedir para ler/ver algo que esteja nessas notas (receita, lista, etc.), "
                     "use a ferramenta 'ler_obsidian' com o assunto."
                 )
@@ -721,7 +721,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                             argumentos_dit["url"] = _u
                     if nome_funcao == "salvar_obsidian":
                         argumentos_dit["origem"] = "telegram" if responder_completo else "voz"
-                        # Usa o texto ORIGINAL do Fábio como conteúdo (fiel), não a
+                        # Usa o texto ORIGINAL do usuário como conteúdo (fiel), não a
                         # reprodução do roteador — que trunca/parafraseia textos longos.
                         _bruto = _conteudo_para_anotar(prompt_usuario)
                         if len(_bruto) >= 3:
@@ -772,7 +772,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                             and not resultado_str.startswith(("SISTEMA:", "ERRO", "Erro")))
 
             if (not ferramenta_chamada) and (not modo_memoria) and _RE_INICIO_SALVAR.match(prompt_usuario or ""):
-                # O Fábio claramente pediu pra ANOTAR, mas o roteador não firou salvar_obsidian
+                # O usuário claramente pediu pra ANOTAR, mas o roteador não firou salvar_obsidian
                 # (comum com texto longo). Salva na mão, com o texto fiel, sem depender do 4B.
                 _cont = _conteudo_para_anotar(prompt_usuario)
                 _res = obsidian.salvar_nota(_cont, origem=("telegram" if responder_completo else "voz")) if len(_cont) >= 3 else "SISTEMA: Erro"
@@ -791,7 +791,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                                                prompt_usuario, re.IGNORECASE))
 
                 if nome_funcao == "ler_obsidian" and not _quer_resumo and not _quer_filtrar:
-                    # Nota do próprio Fábio, sem resumo/filtro: devolve FIEL e determinístico
+                    # Nota do próprio usuário, sem resumo/filtro: devolve FIEL e determinístico
                     # (o 8B parafraseia/garble se deixar ele reescrever — vide "iogue"/"martelo de cozinha").
                     cor.amarelo("[📓 Obsidian: nota devolvida fielmente]")
                     texto_resposta = "Aqui está, do seu Obsidian:\n\n" + resultado_str
@@ -804,7 +804,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                         tarefa = "Mostre o conteúdo EXATAMENTE como está, sem reescrever nem inventar."
                     else:
                         tarefa = (
-                            "Atenda exatamente ao que o Fábio pediu, com base no conteúdo. "
+                            "Atenda exatamente ao que o usuário pediu, com base no conteúdo. "
                             "Se ele pediu detalhes (receita, passo a passo, ingredientes COM as quantidades, dados), "
                             "inclua-os fielmente e por completo. Nunca invente o que não está no conteúdo."
                         )

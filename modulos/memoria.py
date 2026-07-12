@@ -8,6 +8,7 @@ import json
 import uuid
 import datetime
 import chromadb
+from dotenv import load_dotenv
 import re
 import warnings
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
@@ -17,6 +18,10 @@ import modelos.cores as cor
 
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 warnings.filterwarnings("ignore")
+
+load_dotenv()
+# Nome do usuário vem do .env (privacidade — o nome real não fica no código)
+NOME_USUARIO = os.getenv("USUARIO_NOME", "Usuário")
 
 # ============================================================
 # CONFIGURAÇÃO
@@ -89,7 +94,7 @@ def ler_memoria_permanente() -> str:
     if not dados:
         return ""
     
-    linhas = ["Fatos que você sabe sobre o Fábio:"]
+    linhas = [f"Fatos que você sabe sobre o {NOME_USUARIO}:"]
     for chave, info in dados.items():
         linhas.append(f"- {chave}: {info['valor']}")
     return "\n".join(linhas)
@@ -109,7 +114,7 @@ def salvar_conversa(pergunta: str, resposta: str):
     agora_str = agora.strftime("%d/%m/%Y %H:%M")
     # Usa timestamp como ID para garantir ordem cronológica
     id_conversa = agora.strftime("%Y%m%d%H%M%S") + "_" + str(uuid.uuid4())[:8]
-    documento = f"Fábio: {pergunta}\nLuna: {resposta}"
+    documento = f"{NOME_USUARIO}: {pergunta}\nLuna: {resposta}"
     
     _colecao.add(
         documents=[documento],
@@ -184,14 +189,14 @@ def analisar_e_salvar_fato(pergunta, resposta, gerar_resposta_fn):
     prompt = (
         "Você é um classificador lógico de memória estrito. Sua ÚNICA tarefa é extrair fatos NOVOS declarados na mensagem do usuário.\n\n"
         f"[FATOS JÁ CONHECIDOS - PROIBIDO EXTRAIR NOVAMENTE]:\n{memoria_atual}\n\n"
-        f"[MENSAGEM DO USUÁRIO PARA ANALISAR]:\nFábio: {pergunta}\n\n"
+        f"[MENSAGEM DO USUÁRIO PARA ANALISAR]:\n{NOME_USUARIO}: {pergunta}\n\n"
         "REGRAS ABSOLUTAS:\n"
         "1. IGNORAR COMANDOS: Se a mensagem for um pedido ('toque música', 'pesquise', 'bom dia', 'abra o navegador'), retorne {\"salvar\": false}.\n"
         "2. IGNORAR FATOS CONHECIDOS: Se o assunto da mensagem já consta na lista de FATOS JÁ CONHECIDOS, retorne {\"salvar\": false}.\n"
         "3. SALVAR APENAS O NOVO: Se o usuário declarar explicitamente uma informação estrutural INÉDITA sobre seu hardware, trabalho, gostos ou vida pessoal, retorne um fato estruturado.\n\n"
         "FORMATO DE SAÍDA OBRIGATÓRIO (Escolha apenas UMA opção e não escreva mais nada):\n"
         'Opção A (Nada novo): {"salvar": false}\n'
-        'Opção B (Fato novo): {"salvar": true, "chave": "categoria_da_informacao", "valor": "informacao resumida sobre o Fábio"}\n'
+        'Opção B (Fato novo): {"salvar": true, "chave": "categoria_da_informacao", "valor": "informacao resumida sobre o usuario"}\n'
     )
     
     try:

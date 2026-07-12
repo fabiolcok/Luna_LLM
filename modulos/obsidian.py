@@ -8,8 +8,11 @@ import os
 import re
 import datetime
 import unicodedata
+from dotenv import load_dotenv
 
-_VAULT = (os.getenv("OBSIDIAN_VAULT", "") or r"G:\Projetos\obisidian\Fabio").strip()
+load_dotenv()
+# Caminho do vault vem do .env (OBSIDIAN_VAULT). Sem ele, a integração fica inativa.
+_VAULT = os.getenv("OBSIDIAN_VAULT", "").strip()
 
 # A Luna lê TUDO, menos: pastas internas do Obsidian e a pasta de ignorados (você controla).
 # Jogue em "0 Pasta ignorada" qualquer coisa que ela NÃO deva ler.
@@ -259,7 +262,7 @@ def salvar_foto(dados_imagem: bytes, legenda: str = "", origem: str = "", ext: s
         return f"SISTEMA: Erro ao salvar a foto: {e}"
 
 
-# ── ANIMES (lista configurada pelo Fábio no Obsidian) ──
+# ── ANIMES (lista configurada pelo usuário no Obsidian) ──
 def ler_lista_animes() -> list:
     """Lê os animes dos BULLETS da nota Luna/animes.md. Retorna [(nome_busca, apelido)]:
     '- Nome do anime'            -> apelido None (a Luna fala o título oficial em inglês)
@@ -288,7 +291,7 @@ def ler_lista_animes() -> list:
     return animes
 
 
-# ── RADAR (feeds RSS configurados pelo Fábio no Obsidian) ──
+# ── RADAR (feeds RSS configurados pelo usuário no Obsidian) ──
 def ler_feeds_radar() -> list:
     """Lê as URLs de RSS dos BULLETS da nota Luna/radar_rss.md. Só linhas que
     começam com '-' ou '*' contam — assim a dica com link de exemplo é ignorada."""

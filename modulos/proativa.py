@@ -7,7 +7,7 @@ import datetime
 import random
 import requests
 import ctypes
-from modulos.habilidades import checar_emails_nao_lidos, ler_agenda_google, obter_previsao_tempo, obter_janela_em_foco, controlar_firefox_via_extensao
+from modulos.habilidades import checar_emails_nao_lidos, ler_agenda_google, obter_previsao_tempo, obter_janela_em_foco, controlar_firefox_via_extensao, NOME_USUARIO
 from modulos.pensar import gerar_resposta
 from modulos.falar import falar_texto
 from modulos.memoria import carregar_vistos, salvar_vistos, atualizar_estado_luna
@@ -177,8 +177,8 @@ DESCONTO_MINIMO  = 50
 # Idioma, personalidade, sarcasmo e "amiga-não-esposa" já vêm do PROMPT_LUNA_PERSONA
 # (pensar.py), aplicado como sistema em toda chamada — repetir aqui só duplicava/conflitava.
 REGRA_PERSONA = (
-    "Fale DIRETAMENTE com o Fábio, em SEGUNDA pessoa (você, seu, te). Mesmo que a instrução "
-    "mencione 'o Fábio' ou 'dele' (é só o contexto te informando), NUNCA fale dele em terceira "
+    f"Fale DIRETAMENTE com o {NOME_USUARIO}, em SEGUNDA pessoa (você, seu, te). Mesmo que a instrução "
+    "mencione 'o usuário' ou 'dele' (é só o contexto te informando), NUNCA fale dele em terceira "
     "pessoa: diga 'seus stats', 'você está em Gold' — nunca 'os stats dele'. "
     "Seja breve e natural: máximo 2 frases."
 )
@@ -257,7 +257,7 @@ def _passou_intervalo(chave, minutos):
     return False
 
 # Histórico da conversa de voz (main.py registra a lista dele aqui). As falas
-# proativas entram nele — senão a Luna avisa "tem 2 novidades", o Fábio pergunta
+# proativas entram nele — senão a Luna avisa "tem 2 novidades", o usuário pergunta
 # "quais são?" e ela não faz ideia do que falou (aconteceu, avaliação de 28/06).
 _historico_principal = None
 
@@ -293,7 +293,7 @@ def _falar_proativamente(texto_resposta) -> bool:
 # Abordagens sorteadas para o proativo não ficar repetitivo (variar=True)
 _ABORDAGENS = [
     "um comentário curto e direto",
-    "uma pergunta casual pro Fábio",
+    "uma pergunta casual pro usuário",
     "uma curiosidade ou observação leve sobre o assunto",
     "uma provocação leve e bem-humorada (sem ofender)",
 ]
@@ -405,7 +405,7 @@ def _pegar_preco(appid):
         return None
 
 # ------------------------------------------------------------
-# STEAM AO VIVO — o que o Fábio está jogando AGORA (genérico)
+# STEAM AO VIVO — o que o usuário está jogando AGORA (genérico)
 # ------------------------------------------------------------
 def _steam_cliente_aberto():
     """True se o cliente Steam (steam.exe) está rodando. Checagem local barata:
@@ -419,7 +419,7 @@ def _steam_cliente_aberto():
     return False
 
 def _steam_status_atual():
-    """Pergunta pro Steam o que o Fábio está jogando neste momento.
+    """Pergunta pro Steam o que o usuário está jogando neste momento.
     Retorna (appid:str, nome:str) ou (None, None) se não estiver jogando."""
     if not STEAM_API_KEY or not STEAM_ID:
         return None, None
@@ -502,7 +502,7 @@ def _steam_info_jogo(appid):
 # ============================================================
 
 def _buscar_dados_overwatch():
-    """Busca o perfil completo do Fábio e os heróis mais jogados na API do Overwatch."""
+    """Busca o perfil completo do usuário e os heróis mais jogados na API do Overwatch."""
     battletag = os.getenv("OW_BATTLETAG", "")
     
     url_perfil = f"https://overfast-api.tekrop.fr/players/{battletag}/summary"
@@ -760,7 +760,7 @@ def _tarefa_checar_emails():
         novos = [linha for linha in resultado.strip().split("\n") if linha and linha not in _emails_vistos]
         for n in novos: _emails_vistos.add(n)
         if not novos or "não há novos" in resultado.lower(): return
-        prompt = f"O Fábio tem {len(novos)} emails novos. Remetentes: {' | '.join(novos[:5])}. Avise-o. {REGRA_PERSONA}"
+        prompt = f"O usuário tem {len(novos)} emails novos. Remetentes: {' | '.join(novos[:5])}. Avise-o. {REGRA_PERSONA}"
         _falar_proativamente(_gerar_fala_proativa(prompt, "checar_emails", variar=False))
         registrar_tentativa()
     except Exception as e: cor.vermelho(f"[Erro emails: {e}]")
@@ -813,7 +813,7 @@ def _tarefa_checar_agenda():
 
         prompt = (
             f"Estes compromissos estão próximos AGORA: {'; '.join(urgentes)}. "
-            f"Avise o Fábio de forma seca e direta, mencionando só esses. {REGRA_PERSONA}"
+            f"Avise o usuário de forma seca e direta, mencionando só esses. {REGRA_PERSONA}"
         )
 
         fala = _gerar_fala_proativa(prompt, "checar_agenda", variar=False)
@@ -827,7 +827,7 @@ def _tarefa_checar_agenda():
 def _tarefa_lembrete_pausa():
     cfg = CONFIGURACAO["lembrete_pausa"]
     if not cfg["ativo"] or _em_horario_silencio(18, 9) or not _passou_intervalo("pausa", cfg["intervalo_minutos"]): return
-    _falar_proativamente(_gerar_fala_proativa(f"Mande o Fábio fazer uma pausa ou beber água em uma frase. {REGRA_PERSONA}", "lembrete_pausa"))
+    _falar_proativamente(_gerar_fala_proativa(f"Mande o usuário fazer uma pausa ou beber água em uma frase. {REGRA_PERSONA}", "lembrete_pausa"))
     registrar_tentativa()
 
 def _tarefa_monitorar_clima():
@@ -867,7 +867,7 @@ def _tarefa_steam_wishlist():
         promocoes.append(info)
     if promocoes:
         lista = ", ".join(f"{j['nome']} ({j['desconto']}%)" for j in promocoes)
-        prompt = f"Tem promoção na wishlist da Steam: {lista}. Avise o Fábio para gastar dinheiro. {REGRA_PERSONA}"
+        prompt = f"Tem promoção na wishlist da Steam: {lista}. Avise o usuário para gastar dinheiro. {REGRA_PERSONA}"
         falou = _falar_proativamente(_gerar_fala_proativa(prompt, "steam_wishlist"))
         # Só carimba 'avisado' se a fala SAIU de verdade — senão tenta de novo na
         # próxima rodada (bug antigo: carimbava antes de falar e o aviso sumia).
@@ -972,14 +972,14 @@ def _tarefa_radar_rss():
 
         if n == 1:
             prompt = (
-                f"Você achou 1 novidade nos feeds que o Fábio acompanha e anotou na nota 'Novidades' dele.\n"
+                f"Você achou 1 novidade nos feeds que o usuário acompanha e anotou na nota 'Novidades' dele.\n"
                 f"A NOVIDADE: {amostra}\n"
                 f"Conte pra ele, do seu jeito e em 1-2 frases, o que é essa novidade (resuminho leve, "
                 f"NÃO copie o texto). {REGRA_PERSONA}"
             )
         else:
             prompt = (
-                f"Você achou {n} novidades nos feeds que o Fábio acompanha e anotou todas na nota 'Novidades' dele.\n"
+                f"Você achou {n} novidades nos feeds que o usuário acompanha e anotou todas na nota 'Novidades' dele.\n"
                 f"NOVIDADE EM DESTAQUE (só uma amostra das {n}): {amostra}\n"
                 f"Dê um resuminho leve SÓ dessa novidade em destaque (1-2 frases, sem copiar o texto) e, no fim, "
                 f"avise que tem mais {n - 1} esperando na nota Novidades. {REGRA_PERSONA}"
@@ -999,7 +999,7 @@ def _consultar_anilist(nome):
         if not m or not m.get("nextAiringEpisode"):
             return None
         nae = m["nextAiringEpisode"]
-        # prefere o título em inglês (o da Crunchyroll, que o Fábio conhece)
+        # prefere o título em inglês (o da Crunchyroll, que o usuário conhece)
         titulo = m["title"].get("english") or m["title"]["romaji"]
         return (titulo, nae["episode"], nae["airingAt"])
     except Exception:
@@ -1039,7 +1039,7 @@ def _tarefa_avisar_animes():
     lista_txt = "; ".join(f"{falado} (episódio {e})" for _, falado, e in saem_hoje)
     cor.amarelo(f"[🎌 Animes hoje: {lista_txt}]")
     prompt = (
-        f"HOJE sai episódio novo de anime que o Fábio acompanha: {lista_txt}. "
+        f"HOJE sai episódio novo de anime que o usuário acompanha: {lista_txt}. "
         f"Avise ele com empolgação leve, citando o anime EXATAMENTE pelo nome dado e o episódio — "
         f"chega na Crunchyroll ao longo do dia. {REGRA_PERSONA}"
     )
@@ -1113,7 +1113,7 @@ def _tarefa_bom_dia():
             except:
                 dados_email = "Não foi possível acessar os emails."
                 
-            prompt_matinal = f"""O sistema notou que o horário atual está dentro da janela matinal e o Fábio está ativo.
+            prompt_matinal = f"""O sistema notou que o horário atual está dentro da janela matinal e o usuário está ativo.
 DADOS DA AGENDA PARA HOJE: {dados_agenda}.
 DADOS DA CAIXA DE EMAIL:{dados_email}.
 
@@ -1128,7 +1128,7 @@ Dê um 'bom dia' usando sua personalidade {REGRA_PERSONA} EXCEÇÃO ao limite de
                 salvar_estado_proativo("ultimo_dia_bom_dia", dia_atual)
 
 def _tarefa_monitorar_jogos():
-    """Verifica se o Fábio iniciou ou encerrou uma partida."""
+    """Verifica se o usuário iniciou ou encerrou uma partida."""
     global ESTADO_JOGOS
     
     # Pega todos os nomes de processos rodando agora (case-insensitive)
@@ -1149,7 +1149,7 @@ def _tarefa_monitorar_jogos():
                 print("[📊 Buscando dados para briefing de sessão...]")
                 dados_abertura = _buscar_dados_overwatch()
                 prompt = (
-                    f"O Fábio acabou de abrir Overwatch.\n"
+                    f"O usuário acabou de abrir Overwatch.\n"
                     f"DADOS ATUAIS DA CONTA: {dados_abertura}\n"
                     f"Faça um briefing de sessão direto, do seu jeito: rank atual + uma observação sobre tendência de desempenho. "
                     f"{REGRA_PERSONA}"
@@ -1158,13 +1158,13 @@ def _tarefa_monitorar_jogos():
                 print("[📊 Buscando dados para briefing de sessão Deadlock...]")
                 dados_abertura = _buscar_dados_deadlock()
                 prompt = (
-                    f"O Fábio acabou de abrir Deadlock.\n"
+                    f"O usuário acabou de abrir Deadlock.\n"
                     f"DADOS DA CONTA: {dados_abertura}\n"
                     f"Faça um briefing de sessão direto: winrate atual + observação sobre tendência. "
                     f"{REGRA_PERSONA}"
                 )
             else:
-                prompt = f"O Fábio acabou de abrir o {nome_jogo}. Comente o início da sessão do seu jeito. {REGRA_PERSONA} 1 frase."
+                prompt = f"O usuário acabou de abrir o {nome_jogo}. Comente o início da sessão do seu jeito. {REGRA_PERSONA} 1 frase."
 
             texto = _gerar_fala_proativa(prompt, f"jogo_aberto_{nome_jogo}")
             if texto: _falar_proativamente(texto)
@@ -1187,7 +1187,7 @@ def _tarefa_monitorar_jogos():
                 dados_extras = _buscar_dados_overwatch()
                
                 if dados_extras == "ERRO_DE_CONEXAO":
-                    instrucao_especifica = "Deu erro de rede ao buscar os dados. Registre o fim da sessão e pode soltar uma alfinetada leve na internet ou nos servidores da Blizzard — nunca no Fábio."
+                    instrucao_especifica = "Deu erro de rede ao buscar os dados. Registre o fim da sessão e pode soltar uma alfinetada leve na internet ou nos servidores da Blizzard — nunca nele."
                 else:
                     instrucao_especifica = (
                         "Use os dados como observação factual. "
@@ -1224,7 +1224,7 @@ def _tarefa_monitorar_jogos():
             # ==========================================
             # MONTAGEM DO PROMPT
             # ==========================================
-            prompt = f"""O Fábio acabou de fechar o {nome_jogo}.
+            prompt = f"""O usuário acabou de fechar o {nome_jogo}.
 DADOS TÉCNICOS DA CONTA: {dados_extras}
 
 Registre o encerramento da sessão com tom observacional:
@@ -1305,7 +1305,7 @@ def _tarefa_monitorar_steam():
         dados = " ".join(partes)
 
         prompt = (
-            f"O Fábio acabou de abrir {nome} na Steam.\n"
+            f"O usuário acabou de abrir {nome} na Steam.\n"
             f"DADOS: {dados}\n"
             f"Comente a abertura da sessão de forma leve e amigável: cite 1 dado marcante "
             f"(horas ou conquistas) e/ou um toque sobre o jogo. {REGRA_PERSONA}"
@@ -1340,7 +1340,7 @@ def _tarefa_monitorar_steam():
                 partes.append("Nenhuma conquista nova nesta sessão.")
             dados = " ".join(partes)
             prompt = (
-                f"O Fábio acabou de fechar {nome_antes} (Steam).\n"
+                f"O usuário acabou de fechar {nome_antes} (Steam).\n"
                 f"DADOS DA SESSÃO: {dados}\n"
                 f"Feche a sessão de forma leve: comente o tempo jogado e, se houve, as conquistas novas. "
                 f"{REGRA_PERSONA}"
@@ -1395,7 +1395,7 @@ def _tarefa_contexto_navegador():
     # YouTube com vídeo aberto → ação concreta
     if "youtube.com/watch" in url_lower or "youtu.be/" in url_lower:
         prompt = (
-            f"O Fábio está com um vídeo do YouTube aberto há {int(minutos_na_url)} minutos. "
+            f"O usuário está com um vídeo do YouTube aberto há {int(minutos_na_url)} minutos. "
             f"Pergunte de forma casual e direta se ele quer que você resuma o vídeo. "
             f"NÃO diga 'você está assistindo' ou descreva o que ele faz. Só a pergunta. "
             f"{REGRA_PERSONA} 1 frase."
@@ -1410,7 +1410,7 @@ def _tarefa_contexto_navegador():
                 or "Erro" in titulo):
             return
         prompt = (
-            f"O Fábio está nessa página há {int(minutos_na_url)} minutos: '{titulo}'. "
+            f"O usuário está nessa página há {int(minutos_na_url)} minutos: '{titulo}'. "
             f"Faça UM comentário curto sobre o assunto do título — fale sobre o tema, "
             f"NÃO sobre o fato de ele estar lendo. Sem 'você está', sem narração. "
             f"{REGRA_PERSONA} 1 frase."

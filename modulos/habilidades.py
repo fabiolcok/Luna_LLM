@@ -43,14 +43,17 @@ from googleapiclient.discovery import build
 
 load_dotenv()
 
+# Nome do usuário (privacidade: o nome real fica no .env, fora do repositório).
+# É importado pelos outros módulos (pensar, proativa, memoria) pra montar os prompts.
+NOME_USUARIO = os.getenv("USUARIO_NOME", "Usuário")
 
 
 """
 MÓDULO DE HABILIDADES (FERRAMENTAS) DA LUNA
 ---------------------------------------------------------
 Este arquivo contém todas as funções de "Pull" (Reativas).
-São as ferramentas que a Luna pode decidir acionar por conta própria quando o Fábio 
-faz uma pergunta direta ou quando o Fabio fala um termo que ativa a habilidade.
+São as ferramentas que a Luna pode decidir acionar por conta própria quando o usuário
+faz uma pergunta direta ou quando fala um termo que ativa a habilidade.
 
 
 Funções Disponíveis:
@@ -77,8 +80,8 @@ Funções Disponíveis:
 - listar_processos_pesados(): Retorna os 5 processos que mais estão consumindo RAM/CPU no momento.
 - abrir_programa(nome_programa): Permite a Luna abrir jogos ou aplicativos.
 - matar_processo(nome_processo): Permite a Luna forçar o fechamento de um programa que travou.
-- obter_janela_em_foco(): Descobre qual programa ou janela está em primeiro plano no Windows do Fábio.
-- desenhar_imagem(prompt_imagem): Gera uma imagem baseada na descrição da Luna e abre no navegador do Fábio.
+- obter_janela_em_foco(): Descobre qual programa ou janela está em primeiro plano no Windows.
+- desenhar_imagem(prompt_imagem): Gera uma imagem baseada na descrição da Luna e abre no navegador.
 - alternar_mute(): Muta ou desmuta o volume do sistema via pycaw (Windows).
 - ler_url_especifica(url): Faz fetch de uma URL, extrai parágrafos com BeautifulSoup e retorna até 15000 chars de texto limpo.
 
@@ -606,12 +609,12 @@ def checar_emails_nao_lidos(limite=5):
         status, mensagens = mail.search(None, "UNSEEN")
         
         if status != "OK" or not mensagens[0]:
-            return "Aviso para a IA: Não há novos e-mails não lidos na caixa de entrada do Fábio."
+            return "Aviso para a IA: Não há novos e-mails não lidos na caixa de entrada do usuário."
             
         lista_ids = mensagens[0].split()
         ids_recentes = lista_ids[-limite:] # Pega apenas os últimos X e-mails
         
-        resumo_emails = "Lista de e-mails não lidos do Fábio:\n\n"
+        resumo_emails = "Lista de e-mails não lidos do usuário:\n\n"
         
         for id_email in ids_recentes:
             _, msg_data = mail.fetch(id_email, "(RFC822)")
@@ -633,7 +636,7 @@ def checar_emails_nao_lidos(limite=5):
             "\n[AVISO DE SISTEMA OBRIGATÓRIO PARA A LUNA]: "
             "Você só tem acesso ao Remetente e ao Assunto. O corpo do e-mail NÃO foi baixado para "
             "poupar processamento e proteger a privacidade. NUNCA tente adivinhar ou inventar o conteúdo "
-            "da mensagem. Se o Fábio perguntar o que está escrito dentro do e-mail, diga explicitamente "
+            "da mensagem. Se o usuário perguntar o que está escrito dentro do e-mail, diga explicitamente "
             "que o seu sistema só permite ler o remetente e o assunto."
         )
 
@@ -693,7 +696,7 @@ def controlar_firefox_via_extensao(acao: str, parametro: str = ""):
     global _resposta_pendente
 
     if not _conexao_ativa or not _loop_websocket:
-        return "Erro: O Firefox não está conectado no momento. Peça ao Fábio para abrir o navegador."
+        return "Erro: O Firefox não está conectado no momento. Peça ao usuário para abrir o navegador."
 
     # Garante que abrir_url sempre receba uma URL válida —
     # se o modelo mandar só um nome (ex: "Wikipedia"), converte em busca do Google.
@@ -763,17 +766,18 @@ def listar_processos_pesados():
 
 def abrir_programa(nome_programa):
     """Permite a Luna abrir jogos ou aplicativos."""
-    # Um dicionário mapeando os nomes para os caminhos reais no seu PC
+    # Um dicionário mapeando os nomes para os caminhos reais no PC
+    # (%LOCALAPPDATA% expande pro usuário atual — sem caminho pessoal fixo)
     atalhos = {
         "overwatch": "steam://rungameid/2357570",
-        "obsidian": "C:\\Users\\Fabio\\AppData\\Local\\Obsidian\\Obsidian.exe",
+        "obsidian": os.path.expandvars(r"%LOCALAPPDATA%\Programs\Obsidian\Obsidian.exe"),
         "firefox": "start firefox"
     }
     
     comando = atalhos.get(nome_programa.lower())
     if comando:
         os.system(comando)
-        return f"SISTEMA: O {nome_programa} foi aberto. LUNA, avise o Fábio que você abriu."
+        return f"SISTEMA: O {nome_programa} foi aberto. LUNA, avise o usuário que você abriu."
     return "SISTEMA: Programa não encontrado nos atalhos."
 
 def matar_processo(nome_processo):
@@ -782,7 +786,7 @@ def matar_processo(nome_processo):
     return f"SISTEMA: O processo {nome_processo} foi finalizado."
 
 def obter_janela_em_foco():
-    """Descobre qual programa ou janela está em primeiro plano no Windows do Fábio."""
+    """Descobre qual programa ou janela está em primeiro plano no Windows."""
     try:
         # Pega o ID da janela que está ativa agora no Windows
         hwnd = ctypes.windll.user32.GetForegroundWindow()
@@ -794,8 +798,8 @@ def obter_janela_em_foco():
         
         nome_janela = buffer.value
         if nome_janela:
-            return f"SISTEMA: O Fábio está com a janela '{nome_janela}' em foco no momento."
-        return "SISTEMA: O Fábio está na área de trabalho ou nenhuma janela está em foco."
+            return f"SISTEMA: O usuário está com a janela '{nome_janela}' em foco no momento."
+        return "SISTEMA: O usuário está na área de trabalho ou nenhuma janela está em foco."
     except Exception as e:
         return f"SISTEMA: Erro ao tentar ler a janela em foco: {e}"
     
@@ -908,7 +912,7 @@ def alternar_mute():
 #================================================================
 
 def consultar_overwatch() -> str:
-    """Busca perfil e estatísticas do Fábio no Overwatch via OverFast API."""
+    """Busca perfil e estatísticas do usuário no Overwatch via OverFast API."""
     battletag = os.getenv("OW_BATTLETAG", "")
     url_perfil = f"https://overfast-api.tekrop.fr/players/{battletag}/summary"
     url_stats  = f"https://overfast-api.tekrop.fr/players/{battletag}/stats/summary"
@@ -1037,7 +1041,7 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "resumir_youtube",
-            "description": "Resume um vídeo do YouTube. Se o Fábio mandar um link (ex: pelo Telegram), passe-o em 'url'. Se ele não mandar link (ex: pedindo por voz no PC), deixe 'url' vazio para usar a aba ativa do Firefox.",
+            "description": "Resume um vídeo do YouTube. Se o usuário mandar um link (ex: pelo Telegram), passe-o em 'url'. Se ele não mandar link (ex: pedindo por voz no PC), deixe 'url' vazio para usar a aba ativa do Firefox.",
             "parameters": {
                 "type": "object",
                 "properties": {"url": {"type": "string", "description": "URL do vídeo do YouTube, se o usuário tiver fornecido. Caso contrário, omita."}},
@@ -1127,7 +1131,7 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "abrir_programa",
-            "description": "Abre um programa ou jogo no computador do Fábio.",
+            "description": "Abre um programa ou jogo no computador do usuário.",
             "parameters": {
                 "type": "object",
                 "properties": {"nome_programa": {"type": "string"}},
@@ -1139,7 +1143,7 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "desenhar_imagem",
-            "description": "Gera uma imagem. Use quando o Fábio pedir um desenho.",
+            "description": "Gera uma imagem. Use quando o usuário pedir um desenho.",
             "parameters": {
                 "type": "object",
                 "properties": {"prompt_imagem": {"type": "string"}},
@@ -1175,7 +1179,7 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "consultar_overwatch",
-            "description": "Consulta o perfil, rank, winrate, KDA e herói main do Fábio no Overwatch. Use quando ele perguntar sobre as próprias stats, rank, ou desempenho no Overwatch.",
+            "description": "Consulta o perfil, rank, winrate, KDA e herói main do usuário no Overwatch. Use quando ele perguntar sobre as próprias stats, rank, ou desempenho no Overwatch.",
             "parameters": {"type": "object", "properties": {}, "required": []}
         }
     },
@@ -1183,7 +1187,7 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "resumir_site",
-            "description": "Lê/resume um site ou artigo. Se o Fábio mandar um link (ex: pelo Telegram), passe-o em 'url'. Se ele não mandar link (ex: por voz no PC), deixe 'url' vazio para usar a aba do Firefox ou o clipboard.",
+            "description": "Lê/resume um site ou artigo. Se o usuário mandar um link (ex: pelo Telegram), passe-o em 'url'. Se ele não mandar link (ex: por voz no PC), deixe 'url' vazio para usar a aba do Firefox ou o clipboard.",
             "parameters": {
                 "type": "object",
                 "properties": {"url": {"type": "string", "description": "URL do site/artigo, se o usuário tiver fornecido. Caso contrário, omita."}},
@@ -1203,7 +1207,7 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "ver_tela",
-            "description": "Tira um print da tela atual do PC do Fábio e descreve o que está nela. Use quando ele pedir para ver/olhar a tela, tirar um print, ou ajuda com algo que está na tela.",
+            "description": "Tira um print da tela atual do PC do usuário e descreve o que está nela. Use quando ele pedir para ver/olhar a tela, tirar um print, ou ajuda com algo que está na tela.",
             "parameters": {"type": "object", "properties": {}, "required": []}
         }
     },
@@ -1223,7 +1227,7 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "ler_obsidian",
-            "description": "Lê uma nota das ANOTAÇÕES PESSOAIS do Fábio (Obsidian) — receitas, listas, coisas que ele salvou, e a nota 'Novidades' (onde o radar de notícias anota as novidades dos feeds dele). Use quando ele pedir algo das 'minhas notas/anotações' ou perguntar 'quais são as novidades'. NÃO use para a web (isso é pesquisar_web) nem para links (resumir_site). NÃO use se ele perguntar o que ACABOU de salvar nesta conversa — isso você responde de memória, pela própria conversa.",
+            "description": "Lê uma nota das ANOTAÇÕES PESSOAIS do usuário (Obsidian) — receitas, listas, coisas que ele salvou, e a nota 'Novidades' (onde o radar de notícias anota as novidades dos feeds dele). Use quando ele pedir algo das 'minhas notas/anotações' ou perguntar 'quais são as novidades'. NÃO use para a web (isso é pesquisar_web) nem para links (resumir_site). NÃO use se ele perguntar o que ACABOU de salvar nesta conversa — isso você responde de memória, pela própria conversa.",
             "parameters": {
                 "type": "object",
                 "properties": {"assunto": {"type": "string", "description": "Do que é a nota que ele quer (ex: 'receita do biscoito', 'contas do mês')."}},
@@ -1235,11 +1239,11 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "salvar_obsidian",
-            "description": "Anota/salva um recado, ideia ou lembrete SEM data e hora marcadas nas notas do Fábio (Obsidian) — sempre cria uma nota NOVA. Use quando ele disser 'anota', 'salva isso', 'registra', 'guarda', 'lembra que', 'toma nota' seguido do que guardar (ex: 'anota que preciso renovar o seguro'). Se for compromisso COM dia e hora, use adicionar_agenda. NÃO use para LER nota (isso é ler_obsidian). NÃO use para EDITAR nota existente (marcar como concluído, riscar item, alterar linha) — você NÃO consegue editar notas; nesse caso NÃO use ferramenta nenhuma e avise honestamente que não consegue.",
+            "description": "Anota/salva um recado, ideia ou lembrete SEM data e hora marcadas nas notas do usuário (Obsidian) — sempre cria uma nota NOVA. Use quando ele disser 'anota', 'salva isso', 'registra', 'guarda', 'lembra que', 'toma nota' seguido do que guardar (ex: 'anota que preciso renovar o seguro'). Se for compromisso COM dia e hora, use adicionar_agenda. NÃO use para LER nota (isso é ler_obsidian). NÃO use para EDITAR nota existente (marcar como concluído, riscar item, alterar linha) — você NÃO consegue editar notas; nesse caso NÃO use ferramenta nenhuma e avise honestamente que não consegue.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "conteudo": {"type": "string", "description": "O que deve ser anotado, exatamente como o Fábio quer guardar (ex: 'renovar o seguro do carro esse mês')."},
+                    "conteudo": {"type": "string", "description": "O que deve ser anotado, exatamente como o usuário quer guardar (ex: 'renovar o seguro do carro esse mês')."},
                     "titulo": {"type": "string", "description": "Título curto opcional (ex: 'Seguro do carro'). Se não souber, deixe vazio."}
                 },
                 "required": ["conteudo"]

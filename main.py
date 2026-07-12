@@ -255,7 +255,7 @@ def loop_voz():
                         # Confirmação com a voz da persona; frases prontas só como fallback.
                         from modulos.pensar import frase_confirmacao
                         resposta_luna = frase_confirmacao(
-                            f"Você acabou de arquivar no Inbox do Obsidian do Fábio uma imagem que ele "
+                            f"Você acabou de arquivar no Inbox do Obsidian do usuário uma imagem que ele "
                             f"te mandou, com o título '{t}'. Confirme pra ele em 1 frase curta, do seu "
                             f"jeito, citando o título."
                         ) or _rnd.choice([

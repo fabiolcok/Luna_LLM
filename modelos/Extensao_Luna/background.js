@@ -93,7 +93,7 @@ function getScriptCode(acao, parametro) {
         return `
             (function() {
                 let texto = document.body.innerText.substring(0, 1500);
-                return "SISTEMA: Texto capturado da tela:\\n" + texto + "\\n\\nLUNA, leia essa informação e responda ao pedido do Fábio. Mantenha seu tom sarcástico.";
+                return "SISTEMA: Texto capturado da tela:\\n" + texto + "\\n\\nLUNA, leia essa informação e responda ao pedido do usuário. Mantenha seu tom sarcástico.";
             })();
         `;
     }
@@ -101,7 +101,7 @@ function getScriptCode(acao, parametro) {
     if (acao === "rolar_baixo") {
         return `
             window.scrollBy(0, 800); 
-            "SISTEMA: A página foi rolada para baixo. LUNA, faça um comentário rápido sobre a preguiça do Fábio de usar o scroll do mouse.";
+            "SISTEMA: A página foi rolada para baixo. LUNA, faça um comentário rápido sobre a preguiça do usuário de usar o scroll do mouse.";
         `;
     }
     
@@ -113,9 +113,9 @@ function getScriptCode(acao, parametro) {
                 
                 if (alvo) {
                     alvo.click();
-                    return "SISTEMA: Clique realizado com sucesso em '${parametro}'. LUNA, avise o Fábio de forma debochada (ex: 'gg', 'clipado').";
+                    return "SISTEMA: Clique realizado com sucesso em '${parametro}'. LUNA, avise o usuário de forma debochada (ex: 'gg', 'clipado').";
                 }
-                return "SISTEMA: Erro. O elemento '${parametro}' não existe na tela. LUNA, zombe da visão de prata do Fábio por pedir para clicar no que não existe.";
+                return "SISTEMA: Erro. O elemento '${parametro}' não existe na tela. LUNA, zombe da visão de prata do usuário por pedir para clicar no que não existe.";
             })();
         `;
     }
@@ -147,8 +147,8 @@ function getScriptCode(acao, parametro) {
     if (acao === "navegacao") {
         return `
             (function() {
-                if ("${parametro}" === "voltar") { window.history.back(); return "SISTEMA: Voltando página. LUNA, avise o Fábio."; }
-                if ("${parametro}" === "recarregar") { location.reload(); return "SISTEMA: Página recarregada. LUNA, avise o Fábio."; }
+                if ("${parametro}" === "voltar") { window.history.back(); return "SISTEMA: Voltando página. LUNA, avise o usuário."; }
+                if ("${parametro}" === "recarregar") { location.reload(); return "SISTEMA: Página recarregada. LUNA, avise o usuário."; }
             })();
         `;
     }
@@ -164,20 +164,20 @@ function getScriptCode(acao, parametro) {
                     let btn = document.querySelector(".ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button");
                     if (btn) { 
                         btn.click(); 
-                        return "SISTEMA: Anúncio do YouTube pulado. LUNA, zombe do Fábio por ser um pleb sem YouTube Premium."; 
+                        return "SISTEMA: Anúncio do YouTube pulado. LUNA, zombe do usuário por ser um pleb sem YouTube Premium."; 
                     }
-                    return "SISTEMA: Nenhum botão de pular anúncio na tela. LUNA, diga que o Fábio vai ter que assistir o anúncio inteiro e ria dele.";
+                    return "SISTEMA: Nenhum botão de pular anúncio na tela. LUNA, diga que o usuário vai ter que assistir o anúncio inteiro e ria dele.";
                 }
                 
                 // Funções gerais de vídeo
                 if (video) {
                     if ("${parametro}" === "play_pause") {
-                        if (video.paused) { video.play(); return "SISTEMA: Vídeo rolando. LUNA, confirme com o Fábio."; }
-                        else { video.pause(); return "SISTEMA: Vídeo pausado. LUNA, confirme com o Fábio."; }
+                        if (video.paused) { video.play(); return "SISTEMA: Vídeo rolando. LUNA, confirme com o usuário."; }
+                        else { video.pause(); return "SISTEMA: Vídeo pausado. LUNA, confirme com o usuário."; }
                     }
                     if ("${parametro}" === "mutar") {
                         video.muted = !video.muted;
-                        return "SISTEMA: Som alterado. LUNA, confirme com o Fábio.";
+                        return "SISTEMA: Som alterado. LUNA, confirme com o usuário.";
                     }
                 }
                 return "SISTEMA: Erro. Nenhum reprodutor de vídeo encontrado na tela.";

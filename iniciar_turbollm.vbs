@@ -4,4 +4,5 @@
 ' --no-open = nao abre o navegador a cada boot.
 ' O modelo da Luna (Gemma-4-12B) carrega sob demanda (JIT) na primeira chamada dela.
 Set s = CreateObject("WScript.Shell")
-s.Run """C:\Program Files\nodejs\node.exe"" ""C:\Users\Fabio Lemes\AppData\Roaming\npm\node_modules\turbollm\bin\turbollm.mjs"" --no-open", 0, False
+appdata = s.ExpandEnvironmentStrings("%APPDATA%")
+s.Run """C:\Program Files\nodejs\node.exe"" """ & appdata & "\npm\node_modules\turbollm\bin\turbollm.mjs"" --no-open", 0, False

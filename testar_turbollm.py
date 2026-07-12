@@ -68,7 +68,7 @@ ok = True
 for i in range(1, 4):
     try:
         r_r, dr = chamar(ROTEADOR, "que horas são?", tools=ferr)
-        r_p, dp = chamar(PERSONA, "Diga em uma frase algo gentil pro Fábio.")
+        r_p, dp = chamar(PERSONA, "Diga em uma frase algo gentil pro seu usuário.")
         tp = r_p.usage.completion_tokens or 0
         spd = f"{tp/dp:.0f} tok/s" if dp > 0 else "-"
         print(f"   Rodada {i}: rota={dr:.1f}s | persona={dp:.1f}s ({spd})")
