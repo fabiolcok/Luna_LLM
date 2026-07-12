@@ -130,6 +130,18 @@ PROCESSOS_JOGOS = {
     "Deadlock.exe" : "Deadlock"
 }
 
+# Jogos Steam que o monitor proativo deve IGNORAR — ex: idle games que ficam
+# SEMPRE abertos (não são "sessão de jogo"; senão a Luna comenta e ativa o
+# "não perturbe" à toa). Casa por appid (confiável) OU por trecho do nome.
+_STEAM_IGNORAR_APPIDS = {"3678970"}         # TBH: Task Bar Hero (idle)
+_STEAM_IGNORAR_NOMES  = {"task bar hero"}   # reserva, caso o appid mude
+
+def _steam_ignorado(appid, nome) -> bool:
+    return bool(appid) and (
+        str(appid) in _STEAM_IGNORAR_APPIDS
+        or any(ig in (nome or "").lower() for ig in _STEAM_IGNORAR_NOMES)
+    )
+
 # Estado interno para não ficar repetindo a fala
 ESTADO_JOGOS = {
     "Overwatch": False,
@@ -938,11 +950,27 @@ def _tarefa_radar_rss():
         obsidian.adicionar_novidades(novos)
         n = len(novos)
         cor.amarelo(f"[📡 Radar: {n} novidade(s) → Novidades.md]")
-        prompt = (
-            f"Você encontrou {n} novidade(s) nos feeds que o Fábio acompanha e já anotou na nota 'Novidades' dele. "
-            f"Avise em 1 frase curta que tem {n} novidade(s) no radar pra ele dar uma olhada — NÃO liste os títulos. {REGRA_PERSONA}"
-        )
-        _falar_proativamente(_gerar_fala_proativa(prompt, "radar_rss"))
+
+        # Teaser: resume UMA novidade em destaque e diz que tem mais na nota.
+        destaque = random.choice(novos)
+        titulo_d, resumo_d = destaque[0], destaque[3]
+        amostra = f"Título: {titulo_d}." + (f" Resumo: {resumo_d}" if resumo_d else "")
+
+        if n == 1:
+            prompt = (
+                f"Você achou 1 novidade nos feeds que o Fábio acompanha e anotou na nota 'Novidades' dele.\n"
+                f"A NOVIDADE: {amostra}\n"
+                f"Conte pra ele, do seu jeito e em 1-2 frases, o que é essa novidade (resuminho leve, "
+                f"NÃO copie o texto). {REGRA_PERSONA}"
+            )
+        else:
+            prompt = (
+                f"Você achou {n} novidades nos feeds que o Fábio acompanha e anotou todas na nota 'Novidades' dele.\n"
+                f"NOVIDADE EM DESTAQUE (só uma amostra das {n}): {amostra}\n"
+                f"Dê um resuminho leve SÓ dessa novidade em destaque (1-2 frases, sem copiar o texto) e, no fim, "
+                f"avise que tem mais {n - 1} esperando na nota Novidades. {REGRA_PERSONA}"
+            )
+        _falar_proativamente(_gerar_fala_proativa(prompt, "radar_rss", max_tokens=220))
         registrar_tentativa()
 
 def _tarefa_autoconhecimento():
@@ -1165,6 +1193,11 @@ def _tarefa_monitorar_steam():
 
     # Jogos que já têm tratamento dedicado ficam com o outro handler
     if nome and nome in set(PROCESSOS_JOGOS.values()):
+        appid, nome = None, None
+
+    # Jogos ignorados (idle sempre aberto, ex: Task Bar Hero): a Luna não trata
+    # como sessão — nem comenta na abertura, nem liga o "não perturbe".
+    if _steam_ignorado(appid, nome):
         appid, nome = None, None
 
     appid_antes = _STEAM_SESSAO["appid"]
