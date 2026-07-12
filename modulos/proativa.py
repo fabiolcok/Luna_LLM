@@ -503,7 +503,7 @@ def _steam_info_jogo(appid):
 
 def _buscar_dados_overwatch():
     """Busca o perfil completo do Fábio e os heróis mais jogados na API do Overwatch."""
-    battletag = os.getenv("OW_BATTLETAG", "Fabio-1600")
+    battletag = os.getenv("OW_BATTLETAG", "")
     
     url_perfil = f"https://overfast-api.tekrop.fr/players/{battletag}/summary"
     url_status = f"https://overfast-api.tekrop.fr/players/{battletag}/stats/summary"

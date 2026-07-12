@@ -259,8 +259,10 @@ def adicionar_evento_google(resumo, data_hora_iso):
 
 def obter_previsao_tempo():
     """Busca o clima atual usando a API gratuita do Open-Meteo"""
-    latitude = -15.7343385  # Itapoa parque
-    longitude = -47.7771159
+    # Coordenadas vêm do .env (privado). Default genérico = centro de Brasília,
+    # pra não expor endereço de ninguém num repositório público.
+    latitude = os.getenv("CLIMA_LAT", "-15.7942")
+    longitude = os.getenv("CLIMA_LON", "-47.8822")
     
     url = f"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code&timezone=America%2FSao_Paulo"
     
@@ -907,7 +909,7 @@ def alternar_mute():
 
 def consultar_overwatch() -> str:
     """Busca perfil e estatísticas do Fábio no Overwatch via OverFast API."""
-    battletag = os.getenv("OW_BATTLETAG", "Fabio-1600")
+    battletag = os.getenv("OW_BATTLETAG", "")
     url_perfil = f"https://overfast-api.tekrop.fr/players/{battletag}/summary"
     url_stats  = f"https://overfast-api.tekrop.fr/players/{battletag}/stats/summary"
 
