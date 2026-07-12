@@ -261,11 +261,15 @@ def registrar_historico_principal(lista):
     _historico_principal = lista
 
 
-def _falar_proativamente(texto_resposta):
+def _falar_proativamente(texto_resposta) -> bool:
+    """Fala o texto quando a Luna ficar livre. Retorna True SE falou de verdade —
+    quem depende do aviso (ex: dedup da wishlist) só deve marcar 'avisado' com True."""
+    if not texto_resposta or not str(texto_resposta).strip():
+        return False
     timeout = time.time() + 300
     while not luna_esta_livre():
         if time.time() > timeout:
-            return
+            return False
         time.sleep(3)
     try:
         import servidor as _srv
@@ -279,6 +283,7 @@ def _falar_proativamente(texto_resposta):
         if len(_historico_principal) > 12:
             del _historico_principal[:-12]
     falar_texto(texto_resposta)
+    return True
 
 # Abordagens sorteadas para o proativo não ficar repetitivo (variar=True)
 _ABORDAGENS = [
@@ -851,18 +856,22 @@ def _tarefa_steam_wishlist():
         if not info: continue
         desconto = info["desconto"]
         if desconto < DESCONTO_MINIMO:
-            jogos_avisados.pop(appid, None)
+            jogos_avisados.pop(appid, None)   # saiu da promoção — libera avisar de novo no futuro
             continue
         if jogos_avisados.get(appid) == desconto: continue
-        jogos_avisados[appid] = desconto
         promocoes.append(info)
-    vistos["steam"] = jogos_avisados
-    salvar_vistos(vistos)
     if promocoes:
         lista = ", ".join(f"{j['nome']} ({j['desconto']}%)" for j in promocoes)
         prompt = f"Tem promoção na wishlist da Steam: {lista}. Avise o Fábio para gastar dinheiro. {REGRA_PERSONA}"
-        _falar_proativamente(_gerar_fala_proativa(prompt, "steam_wishlist"))
-        registrar_tentativa()
+        falou = _falar_proativamente(_gerar_fala_proativa(prompt, "steam_wishlist"))
+        # Só carimba 'avisado' se a fala SAIU de verdade — senão tenta de novo na
+        # próxima rodada (bug antigo: carimbava antes de falar e o aviso sumia).
+        if falou:
+            for j in promocoes:
+                jogos_avisados[str(j["appid"])] = j["desconto"]
+            registrar_tentativa()
+    vistos["steam"] = jogos_avisados
+    salvar_vistos(vistos)
 
 def _limpar_resumo(html_txt, limite=280):
     """Tira o HTML do resumo do feed e corta num tamanho legível pro Obsidian."""
