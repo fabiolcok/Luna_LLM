@@ -10,6 +10,12 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 11/07/2026
 
+- ✨ **Primeira novidade do radar vem com teaser.** Em vez de só "tem 3 novidades",
+  a Luna já dá um resuminho de uma delas e avisa que tem mais na nota Novidades.
+- 🔧 **Idle games não atrapalham mais.** Jogos que ficam sempre abertos (ex: Task
+  Bar Hero) não disparam o comentário nem o "não perturbe".
+- 🔧 **Botão do Proativo mais claro.** Quando desligado, agora fica 🔴 "Proativo
+  DESLIGADO" em vermelho — fim do "cliquei sem querer e não percebi".
 - 🔧 **"Troca de música" agora funciona de verdade.** A Luna toca a música com o
   álbum na fila (sempre tem próxima, sempre do artista certo), confere o que
   realmente ficou tocando antes de confirmar, e foi proibida de escolher sempre
