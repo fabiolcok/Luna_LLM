@@ -218,11 +218,12 @@
         #btn-toggle-proativo:hover  { background-color: #1f3320; transform: scale(1.04); }
         #btn-toggle-proativo:active { transform: scale(0.96); }
         #btn-toggle-proativo.inativo {
-            background-color: #1a1a1a;
-            color: #3a3a5a;
-            border-color: #2a2a3a;
+            background-color: #2e1a1a;
+            color: #f7768e;
+            border-color: #6a2a2a;
+            font-weight: bold;
         }
-        #btn-toggle-proativo.inativo:hover { background-color: #222; }
+        #btn-toggle-proativo.inativo:hover { background-color: #3a2020; }
 
         /* Status mic */
         #status-mic {
@@ -883,7 +884,7 @@
 
         <div class="btn-row">
             <button id="btn-interromper">⬛ Parar fala</button>
-            <button id="btn-toggle-proativo" title="Ativar/pausar modo proativo">◉ Proativo</button>
+            <button id="btn-toggle-proativo" title="Ativar/pausar modo proativo">🟢 Proativo ligado</button>
         </div>
 
     </div>
@@ -1154,7 +1155,7 @@
         const btnToggleProativo = document.getElementById('btn-toggle-proativo');
         function atualizarBtnProativo(ativo) {
             btnToggleProativo.classList.toggle('inativo', !ativo);
-            btnToggleProativo.textContent = ativo ? '◉ Proativo' : '○ Proativo';
+            btnToggleProativo.textContent = ativo ? '🟢 Proativo ligado' : '🔴 Proativo DESLIGADO';
         }
         btnToggleProativo.onclick = function() {
             const novoEstado = this.classList.contains('inativo');
