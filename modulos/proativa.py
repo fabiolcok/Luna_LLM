@@ -121,6 +121,11 @@ CONFIGURACAO = {
         "intervalo_minutos": 240,     # ~a cada 4h — reflexão ocasional, não repetitiva
         "horario_silencio": (0, 8),
     },
+    "Animes": {
+        "ativo": True,
+        "intervalo_minutos": 360,     # episódio é evento diário — checar ~4x/dia basta
+        "horario_silencio": (0, 9),
+    },
 }
 
 # Jogos para ser monitorados.
@@ -195,7 +200,7 @@ _proativo_ativo = True
 TAREFAS_ATIVAS = {
     "jogos": True, "emails": True, "agenda": True,
     "pausa": True, "clima": True, "bom_dia": True, "steam": True, "navegador": True,
-    "radar_rss": True, "autoconhecimento": True, "steam_jogo": True
+    "radar_rss": True, "autoconhecimento": True, "steam_jogo": True, "animes": True
 }
 
 # Estado interno da tarefa de contexto de navegação
@@ -982,6 +987,70 @@ def _tarefa_radar_rss():
         _falar_proativamente(_gerar_fala_proativa(prompt, "radar_rss", max_tokens=220))
         registrar_tentativa()
 
+def _consultar_anilist(nome):
+    """Próximo episódio de um anime pelo nome — AniList (GraphQL pública, sem chave).
+    Retorna (titulo, episodio, timestamp) ou None se não achou / série encerrada."""
+    q = ("query($busca: String) { Media(search: $busca, type: ANIME) {"
+         " title { romaji english } nextAiringEpisode { episode airingAt } } }")
+    try:
+        r = requests.post("https://graphql.anilist.co",
+                          json={"query": q, "variables": {"busca": nome}}, timeout=10)
+        m = (r.json().get("data") or {}).get("Media")
+        if not m or not m.get("nextAiringEpisode"):
+            return None
+        nae = m["nextAiringEpisode"]
+        # prefere o título em inglês (o da Crunchyroll, que o Fábio conhece)
+        titulo = m["title"].get("english") or m["title"]["romaji"]
+        return (titulo, nae["episode"], nae["airingAt"])
+    except Exception:
+        return None
+
+
+def _tarefa_avisar_animes():
+    """Avisa no DIA em que sai episódio novo dos animes da nota Luna/animes.md.
+    Fonte: AniList. Dedup por (anime, episódio) em vistos['animes'] — e o carimbo
+    só acontece se a fala saiu de verdade (lição da wishlist)."""
+    cfg = CONFIGURACAO["Animes"]
+    if not cfg["ativo"] or _em_horario_silencio(*cfg["horario_silencio"]) or not _passou_intervalo("animes", cfg["intervalo_minutos"]):
+        return
+    lista = obsidian.ler_lista_animes()
+    if not lista:
+        return
+
+    vistos = carregar_vistos()
+    avisados = vistos.get("animes", {})
+    hoje = datetime.datetime.now().date()
+    saem_hoje = []
+    for nome, apelido in lista[:10]:     # teto de sanidade na quantidade de consultas
+        info = _consultar_anilist(nome)
+        time.sleep(1)                    # gentileza com a API
+        if not info:
+            continue
+        titulo, ep, ts = info
+        if datetime.datetime.fromtimestamp(ts).date() != hoje:
+            continue
+        if avisados.get(titulo) == ep:   # já avisou ESSE episódio (dedup pelo título real)
+            continue
+        # a Luna FALA o apelido (se houver); o dedup fica no título oficial (estável)
+        saem_hoje.append((titulo, apelido or titulo, ep))
+
+    if not saem_hoje:
+        return
+    lista_txt = "; ".join(f"{falado} (episódio {e})" for _, falado, e in saem_hoje)
+    cor.amarelo(f"[🎌 Animes hoje: {lista_txt}]")
+    prompt = (
+        f"HOJE sai episódio novo de anime que o Fábio acompanha: {lista_txt}. "
+        f"Avise ele com empolgação leve, citando o anime EXATAMENTE pelo nome dado e o episódio — "
+        f"chega na Crunchyroll ao longo do dia. {REGRA_PERSONA}"
+    )
+    if _falar_proativamente(_gerar_fala_proativa(prompt, "animes")):
+        for titulo, _, e in saem_hoje:
+            avisados[titulo] = e
+        vistos["animes"] = avisados
+        salvar_vistos(vistos)
+        registrar_tentativa()
+
+
 def _tarefa_autoconhecimento():
     """Introspecção: a Luna comenta algo REAL sobre o próprio funcionamento (modelo,
     roteador, nº de ferramentas, tempo ligada). Python junta os fatos; a persona
@@ -1400,6 +1469,7 @@ def _loop_proativo():
                 if TAREFAS_ATIVAS.get("bom_dia", True): _tarefa_bom_dia()
                 if TAREFAS_ATIVAS.get("navegador", True): _tarefa_contexto_navegador()
                 if TAREFAS_ATIVAS.get("radar_rss", True): _tarefa_radar_rss()
+                if TAREFAS_ATIVAS.get("animes", True): _tarefa_avisar_animes()
                 if TAREFAS_ATIVAS.get("autoconhecimento", True): _tarefa_autoconhecimento()
             else:
                 if not _ja_imprimiu_jogando:

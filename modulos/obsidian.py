@@ -259,6 +259,35 @@ def salvar_foto(dados_imagem: bytes, legenda: str = "", origem: str = "", ext: s
         return f"SISTEMA: Erro ao salvar a foto: {e}"
 
 
+# ── ANIMES (lista configurada pelo Fábio no Obsidian) ──
+def ler_lista_animes() -> list:
+    """Lê os animes dos BULLETS da nota Luna/animes.md. Retorna [(nome_busca, apelido)]:
+    '- Nome do anime'            -> apelido None (a Luna fala o título oficial em inglês)
+    '- Nome do anime | apelido'  -> a Luna fala o APELIDO (útil pra títulos quilométricos)."""
+    caminho = os.path.join(_VAULT, "Luna", "animes.md")
+    animes = []
+    try:
+        em_comentario = False
+        with open(caminho, encoding="utf-8") as f:
+            for linha in f:
+                s = linha.strip()
+                if "<!--" in s:
+                    em_comentario = True
+                if "-->" in s:
+                    em_comentario = False
+                    continue
+                if em_comentario or not s.startswith(("-", "*")):
+                    continue
+                nome = s[1:].strip().strip("[]").strip()
+                if not nome or nome.startswith((">", "-")):
+                    continue
+                busca, _, apelido = nome.partition("|")
+                animes.append((busca.strip(), apelido.strip() or None))
+    except Exception:
+        return []
+    return animes
+
+
 # ── RADAR (feeds RSS configurados pelo Fábio no Obsidian) ──
 def ler_feeds_radar() -> list:
     """Lê as URLs de RSS dos BULLETS da nota Luna/radar_rss.md. Só linhas que
