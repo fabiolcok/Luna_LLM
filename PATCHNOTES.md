@@ -8,6 +8,21 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 13/07/2026
+
+- ✨ **Novidades (radar) agora tem interruptor.** Igual aos animes: dá pra
+  desligar o aviso de novidades na tela de config — útil pra ela não te cortar
+  no meio de uma ligação. (De quebra, o botão dos **animes** que não estava
+  respondendo ao clique foi consertado.)
+- 🔧 **Ela fala mais sobre o jogo da Steam que você abre.** Além de horas e
+  conquistas, agora puxa um detalhe específico — a história/premissa (extraída
+  da descrição da loja), um prêmio ou um modo de jogo. Funciona pra qualquer
+  jogo: se a página é magra, cai na descrição curta; se é gigante, não enrola.
+- 🐛 **GIF do modo de espera saiu da mesmice.** O termo "desligando" só tinha
+  2 GIFs no Giphy (sempre os mesmos); virou "sleeping", que tem centenas.
+- 🔧 **Descrições da Steam vêm em português do Brasil** (antes vinham de
+  Portugal, com "tu/conseguires").
+
 ## 12/07/2026
 
 - ✨ **Aviso de lançamento de animes!** Você lista seus animes numa nota do
