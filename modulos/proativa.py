@@ -15,6 +15,7 @@ from modulos import obsidian
 import modelos.cores as cor
 import psutil
 import re
+import html
 
 """
 MÓDULO DE ROTINAS PROATIVAS DA LUNA
@@ -385,7 +386,7 @@ def _pegar_wishlist():
         return []
 
 def _pegar_preco(appid):
-    url = f"https://store.steampowered.com/api/appdetails?appids={appid}&cc=br&l=portuguese&filters=price_overview,basic"
+    url = f"https://store.steampowered.com/api/appdetails?appids={appid}&cc=br&l=brazilian&filters=price_overview,basic"
 
     try:
         dados = requests.get(url, timeout=10).json()
@@ -475,25 +476,60 @@ def _steam_horas(appid):
         pass
     return 0.0
 
+# Palavras que denunciam parágrafo TÉCNICO/burocrático no "Sobre este jogo"
+# (specs de PC, acessibilidade, requisitos) — nada disso serve pra Luna comentar.
+# Palavras que denunciam parágrafo TÉCNICO/burocrático no "Sobre este jogo"
+# (specs de PC, acessibilidade, requisitos) — nada disso serve pra Luna comentar.
+_STEAM_DESC_LIXO = (
+    "esta edição", "esta edicao", "requer", "compatível", "compativel", "compatibilidade",
+    "dlss", "fsr", "xess", "directstorage", "hdr", "ultrawide", "widescreen", "conexão",
+    "conexao", "dualsense", "troféu", "trofeu", "playstation", "mapeamento", "upscaling",
+    "áudio descritivo", "audio descritivo", "resolução", "resolucao", "placa de vídeo",
+)
+# Parágrafo de marketing (prêmios/aclamação) — já vem na descrição curta; aqui queremos a HISTÓRIA.
+_STEAM_DESC_MKT = ("prémio", "premio", "prêmio", "jogo do ano", "vencedor", "aclamad", "definitiva")
+
+def _steam_premissa(html_about):
+    """Pesca o parágrafo de HISTÓRIA do 'Sobre este jogo' (HTML cru da Steam).
+    A premissa costuma ser o 1º parágrafo narrativo — pulando técnico e marketing."""
+    if not html_about:
+        return ""
+    for p in re.findall(r"<p[^>]*>(.*?)</p>", html_about, re.DOTALL):
+        t = html.unescape(re.sub(r"<[^>]+>", "", p)).strip()
+        if len(t) < 150:                      # curto demais = título/bullet técnico
+            continue
+        low = t.lower()
+        if any(x in low for x in _STEAM_DESC_LIXO):
+            continue
+        if any(x in low for x in _STEAM_DESC_MKT):
+            continue
+        return t[:450]                        # 1º parágrafo narrativo = a premissa
+    return ""
+
 def _steam_info_jogo(appid):
-    """Descrição curta + gênero do jogo, pra Luna comentar sobre ele. '' se falhar."""
+    """Material do jogo pra Luna comentar: gênero + descrição curta (prêmios/modos) +
+    premissa da história (extraída limpa do 'Sobre este jogo'). '' se falhar."""
     if not appid:
         return ""
-    url = (f"https://store.steampowered.com/api/appdetails"
-           f"?appids={appid}&cc=br&l=portuguese&filters=basic,genres")
+    # Sem filtro: precisamos de about_the_game (o 'basic' só traz a descrição curta).
+    # l=brazilian → pt-BR (l=portuguese vem de Portugal, com conjugação que a persona proíbe).
+    url = f"https://store.steampowered.com/api/appdetails?appids={appid}&cc=br&l=brazilian"
     try:
         dados = requests.get(url, timeout=10).json().get(str(appid), {})
         if not dados.get("success"):
             return ""
         data = dados.get("data", {})
-        desc = (data.get("short_description") or "").strip()
-        generos = ", ".join(g.get("description", "") for g in data.get("genres", []))
         partes = []
+        generos = ", ".join(g.get("description", "") for g in data.get("genres", []))
         if generos:
             partes.append(f"Gênero: {generos}.")
+        desc = (data.get("short_description") or "").strip()
         if desc:
             partes.append(desc)
-        return " ".join(partes)[:400]
+        historia = _steam_premissa(data.get("about_the_game", ""))
+        if historia:
+            partes.append(f"História: {historia}")
+        return " ".join(partes)[:700]
     except Exception:
         return ""
 
@@ -1307,8 +1343,10 @@ def _tarefa_monitorar_steam():
         prompt = (
             f"O usuário acabou de abrir {nome} na Steam.\n"
             f"DADOS: {dados}\n"
-            f"Comente a abertura da sessão de forma leve e amigável: cite 1 dado marcante "
-            f"(horas ou conquistas) e/ou um toque sobre o jogo. {REGRA_PERSONA}"
+            f"Comente a abertura da sessão de forma leve e amigável. Puxe UM detalhe ESPECÍFICO "
+            f"do jogo (a história/premissa, um prêmio ou um modo de jogo — nunca algo genérico) "
+            f"E encaixe um dado dele (horas ou conquistas). {REGRA_PERSONA} "
+            f"(exceção: aqui pode usar até 3 frases pra caber o detalhe do jogo)."
         )
         texto = _gerar_fala_proativa(prompt, f"steam_abriu_{nome}")
         if texto: _falar_proativamente(texto)
