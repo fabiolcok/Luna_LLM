@@ -1523,7 +1523,7 @@ def _loop_proativo():
                 try:
                     import servidor as _srv
                     _srv.atualizar_status("🌑 Suspensa — aguardando interação")
-                    _srv.atualizar_gif("desligando")
+                    _srv.atualizar_gif("sleeping")
                 except Exception:
                     pass
                 
