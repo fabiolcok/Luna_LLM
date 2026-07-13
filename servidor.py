@@ -59,7 +59,8 @@ _estado_config = {
     "memoria": False,
     "tarefas": {"jogos": True, "emails": True, "agenda": True, "pausa": True,
                 "clima": True, "bom_dia": True, "steam": True, "navegador": True,
-                "radar_rss": True, "animes": True, "autoconhecimento": True},
+                "steam_jogo": True, "radar_rss": True, "animes": True,
+                "autoconhecimento": True},
     "voz": "jf_alpha",
     "velocidade": 0.9,
 }
