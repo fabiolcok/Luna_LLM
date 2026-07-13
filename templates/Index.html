@@ -805,6 +805,10 @@
                 <span>Animes (lançamentos)</span>
                 <label class="toggle"><input type="checkbox" id="cfg-tarefa-animes" checked><span class="slider"></span></label>
             </div>
+            <div class="config-linha config-sublinha">
+                <span>Autoconhecimento</span>
+                <label class="toggle"><input type="checkbox" id="cfg-tarefa-autoconhecimento" checked><span class="slider"></span></label>
+            </div>
         </div>
 
         <!-- Voz + Velocidade -->
@@ -1185,7 +1189,7 @@
         });
 
         // Task toggles
-        ['jogos', 'emails', 'agenda', 'pausa', 'clima', 'bom_dia', 'steam', 'navegador', 'radar_rss', 'animes'].forEach(nome => {
+        ['jogos', 'emails', 'agenda', 'pausa', 'clima', 'bom_dia', 'steam', 'navegador', 'radar_rss', 'animes', 'autoconhecimento'].forEach(nome => {
             const el = document.getElementById('cfg-tarefa-' + nome);
             if (el) el.addEventListener('change', function() {
                 enviarConfig({ config: 'tarefa', nome: nome, valor: this.checked });
