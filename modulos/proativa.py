@@ -1025,14 +1025,20 @@ def _tarefa_radar_rss():
 
 def _consultar_anilist(nome):
     """Próximo episódio de um anime pelo nome — AniList (GraphQL pública, sem chave).
-    Retorna (titulo, episodio, timestamp) ou None se não achou / série encerrada."""
-    q = ("query($busca: String) { Media(search: $busca, type: ANIME) {"
-         " title { romaji english } nextAiringEpisode { episode airingAt } } }")
+    Retorna (titulo, episodio, timestamp) ou None se não achou / nada em exibição.
+    Busca VÁRIOS resultados e prefere o que tem episódio agendado: no AniList cada
+    temporada é uma entrada separada, e a busca simples devolvia a 1ª temporada
+    (encerrada) — silenciando franquias com temporada nova no ar (ex: Slime S4)."""
+    q = ("query($busca: String) { Page(perPage: 8) {"
+         " media(search: $busca, type: ANIME, sort: SEARCH_MATCH) {"
+         " title { romaji english } nextAiringEpisode { episode airingAt } } } }")
     try:
         r = requests.post("https://graphql.anilist.co",
                           json={"query": q, "variables": {"busca": nome}}, timeout=10)
-        m = (r.json().get("data") or {}).get("Media")
-        if not m or not m.get("nextAiringEpisode"):
+        medias = ((r.json().get("data") or {}).get("Page") or {}).get("media", [])
+        # melhor correspondência COM episódio agendado (em exibição ou estreia marcada)
+        m = next((x for x in medias if x.get("nextAiringEpisode")), None)
+        if not m:
             return None
         nae = m["nextAiringEpisode"]
         # prefere o título em inglês (o da Crunchyroll, que o usuário conhece)
