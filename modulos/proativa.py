@@ -956,6 +956,9 @@ def _tarefa_radar_rss():
     vistos = carregar_vistos()
     itens_vistos = vistos.get("radar", {})          # id_do_item -> True
     feeds_semeados = vistos.get("radar_feeds", [])  # feeds cujo baseline já foi marcado
+    # Auto-sincroniza com a nota: descarta feeds que saíram do radar_rss.md (órfãos).
+    # Assim o registro espelha a nota e um feed re-adicionado volta a semear em silêncio.
+    feeds_semeados = [u for u in feeds_semeados if u in feeds]
 
     # Rodízio: o Reddit dá 429 se martelar vários feeds numa janela curta. Então
     # cada rodada checa só uns poucos, alternando — bem mais gentil no rate-limit.
