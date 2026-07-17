@@ -8,6 +8,15 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 17/07/2026
+
+- 🐛 **Aviso de anime agora dispara de verdade quando o episódio SAI.** A lógica
+  antiga olhava "vai sair hoje" e só tinha uma frestinha antes do episódio ir ao
+  ar — quando ele saía, o AniList já pulava pro próximo e a Luna ficava muda
+  (o ep 15 da 4ª temporada do Slime passou batido por isso). Agora ela detecta o
+  último episódio que **já foi ao ar** (últimas 24h) e avisa que está no ar pra
+  assistir.
+
 ## 13/07/2026
 
 - ✨ **Novidades (radar) agora tem interruptor.** Igual aos animes: dá pra

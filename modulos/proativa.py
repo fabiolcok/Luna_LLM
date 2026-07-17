@@ -1023,35 +1023,53 @@ def _tarefa_radar_rss():
         _falar_proativamente(_gerar_fala_proativa(prompt, "radar_rss", max_tokens=220))
         registrar_tentativa()
 
-def _consultar_anilist(nome):
-    """Próximo episódio de um anime pelo nome — AniList (GraphQL pública, sem chave).
-    Retorna (titulo, episodio, timestamp) ou None se não achou / nada em exibição.
-    Busca VÁRIOS resultados e prefere o que tem episódio agendado: no AniList cada
-    temporada é uma entrada separada, e a busca simples devolvia a 1ª temporada
-    (encerrada) — silenciando franquias com temporada nova no ar (ex: Slime S4)."""
+def _anilist_temporada_no_ar(nome):
+    """Acha a temporada EM EXIBIÇÃO do anime pelo nome — (media_id, titulo) ou None.
+    No AniList cada temporada é uma entrada separada; a busca simples pegava a 1ª
+    (encerrada) e silenciava franquias com temporada nova no ar (ex: Slime S4).
+    Por isso buscamos vários e ficamos com a que tem episódio agendado (RELEASING)."""
     q = ("query($busca: String) { Page(perPage: 8) {"
          " media(search: $busca, type: ANIME, sort: SEARCH_MATCH) {"
-         " title { romaji english } nextAiringEpisode { episode airingAt } } } }")
+         " id title { romaji english } nextAiringEpisode { episode } } } }")
     try:
         r = requests.post("https://graphql.anilist.co",
                           json={"query": q, "variables": {"busca": nome}}, timeout=10)
         medias = ((r.json().get("data") or {}).get("Page") or {}).get("media", [])
-        # melhor correspondência COM episódio agendado (em exibição ou estreia marcada)
         m = next((x for x in medias if x.get("nextAiringEpisode")), None)
         if not m:
             return None
-        nae = m["nextAiringEpisode"]
         # prefere o título em inglês (o da Crunchyroll, que o usuário conhece)
         titulo = m["title"].get("english") or m["title"]["romaji"]
-        return (titulo, nae["episode"], nae["airingAt"])
+        return (m["id"], titulo)
     except Exception:
         return None
 
 
+def _anilist_ultimo_episodio(media_id):
+    """Último episódio JÁ EXIBIDO dessa temporada — (episodio, timestamp) ou None.
+    O nextAiringEpisode aponta pro FUTURO (quando sai o ep 15, ele já pula pro 16),
+    então não serve pra 'já saiu'. Aqui pegamos a agenda ordenada por tempo
+    decrescente e ficamos com o episódio mais recente que JÁ foi ao ar."""
+    q = ("query($id: Int) { Page(perPage: 1) {"
+         " airingSchedules(mediaId: $id, notYetAired: false, sort: TIME_DESC) {"
+         " episode airingAt } } }")
+    try:
+        r = requests.post("https://graphql.anilist.co",
+                          json={"query": q, "variables": {"id": media_id}}, timeout=10)
+        nodes = ((r.json().get("data") or {}).get("Page") or {}).get("airingSchedules", [])
+        if not nodes:
+            return None
+        return (nodes[0]["episode"], nodes[0]["airingAt"])
+    except Exception:
+        return None
+
+
+_ANIMES_JANELA_H = 24   # avisa se o episódio saiu nas últimas N horas (não "vai sair")
+
 def _tarefa_avisar_animes():
-    """Avisa no DIA em que sai episódio novo dos animes da nota Luna/animes.md.
-    Fonte: AniList. Dedup por (anime, episódio) em vistos['animes'] — e o carimbo
-    só acontece se a fala saiu de verdade (lição da wishlist)."""
+    """Avisa quando SAIU episódio novo dos animes da nota Luna/animes.md (janela de
+    ~24h). Fonte: AniList. Dedup por (anime, episódio) em vistos['animes'] — e o
+    carimbo só acontece se a fala saiu de verdade (lição da wishlist)."""
     cfg = CONFIGURACAO["Animes"]
     if not cfg["ativo"] or _em_horario_silencio(*cfg["horario_silencio"]) or not _passou_intervalo("animes", cfg["intervalo_minutos"]):
         return
@@ -1061,32 +1079,37 @@ def _tarefa_avisar_animes():
 
     vistos = carregar_vistos()
     avisados = vistos.get("animes", {})
-    hoje = datetime.datetime.now().date()
-    saem_hoje = []
+    agora = time.time()
+    sairam = []
     for nome, apelido in lista[:10]:     # teto de sanidade na quantidade de consultas
-        info = _consultar_anilist(nome)
+        temporada = _anilist_temporada_no_ar(nome)
         time.sleep(1)                    # gentileza com a API
-        if not info:
+        if not temporada:
             continue
-        titulo, ep, ts = info
-        if datetime.datetime.fromtimestamp(ts).date() != hoje:
+        media_id, titulo = temporada
+        ult = _anilist_ultimo_episodio(media_id)
+        time.sleep(1)
+        if not ult:
+            continue
+        ep, ts = ult
+        if ts > agora or (agora - ts) > _ANIMES_JANELA_H * 3600:   # ainda não saiu, ou saiu há +24h
             continue
         if avisados.get(titulo) == ep:   # já avisou ESSE episódio (dedup pelo título real)
             continue
         # a Luna FALA o apelido (se houver); o dedup fica no título oficial (estável)
-        saem_hoje.append((titulo, apelido or titulo, ep))
+        sairam.append((titulo, apelido or titulo, ep))
 
-    if not saem_hoje:
+    if not sairam:
         return
-    lista_txt = "; ".join(f"{falado} (episódio {e})" for _, falado, e in saem_hoje)
-    cor.amarelo(f"[🎌 Animes hoje: {lista_txt}]")
+    lista_txt = "; ".join(f"{falado} (episódio {e})" for _, falado, e in sairam)
+    cor.amarelo(f"[🎌 Animes — episódio novo: {lista_txt}]")
     prompt = (
-        f"HOJE sai episódio novo de anime que o usuário acompanha: {lista_txt}. "
+        f"SAIU episódio novo de anime que o usuário acompanha: {lista_txt}. "
         f"Avise ele com empolgação leve, citando o anime EXATAMENTE pelo nome dado e o episódio — "
-        f"chega na Crunchyroll ao longo do dia. {REGRA_PERSONA}"
+        f"já está no ar pra assistir. {REGRA_PERSONA}"
     )
     if _falar_proativamente(_gerar_fala_proativa(prompt, "animes")):
-        for titulo, _, e in saem_hoje:
+        for titulo, _, e in sairam:
             avisados[titulo] = e
         vistos["animes"] = avisados
         salvar_vistos(vistos)
