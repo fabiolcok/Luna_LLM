@@ -571,7 +571,7 @@
             top: 0;
             right: 0;
             height: 100vh;
-            width: 300px;
+            width: min(400px, 92vw);
             background: #0d0d12;
             border-left: 1px solid #1a1a2e;
             z-index: 300;
@@ -624,6 +624,24 @@
             color: #3a3a5a;
             margin-bottom: 10px;
         }
+        /* Acordeão: o 1º título de cada seção vira cabeçalho clicável */
+        .config-secao-titulo.acc {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: color 0.15s;
+        }
+        .config-secao-titulo.acc:hover { color: #7aa2f7; }
+        .config-secao-titulo.acc::after {
+            content: '▾';
+            font-size: 0.8rem;
+            transition: transform 0.25s ease;
+        }
+        .config-secao.fechada .config-secao-titulo.acc::after { transform: rotate(-90deg); }
+        .config-secao.fechada > *:not(:first-child) { display: none; }
+        .config-secao.fechada .config-secao-titulo.acc { margin-bottom: 0; }
         .config-linha {
             display: flex;
             align-items: center;
@@ -1513,6 +1531,19 @@
 
         document.querySelectorAll('.btn-abrir').forEach(btn => {
             btn.onclick = () => socket.send(JSON.stringify({ comando: 'abrir_arquivo', alvo: btn.dataset.alvo }));
+        });
+
+        // ── Acordeão do painel: cada grupo abre/fecha pelo título (estado lembrado) ──
+        document.querySelectorAll('#config-panel .config-secao').forEach(sec => {
+            const titulo = sec.querySelector('.config-secao-titulo');   // só o 1º = cabeçalho
+            if (!titulo) return;                                        // seção sem título (Reload/Fechar) fica sempre visível
+            const chave = 'luna_sec_' + titulo.textContent.trim();
+            titulo.classList.add('acc');
+            if (localStorage.getItem(chave) !== 'aberto') sec.classList.add('fechada');
+            titulo.addEventListener('click', () => {
+                sec.classList.toggle('fechada');
+                localStorage.setItem(chave, sec.classList.contains('fechada') ? 'fechado' : 'aberto');
+            });
         });
     </script>
 </body>
