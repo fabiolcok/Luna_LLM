@@ -109,6 +109,24 @@ TECLA_INTERROMPER = {kb.Key.ctrl_l, kb.Key.f9}
 
 TECLA_MODO_JOGO = {kb.Key.ctrl_l, kb.Key.f7}
 
+def configurar_tecla(nome, combo_txt):
+    """Handler da config web (⌨ Teclas): troca os atalhos em runtime.
+    O listener global lê as globais a cada tecla, então rebindar já vale."""
+    global TECLA_INTERROMPER, TECLA_MODO_JOGO
+    from modulos.ouvir import parsear_combo, configurar_tecla_ptt
+    if nome == "ptt":
+        return configurar_tecla_ptt(combo_txt)
+    teclas = parsear_combo(combo_txt)
+    if not teclas:
+        return False
+    if nome == "interromper":
+        TECLA_INTERROMPER = teclas
+    elif nome == "suspenso":
+        TECLA_MODO_JOGO = teclas
+    else:
+        return False
+    return True
+
 
 
 
@@ -366,7 +384,8 @@ def main():
     registrar_config_handler("voz", lambda v: configurar_voz(voz=v))
     registrar_config_handler("velocidade", lambda v: configurar_voz(velocidade=float(v)))
     registrar_config_handler("tarefa", configurar_tarefa)
-    carregar_e_aplicar_config()   # aplica voz/velocidade/proativo/tarefas salvos
+    registrar_config_handler("tecla", configurar_tecla)
+    carregar_e_aplicar_config()   # aplica voz/velocidade/proativo/tarefas/teclas salvos
     iniciar_servidor()
     iniciar_bot_telegram()
     threading.Thread(target=loop_voz, daemon=True).start()

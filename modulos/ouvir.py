@@ -68,7 +68,49 @@ def transcrever_bytes(dados: bytes) -> str:
 
 
 
-TECLA_PTT = {keyboard.Key.ctrl_l, keyboard.Key.alt_l, keyboard.Key.f8}
+# ==========================================
+# Teclas configuráveis (config web → 'ctrl+alt+f8' vira set de teclas pynput)
+# ==========================================
+_MODIFICADORES = {
+    "ctrl": keyboard.Key.ctrl_l, "alt": keyboard.Key.alt_l,
+    "shift": keyboard.Key.shift_l, "win": keyboard.Key.cmd,
+}
+
+def parsear_combo(txt):
+    """'ctrl+alt+f8' → set de teclas pynput. None se inválido.
+    Aceita: ctrl/alt/shift/win, f1–f12, teclas nomeadas (space, esc, pause...)
+    e letras soltas. Dica: modificador+letra é instável no pynput — prefira F-keys."""
+    import re as _re
+    teclas = set()
+    for parte in str(txt).lower().replace(" ", "").split("+"):
+        if not parte:
+            return None
+        if parte in _MODIFICADORES:
+            teclas.add(_MODIFICADORES[parte])
+        elif _re.fullmatch(r"f([1-9]|1[0-2])", parte):
+            teclas.add(getattr(keyboard.Key, parte))
+        elif len(parte) == 1:
+            teclas.add(keyboard.KeyCode.from_char(parte))
+        elif hasattr(keyboard.Key, parte):
+            teclas.add(getattr(keyboard.Key, parte))
+        else:
+            return None
+    return teclas or None
+
+
+TECLA_PTT     = {keyboard.Key.ctrl_l, keyboard.Key.alt_l, keyboard.Key.f8}
+TECLA_PTT_TXT = "Ctrl+Alt+F8"   # só pra exibir nas mensagens
+
+def configurar_tecla_ptt(combo_txt):
+    """Troca a tecla do PTT em runtime (o listener lê a global a cada tecla)."""
+    global TECLA_PTT, TECLA_PTT_TXT
+    teclas = parsear_combo(combo_txt)
+    if not teclas:
+        return False
+    TECLA_PTT = teclas
+    TECLA_PTT_TXT = "+".join(p.capitalize() for p in str(combo_txt).split("+"))
+    return True
+
 
 def escutar_usuario():
     taxa_amostragem = 16000
@@ -104,7 +146,7 @@ def escutar_usuario():
 
 
     cor.cinza(f"\n===========================================")
-    cor.verde("[🌑 Aguardando... Segure Ctrl+Alt+F8 para falar]")
+    cor.verde(f"[🌑 Aguardando... Segure {TECLA_PTT_TXT} para falar]")
     try:
         import servidor as _srv
         _srv.atualizar_status_mic("aguardando")

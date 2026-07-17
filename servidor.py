@@ -63,6 +63,7 @@ _estado_config = {
                 "autoconhecimento": True},
     "voz": "jf_alpha",
     "velocidade": 0.9,
+    "teclas": {"ptt": "ctrl+alt+f8", "interromper": "ctrl+f9", "suspenso": "ctrl+f7"},
 }
 
 _CAMINHO_CONFIG = "modelos/config_luna.json"
@@ -84,8 +85,8 @@ def carregar_e_aplicar_config():
             with open(_CAMINHO_CONFIG, "r", encoding="utf-8") as f:
                 salvo = json.load(f)
             for k, v in salvo.items():
-                if k == "tarefas" and isinstance(v, dict):
-                    _estado_config.setdefault("tarefas", {}).update(v)
+                if k in ("tarefas", "teclas") and isinstance(v, dict):
+                    _estado_config.setdefault(k, {}).update(v)
                 else:
                     _estado_config[k] = v
         except Exception:
@@ -101,6 +102,11 @@ def carregar_e_aplicar_config():
     if fn_tarefa:
         for nome, val in _estado_config.get("tarefas", {}).items():
             try: fn_tarefa(nome, val)
+            except Exception: pass
+    fn_tecla = _config_handlers.get("tecla")
+    if fn_tecla:
+        for nome, combo in _estado_config.get("teclas", {}).items():
+            try: fn_tecla(nome, combo)
             except Exception: pass
 
 def registrar_callback_interrupcao(fn):
@@ -128,7 +134,17 @@ def _aplicar_config(dados: dict):
             try: fn(nome, valor)
             except Exception: pass
         _estado_config.setdefault('tarefas', {})[nome] = valor
-    else:
+    elif chave == 'tecla':
+        nome = dados.get('nome')
+        valor = str(dados.get('valor', '')).lower().strip()
+        fn = _config_handlers.get('tecla')
+        aceitou = False
+        if fn and nome and valor:
+            try: aceitou = bool(fn(nome, valor))
+            except Exception: aceitou = False
+        if aceitou:
+            _estado_config.setdefault('teclas', {})[nome] = valor
+        # combo inválido: não salva — o broadcast devolve o valor antigo pro painel
         valor = dados.get('valor')
         fn = _config_handlers.get(chave)
         if fn:

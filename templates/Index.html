@@ -552,6 +552,11 @@
         .chave-falta { color: #f7768e; }
         .atalhos-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
         .oficina-dica { font-size: 0.72rem; color: #3f3f5f; margin-top: 6px; line-height: 1.4; }
+        .tecla-input {
+            flex: 0 0 150px; text-align: center; cursor: pointer;
+            text-transform: lowercase; letter-spacing: 0.5px;
+        }
+        .tecla-input:focus { border-color: #9ece6a; color: #9ece6a; }
 
         /* Overlay */
         #config-overlay {
@@ -944,6 +949,25 @@
             </div>
         </div>
 
+        <!-- Teclas de atalho (clica no campo e aperta a combinação) -->
+        <div class="config-secao">
+            <div class="config-secao-titulo">⌨ Teclas</div>
+            <div class="config-linha">
+                <span>Falar (PTT)</span>
+                <input class="oficina-input tecla-input" id="tecla-ptt" data-tecla="ptt" readonly placeholder="clique e aperte">
+            </div>
+            <div class="config-linha">
+                <span>Calar a fala</span>
+                <input class="oficina-input tecla-input" id="tecla-interromper" data-tecla="interromper" readonly placeholder="clique e aperte">
+            </div>
+            <div class="config-linha">
+                <span>Modo Suspenso</span>
+                <input class="oficina-input tecla-input" id="tecla-suspenso" data-tecla="suspenso" readonly placeholder="clique e aperte">
+            </div>
+            <div class="oficina-dica">Clique no campo e aperte a combinação nova (Esc cancela).
+                Prefira modificador + F1–F12 (ex: ctrl+f9) ou uma tecla só. Vale na hora.</div>
+        </div>
+
         <!-- Atalhos de arquivos (só funciona no próprio PC) -->
         <div class="config-secao">
             <div class="config-secao-titulo">📂 Abrir no PC</div>
@@ -1287,6 +1311,13 @@
                 }
             }
 
+            if (estado.teclas) {
+                for (const [nome, combo] of Object.entries(estado.teclas)) {
+                    const el = document.getElementById('tecla-' + nome);
+                    if (el) el.value = combo;
+                }
+            }
+
             document.querySelectorAll('.btn-voz').forEach(btn => {
                 btn.classList.toggle('ativo', btn.dataset.voz === estado.voz);
             });
@@ -1562,6 +1593,41 @@
             titulo.addEventListener('click', () => {
                 sec.classList.toggle('fechada');
                 localStorage.setItem(chave, sec.classList.contains('fechada') ? 'fechado' : 'aberto');
+            });
+        });
+
+        // ── ⌨ Teclas: captura a combinação direto do teclado ──
+        function comboDoEvento(e) {
+            const partes = [];
+            if (e.ctrlKey) partes.push('ctrl');
+            if (e.altKey) partes.push('alt');
+            if (e.shiftKey) partes.push('shift');
+            let k = e.key.toLowerCase();
+            if (['control', 'alt', 'shift', 'meta'].includes(k)) return null;  // só modificador — espera a tecla principal
+            if (k === 'escape') return 'cancelar';
+            const mapa = { ' ': 'space', 'arrowup': 'up', 'arrowdown': 'down',
+                           'arrowleft': 'left', 'arrowright': 'right' };
+            partes.push(mapa[k] || k);
+            return partes.join('+');
+        }
+        document.querySelectorAll('.tecla-input').forEach(inp => {
+            inp.addEventListener('keydown', function(e) {
+                e.preventDefault();
+                const combo = comboDoEvento(e);
+                if (combo === 'cancelar') { this.blur(); return; }
+                if (!combo) return;
+                this.value = combo;
+                enviarConfig({ config: 'tecla', nome: this.dataset.tecla, valor: combo });
+                this.blur();
+            });
+            inp.addEventListener('focus', function() {
+                this.dataset.anterior = this.value;          // guarda pra restaurar se cancelar
+                this.placeholder = 'aperte a combinação...';
+                this.value = '';
+            });
+            inp.addEventListener('blur', function() {
+                this.placeholder = 'clique e aperte';
+                if (!this.value) this.value = this.dataset.anterior || '';   // cancelou: volta o que era
             });
         });
 

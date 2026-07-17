@@ -147,9 +147,10 @@ Atalhos/
 "um print" / "olha minha tela", "modo jogo/reunião/hibernação", "luna pausa",
 "próxima música", "muta"/"desmuta", "traduz isso".
 
-**Atalhos globais:**
+**Atalhos globais** (padrões — dá pra trocar na config web, seção ⌨ Teclas:
+clica no campo e aperta a combinação nova; vale na hora, sem reiniciar):
 
-| Tecla | Ação |
+| Tecla (padrão) | Ação |
 |-------|------|
 | `Ctrl+Alt+F8` | PTT: segura pra gravar, solta pra enviar |
 | `Ctrl+F9`     | interrompe a fala imediatamente |
