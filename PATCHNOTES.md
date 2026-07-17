@@ -10,6 +10,11 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 17/07/2026
 
+- ✨ **Config web virou central da Luna.** Painel novo com: **Oficina da fala**
+  (digite e ouça na hora + dicionário de pronúncia editável que vale sem
+  reiniciar), **atalhos** pra abrir avaliações/vistos/log/.env no PC, painel de
+  **chaves** (mostra ✓/✗ de cada uma do .env, sem expor valor) e botão **📜**
+  na tela principal que abre estas notas de atualização bonitinhas.
 - 🐛 **Aviso de anime agora dispara de verdade quando o episódio SAI.** A lógica
   antiga olhava "vai sair hoje" e só tinha uma frestinha antes do episódio ir ao
   ar — quando ele saía, o AniList já pulava pro próximo e a Luna ficava muda

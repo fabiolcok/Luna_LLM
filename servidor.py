@@ -20,7 +20,7 @@ Funções para usar no main.py:
 WebSocket (/ws): recebe {'comando': 'interromper'} do frontend para acionar sd.stop().
 """
 
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_sock import Sock
 import threading
 import json
@@ -142,8 +142,114 @@ def _aplicar_config(dados: dict):
 def index():
     return render_template('index.html')
 
+
+# ── Patchnotes renderizado (markdown → HTML, sem dependência externa) ──
+def _md_para_html(md: str) -> str:
+    import html as _html
+    linhas_html, em_lista = [], False
+    for linha in md.splitlines():
+        l = linha.rstrip()
+        if l.startswith('- '):
+            if not em_lista:
+                linhas_html.append('<ul>'); em_lista = True
+            linhas_html.append(f'<li>{_html.escape(l[2:])}</li>')
+            continue
+        if em_lista and (l.startswith('  ') and l.strip()):   # continuação de bullet
+            linhas_html[-1] = linhas_html[-1][:-5] + ' ' + _html.escape(l.strip()) + '</li>'
+            continue
+        if em_lista:
+            linhas_html.append('</ul>'); em_lista = False
+        if l.startswith('### '):  linhas_html.append(f'<h3>{_html.escape(l[4:])}</h3>')
+        elif l.startswith('## '): linhas_html.append(f'<h2>{_html.escape(l[3:])}</h2>')
+        elif l.startswith('# '):  linhas_html.append(f'<h1>{_html.escape(l[2:])}</h1>')
+        elif l.strip() in ('---', '***'): linhas_html.append('<hr>')
+        elif l.strip():           linhas_html.append(f'<p>{_html.escape(l)}</p>')
+    if em_lista:
+        linhas_html.append('</ul>')
+    corpo = '\n'.join(linhas_html)
+    # inline: **negrito**, *itálico* (depois do escape, seguro)
+    corpo = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', corpo)
+    corpo = re.sub(r'(?<!\*)\*([^*\n]+)\*(?!\*)', r'<em>\1</em>', corpo)
+    return corpo
+
+@app.route('/patchnotes')
+def patchnotes():
+    try:
+        with open('PATCHNOTES.md', encoding='utf-8') as f:
+            corpo = _md_para_html(f.read())
+    except Exception as e:
+        corpo = f'<p>Não consegui ler o PATCHNOTES.md: {e}</p>'
+    return f"""<!DOCTYPE html><html lang="pt-br"><head><meta charset="utf-8">
+<title>Luna — Novidades</title><style>
+body {{ background:#0d0d12; color:#e0e0e0; font-family:'Segoe UI',sans-serif;
+       max-width:760px; margin:0 auto; padding:32px 20px; line-height:1.6; }}
+h1 {{ color:#b4f9f8; }} h2 {{ color:#7aa2f7; margin-top:28px; border-bottom:1px solid #1a1a2e; padding-bottom:6px; }}
+li {{ margin:8px 0; }} strong {{ color:#bb9af7; }} hr {{ border:none; border-top:1px solid #1a1a2e; margin:24px 0; }}
+a {{ color:#7aa2f7; }} p {{ color:#9aa5ce; }}
+</style></head><body>
+<p><a href="/">← voltar pra Luna</a></p>
+{corpo}
+</body></html>"""
+
+
+# ── Oficina: helpers dos comandos do painel (teste de fala, arquivos, chaves) ──
+_ABRIR_PERMITIDOS = {   # o que o botão "abrir" pode abrir no PC (whitelist)
+    "avaliacoes": "logs/avaliacoes.jsonl",
+    "vistos":     "modelos/vistos.json",
+    "log":        "logs/luna.log",
+    "logs_pasta": "logs",
+    "env":        ".env",
+    "pronuncia":  "modelos/pronuncia.json",
+}
+
+def _abrir_no_pc(alvo: str) -> str:
+    caminho = _ABRIR_PERMITIDOS.get(alvo)
+    if not caminho or not os.path.exists(caminho):
+        return f"'{alvo}' não encontrado"
+    try:
+        os.startfile(os.path.abspath(caminho))   # abre no app padrão do Windows
+        return ""
+    except Exception as e:
+        return str(e)
+
+def _status_chaves() -> list:
+    """[{'chave': 'GEMINI_API_KEY', 'ok': True}, ...] — nomes vêm do .env.example
+    (fica em sincronia sozinho); NUNCA envia o valor, só se está preenchida."""
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()   # garante o .env carregado independente da ordem de import
+    except Exception:
+        pass
+    chaves = []
+    try:
+        with open('.env.example', encoding='utf-8') as f:
+            for linha in f:
+                m = re.match(r'^([A-Z][A-Z0-9_]*)=', linha.strip())
+                if m:
+                    nome = m.group(1)
+                    chaves.append({"chave": nome, "ok": bool(os.getenv(nome, "").strip())})
+    except Exception:
+        pass
+    return chaves
+
+def _falar_teste(texto: str):
+    """Fala um texto de teste no PC (thread própria — não trava o WebSocket)."""
+    def _rodar():
+        try:
+            from modulos import falar
+            falar.falar_texto(texto)
+        except Exception:
+            pass
+    threading.Thread(target=_rodar, daemon=True).start()
+
 @sock.route('/ws')
 def websocket(ws):
+    # O servidor escuta em 0.0.0.0 (dá pra abrir do celular). Ações que mexem NO PC
+    # (abrir arquivo/pasta) ficam restritas a conexões do próprio PC.
+    try:
+        _eh_local = request.remote_addr in ('127.0.0.1', '::1')
+    except Exception:
+        _eh_local = False
     with _clientes_lock:
         _clientes.add(ws)
         
@@ -198,6 +304,34 @@ def websocket(ws):
                         falar.repetir_ultima_fala()
                     except Exception:
                         pass
+                # ---- Oficina (painel de config) ----
+                elif dados.get('comando') == 'abrir_arquivo':
+                    if _eh_local:
+                        erro = _abrir_no_pc(dados.get('alvo', ''))
+                        if erro:
+                            ws.send(json.dumps({"tipo": "oficina_erro", "texto": erro}))
+                    else:
+                        ws.send(json.dumps({"tipo": "oficina_erro",
+                                            "texto": "abrir arquivos só funciona no próprio PC"}))
+                elif dados.get('comando') == 'falar_teste':
+                    texto = (dados.get('texto') or '').strip()[:400]
+                    if texto:
+                        _falar_teste(texto)
+                elif dados.get('comando') == 'pronuncia_listar':
+                    from modulos import falar
+                    ws.send(json.dumps({"tipo": "pronuncia", "itens": falar.obter_pronuncia()},
+                                       ensure_ascii=False))
+                elif dados.get('comando') == 'pronuncia_definir':
+                    from modulos import falar
+                    falar.definir_pronuncia(dados.get('palavra', ''), dados.get('grafia', ''))
+                    _broadcast({"tipo": "pronuncia", "itens": falar.obter_pronuncia()})
+                elif dados.get('comando') == 'pronuncia_remover':
+                    from modulos import falar
+                    falar.remover_pronuncia(dados.get('palavra', ''))
+                    _broadcast({"tipo": "pronuncia", "itens": falar.obter_pronuncia()})
+                elif dados.get('comando') == 'chaves_status':
+                    ws.send(json.dumps({"tipo": "chaves", "itens": _status_chaves()},
+                                       ensure_ascii=False))
                 elif dados.get('config'):
                     _aplicar_config(dados)
     except Exception:

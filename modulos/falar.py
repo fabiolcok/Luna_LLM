@@ -1,4 +1,6 @@
+import json
 import logging
+import os
 import re
 import datetime
 import numpy as np
@@ -98,19 +100,65 @@ def configurar_voz(voz=None, velocidade=None):
 
 
 # ==========================================
-# Dicionário de pronúncia (fácil de crescer)
+# Dicionário de pronúncia (modelos/pronuncia.json — editável pela config web)
 # ==========================================
-# Se o Kokoro falar uma palavra ERRADO, é só mapear aqui a grafia que ele ACERTA.
+# Se o Kokoro falar uma palavra ERRADO, mapeia a grafia que ele ACERTA.
 # Afeta SÓ o ÁUDIO — a Luna continua ESCREVENDO certo, só PRONUNCIA melhor.
-# Preserva a inicial maiúscula automaticamente. Exemplo de como adicionar:
-#     "puxar": "puchar",     # se ela diz "pucsar", força a grafia que soa certo
-#     "poxa":  "pôxa",
-_PRONUNCIA = {
-}
-_RE_PRONUNCIA = (
-    re.compile(r'\b(' + '|'.join(map(re.escape, _PRONUNCIA)) + r')\b', re.IGNORECASE)
-    if _PRONUNCIA else None
-)
+# Preserva a inicial maiúscula automaticamente. Ex: {"hype": "raipe"}.
+# Vive num JSON pra web editar e valer NA HORA, sem reiniciar a Luna.
+_CAMINHO_PRONUNCIA = "modelos/pronuncia.json"
+_PRONUNCIA = {}
+_RE_PRONUNCIA = None
+
+def _reconstruir_regex_pronuncia():
+    global _RE_PRONUNCIA
+    _RE_PRONUNCIA = (
+        re.compile(r'\b(' + '|'.join(map(re.escape, _PRONUNCIA)) + r')\b', re.IGNORECASE)
+        if _PRONUNCIA else None
+    )
+
+def _carregar_pronuncia():
+    """Lê o JSON do disco (cria com o conteúdo padrão na 1ª vez)."""
+    global _PRONUNCIA
+    try:
+        with open(_CAMINHO_PRONUNCIA, encoding="utf-8") as f:
+            _PRONUNCIA = {str(k).lower(): str(v) for k, v in json.load(f).items()}
+    except FileNotFoundError:
+        _PRONUNCIA = {"hype": "raipe"}
+        _salvar_pronuncia()
+    except Exception as e:
+        _log.warning(f"pronuncia.json inválido ({e}) — seguindo sem correções")
+        _PRONUNCIA = {}
+    _reconstruir_regex_pronuncia()
+
+def _salvar_pronuncia():
+    os.makedirs("modelos", exist_ok=True)
+    with open(_CAMINHO_PRONUNCIA, "w", encoding="utf-8") as f:
+        json.dump(_PRONUNCIA, f, ensure_ascii=False, indent=2)
+
+def obter_pronuncia() -> dict:
+    """Cópia do dicionário atual (pra config web listar)."""
+    return dict(_PRONUNCIA)
+
+def definir_pronuncia(palavra: str, grafia: str):
+    """Adiciona/atualiza uma correção e aplica na hora (sem reiniciar)."""
+    palavra, grafia = str(palavra).strip().lower(), str(grafia).strip()
+    if not palavra or not grafia:
+        return False
+    _PRONUNCIA[palavra] = grafia
+    _salvar_pronuncia()
+    _reconstruir_regex_pronuncia()
+    return True
+
+def remover_pronuncia(palavra: str):
+    """Remove uma correção e aplica na hora."""
+    if _PRONUNCIA.pop(str(palavra).strip().lower(), None) is None:
+        return False
+    _salvar_pronuncia()
+    _reconstruir_regex_pronuncia()
+    return True
+
+_carregar_pronuncia()
 
 def _corrigir_pronuncia(texto):
     """Troca palavras mal pronunciadas pela grafia que o Kokoro acerta.

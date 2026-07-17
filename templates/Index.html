@@ -495,6 +495,64 @@
         }
         #btn-config:hover { color: #7aa2f7; border-color: #7aa2f7; background: #0d1526; }
 
+        /* Botão de patchnotes (📜) — mesmo estilo do ⚙, logo abaixo dele */
+        #btn-patchnotes {
+            position: fixed;
+            top: 64px;
+            right: 16px;
+            background: #11111a;
+            border: 1px solid #2a2a4a;
+            color: #565f89;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.0rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: color 0.2s, border-color 0.2s, background 0.2s;
+            z-index: 100;
+        }
+        #btn-patchnotes:hover { color: #b4f9f8; border-color: #b4f9f8; background: #0d1526; }
+
+        /* ── Oficina (teste de fala, dicionário, atalhos, chaves) ── */
+        .oficina-linha { display: flex; gap: 6px; margin-top: 8px; }
+        .oficina-input {
+            flex: 1; min-width: 0;
+            background: #11111a; border: 1px solid #2a2a4a; border-radius: 6px;
+            color: #e0e0e0; padding: 7px 10px; font-size: 0.85rem; font-family: inherit;
+        }
+        .oficina-input:focus { outline: none; border-color: #7aa2f7; }
+        .btn-oficina {
+            background: #16213e; border: 1px solid #2a3a5a; color: #7aa2f7;
+            border-radius: 6px; padding: 7px 12px; cursor: pointer;
+            font-size: 0.85rem; font-family: inherit; white-space: nowrap;
+            transition: background 0.15s, color 0.15s;
+        }
+        .btn-oficina:hover { background: #1a2a4e; color: #b4f9f8; }
+        .dic-linha {
+            display: flex; align-items: center; gap: 8px;
+            padding: 5px 2px; font-size: 0.83rem; color: #9aa5ce;
+            border-bottom: 1px dashed #1a1a2e;
+        }
+        .dic-linha .dic-seta { color: #3a3a5a; }
+        .dic-linha .dic-grafia { color: #b4f9f8; }
+        .dic-linha button {
+            margin-left: auto; background: none; border: none; color: #3a3a5a;
+            cursor: pointer; font-size: 0.85rem; padding: 2px 6px;
+        }
+        .dic-linha button:hover { color: #f7768e; }
+        .chave-linha {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 4px 2px; font-size: 0.8rem; color: #9aa5ce;
+        }
+        .chave-ok  { color: #9ece6a; }
+        .chave-falta { color: #f7768e; }
+        .atalhos-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .oficina-dica { font-size: 0.72rem; color: #3f3f5f; margin-top: 6px; line-height: 1.4; }
+
         /* Overlay */
         #config-overlay {
             position: fixed;
@@ -741,6 +799,7 @@
     </div>
 
     <button id="btn-config" title="Configurações">⚙</button>
+    <a id="btn-patchnotes" href="/patchnotes" target="_blank" title="Novidades da Luna">📜</a>
     <div id="config-overlay"></div>
 
     <div id="config-panel">
@@ -828,6 +887,46 @@
                 <input type="range" id="cfg-velocidade" min="0.7" max="1.5" step="0.1" value="0.9">
                 <span class="config-velocidade-valor" id="cfg-velocidade-valor">0.9×</span>
             </div>
+        </div>
+
+        <!-- Oficina: teste de fala + dicionário de pronúncia -->
+        <div class="config-secao">
+            <div class="config-secao-titulo">🔧 Oficina da fala</div>
+            <div class="oficina-linha">
+                <input class="oficina-input" id="oficina-texto" placeholder="digite e ouça...">
+                <button class="btn-oficina" id="oficina-falar">▶</button>
+            </div>
+            <div class="oficina-dica">Testa a voz com qualquer texto. Pra comparar grafias
+                (ex: raipe vs raypi), toca uma de cada vez.</div>
+
+            <div class="config-secao-titulo" style="margin-top:14px;">Dicionário de pronúncia</div>
+            <div id="dic-lista"></div>
+            <div class="oficina-linha">
+                <input class="oficina-input" id="dic-palavra" placeholder="palavra" style="flex:0.9">
+                <input class="oficina-input" id="dic-grafia" placeholder="como falar">
+                <button class="btn-oficina" id="dic-add">+</button>
+            </div>
+            <div class="oficina-dica">Vale na hora, sem reiniciar. Só muda o ÁUDIO — o texto
+                escrito continua certo.</div>
+        </div>
+
+        <!-- Oficina: atalhos de arquivos (só funciona no próprio PC) -->
+        <div class="config-secao">
+            <div class="config-secao-titulo">📂 Abrir no PC</div>
+            <div class="atalhos-grid">
+                <button class="btn-oficina btn-abrir" data-alvo="avaliacoes">Avaliações</button>
+                <button class="btn-oficina btn-abrir" data-alvo="vistos">Vistos</button>
+                <button class="btn-oficina btn-abrir" data-alvo="log">luna.log</button>
+                <button class="btn-oficina btn-abrir" data-alvo="logs_pasta">Pasta logs</button>
+                <button class="btn-oficina btn-abrir" data-alvo="env">.env</button>
+            </div>
+            <div class="oficina-dica" id="oficina-erro"></div>
+        </div>
+
+        <!-- Chaves configuradas (.env) — só mostra SE está preenchida, nunca o valor -->
+        <div class="config-secao">
+            <div class="config-secao-titulo">🔑 Chaves (.env)</div>
+            <div id="chaves-lista" class="oficina-dica">carregando...</div>
         </div>
 
         <!-- Reload / Fechar -->
@@ -1296,6 +1395,19 @@
                 if (dados.status === 'aguardando') iniciarDicas(); else pararDicas();
                 return;
             }
+            if (dados.tipo === 'pronuncia') {
+                renderPronuncia(dados.itens || {});
+                return;
+            }
+            if (dados.tipo === 'chaves') {
+                renderChaves(dados.itens || []);
+                return;
+            }
+            if (dados.tipo === 'oficina_erro') {
+                const el = document.getElementById('oficina-erro');
+                if (el) { el.textContent = '⚠ ' + dados.texto; setTimeout(() => el.textContent = '', 5000); }
+                return;
+            }
             if (dados.tipo === 'metricas') {
                 if (dados.roteador) {
                     const el = document.getElementById('met-roteador');
@@ -1330,6 +1442,78 @@
                 if (detailsEl.open) conteudoEl.style.height = 'auto';
             }
         };
+
+        // ── Oficina: teste de fala, dicionário de pronúncia, atalhos, chaves ──
+        socket.addEventListener('open', function() {
+            socket.send(JSON.stringify({ comando: 'pronuncia_listar' }));
+            socket.send(JSON.stringify({ comando: 'chaves_status' }));
+        });
+
+        function renderPronuncia(itens) {
+            const lista = document.getElementById('dic-lista');
+            if (!lista) return;
+            lista.innerHTML = '';
+            const palavras = Object.keys(itens).sort();
+            if (!palavras.length) {
+                lista.innerHTML = '<div class="oficina-dica">nenhuma correção cadastrada ainda</div>';
+                return;
+            }
+            for (const p of palavras) {
+                const linha = document.createElement('div');
+                linha.className = 'dic-linha';
+                linha.innerHTML = `<span>${p}</span><span class="dic-seta">→</span>` +
+                                  `<span class="dic-grafia">${itens[p]}</span>`;
+                const btnOuvir = document.createElement('button');
+                btnOuvir.textContent = '▶';
+                btnOuvir.title = 'ouvir como ficou';
+                btnOuvir.onclick = () => socket.send(JSON.stringify({ comando: 'falar_teste', texto: p }));
+                const btnDel = document.createElement('button');
+                btnDel.textContent = '✕';
+                btnDel.title = 'remover';
+                btnDel.style.marginLeft = '4px';
+                btnDel.onclick = () => socket.send(JSON.stringify({ comando: 'pronuncia_remover', palavra: p }));
+                btnOuvir.style.marginLeft = 'auto';
+                linha.appendChild(btnOuvir);
+                linha.appendChild(btnDel);
+                lista.appendChild(linha);
+            }
+        }
+
+        function renderChaves(itens) {
+            const el = document.getElementById('chaves-lista');
+            if (!el) return;
+            if (!itens.length) { el.textContent = 'não consegui ler o .env.example'; return; }
+            el.innerHTML = '';
+            el.classList.remove('oficina-dica');
+            for (const c of itens) {
+                const linha = document.createElement('div');
+                linha.className = 'chave-linha';
+                linha.innerHTML = `<span>${c.chave}</span>` +
+                    (c.ok ? '<span class="chave-ok">✓</span>' : '<span class="chave-falta">✗ falta</span>');
+                el.appendChild(linha);
+            }
+        }
+
+        const oficinaTexto = document.getElementById('oficina-texto');
+        function oficinaFalar() {
+            const t = oficinaTexto.value.trim();
+            if (t) socket.send(JSON.stringify({ comando: 'falar_teste', texto: t }));
+        }
+        document.getElementById('oficina-falar').onclick = oficinaFalar;
+        oficinaTexto.addEventListener('keydown', e => { if (e.key === 'Enter') oficinaFalar(); });
+
+        document.getElementById('dic-add').onclick = function() {
+            const p = document.getElementById('dic-palavra').value.trim();
+            const g = document.getElementById('dic-grafia').value.trim();
+            if (!p || !g) return;
+            socket.send(JSON.stringify({ comando: 'pronuncia_definir', palavra: p, grafia: g }));
+            document.getElementById('dic-palavra').value = '';
+            document.getElementById('dic-grafia').value = '';
+        };
+
+        document.querySelectorAll('.btn-abrir').forEach(btn => {
+            btn.onclick = () => socket.send(JSON.stringify({ comando: 'abrir_arquivo', alvo: btn.dataset.alvo }));
+        });
     </script>
 </body>
 </html>
