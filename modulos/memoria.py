@@ -229,8 +229,14 @@ def carregar_vistos() -> dict:
 
 def salvar_vistos(dados: dict):
     os.makedirs("modelos", exist_ok=True)
+    # 'radar' é o único que cresce muito (1 entrada por notícia vista). Escrevemos ele
+    # por ÚLTIMO pra manter as entradas pequenas e legíveis (steam, animes, e o que for
+    # entrando com o tempo) no TOPO do arquivo — fácil de achar e editar/limpar na mão.
+    ordenado = {k: v for k, v in dados.items() if k != "radar"}
+    if "radar" in dados:
+        ordenado["radar"] = dados["radar"]
     with open(CAMINHO_VISTOS, "w") as f:
-        json.dump(dados, f, ensure_ascii=False, indent=2)
+        json.dump(ordenado, f, ensure_ascii=False, indent=2)
 
 
 # ============================================================

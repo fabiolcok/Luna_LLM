@@ -934,6 +934,8 @@ def _extrair_imagem(entry):
     m = re.search(r'<img[^>]+src=["\']([^"\']+)', entry.get("summary", ""))
     return m.group(1) if m else ""
 
+_RADAR_MAX_VISTOS = 1000   # teto de itens vistos guardados (os antigos já saíram dos feeds)
+
 def _tarefa_radar_rss():
     """Radar Geek: lê feeds RSS (config em Luna/radar_rss.md), escreve os itens
     novos em Novidades.md (B) e dá uma campainha curta na voz (A). Determinístico:
@@ -992,6 +994,11 @@ def _tarefa_radar_rss():
             # feed novo: só marca como visto (semeia baseline), sem anunciar
         if feed_novo:
             feeds_semeados.append(url)
+    # Auto-limite: guarda só os últimos N itens vistos (dict preserva ordem de
+    # inserção, então são os mais recentes). Os antigos já saíram dos feeds — que
+    # mostram só os recentes —, então descartar é seguro e não re-anuncia nada.
+    if len(itens_vistos) > _RADAR_MAX_VISTOS:
+        itens_vistos = dict(list(itens_vistos.items())[-_RADAR_MAX_VISTOS:])
     vistos["radar"] = itens_vistos
     vistos["radar_feeds"] = feeds_semeados
     salvar_vistos(vistos)
