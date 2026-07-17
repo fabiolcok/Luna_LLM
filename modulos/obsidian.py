@@ -117,12 +117,26 @@ def _limpar_md(texto: str) -> str:
     return texto.strip()
 
 
+def avaliar_relevancia(pergunta: str, conteudo: str, minimo: float = 0.5) -> bool:
+    """PURA e reutilizável: o 'conteudo' RESPONDE à 'pergunta'? Heurística barata por
+    sobreposição de palavras-chave (sem stopwords, com stem simples). SÓ julga — não
+    decide o que fazer depois (isso é do caller: cair no conhecimento, ou falha honesta).
+    Assim qualquer ferramenta que precise do mesmo cuidado é só chamar esta função.
+    'minimo' = fração das palavras-chave da pergunta que precisa aparecer no conteúdo."""
+    chaves = {_stem(p) for p in _norm(pergunta).split() if len(p) >= 3 and p not in _STOPWORDS}
+    if not chaves:
+        return True   # pergunta sem palavra-chave (ex: 'o que tem aqui') — não bloqueia
+    corpo = {_stem(t) for t in _norm(conteudo).split() if len(t) >= 3}
+    return len(chaves & corpo) / len(chaves) >= minimo
+
+
 def buscar_nota(assunto: str) -> str:
     """Acha a nota mais relevante para 'assunto' e devolve o conteúdo (fetch-only).
     Estratégia em 2 etapas:
       1. Casa pelo NOME do arquivo (mais confiável e barato — comportamento de sempre).
       2. Fallback: se nenhum nome casar, procura as palavras no CORPO das notas.
-    O fallback só entra quando o nome falha, então não muda o que já funcionava."""
+    Antes de devolver, PASSA a nota por avaliar_relevancia: match fraco (ex: 1 palavra
+    solta num radar gigante) vira 'SEM_NOTA_RELEVANTE' em vez de cuspir a nota errada."""
     notas = _listar_notas()
     if not notas:
         return "SISTEMA: Não há notas acessíveis no Obsidian (vault vazio ou caminho errado)."
@@ -153,12 +167,20 @@ def buscar_nota(assunto: str) -> str:
                     melhor, melhor_corpo = c, score
 
     if not melhor:
-        return f"SISTEMA: Não achei nenhuma nota sobre '{assunto}' nas suas anotações."
+        return "SISTEMA: SEM_NOTA_RELEVANTE"
     try:
         with open(melhor, encoding="utf-8") as f:
-            return _limpar_md(f.read())
+            bruto = f.read()
     except Exception as e:
         return f"SISTEMA: Erro ao ler a nota: {e}"
+    # Grade de relevância: a nota escolhida realmente responde ao que foi pedido?
+    # (match fraco = coincidência de 1 palavra). Inclui o NOME do arquivo — notas como
+    # Novidades.md casam pelo título e o corpo pode nem repetir a palavra. O caller
+    # decide o que fazer com o 'não'.
+    nome = os.path.splitext(os.path.basename(melhor))[0]
+    if not avaliar_relevancia(assunto, nome + "\n" + bruto):
+        return "SISTEMA: SEM_NOTA_RELEVANTE"
+    return _limpar_md(bruto)
 
 
 # Pasta de ESCRITA da Luna. Ela só CRIA notas aqui — nunca edita nota existente,

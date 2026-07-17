@@ -169,6 +169,12 @@ def _executar_salvar_obsidian(conteudo="", titulo="", origem=""):
 # Detecta "anota/salva/..." no começo da mensagem e extrai o conteúdo (texto ORIGINAL,
 # fiel — não a reprodução do roteador 4B, que mangla textos longos).
 _RE_INICIO_SALVAR = re.compile(r'^\s*(anota|salva|registra|guarda|arquiva|toma\s+nota|lembra(r)?(\s+que)?)\b', re.IGNORECASE)
+# Pergunta que se refere a uma anotação PESSOAL do usuário (posse). Quando o ler_obsidian
+# não acha nota relevante: se É pessoal → honesto ("não tenho isso anotado"); se NÃO é
+# (pergunta de conhecimento geral, ex: "receita de mousse") → responde do que ela sabe.
+_RE_REF_NOTA_PESSOAL = re.compile(
+    r'\b(anotei|salvei|guardei|minhas?\s+(notas?|anota\w*)|meu\s+obsidian|na\s+minha\s+nota|'
+    r'que\s+eu\s+(salvei|anotei|guardei)|nas\s+minhas\s+anota\w*)\b', re.IGNORECASE)
 _RE_TIRA_CMD_SALVAR = re.compile(
     r'^\s*(anota|salva|registra|guarda|arquiva|toma\s+nota|lembra(r)?(\s+que)?)\w*\s*'
     r'(isso|a[íi]|aqui|essa\s+nota|pra\s+mim|no\s+obsidian)?\s*[:,\-–]?\s*', re.IGNORECASE)
@@ -815,6 +821,19 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                         tarefa_documento=tarefa, responder_completo=responder_completo,
                     )
                     lembranca_oculta = ""   # não guarda o texto cru na memória
+            elif ferramenta_chamada and nome_funcao == "ler_obsidian" and resultado_str.startswith("SISTEMA: SEM_NOTA_RELEVANTE"):
+                # A nota não bate com a pergunta (ou não havia nota). Balde A:
+                # - pergunta sobre anotação PESSOAL → honesto que não tem;
+                # - pergunta de conhecimento geral → responde do que ela sabe (chamada
+                #   LIMPA, sem contexto de ferramenta = mesmo caminho de "sem ferramenta").
+                if _RE_REF_NOTA_PESSOAL.search(prompt_usuario or ""):
+                    cor.amarelo("[📓 Obsidian: sem nota relevante → honestidade]")
+                    texto_resposta = "Não achei essa anotação nas suas notas. Quer que eu procure com outras palavras?"
+                else:
+                    cor.amarelo("[📓 Obsidian: sem nota relevante → resposta de conhecimento]")
+                    texto_resposta = _reescrever_como_luna("", prompt_usuario, historico, max_tokens,
+                                                           responder_completo=responder_completo)
+                lembranca_oculta = ""
             elif ferramenta_chamada and nome_funcao == "salvar_obsidian":
                 # O save já aconteceu (determinístico). A persona confirma COMENTANDO o
                 # assunto — rico, mas sem poder mentir (o save é fato, não invenção).
