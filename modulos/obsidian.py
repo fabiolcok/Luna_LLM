@@ -309,6 +309,76 @@ def ler_feeds_radar() -> list:
     return feeds
 
 
+# ── SEMEADURA (vault novo: cria as notas de CONFIG com template) ──
+# Só cria o que NÃO existe — nunca toca em nota existente. As notas de escrita
+# (Luna/Inbox, Novidades.md) a Luna já cria sozinha quando precisa.
+_TEMPLATES_VAULT = {
+    ("Luna", "perfil.md"): """# Perfil — quem a Luna acompanha
+
+> Esta nota é o NÚCLEO da Luna: ela é carregada em TODA conversa.
+> Mantenha ENXUTA — cada linha gasta contexto do modelo. Bullets curtos.
+> (Aparência pra desenhos NÃO vai aqui — fica em modelos/desenho.json.)
+
+## Sobre
+- Trabalho: (ex: suporte do sistema X)
+- Família: (ex: casado com Fulana)
+- Gosta de: (jogos, séries, hobbies...)
+
+## Agora (atualizo quando muda)
+- Foco da semana:
+- Humor/energia:
+- Acompanhar:
+  - [ ] exemplo de pendência (a Luna entende [ ] aberto e [x] feito)
+""",
+    ("Luna", "animes.md"): """# 🎌 Animes que a Luna acompanha
+
+> A Luna te avisa quando sai episódio novo (fonte: AniList).
+> Um anime por linha, em bullet:
+>
+> `- Nome do anime` → ela fala o título oficial (inglês)
+> `- Nome do anime | apelido` → ela fala o APELIDO (bom pra título quilométrico)
+>
+> ⚠️ No NOME use o título completo (Crunchyroll em inglês OU japonês/romaji):
+> ✅ `That Time I Got Reincarnated as a Slime`  ✅ `Kimetsu no Yaiba`
+> ❌ `Demon Slayer` (nome curto pode achar o anime errado — apelido é só depois do `|`)
+>
+> Exemplos (copie pra fora da citação pra valer):
+> `- One Piece`
+> `- That Time I Got Reincarnated as a Slime | Anime do Slime`
+""",
+    ("Luna", "radar_rss.md"): """# Radar RSS — fontes que a Luna acompanha
+
+Cole aqui links de feeds RSS, um por linha em bullet. A Luna lê os links,
+te avisa quando sai novidade e anota tudo em **Novidades.md** (na raiz do vault).
+
+> Dica: qualquer subreddit vira feed colocando `.rss` no fim
+> (ex: `https://www.reddit.com/r/dota2/.rss`).
+> Exemplo de linha ativa (tire da citação pra valer):
+> `- https://www.adrenaline.com.br/feed/`
+""",
+}
+
+
+def semear_vault() -> list:
+    """Cria as notas de CONFIGURAÇÃO com template quando não existem (vault novo).
+    Nunca sobrescreve nada. Retorna os caminhos criados (vazio se nada faltava)."""
+    if not os.path.isdir(_VAULT):
+        return []
+    criadas = []
+    for partes, conteudo in _TEMPLATES_VAULT.items():
+        caminho = os.path.join(_VAULT, *partes)
+        if os.path.exists(caminho):
+            continue
+        try:
+            os.makedirs(os.path.dirname(caminho), exist_ok=True)
+            with open(caminho, "w", encoding="utf-8") as f:
+                f.write(conteudo)
+            criadas.append("/".join(partes))
+        except Exception:
+            pass
+    return criadas
+
+
 def _trim_novidades(conteudo: str, max_horas: int) -> str:
     """Mantém só os blocos '## data hora' dentro de max_horas; descarta os mais velhos
     (janela rolante — a nota não cresce sem limite)."""

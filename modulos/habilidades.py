@@ -437,7 +437,6 @@ def capturar_tela_base64() -> str:
     return base64.b64encode(buffer.read()).decode("utf-8")
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GROQ_API_KEY   = os.getenv("GROQ_API_KEY", "")
 
 def analisar_imagem_gemini(imagem_base64: str, pergunta: str = "") -> str:
     client = genai.Client(api_key=GEMINI_API_KEY)

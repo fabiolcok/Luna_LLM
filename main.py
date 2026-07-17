@@ -386,6 +386,13 @@ def main():
     registrar_config_handler("tarefa", configurar_tarefa)
     registrar_config_handler("tecla", configurar_tecla)
     carregar_e_aplicar_config()   # aplica voz/velocidade/proativo/tarefas/teclas salvos
+    try:
+        from modulos import obsidian
+        _criadas = obsidian.semear_vault()   # vault novo: cria perfil/animes/radar com template
+        if _criadas:
+            cor.verde(f"[📓 Obsidian: notas de config criadas com template: {', '.join(_criadas)}]")
+    except Exception:
+        pass
     iniciar_servidor()
     iniciar_bot_telegram()
     threading.Thread(target=loop_voz, daemon=True).start()
