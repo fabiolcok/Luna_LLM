@@ -1103,10 +1103,16 @@ def _tarefa_avisar_animes():
         return
     lista_txt = "; ".join(f"{falado} (episódio {e})" for _, falado, e in sairam)
     cor.amarelo(f"[🎌 Animes — episódio novo: {lista_txt}]")
+    # Quando há apelido (falado != titulo oficial), o 12B tende a "corrigir" pro nome
+    # canônico que ele conhece. Damos o contra-exemplo explícito pra travar isso.
+    proibidos = "; ".join(f"chame de '{falado}', NUNCA de '{titulo}'"
+                          for titulo, falado, _ in sairam if falado != titulo)
+    regra_nome = f" IMPORTANTE: {proibidos}." if proibidos else ""
     prompt = (
         f"SAIU episódio novo de anime que o usuário acompanha: {lista_txt}. "
-        f"Avise ele com empolgação leve, citando o anime EXATAMENTE pelo nome dado e o episódio — "
-        f"já está no ar pra assistir. {REGRA_PERSONA}"
+        f"Avise ele com empolgação leve. Use EXATAMENTE o nome que eu dei, sem traduzir, "
+        f"expandir nem trocar pelo título oficial em inglês.{regra_nome} "
+        f"Já está no ar pra assistir. {REGRA_PERSONA}"
     )
     if _falar_proativamente(_gerar_fala_proativa(prompt, "animes")):
         for titulo, _, e in sairam:
