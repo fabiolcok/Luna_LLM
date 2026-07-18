@@ -38,7 +38,7 @@ nuvem. As **ferramentas** ligam pra serviços externos só quando você as acion
 | LLM / raciocínio (Gemma-4-12B) | Ver tela / analisar imagem → Gemini (Google) |
 | Transcrição de voz (Faster-Whisper) | Gerar imagem → Hugging Face |
 | Síntese de voz (Kokoro) | Agenda → Google · E-mail → Gmail |
-| Memória de conversas (ChromaDB) | Música → Spotify · Jogos → Steam / OverFast |
+| Memória (perfil, episódica, ChromaDB) | Música → Spotify · Jogos → Steam / OverFast |
 | Persona e camada proativa | Clima, pesquisa web, animes, GIFs, Telegram |
 
 > 💡 Este README também serve de **contexto para a LLM**: dá pra colar ele inteiro
@@ -95,12 +95,18 @@ Velocidade padrão **0.9x**. *(O Supertonic ficou como plano B arquivado em
 - **JIT + idle-unload:** o TurboLLM carrega na 1ª chamada (~6s a frio) e descarrega
   sozinho quando fica ocioso (libera VRAM) — recarrega na próxima fala.
 
-**Memória de conversas** — ChromaDB local, busca semântica por relevância.
-Embedding: all-MiniLM-L6-v2 (CPU, ~80MB), `LIMIAR_DISTANCIA=1.3`.
+A memória tem **3 camadas com papéis distintos** (pra não confundir o modelo):
 
-**Memória permanente** (fatos sobre o usuário) — `modelos/memoria_permanente.json`
-(+ `perfil.md` no Obsidian é o núcleo). `ATIVAR_MEMORIA_PERMANENTE = False` (desativado
-— requer um LLM que extraia fatos sem alucinar).
+- **Perfil** (`perfil.md` no Obsidian) — a **identidade**: quem o usuário é (trabalho,
+  família, gostos). Estável, o usuário edita. Sempre no contexto.
+- **Memória episódica** (`Luna/Memoria.md` no Obsidian) — **o que anda acontecendo**:
+  eventos datados, assuntos em aberto, humor. A Luna **propõe** (extração no ocioso via o
+  próprio 12B) e o usuário **confirma** numa caixa no web antes de salvar (o gate de
+  confirmação é o anti-alucinação). No prompt entram só os **~15 mais recentes**; recência
+  resolve conflito (o fato novo vence o velho). Fila de pendentes + lixo em
+  `modelos/memoria_pendente.json`.
+- **Conversas** (ChromaDB local) — **recall literal** das últimas 30 conversas, por busca
+  semântica. Embedding all-MiniLM-L6-v2 (CPU, ~80MB), `LIMIAR_DISTANCIA=1.3`.
 
 ---
 
@@ -132,10 +138,10 @@ modulos/
   falar.py             — TTS Kokoro + limpeza de texto (limpar_texto_para_voz)
   ouvir.py             — STT Faster-Whisper + PTT (também transcreve áudio do Telegram)
   habilidades.py       — todas as integrações externas (APIs, Spotify, etc.)
-  proativa.py          — thread autônoma com tarefas de background
+  proativa.py          — thread autônoma: tarefas de background + extração de memória (ocioso)
   telegram_bot.py      — bot do Telegram (texto + mensagens de voz)
-  memoria.py           — ChromaDB + JSON (estado_luna, estado_proativo, vistos)
-  obsidian.py          — leitura/escrita do vault (perfil.md, notas, radar RSS, animes)
+  memoria.py           — ChromaDB + fila da memória episódica + JSON (estado, vistos)
+  obsidian.py          — vault: perfil.md, Memoria.md (episódica), notas, radar RSS, animes
 modelos/
   estado_luna.json     — estado situacional em tempo real (jogo ativo, programa, sessão)
   estado_proativo.json — persistência das rotinas diárias (bom_dia, etc.)

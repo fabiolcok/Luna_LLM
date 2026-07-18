@@ -8,6 +8,23 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 18/07/2026
+
+- ✨ **Memória episódica — a Luna passou a lembrar do que anda acontecendo.** Além do
+  perfil (quem você é) e das conversas (ChromaDB), agora tem uma camada nova: eventos
+  datados, assuntos em aberto, humor da semana. Quando você sai do PC, ela **revisa as
+  conversas sozinha e propõe lembranças**; um **badge roxo (pulsante)** acende no ⚙ e você
+  **confirma ou descarta** cada uma numa caixa (🧠 Memória), podendo **editar** o texto
+  antes de guardar. Nada é salvo sem sua aprovação (é o anti-alucinação). O que você guarda
+  vai pro Obsidian (`Luna/Memoria.md`) e a Luna usa nas próximas conversas — com **o fato
+  mais recente vencendo** o antigo quando conflitam. Tem botão **"Processar agora"** pra
+  forçar, **lixo de 7 dias** pra desfazer descarte, e dá pra desligar a extração automática.
+- 🔧 **Config web mais limpa** — saiu a seção "Comportamento" (o Proativo já tem botão na
+  tela principal; a memória permanente antiga foi substituída pela episódica). Emojis novos
+  nos títulos e painel um pouco mais largo.
+- 🐛 **Bug do `modo_memoria`** — quando o modelo respondia um JSON direto (sem ferramenta),
+  o texto estava sendo descartado. Consertado — era o que travava a extração de fatos.
+
 ## 17/07/2026
 
 - ✨ **Config web virou central da Luna.** Painel novo com: **Oficina da fala**
