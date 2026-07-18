@@ -1,8 +1,6 @@
 # 🌙 Luna
 
-<!-- 📸 TODO: colar aqui um GIF/print da interface (o de maior impacto pro repo).
-     É só arrastar a imagem pro editor do README no GitHub, ou pôr em docs/ e usar:
-     ![Luna](docs/demo.gif) -->
+![Luna comentando por voz uma notícia do radar RSS](docs/luna-demo.gif)
 
 Imagine uma Alexa que:
 
