@@ -566,7 +566,11 @@
             min-width: 17px; height: 17px; border-radius: 9px;
             display: none; align-items: center; justify-content: center; padding: 0 4px;
         }
-        #config-badge.ativo { display: flex; }
+        #config-badge.ativo { display: flex; animation: badge-pulse 1.6s ease-in-out infinite; }
+        @keyframes badge-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(187, 154, 247, 0.6); }
+            50%      { box-shadow: 0 0 0 5px rgba(187, 154, 247, 0); }
+        }
         .mem-count { color: #bb9af7; font-size: 0.7rem; font-weight: normal; }
         .mem-item {
             background: #11111a; border: 1px solid #2a2a4a; border-radius: 8px;
@@ -612,7 +616,7 @@
             top: 0;
             right: 0;
             height: 100vh;
-            width: min(400px, 92vw);
+            width: min(480px, 100vw);
             background: #0d0d12;
             border-left: 1px solid #1a1a2e;
             z-index: 300;
@@ -885,22 +889,9 @@
             <button id="btn-config-fechar">✕</button>
         </div>
 
-        <!-- Comportamento -->
-        <div class="config-secao">
-            <div class="config-secao-titulo">Comportamento</div>
-            <div class="config-linha">
-                <span>Proativo</span>
-                <label class="toggle"><input type="checkbox" id="cfg-proativo" checked><span class="slider"></span></label>
-            </div>
-            <div class="config-linha">
-                <span>Memória permanente</span>
-                <label class="toggle"><input type="checkbox" id="cfg-memoria"><span class="slider"></span></label>
-            </div>
-        </div>
-
         <!-- Tarefas proativas -->
         <div class="config-secao" id="secao-tarefas">
-            <div class="config-secao-titulo">Tarefas proativas</div>
+            <div class="config-secao-titulo">⚡ Tarefas proativas</div>
             <div class="config-linha config-sublinha">
                 <span>Monitorar jogos</span>
                 <label class="toggle"><input type="checkbox" id="cfg-tarefa-jogos" checked><span class="slider"></span></label>
@@ -953,7 +944,7 @@
 
         <!-- Voz + Velocidade -->
         <div class="config-secao">
-            <div class="config-secao-titulo">Voz</div>
+            <div class="config-secao-titulo">🔊 Voz</div>
             <div class="voz-grid">
                 <button class="btn-voz ativo" data-voz="jf_alpha">Alpha</button>
                 <button class="btn-voz" data-voz="af_bella">Bella</button>
@@ -1353,11 +1344,6 @@
         }
 
         function aplicarEstadoConfig(estado) {
-            const proativoEl = document.getElementById('cfg-proativo');
-            if (proativoEl) proativoEl.checked = estado.proativo;
-            const memoriaEl = document.getElementById('cfg-memoria');
-            if (memoriaEl) memoriaEl.checked = estado.memoria;
-
             if (estado.tarefas) {
                 for (const [nome, val] of Object.entries(estado.tarefas)) {
                     const el = document.getElementById('cfg-tarefa-' + nome);
@@ -1396,22 +1382,10 @@
         }
         btnToggleProativo.onclick = function() {
             const novoEstado = this.classList.contains('inativo');
-            const cfgEl = document.getElementById('cfg-proativo');
-            cfgEl.checked = novoEstado;
             document.getElementById('secao-tarefas').style.display = novoEstado ? '' : 'none';
             atualizarBtnProativo(novoEstado);
             enviarConfig({ config: 'proativo', valor: novoEstado });
         };
-
-        // Comportamento toggles
-        document.getElementById('cfg-proativo').addEventListener('change', function() {
-            enviarConfig({ config: 'proativo', valor: this.checked });
-            atualizarBtnProativo(this.checked);
-            document.getElementById('secao-tarefas').style.display = this.checked ? '' : 'none';
-        });
-        document.getElementById('cfg-memoria').addEventListener('change', function() {
-            enviarConfig({ config: 'memoria', valor: this.checked });
-        });
 
         // Task toggles
         ['jogos', 'emails', 'agenda', 'pausa', 'clima', 'bom_dia', 'steam', 'steam_jogo', 'navegador', 'radar_rss', 'animes', 'autoconhecimento', 'memoria'].forEach(nome => {
