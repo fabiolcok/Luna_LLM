@@ -558,6 +558,42 @@
         }
         .tecla-input:focus { border-color: #9ece6a; color: #9ece6a; }
 
+        /* 🧠 Memória — badge no ⚙, contagem e cards de revisão */
+        #config-badge {
+            position: absolute; top: -5px; right: -5px;
+            background: #bb9af7; color: #0d0d12;
+            font-size: 0.6rem; font-weight: bold;
+            min-width: 17px; height: 17px; border-radius: 9px;
+            display: none; align-items: center; justify-content: center; padding: 0 4px;
+        }
+        #config-badge.ativo { display: flex; }
+        .mem-count { color: #bb9af7; font-size: 0.7rem; font-weight: normal; }
+        .mem-item {
+            background: #11111a; border: 1px solid #2a2a4a; border-radius: 8px;
+            padding: 8px 10px; margin-top: 8px;
+        }
+        .mem-item textarea {
+            width: 100%; background: transparent; border: none; color: #cfc9c2;
+            font-size: 0.86rem; font-family: inherit; resize: vertical; min-height: 2.4em; line-height: 1.4;
+        }
+        .mem-item textarea:focus { outline: none; }
+        .mem-acoes { display: flex; gap: 6px; margin-top: 6px; }
+        .mem-acoes button {
+            flex: 1; border: none; border-radius: 6px; padding: 5px; cursor: pointer;
+            font-size: 0.8rem; font-family: inherit; transition: background 0.15s;
+        }
+        .mem-guardar { background: #1a2a1a; color: #9ece6a; }
+        .mem-guardar:hover { background: #1f3320; }
+        .mem-descartar { background: #2e1a1a; color: #f7768e; }
+        .mem-descartar:hover { background: #3a2020; }
+        .mem-lixo-item {
+            display: flex; align-items: center; gap: 8px; font-size: 0.8rem;
+            color: #565f89; padding: 4px 2px; border-bottom: 1px dashed #1a1a2e;
+        }
+        .mem-lixo-item button { margin-left: auto; background: none; border: none; color: #7aa2f7; cursor: pointer; font-size: 0.78rem; }
+        .mem-vazio { font-size: 0.75rem; color: #3f3f5f; margin-top: 8px; }
+        #mem-processar { width: 100%; }
+
         /* Overlay */
         #config-overlay {
             position: fixed;
@@ -839,7 +875,7 @@
         </div>
     </div>
 
-    <button id="btn-config" title="Configurações">⚙</button>
+    <button id="btn-config" title="Configurações">⚙<span id="config-badge"></span></button>
     <a id="btn-patchnotes" href="/patchnotes" target="_blank" title="Novidades da Luna">📜</a>
     <div id="config-overlay"></div>
 
@@ -966,6 +1002,24 @@
             </div>
             <div class="oficina-dica">Clique no campo e aperte a combinação nova (Esc cancela).
                 Prefira modificador + F1–F12 (ex: ctrl+f9) ou uma tecla só. Vale na hora.</div>
+        </div>
+
+        <!-- 🧠 Memória episódica — revisar lembranças propostas -->
+        <div class="config-secao">
+            <div class="config-secao-titulo">🧠 Memória <span class="mem-count" id="mem-count"></span></div>
+            <div class="config-linha config-sublinha" style="padding-top:0;">
+                <span>Extração automática (ocioso)</span>
+                <label class="toggle"><input type="checkbox" id="cfg-tarefa-memoria" checked><span class="slider"></span></label>
+            </div>
+            <button class="btn-oficina" id="mem-processar">⟳ Processar agora</button>
+            <div id="mem-pendentes"></div>
+            <div class="config-secao-titulo sub-acc" id="mem-lixo-toggle" style="margin-top:12px;">🗑️ Lixo (7 dias)</div>
+            <div id="mem-lixo-wrap">
+                <div id="mem-lixo"></div>
+            </div>
+            <div class="oficina-dica">A Luna propõe lembranças quando você está fora. Aqui você
+                <b>guarda</b> (vai pro Obsidian) ou <b>descarta</b> (fica no lixo por 7 dias). Clique no
+                texto pra editar antes de guardar.</div>
         </div>
 
         <!-- Atalhos de arquivos (só funciona no próprio PC) -->
@@ -1360,7 +1414,7 @@
         });
 
         // Task toggles
-        ['jogos', 'emails', 'agenda', 'pausa', 'clima', 'bom_dia', 'steam', 'steam_jogo', 'navegador', 'radar_rss', 'animes', 'autoconhecimento'].forEach(nome => {
+        ['jogos', 'emails', 'agenda', 'pausa', 'clima', 'bom_dia', 'steam', 'steam_jogo', 'navegador', 'radar_rss', 'animes', 'autoconhecimento', 'memoria'].forEach(nome => {
             const el = document.getElementById('cfg-tarefa-' + nome);
             if (el) el.addEventListener('change', function() {
                 enviarConfig({ config: 'tarefa', nome: nome, valor: this.checked });
@@ -1476,6 +1530,13 @@
                 if (el) { el.textContent = '⚠ ' + dados.texto; setTimeout(() => el.textContent = '', 5000); }
                 return;
             }
+            if (dados.tipo === 'memoria') { renderMemoria(dados.estado || {}); return; }
+            if (dados.tipo === 'memoria_badge') { atualizarBadgeMemoria(dados.n || 0); return; }
+            if (dados.tipo === 'memoria_processando') {
+                const b = document.getElementById('mem-processar');
+                if (b) { b.textContent = '⏳ Processando...'; b.disabled = true; }
+                return;
+            }
             if (dados.tipo === 'metricas') {
                 if (dados.roteador) {
                     const el = document.getElementById('met-roteador');
@@ -1582,6 +1643,85 @@
         document.querySelectorAll('.btn-abrir').forEach(btn => {
             btn.onclick = () => socket.send(JSON.stringify({ comando: 'abrir_arquivo', alvo: btn.dataset.alvo }));
         });
+
+        // ── 🧠 Memória: badge, caixa de revisão, lixo, processar agora ──
+        function atualizarBadgeMemoria(n) {
+            const badge = document.getElementById('config-badge');
+            const cont = document.getElementById('mem-count');
+            if (badge) { badge.textContent = n; badge.classList.toggle('ativo', n > 0); }
+            if (cont) cont.textContent = n > 0 ? `(${n} pra revisar)` : '';
+        }
+
+        function renderMemoria(estado) {
+            const btn = document.getElementById('mem-processar');
+            if (btn) { btn.textContent = '⟳ Processar agora'; btn.disabled = false; }
+            const pend = estado.pendentes || [], lixo = estado.lixo || [];
+            atualizarBadgeMemoria(pend.length);
+
+            const lista = document.getElementById('mem-pendentes');
+            lista.innerHTML = '';
+            if (!pend.length) {
+                lista.innerHTML = '<div class="mem-vazio">nada pra revisar agora</div>';
+            }
+            for (const p of pend) {
+                const div = document.createElement('div');
+                div.className = 'mem-item';
+                const ta = document.createElement('textarea');
+                ta.value = p.fato;
+                ta.rows = 1;
+                const acoes = document.createElement('div');
+                acoes.className = 'mem-acoes';
+                const g = document.createElement('button');
+                g.className = 'mem-guardar'; g.textContent = '✓ guardar';
+                g.onclick = () => socket.send(JSON.stringify({ comando: 'memoria_confirmar', id: p.id, texto: ta.value.trim() }));
+                const d = document.createElement('button');
+                d.className = 'mem-descartar'; d.textContent = '✗ descartar';
+                d.onclick = () => socket.send(JSON.stringify({ comando: 'memoria_descartar', id: p.id }));
+                acoes.appendChild(g); acoes.appendChild(d);
+                div.appendChild(ta); div.appendChild(acoes);
+                lista.appendChild(div);
+            }
+
+            const lx = document.getElementById('mem-lixo');
+            lx.innerHTML = '';
+            if (!lixo.length) {
+                lx.innerHTML = '<div class="mem-vazio">lixo vazio</div>';
+            }
+            for (const p of lixo) {
+                const div = document.createElement('div');
+                div.className = 'mem-lixo-item';
+                div.innerHTML = `<span>${p.fato}</span>`;
+                const r = document.createElement('button');
+                r.textContent = '↩ restaurar';
+                r.onclick = () => socket.send(JSON.stringify({ comando: 'memoria_restaurar', id: p.id }));
+                div.appendChild(r);
+                lx.appendChild(div);
+            }
+        }
+
+        document.getElementById('mem-processar').onclick = function() {
+            socket.send(JSON.stringify({ comando: 'memoria_processar' }));
+        };
+
+        // pede a lista ao abrir o painel de config (e uma vez ao conectar)
+        socket.addEventListener('open', function() {
+            socket.send(JSON.stringify({ comando: 'memoria_listar' }));
+        });
+        document.getElementById('btn-config').addEventListener('click', function() {
+            socket.send(JSON.stringify({ comando: 'memoria_listar' }));
+        });
+
+        // sub-sanfona do Lixo (fechado por padrão)
+        (function() {
+            const t = document.getElementById('mem-lixo-toggle');
+            const w = document.getElementById('mem-lixo-wrap');
+            if (!t || !w) return;
+            t.classList.add('fechado'); w.classList.add('sub-fechado');
+            t.addEventListener('click', () => {
+                t.classList.toggle('fechado');
+                w.classList.toggle('sub-fechado');
+            });
+        })();
 
         // ── Acordeão do painel: cada grupo abre/fecha pelo título (estado lembrado) ──
         document.querySelectorAll('#config-panel .config-secao').forEach(sec => {

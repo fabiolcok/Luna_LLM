@@ -60,7 +60,7 @@ _estado_config = {
     "tarefas": {"jogos": True, "emails": True, "agenda": True, "pausa": True,
                 "clima": True, "bom_dia": True, "steam": True, "navegador": True,
                 "steam_jogo": True, "radar_rss": True, "animes": True,
-                "autoconhecimento": True},
+                "autoconhecimento": True, "memoria": True},
     "voz": "jf_alpha",
     "velocidade": 0.9,
     "teclas": {"ptt": "ctrl+alt+f8", "interromper": "ctrl+f9", "suspenso": "ctrl+f7"},
@@ -258,6 +258,26 @@ def _falar_teste(texto: str):
             pass
     threading.Thread(target=_rodar, daemon=True).start()
 
+# ── Memória episódica (caixa de revisão) ──
+def _memoria_estado() -> dict:
+    """{pendentes:[...], lixo:[...]} pra caixa de revisão do web."""
+    try:
+        from modulos import memoria
+        return {"pendentes": memoria.mem_listar_pendentes(), "lixo": memoria.mem_listar_lixo()}
+    except Exception:
+        return {"pendentes": [], "lixo": []}
+
+def notificar_memoria(n=None):
+    """Broadcast do nº de lembranças pendentes (acende o badge no web).
+    Chamado pela extração da proativa e após cada ação na caixa."""
+    if n is None:
+        try:
+            from modulos import memoria
+            n = len(memoria.mem_listar_pendentes())
+        except Exception:
+            n = 0
+    _broadcast({"tipo": "memoria_badge", "n": n})
+
 @sock.route('/ws')
 def websocket(ws):
     # O servidor escuta em 0.0.0.0 (dá pra abrir do celular). Ações que mexem NO PC
@@ -280,6 +300,7 @@ def websocket(ws):
         ws.send(json.dumps({"tipo": "config_estado", "estado": _estado_config.copy()}))
         ws.send(json.dumps({"tipo": "historico_completo", "turnos": list(_historico_web)}))
         ws.send(json.dumps({"tipo": "status", "texto": _ultimo_status}))
+        ws.send(json.dumps({"tipo": "memoria_badge", "n": len(_memoria_estado()["pendentes"])}))
     except:
         pass
 
@@ -348,6 +369,35 @@ def websocket(ws):
                 elif dados.get('comando') == 'chaves_status':
                     ws.send(json.dumps({"tipo": "chaves", "itens": _status_chaves()},
                                        ensure_ascii=False))
+                # ---- Memória episódica (caixa de revisão) ----
+                elif dados.get('comando') == 'memoria_listar':
+                    ws.send(json.dumps({"tipo": "memoria", "estado": _memoria_estado()}, ensure_ascii=False))
+                elif dados.get('comando') == 'memoria_confirmar':
+                    from modulos import memoria
+                    memoria.mem_confirmar(dados.get('id', ''), dados.get('texto'))
+                    _broadcast({"tipo": "memoria", "estado": _memoria_estado()})
+                    notificar_memoria()
+                elif dados.get('comando') == 'memoria_descartar':
+                    from modulos import memoria
+                    memoria.mem_descartar(dados.get('id', ''))
+                    _broadcast({"tipo": "memoria", "estado": _memoria_estado()})
+                    notificar_memoria()
+                elif dados.get('comando') == 'memoria_restaurar':
+                    from modulos import memoria
+                    memoria.mem_restaurar(dados.get('id', ''))
+                    _broadcast({"tipo": "memoria", "estado": _memoria_estado()})
+                    notificar_memoria()
+                elif dados.get('comando') == 'memoria_processar':
+                    ws.send(json.dumps({"tipo": "memoria_processando"}))
+                    def _processar_mem():
+                        try:
+                            from modulos import proativa
+                            proativa.processar_memoria_agora()
+                        except Exception:
+                            pass
+                        _broadcast({"tipo": "memoria", "estado": _memoria_estado()})
+                        notificar_memoria()
+                    threading.Thread(target=_processar_mem, daemon=True).start()
                 elif dados.get('config'):
                     _aplicar_config(dados)
     except Exception:
