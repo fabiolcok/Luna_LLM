@@ -169,6 +169,12 @@ def _executar_salvar_obsidian(conteudo="", titulo="", origem=""):
 # Detecta "anota/salva/..." no começo da mensagem e extrai o conteúdo (texto ORIGINAL,
 # fiel — não a reprodução do roteador 4B, que mangla textos longos).
 _RE_INICIO_SALVAR = re.compile(r'^\s*(anota|salva|registra|guarda|arquiva|toma\s+nota|lembra(r)?(\s+que)?)\b', re.IGNORECASE)
+# Intenção EXPLÍCITA de anotar (em qualquer lugar da fala) — usada como guard: o roteador
+# às vezes fira salvar_obsidian num comentário casual ('vou fazer a VM pendente'). Sem uma
+# destas palavras, não salva (avaliação 👎: salvou algo que já estava no perfil).
+_RE_INTENCAO_SALVAR = re.compile(
+    r'\b(anota\w*|salva\w*|registra\w*|guarda\w*|arquiva\w*|toma\s+nota|lembra\w*|'
+    r'anot[ae]|not[ae]\s+a[íi]|não\s+esque[çc]\w*|nao\s+esque[çc]\w*)\b', re.IGNORECASE)
 # Pergunta que se refere a uma anotação PESSOAL do usuário (posse). Quando o ler_obsidian
 # não acha nota relevante: se É pessoal → honesto ("não tenho isso anotado"); se NÃO é
 # (pergunta de conhecimento geral, ex: "receita de mousse") → responde do que ela sabe.
@@ -297,6 +303,13 @@ def frase_confirmacao(instrucao: str, max_tokens: int = 120) -> str:
         return ""
 
 
+# Trava anti-estouro de contexto (o modelo tem n_ctx=8192): trunca cada mensagem do
+# histórico e pega só as N últimas, pra um arquivo colado/nota gigante não inflar o prompt.
+def _hist_curto(historico: list, n: int, cap: int = 1500) -> list:
+    return [{"role": m.get("role", "user"), "content": str(m.get("content", ""))[:cap]}
+            for m in historico[-n:]]
+
+
 def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico: list, max_tokens=300, forcar_incluir=False, responder_completo=False, tarefa_documento=None) -> str:
     global _ultima_saudacao_ts
     resposta_tecnica = re.sub(r'<think>.*?</think>', '', resposta_tecnica, flags=re.DOTALL).strip()
@@ -305,6 +318,8 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     memoria_permanente = obsidian.ler_perfil() or ler_memoria_permanente()   # perfil.md é o núcleo
     memoria_episodica = obsidian.ler_memoria_episodica()   # o que anda acontecendo (datado, recentes)
     contexto_db = buscar_contexto_relevante(prompt_usuario)
+    if contexto_db and len(contexto_db) > 2000:        # anti-estouro: nota/conversa gigante
+        contexto_db = contexto_db[:2000] + " […]"
 
     estado = ler_estado_luna()
     programa_em_uso = estado.get("programa_atual") or obter_janela_em_foco()
@@ -437,7 +452,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
 
     try:
         msgs = [{"role": "system", "content": prompt_sistema}]
-        msgs.extend(historico[-8:])
+        msgs.extend(_hist_curto(historico, 8))
         msgs.append({"role": "user", "content": user_msg})
         _t0 = time.time()
         resposta = cliente.chat.completions.create(
@@ -645,7 +660,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             )
 
         mensagens_ferramenta = [{"role": "system", "content": prompt_ferramenta}]
-        mensagens_ferramenta.extend(historico[-4:])  # contexto mínimo para calibrar tool calling
+        mensagens_ferramenta.extend(_hist_curto(historico, 4))  # contexto mínimo para calibrar tool calling
         mensagens_ferramenta.append({"role": "user", "content": prompt_usuario})
 
         # MONO: o mesmo modelo (Gemma-4-12B) roteia as ferramentas. Thinking desligado —
@@ -681,9 +696,17 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
         if raciocinio:
             print(f"\n\033[90m[🧠 LÓGICA INTERNA]:\n{raciocinio.strip()}\033[0m\n")
 
-        if getattr(mensagem_modelo, 'tool_calls', None):
+        _tool_calls = getattr(mensagem_modelo, 'tool_calls', None)
+        # Guard anti-salvamento indevido: se o roteador firou salvar_obsidian num comentário
+        # casual (sem intenção explícita de anotar), ignora a ferramenta e responde normal.
+        if (_tool_calls and _tool_calls[0].function.name == "salvar_obsidian"
+                and not _RE_INTENCAO_SALVAR.search(prompt_usuario or "")):
+            cor.vermelho("[⚠️ salvar_obsidian sem intenção de anotar — ignorado, respondendo normal]")
+            _tool_calls = None
+
+        if _tool_calls:
             ferramenta_chamada = True
-            tool_call = mensagem_modelo.tool_calls[0]
+            tool_call = _tool_calls[0]
             nome_funcao = tool_call.function.name
             _log.info(f"Ferramenta: {nome_funcao}")
             cor.amarelo(f"[🌚⚙️ Motor Lógico ativando habilidade: {nome_funcao}]")
@@ -803,8 +826,11 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 # Sinais de que a pergunta exige FILTRAR/calcular (ex: "quais NÃO paguei", "quanto falta")
                 _quer_filtrar = bool(re.search(r'\b(quais|n[aã]o|quanto|quantos|falta|pendent|pague|pago|apenas|filtr)\b',
                                                prompt_usuario, re.IGNORECASE))
+                # A nota Novidades (dump do radar RSS) NUNCA vem crua — é feita pra ser CONTADA
+                # conversando, senão a Luna "metralha" o markdown com links (avaliações 👎).
+                _eh_novidades = bool(re.search(r'(?m)^##\s*\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}', resultado_str))
 
-                if nome_funcao == "ler_obsidian" and not _quer_resumo and not _quer_filtrar:
+                if nome_funcao == "ler_obsidian" and not _quer_resumo and not _quer_filtrar and not _eh_novidades:
                     # Nota do próprio usuário, sem resumo/filtro: devolve FIEL e determinístico
                     # (o 8B parafraseia/garble se deixar ele reescrever — vide "iogue"/"martelo de cozinha").
                     cor.amarelo("[📓 Obsidian: nota devolvida fielmente]")
@@ -812,7 +838,12 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                     lembranca_oculta = ""
                 else:
                     cor.amarelo("[🎭 Passando para LLM persona...]")
-                    if _quer_resumo:
+                    if _eh_novidades:
+                        tarefa = ("Conte pro usuário as novidades que estão nesta nota, CONVERSANDO — "
+                                  "uma frase curta por novidade, no seu tom. NÃO cole o markdown, NÃO "
+                                  "despeje links nem títulos crus. Se forem muitas, resuma as principais "
+                                  "e diga quantas tem no total.")
+                    elif _quer_resumo:
                         tarefa = "Resuma o conteúdo em poucas frases, em português do Brasil."
                     elif re.search(r'transcre', prompt_usuario, re.IGNORECASE):
                         tarefa = "Mostre o conteúdo EXATAMENTE como está, sem reescrever nem inventar."
@@ -880,10 +911,12 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
         return texto_resposta
 
     except Exception as e:
-        if "Context size" in str(e):
+        _msg = str(e).lower()
+        if any(s in _msg for s in ("context size", "context_size", "exceeds the available context",
+                                    "exceed_context")):
             historico.clear()
             cor.vermelho("[Memória: histórico limpo por contexto cheio]")
             _log.warning("Contexto da LLM cheio — histórico limpo")
-            return "Contexto cheio, limpei minha memória recente. Pode repetir?"
+            return "Opa, minha memória de curto prazo encheu — limpei ela. Manda de novo?"
         _log.exception(f"Erro no motor de raciocínio: {e}")
         return f"Desculpe, deu um curto-circuito na minha conexão: {e}"

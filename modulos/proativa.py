@@ -331,6 +331,13 @@ def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150, variar=True)
             max_tokens=max_tokens
         )
         _historico_proativo = []
+        # Detector de ECO: às vezes o 12B repete a INSTRUÇÃO em vez de executá-la (ela
+        # "falou o prompt" — avaliação 👎). A instrução fala do usuário em 3ª pessoa
+        # ('o usuário acompanha', 'anotou na nota dele'), coisa que a Luna NUNCA diz
+        # (ela sempre trata por 'você'). Se vazar isso, descarta a fala.
+        if resposta and re.search(r'\b(o|ao|do|pro)\s+usu[áa]rio\b', resposta, re.IGNORECASE):
+            cor.vermelho("[⚠️ Fala proativa vazou a instrução (eco) — descartada]")
+            return None
         if resposta:
             _falas_recentes.append(resposta.strip()[:120])
             if len(_falas_recentes) > 5:
@@ -1019,17 +1026,15 @@ def _tarefa_radar_rss():
 
         if n == 1:
             prompt = (
-                f"Você achou 1 novidade nos feeds que o usuário acompanha e anotou na nota 'Novidades' dele.\n"
-                f"A NOVIDADE: {amostra}\n"
-                f"Conte pra ele, do seu jeito e em 1-2 frases, o que é essa novidade (resuminho leve, "
-                f"NÃO copie o texto). {REGRA_PERSONA}"
+                f"Saiu 1 novidade nova nos feeds que você acompanha. Sobre ela: {amostra}\n"
+                f"Avise-o com um resuminho leve em 1-2 frases, do seu jeito (NÃO copie o texto acima). "
+                f"{REGRA_PERSONA}"
             )
         else:
             prompt = (
-                f"Você achou {n} novidades nos feeds que o usuário acompanha e anotou todas na nota 'Novidades' dele.\n"
-                f"NOVIDADE EM DESTAQUE (só uma amostra das {n}): {amostra}\n"
-                f"Dê um resuminho leve SÓ dessa novidade em destaque (1-2 frases, sem copiar o texto) e, no fim, "
-                f"avise que tem mais {n - 1} esperando na nota Novidades. {REGRA_PERSONA}"
+                f"Saíram {n} novidades novas nos feeds que você acompanha. A principal delas: {amostra}\n"
+                f"Avise-o resumindo SÓ essa principal em 1-2 frases (sem copiar o texto acima) e, no fim, "
+                f"diga que tem mais {n - 1} esperando na nota Novidades. {REGRA_PERSONA}"
             )
         _falar_proativamente(_gerar_fala_proativa(prompt, "radar_rss", max_tokens=220))
         registrar_tentativa()
