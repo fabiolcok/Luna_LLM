@@ -19,15 +19,12 @@ interface web, integra com Telegram e toma iniciativa por conta própria (proati
 PT-BR caloroso, e o **núcleo de IA — pensar (LLM), ouvir (STT) e falar (TTS) — roda 100%
 local**, na sua própria máquina.
 
-## 🎥 Veja em ação
+## 🎙️ Ouça a Luna
 
-Quando você abre um jogo na Steam, a Luna comenta **por conta própria** — puxa horas jogadas,
-conquistas e um toque sobre a história do jogo. **▶ Clique pra assistir:**
+A própria Luna se apresentando, na voz dela (Kokoro TTS, pt-BR) — **clique no ▶ pra ouvir**:
 
 <p align="center">
-  <a href="https://youtu.be/p13bGeTycAw">
-    <img src="https://img.youtube.com/vi/p13bGeTycAw/maxresdefault.jpg" alt="Luna comentando a abertura do Silksong (vídeo no YouTube)" width="560">
-  </a>
+  <video src="docs/voz_intro.mp4" controls width="380"></video>
 </p>
 
 Projeto de hobby. A persona tem prompt curto de propósito — o modelo define o tom
@@ -60,7 +57,7 @@ nuvem. As **ferramentas** ligam pra serviços externos só quando você as acion
 | RAM  | 32GB |
 | OS   | Windows 11 |
 
-Atualmente somente pra rodar a luna ele consome 9gb ram e 8gb gpu
+Atualmente, somente pra rodar a luna ele consome 9gb ram e 8gb gpu
 
 Inferência acelerada por **ROCm** (via TurboLLM) — **não** Vulkan (Vulkan é lento nessa AMD).
 
