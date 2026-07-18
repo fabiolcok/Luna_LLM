@@ -1,6 +1,8 @@
 # 🌙 Luna
 
-![Luna comentando por voz uma notícia do radar RSS](docs/luna-demo.gif)
+<p align="center">
+  <img src="docs/luna-demo.gif" alt="Luna comentando por voz uma notícia do radar RSS" width="320">
+</p>
 
 Imagine uma Alexa que:
 
