@@ -23,7 +23,7 @@ local**, na sua própria máquina.
 
 A própria Luna se apresentando, na voz dela (Kokoro TTS, pt-BR) — **clique no ▶ pra ouvir**:
 
-https://github.com/user-attachments/assets/037b50de-d0d8-47cb-bde4-25ad37b007ee
+https://github.com/user-attachments/assets/dec2ef52-8a6b-41c9-97ad-27f86b9adad6
 
 Projeto de hobby. A persona tem prompt curto de propósito — o modelo define o tom
 naturalmente. O nome do usuário (e tudo mais que é pessoal) fica no `.env`, fora do código.
