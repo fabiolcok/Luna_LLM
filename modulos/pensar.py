@@ -754,8 +754,9 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             else:
                 resultado_ferramenta = "Erro: habilidade desconhecida."
         else:
-            # Router não chamou ferramenta — descarta qualquer texto gerado (instrução: retornar vazio)
-            resultado_ferramenta = ""
+            # Router não chamou ferramenta — descarta qualquer texto gerado (instrução: retornar vazio).
+            # EXCEÇÃO: no modo_memoria não há ferramentas — a resposta DIRETA do modelo (o JSON) É o resultado.
+            resultado_ferramenta = (mensagem_modelo.content or "") if modo_memoria else ""
 
         if modo_memoria:
             texto_resposta = str(resultado_ferramenta).strip()

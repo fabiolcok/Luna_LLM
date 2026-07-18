@@ -216,6 +216,141 @@ def analisar_e_salvar_fato(pergunta, resposta, gerar_resposta_fn):
     except Exception as e:
         cor.vermelho(f"[Memória: erro na análise — {e}]")
 
+# ============================================================
+# MEMÓRIA EPISÓDICA — leitura de conversas novas + fila de pendentes
+# ============================================================
+# A memória CONFIRMADA vive no Obsidian (Luna/Memoria.md). Aqui fica só a mecânica:
+# ler conversas novas do ChromaDB (pra extrair) e a FILA de candidatos aguardando
+# a confirmação do usuário no web (mais o lixo e o "não re-propor recusados").
+
+def conversas_desde(marcador_ts: float, limite: int = 40) -> list:
+    """Pares de conversa gravados APÓS marcador_ts, do mais antigo pro mais novo.
+    Retorna [(timestamp, documento)]. Vazio se não houver novas."""
+    try:
+        if _colecao.count() == 0:
+            return []
+        todos = _colecao.get(include=["documents", "metadatas"])
+        pares = []
+        for doc, meta in zip(todos.get("documents", []), todos.get("metadatas", [])):
+            ts = (meta or {}).get("timestamp", 0)
+            if ts and ts > marcador_ts:
+                pares.append((ts, doc))
+        pares.sort(key=lambda x: x[0])
+        return pares[-limite:]
+    except Exception as e:
+        cor.vermelho(f"[Memória: erro ao ler conversas novas — {e}]")
+        return []
+
+
+CAMINHO_MEM_PENDENTE = "modelos/memoria_pendente.json"
+_MEM_LIXO_DIAS = 7   # quantos dias uma lembrança descartada fica recuperável
+
+def _mem_norm(txt: str) -> str:
+    # normaliza pra dedup: minúsculas + colapsa espaços (basta pra comparar fatos repetidos)
+    return " ".join(txt.lower().split()) if txt else ""
+
+def carregar_mem_pendente() -> dict:
+    base = {"marcador_ts": 0.0, "pendentes": [], "lixo": [], "recusados": []}
+    try:
+        with open(CAMINHO_MEM_PENDENTE, encoding="utf-8") as f:
+            base.update(json.load(f))
+    except Exception:
+        pass
+    return base
+
+def salvar_mem_pendente(d: dict):
+    os.makedirs("modelos", exist_ok=True)
+    with open(CAMINHO_MEM_PENDENTE, "w", encoding="utf-8") as f:
+        json.dump(d, f, ensure_ascii=False, indent=2)
+
+def mem_marcador() -> float:
+    return carregar_mem_pendente().get("marcador_ts", 0.0)
+
+def mem_set_marcador(ts: float):
+    d = carregar_mem_pendente()
+    d["marcador_ts"] = max(ts, d.get("marcador_ts", 0.0))
+    salvar_mem_pendente(d)
+
+def mem_adicionar_candidatos(fatos: list) -> int:
+    """Adiciona fatos à fila de pendentes, ignorando repetidos (já na fila ou já
+    recusados antes). Retorna quantos entraram de fato."""
+    d = carregar_mem_pendente()
+    ja = {_mem_norm(p["fato"]) for p in d["pendentes"]} | {_mem_norm(r) for r in d["recusados"]}
+    novos = 0
+    for fato in fatos:
+        fato = (fato or "").strip()
+        n = _mem_norm(fato)
+        if not n or n in ja:
+            continue
+        d["pendentes"].append({
+            "id": datetime.datetime.now().strftime("%Y%m%d%H%M%S") + "_" + str(uuid.uuid4())[:6],
+            "fato": fato,
+            "data": datetime.datetime.now().strftime("%Y-%m-%d"),
+        })
+        ja.add(n)
+        novos += 1
+    if novos:
+        salvar_mem_pendente(d)
+    return novos
+
+def mem_listar_pendentes() -> list:
+    return carregar_mem_pendente()["pendentes"]
+
+def mem_listar_lixo() -> list:
+    return carregar_mem_pendente()["lixo"]
+
+def mem_confirmar(id_: str, texto_editado: str = None) -> bool:
+    """Confirma um pendente: grava no Obsidian (Luna/Memoria.md) e tira da fila.
+    texto_editado permite o usuário corrigir a frase antes de salvar."""
+    from modulos import obsidian
+    d = carregar_mem_pendente()
+    item = next((p for p in d["pendentes"] if p["id"] == id_), None)
+    if not item:
+        return False
+    fato = (texto_editado or item["fato"]).strip()
+    if not obsidian.adicionar_memoria(fato, item.get("data")):
+        return False
+    d["pendentes"] = [p for p in d["pendentes"] if p["id"] != id_]
+    salvar_mem_pendente(d)
+    return True
+
+def mem_descartar(id_: str) -> bool:
+    """Manda um pendente pro lixo (recuperável _MEM_LIXO_DIAS dias) e registra pra
+    não propor de novo o mesmo fato."""
+    d = carregar_mem_pendente()
+    item = next((p for p in d["pendentes"] if p["id"] == id_), None)
+    if not item:
+        return False
+    item["descartado_em"] = datetime.datetime.now().timestamp()
+    d["lixo"].append(item)
+    d["recusados"].append(item["fato"])
+    d["pendentes"] = [p for p in d["pendentes"] if p["id"] != id_]
+    salvar_mem_pendente(d)
+    return True
+
+def mem_restaurar(id_: str) -> bool:
+    """Tira do lixo e devolve pra fila de pendentes (desfaz um descarte)."""
+    d = carregar_mem_pendente()
+    item = next((p for p in d["lixo"] if p["id"] == id_), None)
+    if not item:
+        return False
+    d["recusados"] = [r for r in d["recusados"] if _mem_norm(r) != _mem_norm(item["fato"])]
+    item.pop("descartado_em", None)
+    d["lixo"] = [p for p in d["lixo"] if p["id"] != id_]
+    d["pendentes"].append(item)
+    salvar_mem_pendente(d)
+    return True
+
+def mem_limpar_lixo():
+    """Remove do lixo o que passou de _MEM_LIXO_DIAS dias (chamado de vez em quando)."""
+    d = carregar_mem_pendente()
+    limite = datetime.datetime.now().timestamp() - _MEM_LIXO_DIAS * 86400
+    antes = len(d["lixo"])
+    d["lixo"] = [p for p in d["lixo"] if p.get("descartado_em", 0) >= limite]
+    if len(d["lixo"]) != antes:
+        salvar_mem_pendente(d)
+
+
 CAMINHO_VISTOS = "modelos/vistos.json"
 
 def carregar_vistos() -> dict:

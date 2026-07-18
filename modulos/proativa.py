@@ -201,7 +201,8 @@ _proativo_ativo = True
 TAREFAS_ATIVAS = {
     "jogos": True, "emails": True, "agenda": True,
     "pausa": True, "clima": True, "bom_dia": True, "steam": True, "navegador": True,
-    "radar_rss": True, "autoconhecimento": True, "steam_jogo": True, "animes": True
+    "radar_rss": True, "autoconhecimento": True, "steam_jogo": True, "animes": True,
+    "memoria": True,
 }
 
 # Estado interno da tarefa de contexto de navegação
@@ -1507,6 +1508,64 @@ def _tarefa_contexto_navegador():
 
 
 # ============================================================
+# MEMÓRIA EPISÓDICA — extração de fatos duráveis (roda no ocioso)
+# ============================================================
+def _tarefa_extrair_memoria(forcar=False):
+    """Lê as conversas novas (ChromaDB desde o marcador), pede pro 12B extrair FATOS
+    DURÁVEIS e joga na fila de pendentes pra você confirmar no web. NÃO grava na
+    memória direto — só PROPÕE (a confirmação é o anti-alucinação). Roda no ocioso
+    (AFK) ou forçado pelo botão 'processar agora'."""
+    if not forcar and not _passou_intervalo("extrair_memoria", 30):   # no máx a cada 30 min no ocioso
+        return
+    from modulos import memoria
+    memoria.mem_limpar_lixo()                       # aproveita e limpa o lixo velho
+    novas = memoria.conversas_desde(memoria.mem_marcador())
+    if not novas:
+        return
+    blocos = "\n---\n".join(doc for _, doc in novas)[:6000]
+    prompt = (
+        "Você extrai FATOS DURÁVEIS e NOVOS sobre o usuário destas conversas, pra uma "
+        "memória de longo prazo que ajuda a lembrar dele e dar continuidade depois.\n\n"
+        f"CONVERSAS:\n\"\"\"\n{blocos}\n\"\"\"\n\n"
+        "REGRAS:\n"
+        "- Extraia SÓ o que vale lembrar pra PUXAR ASSUNTO depois: planos, decisões, compras, "
+        "eventos marcantes, mudanças de vida, gostos, e estado que persiste (ex: 'anda estressado "
+        "com o plantão', 'o pai está doente', 'quer terminar o Silksong').\n"
+        "- IGNORE: comandos ('toca música'), perguntas factuais, saudações, coisa efêmera, e "
+        "TRIVIA TÉCNICA solta (specs de hardware, números) — a não ser que seja uma compra/decisão.\n"
+        "- Cada fato: UMA frase curta e NATURAL, sem começar com 'O usuário' (ex: 'comprou um "
+        "Steam Deck', 'tem uma filha', 'joga Hollow Knight').\n"
+        "- Nada que valha lembrar? Retorne lista vazia.\n"
+        'FORMATO (só JSON, nada mais): {"fatos": ["...", "..."]}'
+    )
+    try:
+        bruto = gerar_resposta(prompt, [], analisar=False, salvar=False, modo_memoria=True)
+        m = re.search(r'\{.*\}', bruto or "", re.DOTALL)
+        fatos = json.loads(m.group()).get("fatos", []) if m else []
+        fatos = [f.strip() for f in fatos if isinstance(f, str) and len(f.strip()) >= 5][:8]
+    except Exception as e:
+        cor.vermelho(f"[🧠 Extração de memória falhou: {e}]")
+        return
+    memoria.mem_set_marcador(novas[-1][0])          # marca até onde processou (não relê)
+    if fatos:
+        n = memoria.mem_adicionar_candidatos(fatos)
+        if n:
+            cor.amarelo(f"[🧠 Memória: {n} lembrança(s) nova(s) pra você revisar no web]")
+            try:
+                import servidor as _srv
+                _srv.notificar_memoria(len(memoria.mem_listar_pendentes()))
+            except Exception:
+                pass
+
+def processar_memoria_agora() -> int:
+    """Entrada manual (botão 'processar agora' do web): força a extração e devolve
+    quantos pendentes existem depois."""
+    _tarefa_extrair_memoria(forcar=True)
+    from modulos import memoria
+    return len(memoria.mem_listar_pendentes())
+
+
+# ============================================================
 # LOOP PRINCIPAL DA THREAD PROATIVA
 # ============================================================
 def _loop_proativo():
@@ -1571,7 +1630,10 @@ def _loop_proativo():
                     _srv.atualizar_gif("sleeping")
                 except Exception:
                     pass
-                
+            # Ocioso é o melhor momento pra extrair memória (você fora, sem competir com nada).
+            if TAREFAS_ATIVAS.get("memoria", True):
+                _tarefa_extrair_memoria()
+
         time.sleep(30)
 
 def iniciar_modo_proativo():
