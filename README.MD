@@ -23,9 +23,9 @@ local**, na sua própria máquina.
 
 A própria Luna se apresentando, na voz dela (Kokoro TTS, pt-BR) — **clique no ▶ pra ouvir**:
 
-<p align="center">
-  <video src="docs/voz_intro.mp4" controls width="380"></video>
-</p>
+<!-- 🎙️ ARRASTE AQUI o arquivo docs/voz_intro.mp4 (editando este README pelo site do GitHub).
+     O GitHub sobe o vídeo e cria o player sozinho. Depois pode apagar esta linha. -->
+
 
 Projeto de hobby. A persona tem prompt curto de propósito — o modelo define o tom
 naturalmente. O nome do usuário (e tudo mais que é pessoal) fica no `.env`, fora do código.
