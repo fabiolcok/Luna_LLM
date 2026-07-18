@@ -15,6 +15,7 @@ build/
 # Credenciais e segredos
 .env
 modelos/credentials.json
+modelos/contatos_whatsapp.json
 
 # Tokens gerados em runtime
 token.json
@@ -50,3 +51,4 @@ logs/avaliacoes.jsonl
 # Sistema
 .DS_Store
 Thumbs.db
+*.lnk

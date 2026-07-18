@@ -541,16 +541,16 @@ def pesquisar_na_web(pergunta):
 #               FERRAMENTA WHATSAPP
 #=======================================================    
 
-#agenda:
-CONTATOS_WHATSAPP = {
-    "caian": "5500000000000",
-    "amor": "5500000000000",
-    "fábio": "5500000000000",
-    "mim": "5500000000000",
-    "eduardo": "5500000000000",
-    "filha": "5500000000000",
-    "fausto": "5500000000000",
-}
+# Agenda de contatos: números REAIS ficam em modelos/contatos_whatsapp.json
+# (fora do git — dados pessoais). Veja contatos_whatsapp.example.json pro formato.
+def _carregar_contatos_whatsapp():
+    try:
+        with open("modelos/contatos_whatsapp.json", encoding="utf-8") as f:
+            return {str(k).lower(): str(v) for k, v in json.load(f).items()}
+    except Exception:
+        return {}
+
+CONTATOS_WHATSAPP = _carregar_contatos_whatsapp()
 
 def enviar_mensagem_whatsapp(destinatario, mensagem):
     """Envia WhatsApp. O destinatário pode ser um nome da agenda ou um número."""

@@ -21,6 +21,8 @@ naturalmente. O nome do usuário (e tudo mais que é pessoal) fica no `.env`, fo
 | RAM  | 32GB |
 | OS   | Windows 11 |
 
+Atualmente somente pra rodar a luna ele consome 9gb ram e 8gb gpu
+
 Inferência acelerada por **ROCm** (via TurboLLM) — **não** Vulkan (Vulkan é lento nessa AMD).
 
 ---
