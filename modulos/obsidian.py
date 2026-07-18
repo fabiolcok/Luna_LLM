@@ -284,6 +284,61 @@ def salvar_foto(dados_imagem: bytes, legenda: str = "", origem: str = "", ext: s
         return f"SISTEMA: Erro ao salvar a foto: {e}"
 
 
+# ── MEMÓRIA EPISÓDICA (o que anda acontecendo — datado, o usuário confirma) ──
+_TEMPLATE_MEMORIA = """# 🧠 Memória da Luna
+
+> O que a Luna lembra do que anda acontecendo com você — eventos, assuntos em aberto,
+> humor. Ela PROPÕE e você confirma no modo web; mas pode editar/apagar à vontade aqui.
+> Formato: uma por linha, com data — `- [AAAA-MM-DD] o que aconteceu`.
+> A Luna usa as MAIS RECENTES; se algo mudar, o mais novo manda.
+
+"""
+
+_RE_MEM_LINHA = re.compile(r'^\s*[-*]\s*\[(\d{4})-(\d{2})-(\d{2})\]\s*(.+?)\s*$')
+
+
+def ler_memoria_episodica(limite: int = 15) -> str:
+    """Lê Luna/Memoria.md (linhas '- [AAAA-MM-DD] fato') e devolve os `limite` mais
+    RECENTES já formatados ('- [DD/MM] fato'). Recência resolve conflito: o novo manda.
+    '' se não houver nota/itens."""
+    caminho = os.path.join(_VAULT, "Luna", "Memoria.md")
+    itens = []
+    try:
+        with open(caminho, encoding="utf-8") as f:
+            for linha in f:
+                m = _RE_MEM_LINHA.match(linha)
+                if m:
+                    a, mes, d, fato = m.groups()
+                    itens.append((f"{a}{mes}{d}", f"- [{d}/{mes}] {fato}"))
+    except Exception:
+        return ""
+    if not itens:
+        return ""
+    itens.sort(key=lambda x: x[0], reverse=True)   # mais recente primeiro
+    return "\n".join(t for _, t in itens[:limite])
+
+
+def adicionar_memoria(fato: str, data: str = None) -> bool:
+    """Anexa uma lembrança datada em Luna/Memoria.md (cria com template se não existir).
+    'data' no formato AAAA-MM-DD (hoje, se None). Só cria/escreve; nunca reescreve o resto."""
+    fato = (fato or "").strip()
+    if not fato or not os.path.isdir(_VAULT):
+        return False
+    data = data or datetime.datetime.now().strftime("%Y-%m-%d")
+    caminho = os.path.join(_VAULT, "Luna", "Memoria.md")
+    linha = f"- [{data}] {fato}\n"
+    try:
+        os.makedirs(os.path.dirname(caminho), exist_ok=True)
+        existe = os.path.exists(caminho)
+        with open(caminho, "a", encoding="utf-8") as f:
+            if not existe:
+                f.write(_TEMPLATE_MEMORIA)
+            f.write(linha)
+        return True
+    except Exception:
+        return False
+
+
 # ── ANIMES (lista configurada pelo usuário no Obsidian) ──
 def ler_lista_animes() -> list:
     """Lê os animes dos BULLETS da nota Luna/animes.md. Retorna [(nome_busca, apelido)]:
@@ -368,6 +423,7 @@ _TEMPLATES_VAULT = {
 > `- One Piece`
 > `- That Time I Got Reincarnated as a Slime | Anime do Slime`
 """,
+    ("Luna", "Memoria.md"): _TEMPLATE_MEMORIA,
     ("Luna", "radar_rss.md"): """# Radar RSS — fontes que a Luna acompanha
 
 Cole aqui links de feeds RSS, um por linha em bullet. A Luna lê os links,

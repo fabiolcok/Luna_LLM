@@ -303,6 +303,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
 
     data_hoje = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
     memoria_permanente = obsidian.ler_perfil() or ler_memoria_permanente()   # perfil.md é o núcleo
+    memoria_episodica = obsidian.ler_memoria_episodica()   # o que anda acontecendo (datado, recentes)
     contexto_db = buscar_contexto_relevante(prompt_usuario)
 
     estado = ler_estado_luna()
@@ -342,7 +343,11 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         f"Refira-se a essas coisas como dele ('suas filhas', 'seu trabalho'), NUNCA como suas "
         f"('nossas filhas', 'meu trabalho', 'querido'). Quando ele diz 'eu/meu', é sobre ele:\n"
         f"{memoria_permanente}\n"
-        f"Conversas anteriores: {contexto_db}\n\n"
+        + (f"\nMEMÓRIA RECENTE (o que vem acontecendo com ele, do mais novo pro mais antigo — "
+           f"use pra dar continuidade e mostrar que você lembra; se algo conflitar, o MAIS RECENTE vale. "
+           f"NÃO recite isso como lista; puxe só o que fizer sentido na conversa):\n{memoria_episodica}\n"
+           if memoria_episodica else "")
+        + f"\nConversas anteriores: {contexto_db}\n\n"
         f"{PROMPT_LUNA_PERSONA}{aviso_saudacao}"
     )
 
