@@ -1,11 +1,39 @@
 # 🌙 Luna
 
-Assistente pessoal de IA **100% local**, rodando em Python no Windows 11. Uma amiga
-próxima que fala em PT-BR caloroso: ouve por voz (push-to-talk), responde falando,
-tem interface web, integra com Telegram e faz coisas por conta própria (proativo).
+<!-- 📸 TODO: colar aqui um GIF/print da interface (o de maior impacto pro repo).
+     É só arrastar a imagem pro editor do README no GitHub, ou pôr em docs/ e usar:
+     ![Luna](docs/demo.gif) -->
+
+Imagine uma Alexa que:
+
+- conhece seus jogos
+- acompanha sua agenda
+- conversa naturalmente
+- lembra de conversas antigas
+- controla seu computador
+
+...mas cujo cérebro roda no seu próprio PC.
+
+**Essa é a Luna** — uma amiga de IA que ouve por voz (push-to-talk), responde falando, tem
+interface web, integra com Telegram e toma iniciativa por conta própria (proativo). Fala em
+PT-BR caloroso, e o **núcleo de IA — pensar (LLM), ouvir (STT) e falar (TTS) — roda 100%
+local**, na sua própria máquina.
 
 Projeto de hobby. A persona tem prompt curto de propósito — o modelo define o tom
 naturalmente. O nome do usuário (e tudo mais que é pessoal) fica no `.env`, fora do código.
+
+## 🔒 O que roda local × o que usa API
+
+O **núcleo** (pensar, ouvir, falar) é 100% local — o raciocínio e a sua voz não dependem de
+nuvem. As **ferramentas** ligam pra serviços externos só quando você as aciona:
+
+| 🖥️ Roda 100% no seu PC | ☁️ Usa API externa (ao acionar a ferramenta) |
+|------------------------|-----------------------------------------------|
+| LLM / raciocínio (Gemma-4-12B) | Ver tela / analisar imagem → Gemini (Google) |
+| Transcrição de voz (Faster-Whisper) | Gerar imagem → Hugging Face |
+| Síntese de voz (Kokoro) | Agenda → Google · E-mail → Gmail |
+| Memória de conversas (ChromaDB) | Música → Spotify · Jogos → Steam / OverFast |
+| Persona e camada proativa | Clima, pesquisa web, animes, GIFs, Telegram |
 
 > 💡 Este README também serve de **contexto para a LLM**: dá pra colar ele inteiro
 > num chat com a Claude/ChatGPT pra ela entender o projeto de cara.
