@@ -19,6 +19,17 @@ interface web, integra com Telegram e toma iniciativa por conta própria (proati
 PT-BR caloroso, e o **núcleo de IA — pensar (LLM), ouvir (STT) e falar (TTS) — roda 100%
 local**, na sua própria máquina.
 
+## 🎥 Veja em ação
+
+Quando você abre um jogo na Steam, a Luna comenta **por conta própria** — puxa horas jogadas,
+conquistas e um toque sobre a história do jogo. **▶ Clique pra assistir:**
+
+<p align="center">
+  <a href="https://youtu.be/p13bGeTycAw">
+    <img src="https://img.youtube.com/vi/p13bGeTycAw/maxresdefault.jpg" alt="Luna comentando a abertura do Silksong (vídeo no YouTube)" width="560">
+  </a>
+</p>
+
 Projeto de hobby. A persona tem prompt curto de propósito — o modelo define o tom
 naturalmente. O nome do usuário (e tudo mais que é pessoal) fica no `.env`, fora do código.
 
