@@ -145,6 +145,7 @@ def _aplicar_config(dados: dict):
         if aceitou:
             _estado_config.setdefault('teclas', {})[nome] = valor
         # combo inválido: não salva — o broadcast devolve o valor antigo pro painel
+    else:
         valor = dados.get('valor')
         fn = _config_handlers.get(chave)
         if fn:
