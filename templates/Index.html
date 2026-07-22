@@ -786,7 +786,7 @@
             background: #7aa2f7;
             cursor: pointer;
         }
-        #btn-reload, #btn-fechar-luna {
+        #btn-reload, #btn-fechar-luna, #btn-patchnotes-config {
             width: 100%;
             background: none;
             border: 1px solid #1e1e2e;
@@ -797,6 +797,11 @@
             font-family: inherit;
             transition: color 0.2s, border-color 0.2s;
         }
+        #btn-patchnotes-config {
+            display: block; text-align: center; text-decoration: none;
+            color: #565f89; margin-bottom: 6px; box-sizing: border-box;
+        }
+        #btn-patchnotes-config:hover { color: #b4f9f8; border-color: #b4f9f8; }
         #btn-reload { color: #3a3a5a; }
         #btn-reload:hover { color: #7aa2f7; border-color: #7aa2f7; }
         #btn-fechar-luna { color: #3a2020; border-color: #2a1a1a; margin-top: 6px; }
@@ -1037,6 +1042,7 @@
 
         <!-- Reload / Fechar -->
         <div class="config-secao" style="border-bottom:none;">
+            <a id="btn-patchnotes-config" href="/patchnotes" target="_blank">📜 Novidades (patch notes)</a>
             <button id="btn-reload" onclick="window.location.reload()">↺ Recarregar interface</button>
             <button id="btn-fechar-luna">⏻ Fechar Luna</button>
         </div>
