@@ -496,27 +496,6 @@
         #btn-config:hover { color: #7aa2f7; border-color: #7aa2f7; background: #0d1526; }
 
         /* Botão de patchnotes (📜) — mesmo estilo do ⚙, logo abaixo dele */
-        #btn-patchnotes {
-            position: fixed;
-            top: 64px;
-            right: 16px;
-            background: #11111a;
-            border: 1px solid #2a2a4a;
-            color: #565f89;
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1.0rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            transition: color 0.2s, border-color 0.2s, background 0.2s;
-            z-index: 100;
-        }
-        #btn-patchnotes:hover { color: #b4f9f8; border-color: #b4f9f8; background: #0d1526; }
-
         /* ── Oficina (teste de fala, dicionário, atalhos, chaves) ── */
         .oficina-linha { display: flex; gap: 6px; margin-top: 8px; }
         .oficina-input {
@@ -885,7 +864,6 @@
     </div>
 
     <button id="btn-config" title="Configurações">⚙<span id="config-badge"></span></button>
-    <a id="btn-patchnotes" href="/patchnotes" target="_blank" title="Novidades da Luna">📜</a>
     <div id="config-overlay"></div>
 
     <div id="config-panel">
