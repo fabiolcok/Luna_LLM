@@ -653,6 +653,16 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                     "use a ferramenta 'ler_obsidian' com o assunto."
                 )
 
+            # Jogo ativo no contexto do roteador: sem isto ele não sabe que uma dúvida
+            # vaga de gameplay ('como faço o trem andar?') é sobre o jogo em andamento.
+            _jogo_ativo = ler_estado_luna().get("jogo_ativo")
+            if _jogo_ativo:
+                prompt_ferramenta += (
+                    f"\nO usuário está JOGANDO '{_jogo_ativo}' AGORA. Se ele fizer uma pergunta de "
+                    "gameplay/how-to que faça sentido nesse jogo (como fazer algo, onde achar, como "
+                    "passar de uma parte), MESMO sem citar o jogo, use 'duvida_do_jogo' com a pergunta dele."
+                )
+
         if prompt_usuario.startswith('[Arquivo:'):
             prompt_ferramenta += (
                 "\nATENÇÃO: O conteúdo do arquivo já está incluído na mensagem do usuário. "
