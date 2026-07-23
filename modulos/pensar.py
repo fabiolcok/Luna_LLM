@@ -18,7 +18,7 @@ from modulos.habilidades import (
     obter_janela_em_foco, analisar_imagem_gemini, capturar_tela_base64, ler_texto_selecionado,
     desenhar_imagem, executar_analise_aba, alternar_mute,
     ler_url_especifica, ler_link_copiado, consultar_overwatch, consultar_jogo_steam,
-    ferramentas_disponiveis, NOME_USUARIO)
+    duvida_do_jogo, ferramentas_disponiveis, NOME_USUARIO)
 from modulos.memoria import (
     buscar_contexto_relevante, salvar_conversa,
     ler_memoria_permanente, analisar_e_salvar_fato, ler_estado_luna
@@ -234,6 +234,7 @@ FUNCOES_DISPONIVEIS = {
     "alternar_mute": alternar_mute,
     "consultar_overwatch": consultar_overwatch,
     "consultar_jogo_steam": consultar_jogo_steam,
+    "duvida_do_jogo": duvida_do_jogo,
     "ler_obsidian": _executar_ler_obsidian,
     "salvar_obsidian": _executar_salvar_obsidian,
 }

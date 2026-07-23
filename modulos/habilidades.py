@@ -533,13 +533,49 @@ def pesquisar_na_web(pergunta):
                 texto_compilado += f"\n(Aviso: O site principal bloqueou a leitura do artigo completo: {e_site})\n"
                 
         return texto_compilado
-        
+
     except Exception as e:
         return f"Erro ao tentar acessar a internet: {e}"
 
+
+# ── DÚVIDA SOBRE O JOGO ATIVO (busca escopada + guard anti-jogo-errado) ──
+import unicodedata
+
+_JOGO_SUFIXOS_FIM = {"remastered", "remaster", "edition", "deluxe", "goty",
+                     "definitive", "complete", "ultimate"}
+
+def _norm_txt(s: str) -> str:
+    s = unicodedata.normalize("NFKD", s or "").encode("ascii", "ignore").decode().lower()
+    return re.sub(r'\s+', ' ', re.sub(r'[^a-z0-9 ]', ' ', s)).strip()
+
+def _nucleo_jogo(nome: str) -> str:
+    """Nome do jogo normalizado, sem sufixo de edição no fim (mantém contíguo)."""
+    palavras = _norm_txt(nome).split()
+    while palavras and palavras[-1] in _JOGO_SUFIXOS_FIM:
+        palavras.pop()
+    return " ".join(palavras)
+
+def duvida_do_jogo(pergunta: str) -> str:
+    """Responde uma dúvida sobre o JOGO que o usuário está jogando AGORA, pesquisando na
+    web escopado no jogo (ex: 'como aumento a população?' vira '<jogo> como aumentar
+    população'). GUARD: se os resultados não citarem o próprio jogo pelo nome, é honesta e
+    NÃO chuta (evita dar dica de um jogo parecido quando o jogo é obscuro/sem wiki)."""
+    from modulos.memoria import ler_estado_luna
+    jogo = (ler_estado_luna().get("jogo_ativo") or "").strip()
+    if not jogo:
+        return "SISTEMA: Nenhum jogo ativo agora — não sei de qual jogo é a dúvida. Peça pra citar o jogo."
+    resultado = pesquisar_na_web(f"{jogo} {pergunta}")
+    nucleo = _nucleo_jogo(jogo)
+    if not nucleo or nucleo not in _norm_txt(resultado):
+        return (f"SISTEMA: Pesquisei sobre '{jogo}' mas não achei nada específico DESSE jogo "
+                f"(pode ser um jogo com pouca informação na web). NÃO invente nem confunda com "
+                f"jogo parecido — diga honestamente que não achou material confiável sobre ele.")
+    return f"SISTEMA: Resultado da pesquisa sobre '{jogo}':\n{resultado}"
+
+
 #=======================================================
 #               FERRAMENTA WHATSAPP
-#=======================================================    
+#=======================================================
 
 # Agenda de contatos: números REAIS ficam em modelos/contatos_whatsapp.json
 # (fora do git — dados pessoais). Veja contatos_whatsapp.example.json pro formato.
@@ -1219,6 +1255,18 @@ ferramentas_disponiveis = [
                 "type": "object",
                 "properties": {"nome_jogo": {"type": "string", "description": "Nome do jogo. Se o usuário usar pronome (ex: 'dele', 'desse'), use o nome do jogo citado antes na conversa."}},
                 "required": ["nome_jogo"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "duvida_do_jogo",
+            "description": "Responde uma DÚVIDA/PERGUNTA sobre o jogo que o usuário está JOGANDO agora — como fazer algo, onde achar, dicas, mecânicas ('como aumento a população?', 'onde acho tal item?', 'como derroto esse chefe?'). A pergunta pode ser vaga ('como faço isso?') — o jogo atual é resolvido sozinho. Diferente de 'consultar_jogo_steam' (que é preço/gênero/lançamento): esta é pra DÚVIDA de gameplay do jogo em andamento.",
+            "parameters": {
+                "type": "object",
+                "properties": {"pergunta": {"type": "string", "description": "A dúvida do usuário sobre o jogo, com as palavras dele."}},
+                "required": ["pergunta"]
             }
         }
     },
