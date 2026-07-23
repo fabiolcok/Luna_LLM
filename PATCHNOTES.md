@@ -8,6 +8,25 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 22/07/2026
+
+- ✨ **Ela te ajuda COM o jogo, não só comenta.** Jogando e com uma dúvida, é só perguntar
+  natural ("como faço pra fazer o trem andar?") que ela **saca sozinha** que é do jogo aberto,
+  pesquisa na web escopado nele e te responde. Tem um freio esperto: se a busca não achar
+  nada específico daquele jogo (comum em jogo obscuro/sem wiki), ela é **honesta** que não
+  achou — nunca te dá dica de um jogo parecido achando que é o teu.
+- 🔧 **"Olha minha tela" agora sabe qual jogo você tá jogando.** Quando ela analisa um print
+  com um jogo aberto, avisa ao motor de visão qual é o jogo — aí ele reconhece a tela e
+  responde bem mais certeiro.
+- 🐛 **Trocar voz, velocidade e ligar/desligar o proativo pela config voltou a funcionar.**
+  Um bug (introduzido junto com as teclas configuráveis) fazia esses ajustes serem ignorados
+  no modo web — o botão do proativo ficava preso. Consertado.
+- 🔧 **Menos "metralhada".** Quando você pede as novidades, ela agora **conta** conversando em
+  vez de colar a nota crua. E consertos das suas avaliações 👎: não salva mais comentário
+  casual como anotação, não "fala o roteiro" das falas automáticas, e não trava mais o
+  contexto quando a conversa fica longa.
+- 🔧 **Patch notes acessível pela config** (botão no rodapé do painel).
+
 ## 18/07/2026
 
 - ✨ **Memória episódica — a Luna passou a lembrar do que anda acontecendo.** Além do
