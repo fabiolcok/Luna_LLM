@@ -749,7 +749,12 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                     if responder_completo:   # Telegram: guarda o print para enviar como foto
                         _imagem_pendente = {"tipo": "b64", "dado": imagem_b64}
                     from modulos.habilidades import analisar_imagem_gemini
-                    resultado_ferramenta = analisar_imagem_gemini(imagem_b64, prompt_usuario)
+                    # Se tem jogo aberto, avisa o Gemini QUAL é — ele reconhece o jogo e a
+                    # tela muito melhor (o contexto vai pro Gemini, não incha o prompt local).
+                    _jogo_tela = ler_estado_luna().get("jogo_ativo")
+                    _pergunta_tela = (f"[Contexto: o usuário está jogando '{_jogo_tela}' agora.] {prompt_usuario}"
+                                      if _jogo_tela else prompt_usuario)
+                    resultado_ferramenta = analisar_imagem_gemini(imagem_b64, _pergunta_tela)
                     cor.amarelo(f"[🖥️ Gemini ver_tela retornou: {str(resultado_ferramenta)[:200]}]")
                 else:
                     if nome_funcao == "desenhar_imagem":
