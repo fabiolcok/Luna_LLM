@@ -494,6 +494,12 @@ def _inline_seguro(txt: str) -> str:
     return re.sub(r'\s+', ' ', (txt or '').strip()).replace('[', '(').replace(']', ')')
 
 
+# Marca a nota pro snippet de CSS que joga as novidades em 2 colunas (só esta nota é
+# afetada). O snippet fica em .obsidian/snippets/luna-novidades.css — ligue em
+# Configurações → Aparência → Snippets de CSS.
+_FRONTMATTER_NOVIDADES = "---\ncssclasses:\n  - novidades-grid\n---\n\n"
+
+
 def adicionar_novidades(itens: list, max_horas: int = 72) -> None:
     """Prepende um bloco datado de novidades em Novidades.md (raiz do vault).
     itens = lista de (titulo, link, fonte[, resumo[, imagem]]). Cada novidade vira um
@@ -526,7 +532,8 @@ def adicionar_novidades(itens: list, max_horas: int = 72) -> None:
             with open(caminho, encoding="utf-8") as f:
                 antigo = f.read()
         conteudo = _trim_novidades(bloco + "\n" + antigo, max_horas)
+        # frontmatter é reescrito sempre (o trim descarta tudo que não é bloco datado)
         with open(caminho, "w", encoding="utf-8") as f:
-            f.write(conteudo + "\n")
+            f.write(_FRONTMATTER_NOVIDADES + conteudo + "\n")
     except Exception:
         pass
