@@ -457,47 +457,69 @@ def semear_vault() -> list:
     return criadas
 
 
+def _data_cabecalho_novidade(bloco: str):
+    """Data/hora do cabeçalho de um bloco de novidades. Aceita o formato NOVO
+    ('## 22/07/2026 · 12:16') e o ANTIGO ('## 2026-07-22 12:16'), pra não perder
+    o que já estava na nota quando o formato mudou."""
+    m = re.match(r'##\s*(\d{2}/\d{2}/\d{4})\s*·\s*(\d{2}:\d{2})', bloco)
+    if m:
+        try:
+            return datetime.datetime.strptime(f"{m.group(1)} {m.group(2)}", "%d/%m/%Y %H:%M")
+        except ValueError:
+            return None
+    m = re.match(r'##\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})', bloco)
+    if m:
+        try:
+            return datetime.datetime.strptime(f"{m.group(1)} {m.group(2)}", "%Y-%m-%d %H:%M")
+        except ValueError:
+            return None
+    return None
+
+
 def _trim_novidades(conteudo: str, max_horas: int) -> str:
-    """Mantém só os blocos '## data hora' dentro de max_horas; descarta os mais velhos
+    """Mantém só os blocos datados dentro de max_horas; descarta os mais velhos
     (janela rolante — a nota não cresce sem limite)."""
     limite = datetime.datetime.now() - datetime.timedelta(hours=max_horas)
-    blocos = re.split(r'(?m)^(?=## \d{4}-\d{2}-\d{2} \d{2}:\d{2})', conteudo)
+    blocos = re.split(r'(?m)^(?=##\s*(?:\d{4}-\d{2}-\d{2}|\d{2}/\d{2}/\d{4}))', conteudo)
     mantidos = []
     for b in blocos:
-        m = re.match(r'## (\d{4}-\d{2}-\d{2} \d{2}:\d{2})', b)
-        if not m:
-            continue
-        try:
-            dt = datetime.datetime.strptime(m.group(1), '%Y-%m-%d %H:%M')
-        except ValueError:
-            continue
-        if dt >= limite:
+        dt = _data_cabecalho_novidade(b)
+        if dt and dt >= limite:
             mantidos.append(b.strip())
     return "\n\n".join(mantidos)
 
 
+def _inline_seguro(txt: str) -> str:
+    """Texto seguro pra uma linha de callout: sem quebras e sem colchete que quebre o link."""
+    return re.sub(r'\s+', ' ', (txt or '').strip()).replace('[', '(').replace(']', ')')
+
+
 def adicionar_novidades(itens: list, max_horas: int = 72) -> None:
     """Prepende um bloco datado de novidades em Novidades.md (raiz do vault).
-    itens = lista de (titulo, link, fonte[, resumo[, imagem]]). Mantém só os blocos
-    das últimas max_horas (janela rolante). A Luna só escreve nesse arquivo dedicado."""
+    itens = lista de (titulo, link, fonte[, resumo[, imagem]]). Cada novidade vira um
+    callout [!tip] — o Obsidian renderiza como caixinha (capa + fonte + resumo), bem
+    mais legível que lista crua. Mantém só as últimas max_horas (janela rolante)."""
     if not itens or not os.path.isdir(_VAULT):
         return
     caminho = os.path.join(_VAULT, "Novidades.md")
     agora = datetime.datetime.now()
-    linhas = [f"## {agora:%Y-%m-%d %H:%M}\n"]
+    linhas = [f"## {agora:%d/%m/%Y} · {agora:%H:%M}\n"]
     for item in itens:
-        t, l, fonte = item[0], item[1], item[2]
+        titulo = _inline_seguro(item[0]) or "(sem título)"
+        link, fonte = item[1], _inline_seguro(item[2])
         resumo = item[3] if len(item) > 3 else ""
         imagem = item[4] if len(item) > 4 else ""
-        linhas.append(f"**[{t}]({l})** — {fonte}\n")
+        cx = [f"> [!tip]+ [{titulo}]({link})"]
         if imagem:
-            # |200 = miniatura (largura em px). Sem isso o Obsidian renderiza a
-            # imagem em largura cheia e "polui" a leitura da notícia.
-            linhas.append(f"![|200]({imagem})\n")
-        if resumo:
-            linhas.append(f"> {resumo}\n")
-        linhas.append("\n")
-    bloco = "".join(linhas)
+            # |220 = miniatura (largura em px); sem isso a imagem vem em largura cheia.
+            cx.append(f"> ![|220]({imagem})")
+        if fonte:
+            cx.append(f"> `{fonte}`")
+        for ln in (resumo or "").strip().splitlines():
+            if ln.strip():
+                cx.append(f"> {ln.strip()}")
+        linhas.append("\n".join(cx) + "\n")
+    bloco = "\n".join(linhas)
     try:
         antigo = ""
         if os.path.exists(caminho):
