@@ -110,6 +110,28 @@ A memória tem **3 camadas com papéis distintos** (pra não confundir o modelo)
 
 ---
 
+## 📓 O lado Obsidian (vault "semeado" sozinho)
+
+Aponte `OBSIDIAN_VAULT` (no `.env`) pro seu vault e a Luna **cria o que falta na 1ª vez**
+(nunca sobrescreve o que já existe):
+
+| Arquivo | Pra que serve |
+|---------|---------------|
+| `Luna/perfil.md` | quem você é — o núcleo que ela carrega em toda conversa |
+| `Luna/Memoria.md` | memória episódica (ela propõe, você confirma no painel web) |
+| `Luna/animes.md` | lista de animes pro aviso de episódio novo (formato `- Nome \| apelido`) |
+| `Luna/radar_rss.md` | feeds RSS que ela acompanha |
+| `.obsidian/snippets/luna-novidades.css` | deixa a nota **Novidades** em colunas |
+
+Ela também **escreve** em `Luna/Inbox/` (anotações que você pede) e em `Novidades.md`
+(o radar RSS, com janela rolante de 72h — não cresce sem fim).
+
+> 💡 **Pra ativar o layout bonito das Novidades:** Obsidian → *Configurações → Aparência →
+> Snippets de CSS* → recarregar e ligar o **luna-novidades**. Aí cada notícia vira um card
+> (capa + fonte + resumo) e eles se organizam em colunas conforme a largura da janela.
+
+---
+
 ## 🔄 Fluxo principal (`main.py` → `loop_voz`)
 
 1. **OUVIR** → `ouvir.py`: PTT (`Ctrl+Alt+F8`), grava áudio, Whisper transcreve.

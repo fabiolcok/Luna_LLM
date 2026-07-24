@@ -437,8 +437,48 @@ te avisa quando sai novidade e anota tudo em **Novidades.md** (na raiz do vault)
 }
 
 
+# Snippet de CSS que deixa a nota Novidades em colunas (cards lado a lado).
+# É instalado junto com as notas — quem clonar o projeto ganha o layout também.
+# Só age em notas com 'cssclasses: novidades-grid' (ou seja, só o Novidades.md).
+_SNIPPET_NOVIDADES = """/* Luna — Novidades em colunas
+   Só afeta notas com  cssclasses: novidades-grid  (ou seja: só o Novidades.md).
+   Ligue em: Configurações → Aparência → Snippets de CSS → luna-novidades */
+
+/* Colunas ADAPTATIVAS: cria quantas couberem (~340px cada).
+   Janela pequena = 1-2 colunas; maximizado = 3-4. Sem número fixo. */
+.novidades-grid .markdown-preview-section {
+  column-width: 340px;
+  column-gap: 18px;
+}
+
+/* cada notícia (callout) nunca é cortada no meio entre as colunas */
+.novidades-grid .markdown-preview-section .callout {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  page-break-inside: avoid;
+  margin: 0 0 14px 0;
+}
+
+/* o cabeçalho da data atravessa todas as colunas */
+.novidades-grid .markdown-preview-section h2 {
+  column-span: all;
+  margin-top: 18px;
+}
+
+/* CAPA: ocupa a largura do card, mas com ALTURA TRAVADA — não vira outdoor
+   quando você maximiza. object-fit: cover corta bonito, sem distorcer. */
+.novidades-grid .markdown-preview-section .callout img {
+  width: 100%;
+  max-height: 170px;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+}
+"""
+
+
 def semear_vault() -> list:
-    """Cria as notas de CONFIGURAÇÃO com template quando não existem (vault novo).
+    """Cria as notas de CONFIGURAÇÃO e o snippet de CSS quando não existem (vault novo).
     Nunca sobrescreve nada. Retorna os caminhos criados (vazio se nada faltava)."""
     if not os.path.isdir(_VAULT):
         return []
@@ -452,6 +492,17 @@ def semear_vault() -> list:
             with open(caminho, "w", encoding="utf-8") as f:
                 f.write(conteudo)
             criadas.append("/".join(partes))
+        except Exception:
+            pass
+
+    # Snippet de CSS do Novidades (o usuário ainda precisa LIGAR em Aparência)
+    snippet = os.path.join(_VAULT, ".obsidian", "snippets", "luna-novidades.css")
+    if not os.path.exists(snippet):
+        try:
+            os.makedirs(os.path.dirname(snippet), exist_ok=True)
+            with open(snippet, "w", encoding="utf-8") as f:
+                f.write(_SNIPPET_NOVIDADES)
+            criadas.append(".obsidian/snippets/luna-novidades.css")
         except Exception:
             pass
     return criadas
