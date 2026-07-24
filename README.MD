@@ -316,7 +316,7 @@ O proativo usa `REGRA_PERSONA` (em `proativa.py`) com o mesmo tom.
 BASE_LOCAL     = "http://127.0.0.1:6996/v1"   # TurboLLM (OpenAI-compatível)
 MODELO_PERSONA = "gemma 4 12b it qat"         # ESPAÇOS (JIT do TurboLLM)
 THINK_OFF      = {"chat_template_kwargs": {"enable_thinking": False}}  # em TODA chamada
-ATIVAR_MEMORIA_PERMANENTE = False
+ATIVAR_MEMORIA_PERMANENTE = False   # legado — substituído pela memória episódica
 ```
 
 Trocar de modelo: mudar `BASE_LOCAL` e `MODELO_PERSONA`. Se o novo modelo não for
@@ -330,7 +330,10 @@ Trocar de modelo: mudar `BASE_LOCAL` e `MODELO_PERSONA`. Se o novo modelo não f
   ocioso demora ~6s (recarga JIT).
 - O TurboLLM detecta a VRAM da RX 9060 XT errado (4,3 GB em vez de 16) → não segura 2
   modelos ao mesmo tempo. Daí o desenho MONO.
-- `ATIVAR_MEMORIA_PERMANENTE` desativado (requer modelo que extraia fatos sem alucinar).
+- A extração da memória episódica ainda propõe algum ruído (ex: trivia técnica de uma
+  conversa) — por isso ela **pede sua confirmação** antes de salvar; nada entra sozinho.
+  A memória permanente antiga (`ATIVAR_MEMORIA_PERMANENTE`) virou legado: ela extraía em
+  tempo real e alucinava, problema que o gate de confirmação resolveu.
 - LCU API do LoL só funciona com o cliente rodando; extensão Firefox necessária pras
   ferramentas de navegador; `pdfplumber` opcional (PDF no drag & drop).
 
