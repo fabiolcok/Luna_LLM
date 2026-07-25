@@ -109,7 +109,10 @@ A memória tem **3 camadas com papéis distintos** (pra não confundir o modelo)
   puxar quando o tema casa de verdade). **Curadoria esfria/esquenta**: evento com mais de ~45
   dias sem uso *esfria* e sai dos recentes (vai pro `Luna/Memoria_arquivo.md`, mantendo o
   `Memoria.md` enxuto), mas continua no recall — se o assunto volta à tona, *esquenta* e
-  retorna pro ativo. Fila de pendentes + lixo em `modelos/memoria_pendente.json`.
+  retorna pro ativo. **Retomada proativa**: a Luna puxa sozinha um assunto em aberto ("e aí,
+  conseguiu consertar o PC?") — no máx 2x/dia (1ª uns minutos depois de ligar, 2ª ~6h depois),
+  só fato registrado (o 12B escolhe qual é pendência, nunca inventa). Fila de pendentes + lixo
+  em `modelos/memoria_pendente.json`.
 - **Conversas** (ChromaDB local) — **recall literal** das últimas 30 conversas, por busca
   semântica. Embedding all-MiniLM-L6-v2 (CPU, ~80MB), `LIMIAR_DISTANCIA=1.3`.
 
