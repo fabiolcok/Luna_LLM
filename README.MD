@@ -102,8 +102,11 @@ A memória tem **3 camadas com papéis distintos** (pra não confundir o modelo)
 - **Memória episódica** (`Luna/Memoria.md` no Obsidian) — **o que anda acontecendo**:
   eventos datados, assuntos em aberto, humor. A Luna **propõe** (extração no ocioso via o
   próprio 12B) e o usuário **confirma** numa caixa no web antes de salvar (o gate de
-  confirmação é o anti-alucinação). No prompt entram só os **~15 mais recentes**; recência
-  resolve conflito (o fato novo vence o velho). Fila de pendentes + lixo em
+  confirmação é o anti-alucinação). Entram no prompt em **2 fatias**: os **~15 mais
+  recentes** (continuidade; recência resolve conflito, o novo vence o velho) **+ lembranças
+  antigas que casam com o assunto da conversa** (recall semântico — embedding multilíngue
+  `paraphrase-multilingual-MiniLM-L12-v2` no CPU, ~470MB baixado na 1ª vez; piso alto pra só
+  puxar quando o tema casa de verdade). Fila de pendentes + lixo em
   `modelos/memoria_pendente.json`.
 - **Conversas** (ChromaDB local) — **recall literal** das últimas 30 conversas, por busca
   semântica. Embedding all-MiniLM-L6-v2 (CPU, ~80MB), `LIMIAR_DISTANCIA=1.3`.
