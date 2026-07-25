@@ -106,8 +106,10 @@ A memória tem **3 camadas com papéis distintos** (pra não confundir o modelo)
   recentes** (continuidade; recência resolve conflito, o novo vence o velho) **+ lembranças
   antigas que casam com o assunto da conversa** (recall semântico — embedding multilíngue
   `paraphrase-multilingual-MiniLM-L12-v2` no CPU, ~470MB baixado na 1ª vez; piso alto pra só
-  puxar quando o tema casa de verdade). Fila de pendentes + lixo em
-  `modelos/memoria_pendente.json`.
+  puxar quando o tema casa de verdade). **Curadoria esfria/esquenta**: evento com mais de ~45
+  dias sem uso *esfria* e sai dos recentes (vai pro `Luna/Memoria_arquivo.md`, mantendo o
+  `Memoria.md` enxuto), mas continua no recall — se o assunto volta à tona, *esquenta* e
+  retorna pro ativo. Fila de pendentes + lixo em `modelos/memoria_pendente.json`.
 - **Conversas** (ChromaDB local) — **recall literal** das últimas 30 conversas, por busca
   semântica. Embedding all-MiniLM-L6-v2 (CPU, ~80MB), `LIMIAR_DISTANCIA=1.3`.
 
