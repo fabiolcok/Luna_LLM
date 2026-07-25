@@ -111,8 +111,11 @@ A memória tem **3 camadas com papéis distintos** (pra não confundir o modelo)
   `Memoria.md` enxuto), mas continua no recall — se o assunto volta à tona, *esquenta* e
   retorna pro ativo. **Retomada proativa**: a Luna puxa sozinha um assunto em aberto ("e aí,
   conseguiu consertar o PC?") — no máx 2x/dia (1ª uns minutos depois de ligar, 2ª ~6h depois),
-  só fato registrado (o 12B escolhe qual é pendência, nunca inventa). Fila de pendentes + lixo
-  em `modelos/memoria_pendente.json`.
+  só fato registrado (o 12B escolhe qual é pendência, nunca inventa). **Hábitos de jogo**: ela
+  comenta padrões *medidos* ("anda jogando bem mais Hollow Knight", "faz tempo que não abre
+  Deadlock") a partir do que a Steam reporta ter sido jogado nas últimas 2 semanas — número
+  real, nunca inventado; discreto (no máx 1x/dia). Fila de pendentes + lixo em
+  `modelos/memoria_pendente.json`.
 - **Conversas** (ChromaDB local) — **recall literal** das últimas 30 conversas, por busca
   semântica. Embedding all-MiniLM-L6-v2 (CPU, ~80MB), `LIMIAR_DISTANCIA=1.3`.
 

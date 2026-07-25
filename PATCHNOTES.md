@@ -25,6 +25,11 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
   Com juízo: **no máximo 2x por dia** (uma logo depois de ligar a Luna, outra uma boa folga
   depois), e **só coisa que você realmente falou** — ela nunca inventa uma pendência. Dá pra
   desligar no toggle **"Retomar assuntos"** (⚙ → Tarefas proativas).
+- ✨ **Ela repara nos teus hábitos de jogo.** Sem te espionar nada: usa só o que a **Steam**
+  já registra de tempo jogado nas últimas 2 semanas, e comenta um padrão de vez em quando —
+  *"você anda jogando bem mais Hollow Knight"* ou *"faz um tempo que não abre o Deadlock"*.
+  É sempre **número real** (nunca inventa), e **discreto** (no máx 1x por dia). Toggle
+  **"Hábitos de jogo"** na config, e precisa da Steam configurada.
 
 ## 22/07/2026
 
