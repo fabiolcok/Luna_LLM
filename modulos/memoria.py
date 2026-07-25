@@ -198,7 +198,9 @@ def _cos(a, b) -> float:
 
 def buscar_memoria_relevante(pergunta: str, limite: int = 3, forte: float = 0.52, excluir=None) -> list:
     """Fatos episódicos FORTEMENTE relevantes à pergunta (recall por tema, não só recência).
-    Retorna [(data, fato)] ordenado por similaridade.
+    Retorna [(data, fato)] ordenado por similaridade. Busca no ATIVO (Memoria.md) E no FRIO
+    (Memoria_arquivo.md) — e se um fato FRIO casa forte, ele 'ESQUENTA': volta pro ativo com
+    data de hoje (o assunto voltou à tona = relevante de novo).
 
     Usa o embedder multilíngue (paraphrase-multilingual-MiniLM-L12-v2), que em PT separa bem
     sinal de ruído: match forte tipo 'violão' pra 'instrumento musical' ~0.77, enquanto ruído
@@ -209,18 +211,20 @@ def buscar_memoria_relevante(pergunta: str, limite: int = 3, forte: float = 0.52
     if not pergunta or not pergunta.strip():
         return []
     from modulos import obsidian
-    fatos = obsidian.listar_memoria_episodica()
-    if not fatos:
+    # ativo + frio, marcando a origem (o frio só existe pra poder 'esquentar')
+    combinado = ([(d, f, "ativo") for d, f in obsidian.listar_memoria_episodica()]
+                 + [(d, f, "frio") for d, f in obsidian.listar_memoria_arquivo()])
+    if not combinado:
         return []
     efn = _emb_mem()
-    assinatura = tuple(f for _, f in fatos)
-    if _mem_emb_cache["assinatura"] != assinatura:      # o Memoria.md mudou -> re-embeda
+    assinatura = tuple((f, o) for _, f, o in combinado)
+    if _mem_emb_cache["assinatura"] != assinatura:      # a memória mudou -> re-embeda
         try:
-            vecs = efn([f for _, f in fatos])
+            vecs = efn([f for _, f, _ in combinado])
         except Exception as e:
             cor.vermelho(f"[Memória: erro ao embeddar fatos — {e}]")
             return []
-        _mem_emb_cache.update(assinatura=assinatura, fatos=fatos,
+        _mem_emb_cache.update(assinatura=assinatura, fatos=combinado,
                               vecs=[np.asarray(v, dtype=float) for v in vecs])
     try:
         qv = np.asarray(efn([pergunta])[0], dtype=float)
@@ -228,14 +232,18 @@ def buscar_memoria_relevante(pergunta: str, limite: int = 3, forte: float = 0.52
         return []
     excluir = excluir or set()
     ranked = []
-    for (data, fato), ev in zip(_mem_emb_cache["fatos"], _mem_emb_cache["vecs"]):
+    for (data, fato, origem), ev in zip(_mem_emb_cache["fatos"], _mem_emb_cache["vecs"]):
         if fato in excluir:
             continue
         s = _cos(qv, ev)
         if s >= forte:
-            ranked.append((s, data, fato))
+            ranked.append((s, data, fato, origem))
     ranked.sort(key=lambda x: x[0], reverse=True)
-    return [(d, f) for _, d, f in ranked[:limite]]
+    top = ranked[:limite]
+    for s, data, fato, origem in top:               # os frios do top voltam pro ativo
+        if origem == "frio":
+            obsidian.esquentar_memoria(fato)
+    return [(d, f) for _, d, f, _ in top]
 
 
 # ============================================================

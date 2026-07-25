@@ -1524,6 +1524,15 @@ def _tarefa_extrair_memoria(forcar=False):
         return
     from modulos import memoria
     memoria.mem_limpar_lixo()                       # aproveita e limpa o lixo velho
+    # ESFRIAR: eventos episódicos velhos saem dos "recentes" e vão pro arquivo frio
+    # (continuam no retrieval, podem esquentar). Por idade — roda mesmo sem conversa nova.
+    try:
+        from modulos import obsidian
+        n_frio = obsidian.arquivar_antigas()
+        if n_frio:
+            cor.amarelo(f"[🧊 Memória: {n_frio} lembrança(s) antiga(s) esfriaram (foram pro arquivo)]")
+    except Exception:
+        pass
     novas = memoria.conversas_desde(memoria.mem_marcador())
     if not novas:
         return

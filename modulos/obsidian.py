@@ -285,22 +285,38 @@ def salvar_foto(dados_imagem: bytes, legenda: str = "", origem: str = "", ext: s
 
 
 # ── MEMÓRIA EPISÓDICA (o que anda acontecendo — datado, o usuário confirma) ──
+# Duas notas: Memoria.md = ATIVO (entra no prompt como "recentes" + no retrieval);
+# Memoria_arquivo.md = FRIO (evento velho que esfriou — NÃO entra como recente, mas
+# CONTINUA no retrieval, pra poder "esquentar" e voltar pro ativo se o assunto voltar).
 _TEMPLATE_MEMORIA = """# 🧠 Memória da Luna
 
 > O que a Luna lembra do que anda acontecendo com você — eventos, assuntos em aberto,
 > humor. Ela PROPÕE e você confirma no modo web; mas pode editar/apagar à vontade aqui.
 > Formato: uma por linha, com data — `- [AAAA-MM-DD] o que aconteceu`.
 > A Luna usa as MAIS RECENTES; se algo mudar, o mais novo manda.
+> Eventos antigos que ninguém toca vão pro **Memoria_arquivo.md** (mas ela ainda lembra
+> deles se o assunto voltar).
+
+"""
+
+_TEMPLATE_MEMORIA_ARQ = """# 🧊 Memória da Luna — arquivo (frio)
+
+> Eventos antigos que esfriaram (a Luna não usa mais pro dia a dia), mas que ela ainda
+> PUXA se o assunto voltar à tona — aí a lembrança "esquenta" e volta pro Memoria.md.
+> Mesmo formato: `- [AAAA-MM-DD] o que aconteceu`. Pode apagar o que não quiser guardar.
 
 """
 
 _RE_MEM_LINHA = re.compile(r'^\s*[-*]\s*\[(\d{4})-(\d{2})-(\d{2})\]\s*(.+?)\s*$')
 
+_MEM_ATIVO   = ("Luna", "Memoria.md")
+_MEM_ARQUIVO = ("Luna", "Memoria_arquivo.md")
 
-def listar_memoria_episodica() -> list:
-    """Lê Luna/Memoria.md e devolve os fatos crus [(data 'AAAA-MM-DD', fato)], do MAIS
-    RECENTE pro mais antigo. Base pra formatar (recentes) e pra embeddar (retrieval)."""
-    caminho = os.path.join(_VAULT, "Luna", "Memoria.md")
+
+def _listar_memoria_de(partes) -> list:
+    """Lê uma nota de memória (ativo ou arquivo) e devolve [(data 'AAAA-MM-DD', fato)]
+    do MAIS RECENTE pro mais antigo."""
+    caminho = os.path.join(_VAULT, *partes)
     itens = []
     try:
         with open(caminho, encoding="utf-8") as f:
@@ -313,6 +329,18 @@ def listar_memoria_episodica() -> list:
         return []
     itens.sort(key=lambda x: x[0], reverse=True)   # mais recente primeiro
     return itens
+
+
+def listar_memoria_episodica() -> list:
+    """Fatos ATIVOS [(data, fato)] (Memoria.md), do mais recente pro mais antigo.
+    Base pra formatar os recentes do prompt e pra embeddar no retrieval."""
+    return _listar_memoria_de(_MEM_ATIVO)
+
+
+def listar_memoria_arquivo() -> list:
+    """Fatos FRIOS [(data, fato)] (Memoria_arquivo.md) — não entram como recentes, mas
+    ainda são embeddados no retrieval pra poderem 'esquentar'."""
+    return _listar_memoria_de(_MEM_ARQUIVO)
 
 
 def fmt_memoria(data: str, fato: str) -> str:
@@ -347,6 +375,94 @@ def adicionar_memoria(fato: str, data: str = None) -> bool:
         return True
     except Exception:
         return False
+
+
+def _idade_dias(data_iso: str) -> int:
+    """Dias entre a data (AAAA-MM-DD) e hoje. 0 se não parsear."""
+    try:
+        d = datetime.datetime.strptime(data_iso, "%Y-%m-%d").date()
+        return (datetime.date.today() - d).days
+    except Exception:
+        return 0
+
+
+def arquivar_antigas(dias: int = 45) -> int:
+    """ESFRIAR: move do ativo (Memoria.md) pro frio (Memoria_arquivo.md) os fatos com
+    mais de `dias` dias. Preserva cabeçalho e formatação — só tira as LINHAS de fato
+    vencidas. Devolve quantas esfriaram. Escrita segura: anexa no frio PRIMEIRO (pior
+    caso = duplicata, nunca perda), depois reescreve o ativo de forma atômica."""
+    if not os.path.isdir(_VAULT):
+        return 0
+    caminho = os.path.join(_VAULT, *_MEM_ATIVO)
+    if not os.path.exists(caminho):
+        return 0
+    try:
+        with open(caminho, encoding="utf-8") as f:
+            linhas = f.readlines()
+    except Exception:
+        return 0
+    manter, esfriar = [], []
+    for linha in linhas:
+        m = _RE_MEM_LINHA.match(linha)
+        if m and _idade_dias(f"{m.group(1)}-{m.group(2)}-{m.group(3)}") > dias:
+            esfriar.append((f"{m.group(1)}-{m.group(2)}-{m.group(3)}", m.group(4).strip()))
+        else:
+            manter.append(linha)
+    if not esfriar:
+        return 0
+    arq = os.path.join(_VAULT, *_MEM_ARQUIVO)
+    try:                                            # 1) frio primeiro (append seguro)
+        os.makedirs(os.path.dirname(arq), exist_ok=True)
+        existe = os.path.exists(arq)
+        with open(arq, "a", encoding="utf-8") as f:
+            if not existe:
+                f.write(_TEMPLATE_MEMORIA_ARQ)
+            for data, fato in esfriar:
+                f.write(f"- [{data}] {fato}\n")
+    except Exception:
+        return 0
+    try:                                            # 2) reescreve o ativo (atômico)
+        tmp = caminho + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.writelines(manter)
+        os.replace(tmp, caminho)
+    except Exception:
+        return 0
+    return len(esfriar)
+
+
+def esquentar_memoria(fato: str) -> bool:
+    """ESQUENTAR: o assunto de um fato frio voltou à tona — tira ele do Memoria_arquivo.md
+    e devolve pro Memoria.md com data de HOJE (relevante de novo). Devolve True se moveu.
+    Adiciona no ativo ANTES de tirar do frio (pior caso = duplicata, nunca perda)."""
+    fato = (fato or "").strip()
+    if not fato or not os.path.isdir(_VAULT):
+        return False
+    arq = os.path.join(_VAULT, *_MEM_ARQUIVO)
+    if not os.path.exists(arq):
+        return False
+    try:
+        with open(arq, encoding="utf-8") as f:
+            linhas = f.readlines()
+    except Exception:
+        return False
+    achou, resto = False, []
+    for linha in linhas:
+        m = _RE_MEM_LINHA.match(linha)
+        if m and not achou and m.group(4).strip() == fato:
+            achou = True
+        else:
+            resto.append(linha)
+    if not achou or not adicionar_memoria(fato):    # adiciona no ativo (data hoje)
+        return False
+    try:                                            # tira do frio (atômico)
+        tmp = arq + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.writelines(resto)
+        os.replace(tmp, arq)
+    except Exception:
+        return False
+    return True
 
 
 # ── ANIMES (lista configurada pelo usuário no Obsidian) ──
@@ -434,6 +550,7 @@ _TEMPLATES_VAULT = {
 > `- That Time I Got Reincarnated as a Slime | Anime do Slime`
 """,
     ("Luna", "Memoria.md"): _TEMPLATE_MEMORIA,
+    ("Luna", "Memoria_arquivo.md"): _TEMPLATE_MEMORIA_ARQ,
     ("Luna", "radar_rss.md"): """# Radar RSS — fontes que a Luna acompanha
 
 Cole aqui links de feeds RSS, um por linha em bullet. A Luna lê os links,
