@@ -8,6 +8,24 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 25/07/2026
+
+- ✨ **Ela lembra pelo ASSUNTO, não só pelo que é recente.** Antes a Luna só puxava as
+  lembranças mais novas (por data). Agora, quando você toca num tema, ela resgata a lembrança
+  antiga que combina — mesmo de meses atrás. Você fala "tava pensando em comprar um instrumento
+  musical" e ela lembra que **você queria aprender violão**. (Por baixo: um modelo de linguagem
+  multilíngue que entende português de verdade, com um freio alto — ela só puxa quando o
+  assunto casa mesmo, pra nunca trazer a lembrança errada.)
+- ✨ **A memória se organiza sozinha (esfria e esquenta).** Evento antigo que ninguém toca há
+  mais de ~45 dias **esfria** e sai da lista principal (vai pro `Luna/Memoria_arquivo.md`),
+  deixando o `Memoria.md` enxuto. Mas não some: se o assunto **volta à tona**, a lembrança
+  **esquenta** e retorna sozinha. Nada é apagado — só sai da frente.
+- ✨ **Ela retoma assunto em aberto por conta própria.** Se você tinha uma pendência ("vou
+  tentar consertar o ventilador"), ela puxa depois: *"e aí, conseguiu resolver o ventilador?"*.
+  Com juízo: **no máximo 2x por dia** (uma logo depois de ligar a Luna, outra uma boa folga
+  depois), e **só coisa que você realmente falou** — ela nunca inventa uma pendência. Dá pra
+  desligar no toggle **"Retomar assuntos"** (⚙ → Tarefas proativas).
+
 ## 22/07/2026
 
 - ✨ **Ela te ajuda COM o jogo, não só comenta.** Jogando e com uma dúvida, é só perguntar
