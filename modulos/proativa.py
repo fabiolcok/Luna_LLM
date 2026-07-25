@@ -202,7 +202,7 @@ TAREFAS_ATIVAS = {
     "jogos": True, "emails": True, "agenda": True,
     "pausa": True, "clima": True, "bom_dia": True, "steam": True, "navegador": True,
     "radar_rss": True, "autoconhecimento": True, "steam_jogo": True, "animes": True,
-    "memoria": True,
+    "memoria": True, "retomar": True,
 }
 
 # Estado interno da tarefa de contexto de navegação
@@ -1214,6 +1214,69 @@ Dê um 'bom dia' usando sua personalidade {REGRA_PERSONA} EXCEÇÃO ao limite de
                 # 4. SALVA NO DISCO: A Luna nunca mais vai esquecer que já falou hoje
                 salvar_estado_proativo("ultimo_dia_bom_dia", dia_atual)
 
+
+# ── Retomada de assunto em aberto (memória episódica v2, peça 3) ──
+_RETOMAR_MAX_DIA = 2                    # no máx 2 retomadas por dia (régua do usuário)
+_RETOMAR_ATRASO_ABERTURA = 4 * 60      # s após ligar a Luna: a 1ª não sai "no susto"
+_RETOMAR_ESPACO_2A = 6 * 3600          # 6h entre a 1ª e a 2ª retomada
+
+def _tarefa_retomar_assunto():
+    """Retoma um assunto em ABERTO de antes ('e aí, conseguiu consertar o PC?'). Régua:
+    no máx 2x/dia — a 1ª uns minutos depois de LIGAR a Luna, a 2ª ~6h depois; reabrir no
+    mesmo dia não gera extra; zera no outro dia. Sem pendência em aberto = fica quieta.
+    Zona GLaDOS: só retoma fato REGISTRADO (o 12B escolhe da lista), NUNCA inventa."""
+    from modulos import obsidian
+    agora = time.time()
+    hoje = datetime.date.today().isoformat()
+    est = ler_estado_proativo()
+    if est.get("retomar_dia") != hoje:              # virou o dia -> zera contador e dedup
+        salvar_estado_proativo("retomar_dia", hoje)
+        salvar_estado_proativo("retomar_hoje", 0)
+        salvar_estado_proativo("retomar_assuntos", [])
+        est = ler_estado_proativo()
+    feitas = est.get("retomar_hoje", 0)
+    if feitas >= _RETOMAR_MAX_DIA:                  # cota do dia estourada
+        return
+    if feitas == 0:                                 # 1ª do dia: só uns min depois de ligar
+        if not _sessao_inicio or (agora - _sessao_inicio) < _RETOMAR_ATRASO_ABERTURA:
+            return
+    elif (agora - est.get("retomar_ultima_ts", 0)) < _RETOMAR_ESPACO_2A:   # 2ª: 6h depois
+        return
+    ja = set(est.get("retomar_assuntos", []))       # assuntos já puxados (não repete)
+    fatos = [f for _, f in obsidian.listar_memoria_episodica() if f not in ja]
+    if not fatos:
+        return
+    # passo 1: o 12B ESCOLHE um fato que seja pendência em aberto (ou 0 = nenhum)
+    lista = "\n".join(f"{i+1}. {f}" for i, f in enumerate(fatos[:12]))
+    escolha = (
+        "Estes são fatos recentes sobre o usuário:\n" + lista + "\n\n"
+        "Algum é uma INTENÇÃO, PLANO ou PENDÊNCIA EM ABERTO que valha retomar agora, "
+        "perguntando como foi ('e aí, conseguiu?', 'terminou?')? Escolha no máximo UM. "
+        "Se NENHUM for pendência em aberto (gosto, fato fixo, coisa já resolvida), use 0.\n"
+        'Responda só JSON: {"n": <número do fato ou 0>}'
+    )
+    try:
+        bruto = gerar_resposta(escolha, [], analisar=False, salvar=False,
+                               modo_memoria=True, max_tokens=60)
+        m = re.search(r'\{.*\}', bruto or "", re.DOTALL)
+        n = int(json.loads(m.group()).get("n", 0)) if m else 0
+    except Exception:
+        return
+    if n < 1 or n > len(fatos):                     # nenhuma pendência válida -> cala
+        return
+    fato = fatos[n - 1]
+    # passo 2: a persona da Luna transforma o fato numa retomada leve e natural
+    prompt = (f"O usuário tinha comentado antes: \"{fato}\". Puxe esse assunto de forma leve "
+              "e natural agora, perguntando como foi / se rolou — como quem retoma uma "
+              "conversa. NÃO invente nenhum detalhe além disso.")
+    texto = _gerar_fala_proativa(prompt, "retomar assunto", max_tokens=120, variar=False)
+    if texto and _falar_proativamente(texto):
+        ja.add(fato)
+        salvar_estado_proativo("retomar_assuntos", list(ja))
+        salvar_estado_proativo("retomar_hoje", feitas + 1)
+        salvar_estado_proativo("retomar_ultima_ts", agora)
+
+
 def _tarefa_monitorar_jogos():
     """Verifica se o usuário iniciou ou encerrou uma partida."""
     global ESTADO_JOGOS
@@ -1623,6 +1686,7 @@ def _loop_proativo():
                 if TAREFAS_ATIVAS.get("clima", True): _tarefa_monitorar_clima()
                 if TAREFAS_ATIVAS.get("steam", True): _tarefa_steam_wishlist()
                 if TAREFAS_ATIVAS.get("bom_dia", True): _tarefa_bom_dia()
+                if TAREFAS_ATIVAS.get("retomar", True): _tarefa_retomar_assunto()
                 if TAREFAS_ATIVAS.get("navegador", True): _tarefa_contexto_navegador()
                 if TAREFAS_ATIVAS.get("radar_rss", True): _tarefa_radar_rss()
                 if TAREFAS_ATIVAS.get("animes", True): _tarefa_avisar_animes()

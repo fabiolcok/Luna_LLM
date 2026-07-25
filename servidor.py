@@ -58,7 +58,7 @@ _estado_config = {
     "proativo": True,
     "memoria": False,
     "tarefas": {"jogos": True, "emails": True, "agenda": True, "pausa": True,
-                "clima": True, "bom_dia": True, "steam": True, "navegador": True,
+                "clima": True, "bom_dia": True, "retomar": True, "steam": True, "navegador": True,
                 "steam_jogo": True, "radar_rss": True, "animes": True,
                 "autoconhecimento": True, "memoria": True},
     "voz": "jf_alpha",
