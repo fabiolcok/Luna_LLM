@@ -202,7 +202,7 @@ TAREFAS_ATIVAS = {
     "jogos": True, "emails": True, "agenda": True,
     "pausa": True, "clima": True, "bom_dia": True, "steam": True, "navegador": True,
     "radar_rss": True, "autoconhecimento": True, "steam_jogo": True, "animes": True,
-    "memoria": True, "retomar": True,
+    "memoria": True, "retomar": True, "habitos": True,
 }
 
 # Estado interno da tarefa de contexto de navegação
@@ -1277,6 +1277,102 @@ def _tarefa_retomar_assunto():
         salvar_estado_proativo("retomar_ultima_ts", agora)
 
 
+# ── Detecção de hábitos de jogo (memória episódica v2, peça 4) ──
+# Hábito = PADRÃO MEDIDO, não fato que o usuário disse (anti-GLaDOS: ela comenta número
+# real da Steam, nunca inventa). Fonte: GetRecentlyPlayedGames -> playtime_2weeks por jogo
+# ("quanto jogou de cada nas últimas 2 semanas"). Snapshots diários deixam comparar tendência.
+CAMINHO_HABITOS = "modelos/historico_jogos.json"
+_HABITO_MIN = 180            # min nas 2 semanas pra um jogo "contar" como hábito (3h)
+_HABITO_INTERVALO = 240      # consulta a Steam no máx a cada 4h (min)
+
+def _steam_jogados_recentes():
+    """[(nome, min_2semanas, min_total)] dos jogos jogados nas últimas 2 semanas (desc).
+    Vazio se sem API/erro. É o dado cru pro detector de hábito."""
+    if not STEAM_API_KEY or not STEAM_ID:
+        return []
+    url = (f"https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v1/"
+           f"?key={STEAM_API_KEY}&steamid={STEAM_ID}")
+    try:
+        jogos = requests.get(url, timeout=10).json().get("response", {}).get("games", [])
+    except Exception:
+        return []
+    saida = [(g.get("name", ""), g.get("playtime_2weeks", 0), g.get("playtime_forever", 0))
+             for g in jogos if g.get("name") and g.get("playtime_2weeks", 0) > 0]
+    return sorted(saida, key=lambda x: -x[1])
+
+def _habitos_carregar():
+    try:
+        with open(CAMINHO_HABITOS, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+def _habitos_snapshot(recentes, hist, hoje):
+    """Guarda o snapshot de hoje (min por jogo). Mantém ~30 dias pra comparar tendência."""
+    jogos = {n: m for n, m, _ in recentes}
+    if hist and hist[-1].get("data") == hoje:
+        hist[-1]["jogos"] = jogos            # já tem hoje -> atualiza
+    else:
+        hist.append({"data": hoje, "jogos": jogos})
+    del hist[:-30]
+    try:
+        os.makedirs("modelos", exist_ok=True)
+        with open(CAMINHO_HABITOS, "w", encoding="utf-8") as f:
+            json.dump(hist, f, ensure_ascii=False)
+    except Exception:
+        pass
+
+def _habitos_insight(recentes, hist, hoje):
+    """Um padrão FACTUAL pra comentar (string) ou None. Prioridade: sumiço de um jogo antes
+    frequente > alta forte no dominante > o dominante do momento (fallback)."""
+    if not recentes or recentes[0][1] < _HABITO_MIN:
+        return None
+    nome, mn, _ = recentes[0]
+    h = round(mn / 60, 1)
+    atual = {n: m for n, m, _ in recentes}
+    ant = {}                                 # snapshot de um dia ANTERIOR (pra tendência)
+    for snap in reversed(hist):
+        if snap.get("data") != hoje:
+            ant = snap.get("jogos", {})
+            break
+    # 1) sumiço: jogo que andava forte e agora zerou nas 2 semanas
+    for n, m in sorted(ant.items(), key=lambda x: -x[1]):
+        if m >= _HABITO_MIN and atual.get(n, 0) == 0:
+            return f"faz um tempo que ele não joga {n} (antes andava jogando bastante)"
+    # 2) subiu forte: o dominante cresceu bem em relação ao snapshot anterior
+    antes = ant.get(nome, 0)
+    if antes and mn >= antes * 1.5 and (mn - antes) >= 120:
+        return f"ele anda jogando bem mais {nome} — já são {h} horas nas últimas 2 semanas"
+    # 3) fallback: o jogo do momento (factual)
+    return f"o jogo do momento dele é {nome}, com {h} horas nas últimas 2 semanas"
+
+def _tarefa_detectar_habito():
+    """Comenta um HÁBITO de jogo medido (ex: 'você anda jogando bem mais X'). Régua discreta:
+    no máx 1x/dia e sem repetir o mesmo insight de véspera; consulta a Steam no máx a cada 4h.
+    Só fatos reais (Steam), nunca inventa (zona GLaDOS)."""
+    hoje = datetime.date.today().isoformat()
+    est = ler_estado_proativo()
+    if est.get("habito_dia") == hoje:               # já comentou um hábito hoje
+        return
+    if not _passou_intervalo("habito", _HABITO_INTERVALO):
+        return
+    recentes = _steam_jogados_recentes()
+    if not recentes:
+        return
+    hist = _habitos_carregar()
+    insight = _habitos_insight(recentes, hist, hoje)
+    _habitos_snapshot(recentes, hist, hoje)         # guarda o de hoje (depois de comparar)
+    if not insight or insight == est.get("habito_ultimo"):   # nada novo pra dizer
+        return
+    prompt = (f"Observação FACTUAL sobre os hábitos de jogo do usuário (dado REAL da Steam): "
+              f"{insight}. Comente isso de forma leve e natural, como quem reparou — sem soar "
+              f"vigilante. NÃO invente nenhum número além do que está aí. {REGRA_PERSONA} 1-2 frases.")
+    texto = _gerar_fala_proativa(prompt, "hábito de jogo", max_tokens=120, variar=False)
+    if texto and _falar_proativamente(texto):
+        salvar_estado_proativo("habito_dia", hoje)
+        salvar_estado_proativo("habito_ultimo", insight)
+
+
 def _tarefa_monitorar_jogos():
     """Verifica se o usuário iniciou ou encerrou uma partida."""
     global ESTADO_JOGOS
@@ -1687,6 +1783,7 @@ def _loop_proativo():
                 if TAREFAS_ATIVAS.get("steam", True): _tarefa_steam_wishlist()
                 if TAREFAS_ATIVAS.get("bom_dia", True): _tarefa_bom_dia()
                 if TAREFAS_ATIVAS.get("retomar", True): _tarefa_retomar_assunto()
+                if TAREFAS_ATIVAS.get("habitos", True): _tarefa_detectar_habito()
                 if TAREFAS_ATIVAS.get("navegador", True): _tarefa_contexto_navegador()
                 if TAREFAS_ATIVAS.get("radar_rss", True): _tarefa_radar_rss()
                 if TAREFAS_ATIVAS.get("animes", True): _tarefa_avisar_animes()
