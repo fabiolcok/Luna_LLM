@@ -297,10 +297,9 @@ _TEMPLATE_MEMORIA = """# 🧠 Memória da Luna
 _RE_MEM_LINHA = re.compile(r'^\s*[-*]\s*\[(\d{4})-(\d{2})-(\d{2})\]\s*(.+?)\s*$')
 
 
-def ler_memoria_episodica(limite: int = 15) -> str:
-    """Lê Luna/Memoria.md (linhas '- [AAAA-MM-DD] fato') e devolve os `limite` mais
-    RECENTES já formatados ('- [DD/MM] fato'). Recência resolve conflito: o novo manda.
-    '' se não houver nota/itens."""
+def listar_memoria_episodica() -> list:
+    """Lê Luna/Memoria.md e devolve os fatos crus [(data 'AAAA-MM-DD', fato)], do MAIS
+    RECENTE pro mais antigo. Base pra formatar (recentes) e pra embeddar (retrieval)."""
     caminho = os.path.join(_VAULT, "Luna", "Memoria.md")
     itens = []
     try:
@@ -309,13 +308,24 @@ def ler_memoria_episodica(limite: int = 15) -> str:
                 m = _RE_MEM_LINHA.match(linha)
                 if m:
                     a, mes, d, fato = m.groups()
-                    itens.append((f"{a}{mes}{d}", f"- [{d}/{mes}] {fato}"))
+                    itens.append((f"{a}-{mes}-{d}", fato.strip()))
     except Exception:
-        return ""
-    if not itens:
-        return ""
+        return []
     itens.sort(key=lambda x: x[0], reverse=True)   # mais recente primeiro
-    return "\n".join(t for _, t in itens[:limite])
+    return itens
+
+
+def fmt_memoria(data: str, fato: str) -> str:
+    """'2026-07-24','fato' -> '- [24/07] fato' (formato enxuto pro prompt)."""
+    p = data.split("-")
+    return f"- [{p[2]}/{p[1]}] {fato}" if len(p) == 3 else f"- {fato}"
+
+
+def ler_memoria_episodica(limite: int = 15) -> str:
+    """Os `limite` fatos mais RECENTES, já formatados ('- [DD/MM] fato'). Recência
+    resolve conflito: o novo manda. '' se não houver nota/itens."""
+    itens = listar_memoria_episodica()
+    return "\n".join(fmt_memoria(d, f) for d, f in itens[:limite]) if itens else ""
 
 
 def adicionar_memoria(fato: str, data: str = None) -> bool:

@@ -8,6 +8,7 @@ import json
 import uuid
 import datetime
 import chromadb
+import numpy as np
 from dotenv import load_dotenv
 import re
 import warnings
@@ -32,7 +33,9 @@ LIMIAR_DISTANCIA    = 1.3       # descarta memórias acima dessa distância (0=i
                                 # Evita que conversas antigas/irrelevantes contaminem o contexto.
 CAMINHO_MEMORIA     = "modelos/memoria_permanente.json"
 CAMINHO_CHROMADB    = "modelos/chromadb"
-MODELO_EMBEDDING    = "all-MiniLM-L6-v2"  # ~80MB, roda na CPU
+MODELO_EMBEDDING    = "all-MiniLM-L6-v2"  # ~80MB, roda na CPU (ChromaDB / conversas)
+MODELO_EMBEDDING_MEM = "paraphrase-multilingual-MiniLM-L12-v2"  # ~470MB, recall da memória em PT
+                                # (o all-MiniLM é de inglês e embola no semântico PT; este separa)
 
 # ============================================================
 # INICIALIZAÇÃO
@@ -47,6 +50,16 @@ _colecao = _cliente_chroma.get_or_create_collection(
     name="historico_luna",
     embedding_function=_embedding_fn
 )
+
+# Embedder do recall episódico — carregado só quando a memória semântica é usada de fato
+# (não pesa no boot de quem não mexe na memória). Separado do ChromaDB de propósito.
+_embedding_fn_mem = None
+def _emb_mem():
+    global _embedding_fn_mem
+    if _embedding_fn_mem is None:
+        _embedding_fn_mem = SentenceTransformerEmbeddingFunction(
+            model_name=MODELO_EMBEDDING_MEM, device="cpu")
+    return _embedding_fn_mem
 
 # ============================================================
 # MEMÓRIA PERMANENTE (JSON)
@@ -170,6 +183,59 @@ def buscar_contexto_relevante(pergunta: str) -> str:
     except Exception as e:
         cor.vermelho(f"[Memória: erro na busca — {e}]")
         return ""
+
+
+# ============================================================
+# MEMÓRIA EPISÓDICA — retrieval semântico (relevante ao assunto)
+# ============================================================
+# v1 injeta só os fatos RECENTES (por data). v2 injeta também os RELEVANTES ao que está
+# sendo falado, mesmo antigos — embeddando os fatos com o MESMO modelo do ChromaDB.
+# Cache: só re-embeda quando o Memoria.md muda (o conjunto é pequeno, dezenas de linhas).
+_mem_emb_cache = {"assinatura": None, "fatos": [], "vecs": []}
+
+def _cos(a, b) -> float:
+    return float(np.dot(a, b) / ((np.linalg.norm(a) * np.linalg.norm(b)) + 1e-9))
+
+def buscar_memoria_relevante(pergunta: str, limite: int = 3, forte: float = 0.52, excluir=None) -> list:
+    """Fatos episódicos FORTEMENTE relevantes à pergunta (recall por tema, não só recência).
+    Retorna [(data, fato)] ordenado por similaridade.
+
+    Usa o embedder multilíngue (paraphrase-multilingual-MiniLM-L12-v2), que em PT separa bem
+    sinal de ruído: match forte tipo 'violão' pra 'instrumento musical' ~0.77, enquanto ruído
+    fica ~0.51 pra baixo. O piso (forte=0.52) fica nesse vão: a Luna só puxa a lembrança antiga
+    quando o assunto casa de verdade — melhor calar do que trazer o fato errado. A continuidade
+    do dia a dia já vem pela MEMÓRIA RECENTE.
+    'excluir' = fatos que já vão no bloco de recentes (evita duplicar)."""
+    if not pergunta or not pergunta.strip():
+        return []
+    from modulos import obsidian
+    fatos = obsidian.listar_memoria_episodica()
+    if not fatos:
+        return []
+    efn = _emb_mem()
+    assinatura = tuple(f for _, f in fatos)
+    if _mem_emb_cache["assinatura"] != assinatura:      # o Memoria.md mudou -> re-embeda
+        try:
+            vecs = efn([f for _, f in fatos])
+        except Exception as e:
+            cor.vermelho(f"[Memória: erro ao embeddar fatos — {e}]")
+            return []
+        _mem_emb_cache.update(assinatura=assinatura, fatos=fatos,
+                              vecs=[np.asarray(v, dtype=float) for v in vecs])
+    try:
+        qv = np.asarray(efn([pergunta])[0], dtype=float)
+    except Exception:
+        return []
+    excluir = excluir or set()
+    ranked = []
+    for (data, fato), ev in zip(_mem_emb_cache["fatos"], _mem_emb_cache["vecs"]):
+        if fato in excluir:
+            continue
+        s = _cos(qv, ev)
+        if s >= forte:
+            ranked.append((s, data, fato))
+    ranked.sort(key=lambda x: x[0], reverse=True)
+    return [(d, f) for _, d, f in ranked[:limite]]
 
 
 # ============================================================

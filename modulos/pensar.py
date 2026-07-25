@@ -21,7 +21,8 @@ from modulos.habilidades import (
     duvida_do_jogo, ferramentas_disponiveis, NOME_USUARIO)
 from modulos.memoria import (
     buscar_contexto_relevante, salvar_conversa,
-    ler_memoria_permanente, analisar_e_salvar_fato, ler_estado_luna
+    ler_memoria_permanente, analisar_e_salvar_fato, ler_estado_luna,
+    buscar_memoria_relevante
 )
 from modulos.falar import limpar_texto_para_voz, periodo_atual
 from modulos import obsidian
@@ -317,7 +318,13 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
 
     data_hoje = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
     memoria_permanente = obsidian.ler_perfil() or ler_memoria_permanente()   # perfil.md é o núcleo
-    memoria_episodica = obsidian.ler_memoria_episodica()   # o que anda acontecendo (datado, recentes)
+    # Memória episódica em 2 fatias: RECENTES (continuidade) + RELEVANTES ao assunto
+    # (recall por tema, mesmo antigo — v2). O relevante exclui o que já vai no recente.
+    _mem_recentes = obsidian.listar_memoria_episodica()[:15]
+    memoria_episodica = "\n".join(obsidian.fmt_memoria(d, f) for d, f in _mem_recentes)
+    _mem_relevantes = (buscar_memoria_relevante(prompt_usuario, excluir={f for _, f in _mem_recentes})
+                       if prompt_usuario else [])
+    memoria_relacionada = "\n".join(obsidian.fmt_memoria(d, f) for d, f in _mem_relevantes)
     contexto_db = buscar_contexto_relevante(prompt_usuario)
     if contexto_db and len(contexto_db) > 2000:        # anti-estouro: nota/conversa gigante
         contexto_db = contexto_db[:2000] + " […]"
@@ -363,6 +370,10 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
            f"use pra dar continuidade e mostrar que você lembra; se algo conflitar, o MAIS RECENTE vale. "
            f"NÃO recite isso como lista; puxe só o que fizer sentido na conversa):\n{memoria_episodica}\n"
            if memoria_episodica else "")
+        + (f"\nMEMÓRIA RELACIONADA AO QUE ELE DISSE AGORA (lembranças mais antigas que combinam "
+           f"com o assunto — use pra conectar 'você tinha comentado que...'; não force se não couber):"
+           f"\n{memoria_relacionada}\n"
+           if memoria_relacionada else "")
         + f"\nConversas anteriores: {contexto_db}\n\n"
         f"{PROMPT_LUNA_PERSONA}{aviso_saudacao}"
     )
