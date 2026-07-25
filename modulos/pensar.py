@@ -1,5 +1,6 @@
 #pensar.py
 
+import os
 import logging
 import threading
 import json
@@ -328,6 +329,15 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     contexto_db = buscar_contexto_relevante(prompt_usuario)
     if contexto_db and len(contexto_db) > 2000:        # anti-estouro: nota/conversa gigante
         contexto_db = contexto_db[:2000] + " […]"
+
+    # Diagnóstico opcional (LUNA_DIAG_PROMPT=1): quanto cada bloco de memória ocupa no
+    # prompt da Chamada 2 — pra decidir COM DADO o que enxugar (recentes fixos vs ChromaDB).
+    if os.getenv("LUNA_DIAG_PROMPT"):
+        _blocos = [("perfil", memoria_permanente), ("recentes", memoria_episodica),
+                   ("relacionada", memoria_relacionada), ("chromadb", contexto_db or "")]
+        _det = " · ".join(f"{n} {len(t)}c≈{len(t)//4}tok" for n, t in _blocos if t)
+        _tot = sum(len(t) for _, t in _blocos)
+        cor.cinza(f"[📏 Chamada 2 — memória: {_det} · TOTAL {_tot}c≈{_tot//4}tok]")
 
     estado = ler_estado_luna()
     programa_em_uso = estado.get("programa_atual") or obter_janela_em_foco()
