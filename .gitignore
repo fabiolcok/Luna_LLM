@@ -30,6 +30,7 @@ modelos/vistos.json
 modelos/config_luna.json
 modelos/memoria_pendente.json
 modelos/desenho.json
+modelos/diag_prompt.flag
 modelos/manifests/
 chroma_db/
 *.db

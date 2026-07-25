@@ -330,9 +330,10 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     if contexto_db and len(contexto_db) > 2000:        # anti-estouro: nota/conversa gigante
         contexto_db = contexto_db[:2000] + " […]"
 
-    # Diagnóstico opcional (LUNA_DIAG_PROMPT=1): quanto cada bloco de memória ocupa no
-    # prompt da Chamada 2 — pra decidir COM DADO o que enxugar (recentes fixos vs ChromaDB).
-    if os.getenv("LUNA_DIAG_PROMPT"):
+    # Diagnóstico opcional: quanto cada bloco de memória ocupa no prompt da Chamada 2 —
+    # pra decidir COM DADO o que enxugar (recentes fixos vs ChromaDB). Liga de 2 jeitos:
+    # env var LUNA_DIAG_PROMPT=1, OU criando o arquivo modelos/diag_prompt.flag (sem terminal).
+    if os.getenv("LUNA_DIAG_PROMPT") or os.path.exists("modelos/diag_prompt.flag"):
         _blocos = [("perfil", memoria_permanente), ("recentes", memoria_episodica),
                    ("relacionada", memoria_relacionada), ("chromadb", contexto_db or "")]
         _det = " · ".join(f"{n} {len(t)}c≈{len(t)//4}tok" for n, t in _blocos if t)
