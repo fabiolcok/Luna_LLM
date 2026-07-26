@@ -1601,6 +1601,7 @@ def _tarefa_monitorar_steam():
         print(f"[🎮 Steam: {nome} aberto]")
 
         total, recente, ultima = _steam_dados_jogo(appid)
+        _STEAM_SESSAO["horas_inicio"] = total   # p/ o marco de horas totais no fechamento
         info = _steam_info_jogo(appid)
         partes = [f"Jogo: {nome}."]
         if total >= 1:
@@ -1642,10 +1643,21 @@ def _tarefa_monitorar_steam():
             platinou = (len(det_fim["feitas"]) == det_fim["total"] and det_fim["total"] > 0
                         and len(conq_inicio) < det_fim["total"])  # fechou 100% AGORA
 
+        # Marco de horas TOTAIS (de 100 em 100): horas do fim = início + duração da sessão
+        # (estimativa local, não espera a Steam atualizar o playtime_forever). Cruzou um
+        # múltiplo de 100? Comemora — cada marco dispara 1x na vida do jogo.
+        marco = None
+        h_ini = _STEAM_SESSAO.get("horas_inicio")
+        if h_ini is not None and dur_min > 0:
+            h_fim = h_ini + dur_min / 60
+            if int(h_fim // 100) > int(h_ini // 100) and h_fim >= 100:
+                marco = int(h_fim // 100) * 100
+
         print(f"[🚫 Steam: {nome_antes} fechado — {dur_min}min, +{len(nomes_novos)} conquistas]")
 
         # zera a sessão ANTES de qualquer coisa (evita reprocessar)
-        _STEAM_SESSAO.update({"appid": None, "nome": None, "inicio": 0.0, "conq_inicio": None})
+        _STEAM_SESSAO.update({"appid": None, "nome": None, "inicio": 0.0,
+                              "conq_inicio": None, "horas_inicio": None})
         _STEAM_JOGANDO_AGORA = False
         atualizar_estado_luna("jogo_ativo", None)
 
@@ -1658,13 +1670,15 @@ def _tarefa_monitorar_steam():
                 partes.append(f"Destravou {n} conquista(s) nesta sessão: {citados}{extra}.")
             if platinou:
                 partes.append("E com essa completou 100% das conquistas — PLATINOU o jogo agora.")
+            if marco:
+                partes.append(f"Marco: acabou de passar das {marco} horas totais neste jogo.")
             dados = " ".join(partes)
             prompt = (
                 f"O usuário acabou de fechar {nome_antes} (Steam).\n"
                 f"DADOS DA SESSÃO: {dados}\n"
                 f"Feche a sessão de forma leve: comente o tempo jogado e, SE houver, as conquistas "
-                f"novas (pode citar os nomes) e a platina. Se NÃO houver conquista nova, não toque "
-                f"no assunto conquista. {REGRA_PERSONA}"
+                f"novas (pode citar os nomes), a platina e o marco de horas. Se NÃO houver conquista "
+                f"nova, não toque no assunto conquista. {REGRA_PERSONA}"
             )
             texto = _gerar_fala_proativa(prompt, f"steam_fechou_{nome_antes}", max_tokens=300)
             if texto: _falar_proativamente(texto)
