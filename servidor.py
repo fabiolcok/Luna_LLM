@@ -505,10 +505,48 @@ def atualizar_estado_rosto(estado: str):
     """Ainda mantida caso você queira usar lógica de cores no futuro."""
     _broadcast({'estado': estado})
 
+# Catálogo CURADO de reações -> termos-meme testados (que dão GIF bom, não "pedra").
+# O 12B escolhe só a REAÇÃO (ex: [gif:deboche]); a gente traduz pro termo real. Isso mata
+# o problema de ele inventar adjetivo vago (chillax/vibing) que o Giphy resolve com stock
+# genérico. Termo fora da lista -> fallback (busca direto, como antes).
+_REACOES_GIF = {
+    "deboche":    ["deal with it", "oh really"],
+    "facepalm":   ["picard facepalm", "facepalm"],
+    "cope":       ["this is fine"],
+    "suspeita":   ["suspicious"],
+    "orgulho":    ["nailed it"],
+    "hype":       ["lets go", "excited"],
+    "aplauso":    ["slow clap", "applause"],
+    "choque":     ["surprised pikachu", "mind blown"],
+    "cansaco":    ["tired anime", "tired tom"],
+    "tedio":      ["bored waiting", "tumbleweed"],
+    "desisto":    ["rage quit"],
+    "carinho":    ["hug meme", "there there"],
+    "torcida":    ["you got this"],
+    "gg":         ["gg", "victory", "gg ez"],
+    "carregar":   ["hard carry", "1v9"],
+    "pensando":   ["math lady", "hmm"],
+    "sem_reacao": ["blank stare", "unamused"],
+    "musica":     ["music"],
+    "leitura":    ["read"],
+}
+
+def _resolver_reacao(termo: str) -> str:
+    """Traduz uma REAÇÃO do catálogo pra um termo-meme curado (sorteando entre os da lista).
+    Normaliza minúsculas/acento/espaços pra casar 'Cansaço'/'sem reação' etc. Se não for
+    reação conhecida, devolve o termo como veio (fallback do comportamento antigo)."""
+    import unicodedata, random
+    chave = unicodedata.normalize("NFKD", (termo or "").strip().lower())
+    chave = "".join(c for c in chave if not unicodedata.combining(c)).replace(" ", "_")
+    if chave in _REACOES_GIF:
+        return random.choice(_REACOES_GIF[chave])
+    return termo
+
 def _buscar_gif(termo: str) -> str:
     api_key = os.getenv("GIPHY_API_KEY", "")
     if not api_key:
         return ""
+    termo = _resolver_reacao(termo)               # reação -> termo-meme curado (ou passa direto)
     try:
         r = httpx.get(
             "https://api.giphy.com/v1/gifs/search",
@@ -518,7 +556,9 @@ def _buscar_gif(termo: str) -> str:
         gifs = r.json().get("data", [])
         if gifs:
             import random
-            escolhido = random.choice(gifs[:5])
+            # top-3 (não top-5): o 1º costuma ser o meme icônico; sortear entre os 3
+            # primeiros dá variedade sem cair no resultado ruim lá do fim da lista.
+            escolhido = random.choice(gifs[:3])
             return escolhido["images"]["original"]["url"]
     except Exception:
         pass
