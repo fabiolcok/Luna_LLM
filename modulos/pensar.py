@@ -189,6 +189,31 @@ _RE_TIRA_CMD_SALVAR = re.compile(
 def _conteudo_para_anotar(prompt):
     return _RE_TIRA_CMD_SALVAR.sub('', prompt or '').strip()
 
+# Tokens de um pedido de salvar SEM conteúdo próprio (comando + cortesia + referência).
+# Se sobra só isso, o "isso"/"aí" é anafórico: aponta pra fala ANTERIOR, não pro comando.
+_TOKENS_COMANDO_SALVAR = re.compile(
+    r'\b(beleza|blz|ok|okay|ent[ãa]o|obrigad\w*|valeu|vlw|favor|pfv|pf|'
+    r'deixa|dexa|isso|aquilo|a[íi]|aqui|ess[ae]s?|'
+    r'anota\w*|anotad\w*|salva\w*|registra\w*|guarda\w*|guardad\w*|arquiva\w*|'
+    r'lembra\w*|toma|nota|not[ae]|pra|mim|no|na|nas|obsidian|por|de|o|a|e|um|uma)\b',
+    re.IGNORECASE)
+
+def _so_comando_salvar(prompt: str) -> bool:
+    """True se o pedido é SÓ comando+cortesia+referência (ex: 'deixa isso anotado por favor')
+    — aí o conteúdo real está na mensagem anterior, não no comando."""
+    resto = _TOKENS_COMANDO_SALVAR.sub('', prompt or '')
+    return not re.sub(r'[\s,.\-–!?:;]+', '', resto)
+
+def _ultima_fala_do_historico(historico, prompt_atual) -> str:
+    """O que 'anota isso' referencia: a última fala substancial do histórico (dele OU da
+    Luna), ignorando o próprio comando atual."""
+    alvo = re.sub(r'\s+', ' ', (prompt_atual or '')).strip().lower()
+    for msg in reversed(historico or []):
+        c = re.sub(r'\s+', ' ', str(msg.get('content', ''))).strip()
+        if len(c) > 15 and c.lower() != alvo:
+            return c
+    return ''
+
 def _confirmar_salvamento(res, conteudo, prompt_usuario, historico, max_tokens, responder_completo):
     """Confirma um save de nota: salvou → a persona confirma COMENTANDO o assunto (rico),
     já sabendo que guardou — não pode mentir, o save já é fato. Falhou → mensagem honesta."""
@@ -812,6 +837,12 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                         # Usa o texto ORIGINAL do usuário como conteúdo (fiel), não a
                         # reprodução do roteador — que trunca/parafraseia textos longos.
                         _bruto = _conteudo_para_anotar(prompt_usuario)
+                        # "deixa isso anotado" / "anota aí": o comando não tem conteúdo próprio —
+                        # o "isso" aponta pra fala ANTERIOR (senão salva o eco do comando).
+                        if _so_comando_salvar(prompt_usuario):
+                            _ant = _ultima_fala_do_historico(historico, prompt_usuario)
+                            if _ant:
+                                _bruto = _ant
                         if len(_bruto) >= 3:
                             argumentos_dit["conteudo"] = _bruto
                     if argumentos_dit:
