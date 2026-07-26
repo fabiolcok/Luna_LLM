@@ -268,10 +268,25 @@ def registrar_historico_principal(lista):
     _historico_principal = lista
 
 
+# Cooldown entre falas PROATIVAS: evita a metralhadora do boot (bom_dia + retomar + hábito
+# + radar querem falar todos juntos). Só sai uma de cada vez; a próxima espera um tempo
+# RANDOMIZADO (parece mais natural que um intervalo fixo). Não afeta respostas a você.
+_CD_PROATIVO_MIN = 60      # segundos (mínimo entre duas falas proativas)
+_CD_PROATIVO_MAX = 150     # segundos (máximo)
+_ultima_fala_proativa_ts = 0.0
+_cd_proativo_atual = 0.0   # sorteado a cada fala
+
+def _pode_falar_proativo() -> bool:
+    return (time.time() - _ultima_fala_proativa_ts) >= _cd_proativo_atual
+
+
 def _falar_proativamente(texto_resposta) -> bool:
     """Fala o texto quando a Luna ficar livre. Retorna True SE falou de verdade —
     quem depende do aviso (ex: dedup da wishlist) só deve marcar 'avisado' com True."""
+    global _ultima_fala_proativa_ts, _cd_proativo_atual
     if not texto_resposta or not str(texto_resposta).strip():
+        return False
+    if not _pode_falar_proativo():   # cooldown (rede de segurança p/ falas sem _gerar_fala_proativa)
         return False
     timeout = time.time() + 300
     while not luna_esta_livre():
@@ -290,6 +305,9 @@ def _falar_proativamente(texto_resposta) -> bool:
         if len(_historico_principal) > 12:
             del _historico_principal[:-12]
     falar_texto(texto_resposta)
+    # Arma o cooldown a partir do FIM da fala, com o próximo intervalo sorteado
+    _ultima_fala_proativa_ts = time.time()
+    _cd_proativo_atual = random.uniform(_CD_PROATIVO_MIN, _CD_PROATIVO_MAX)
     return True
 
 # Abordagens sorteadas para o proativo não ficar repetitivo (variar=True)
@@ -305,6 +323,8 @@ _falas_recentes = []
 def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150, variar=True):
     global _historico_proativo
 
+    if not _pode_falar_proativo():   # em cooldown: nem gera (economiza o 12B), tenta no próximo ciclo
+        return None
     cor.amarelo(f"[🌚 Proativo: {tarefa}]")
     try:
         import servidor as _srv
