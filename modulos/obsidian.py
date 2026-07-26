@@ -639,16 +639,16 @@ def _data_cabecalho_novidade(bloco: str):
     """Data/hora do cabeçalho de um bloco de novidades. Aceita o formato NOVO
     ('## 22/07/2026 · 12:16') e o ANTIGO ('## 2026-07-22 12:16'), pra não perder
     o que já estava na nota quando o formato mudou."""
-    m = re.match(r'##\s*(\d{2}/\d{2}/\d{4})\s*·\s*(\d{2}:\d{2})', bloco)
+    m = re.match(r'##\s*(\d{2}/\d{2}/\d{4})(?:\s*·\s*(\d{2}:\d{2}))?', bloco)   # hora opcional (dia agrupado)
     if m:
         try:
-            return datetime.datetime.strptime(f"{m.group(1)} {m.group(2)}", "%d/%m/%Y %H:%M")
+            return datetime.datetime.strptime(f"{m.group(1)} {m.group(2) or '00:00'}", "%d/%m/%Y %H:%M")
         except ValueError:
             return None
-    m = re.match(r'##\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})', bloco)
+    m = re.match(r'##\s*(\d{4}-\d{2}-\d{2})(?:\s+(\d{2}:\d{2}))?', bloco)       # formato antigo (ISO)
     if m:
         try:
-            return datetime.datetime.strptime(f"{m.group(1)} {m.group(2)}", "%Y-%m-%d %H:%M")
+            return datetime.datetime.strptime(f"{m.group(1)} {m.group(2) or '00:00'}", "%Y-%m-%d %H:%M")
         except ValueError:
             return None
     return None
@@ -676,41 +676,69 @@ def _inline_seguro(txt: str) -> str:
 # afetada). O snippet fica em .obsidian/snippets/luna-novidades.css — ligue em
 # Configurações → Aparência → Snippets de CSS.
 _FRONTMATTER_NOVIDADES = "---\ncssclasses:\n  - novidades-grid\n---\n\n"
+# Frontmatter que sobrou GRUDADO no corpo (bug antigo: era reanexado a cada novidade).
+# Removido antes de recompor — o frontmatter válido é só o do topo, escrito uma vez.
+_RE_FM_NOVIDADES = re.compile(r'(?m)^---\ncssclasses:\n  - novidades-grid\n---\n+')
+
+
+def _cartao_novidade(item) -> str:
+    """Uma novidade -> um callout [!tip] (capa + fonte + resumo)."""
+    titulo = _inline_seguro(item[0]) or "(sem título)"
+    link, fonte = item[1], _inline_seguro(item[2])
+    resumo = item[3] if len(item) > 3 else ""
+    imagem = item[4] if len(item) > 4 else ""
+    cx = [f"> [!tip]+ [{titulo}]({link})"]
+    if imagem:
+        cx.append(f"> ![|220]({imagem})")   # |220 = miniatura; sem isso vem em largura cheia
+    if fonte:
+        cx.append(f"> `{fonte}`")
+    for ln in (resumo or "").strip().splitlines():
+        if ln.strip():
+            cx.append(f"> {ln.strip()}")
+    return "\n".join(cx)
+
+
+def _reagrupar_novidades(conteudo: str) -> str:
+    """Tira frontmatters do corpo e agrupa TODOS os callouts por DIA sob um único
+    '## DD/MM/YYYY' (mais recente primeiro). É isso que faz o snippet de colunas funcionar:
+    vários cards sob um cabeçalho fluem em colunas — um cabeçalho por card (com hora) forçava
+    faixa full-width e virava 'uma por linha'. Consolida também os blocos com hora legados."""
+    conteudo = _RE_FM_NOVIDADES.sub("", conteudo)
+    blocos = re.split(r'(?m)^(?=##\s*(?:\d{4}-\d{2}-\d{2}|\d{2}/\d{2}/\d{4}))', conteudo)
+    por_dia = {}                       # 'YYYY-MM-DD' -> [dt_do_dia, [cards...]]
+    for b in blocos:
+        dt = _data_cabecalho_novidade(b)
+        if not dt:
+            continue
+        corpo = b.split("\n", 1)[1].strip() if "\n" in b else ""
+        chave = dt.strftime("%Y-%m-%d")
+        por_dia.setdefault(chave, [dt, []])
+        if corpo:
+            por_dia[chave][1].append(corpo)
+    partes = []
+    for chave in sorted(por_dia, reverse=True):        # dia mais recente primeiro
+        dt, cards = por_dia[chave]
+        if cards:
+            partes.append(f"## {dt:%d/%m/%Y}\n\n" + "\n\n".join(cards))
+    return "\n\n".join(partes)
 
 
 def adicionar_novidades(itens: list, max_horas: int = 72) -> None:
-    """Prepende um bloco datado de novidades em Novidades.md (raiz do vault).
-    itens = lista de (titulo, link, fonte[, resumo[, imagem]]). Cada novidade vira um
-    callout [!tip] — o Obsidian renderiza como caixinha (capa + fonte + resumo), bem
-    mais legível que lista crua. Mantém só as últimas max_horas (janela rolante)."""
+    """Prepende novidades em Novidades.md (raiz do vault), AGRUPADAS POR DIA (um '## dia'
+    com vários callouts — pro snippet de colunas funcionar). itens = lista de
+    (titulo, link, fonte[, resumo[, imagem]]). Mantém só as últimas max_horas (janela rolante)."""
     if not itens or not os.path.isdir(_VAULT):
         return
     caminho = os.path.join(_VAULT, "Novidades.md")
     agora = datetime.datetime.now()
-    linhas = [f"## {agora:%d/%m/%Y} · {agora:%H:%M}\n"]
-    for item in itens:
-        titulo = _inline_seguro(item[0]) or "(sem título)"
-        link, fonte = item[1], _inline_seguro(item[2])
-        resumo = item[3] if len(item) > 3 else ""
-        imagem = item[4] if len(item) > 4 else ""
-        cx = [f"> [!tip]+ [{titulo}]({link})"]
-        if imagem:
-            # |220 = miniatura (largura em px); sem isso a imagem vem em largura cheia.
-            cx.append(f"> ![|220]({imagem})")
-        if fonte:
-            cx.append(f"> `{fonte}`")
-        for ln in (resumo or "").strip().splitlines():
-            if ln.strip():
-                cx.append(f"> {ln.strip()}")
-        linhas.append("\n".join(cx) + "\n")
-    bloco = "\n".join(linhas)
+    novos = f"## {agora:%d/%m/%Y}\n\n" + "\n\n".join(_cartao_novidade(i) for i in itens)
     try:
         antigo = ""
         if os.path.exists(caminho):
             with open(caminho, encoding="utf-8") as f:
                 antigo = f.read()
-        conteudo = _trim_novidades(bloco + "\n" + antigo, max_horas)
-        # frontmatter é reescrito sempre (o trim descarta tudo que não é bloco datado)
+        conteudo = _reagrupar_novidades(novos + "\n\n" + antigo)   # junta hoje c/ hoje, tira FMs
+        conteudo = _trim_novidades(conteudo, max_horas).strip()
         with open(caminho, "w", encoding="utf-8") as f:
             f.write(_FRONTMATTER_NOVIDADES + conteudo + "\n")
     except Exception:
