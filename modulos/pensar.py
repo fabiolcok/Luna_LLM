@@ -577,6 +577,17 @@ def _extrair_url(texto: str):
     return m.group(0) if m else None
 
 
+def _args_do_json_torto(bruto: str) -> dict:
+    """O 12B às vezes gera o JSON dos argumentos malformado (típico com URLs, que têm ?=&).
+    Em vez de perder tudo, pesca os pares 'chave: valor' via regex (tolera aspas simples,
+    faltando ou JSON não fechado). Vazio se não achar nada — aí os guards abaixo assumem."""
+    d = {}
+    for k, v in re.findall(r'["\']?([a-zA-Z_]\w*)["\']?\s*:\s*["\']?([^"\',}\n]+?)["\']?\s*(?:[,}\n]|$)',
+                           bruto or ""):
+        d[k] = v.strip()
+    return d
+
+
 # Verbos que indicam pedido de AÇÃO (mapeiam a ferramentas). Usado para impedir alucinação:
 # se o usuário pede uma ação e o roteador NÃO aciona ferramenta, não deixamos a persona
 # inventar resposta a partir da memória — devolvemos uma resposta honesta.
@@ -755,8 +766,11 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 try:
                     argumentos_dit = json.loads(argumentos_json) if argumentos_json else {}
                 except json.JSONDecodeError:
-                    cor.vermelho("[Erro: O modelo gerou um JSON inválido para a ferramenta]")
-                    argumentos_dit = {}
+                    # o 12B errou o JSON (comum com URLs). Tenta salvar o que der; o essencial
+                    # (url etc) ainda é recuperado pelos guards abaixo — não é falha real.
+                    argumentos_dit = _args_do_json_torto(argumentos_json)
+                    cor.amarelo(f"[JSON dos argumentos veio torto do 12B — recuperado: "
+                                f"{argumentos_dit or 'nada, deixando com os guards'}]")
 
                 if nome_funcao == "controlar_navegador":
                     if "url" in argumentos_dit and "parametro" not in argumentos_dit:
