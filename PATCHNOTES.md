@@ -8,6 +8,26 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 26/07/2026
+
+- 🎮 **Ela entende melhor COMO você joga.** Ao **abrir** um jogo na Steam, agora ela sabe suas
+  horas **totais** e as das **últimas 2 semanas** — e se você tá voltando a um jogo parado, ela
+  comenta *"faz X que você não abria isso"*. Ao **fechar**, ela cita as conquistas que você
+  destravou **pelo nome** (no máx duas + "e mais tantas", pra não metralhar), avisa quando você
+  **platina** o jogo, e comemora quando você **cruza um marco** de horas (100, 200, 300…). E o
+  melhor: se você **não** pegou conquista nenhuma, ela nem toca no assunto (chega de "nenhuma
+  conquista nova pra você").
+- 🔧 **Os GIFs pararam de ser genéricos.** Antes ela inventava o termo do GIF e às vezes caía
+  num vídeo qualquer de "pessoa sentada numa pedra". Agora ela escolhe uma **reação** de uma
+  lista curada (deboche, choque, cansaço, música, leitura…) e a gente traduz pro meme certo —
+  bem mais na cara do momento.
+- 🔧 **Ela não te metralha mais quando liga.** No boot, várias falas proativas (bom dia,
+  retomar assunto, hábitos, novidades) saíam todas de uma vez. Agora sai **uma de cada vez**,
+  com um respiro **variável** (1 a 2,5 min) entre elas — dá pra acompanhar sem susto.
+- 🐛 **Novidades.md voltou pras colunas.** Um bug fazia o estilo se perder (as notícias viravam
+  uma por linha, e o cabeçalho de configuração se duplicava no meio da nota). Agora elas
+  **agrupam por dia** e fluem em colunas de novo.
+
 ## 25/07/2026
 
 - ✨ **Ela lembra pelo ASSUNTO, não só pelo que é recente.** Antes a Luna só puxava as
