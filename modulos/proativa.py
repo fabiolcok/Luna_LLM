@@ -504,6 +504,26 @@ def _steam_horas(appid):
         pass
     return 0.0
 
+def _steam_dados_jogo(appid):
+    """(horas_total, horas_2sem, ultima_vez) de um jogo via GetOwnedGames — mais rico que o
+    recently-played: cobre até jogo parado há meses (traz 'última vez jogado'). horas em
+    float; ultima_vez é datetime ou None. Tudo 0/None se indisponível."""
+    if not appid or not STEAM_API_KEY or not STEAM_ID:
+        return 0.0, 0.0, None
+    url = (f"https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/"
+           f"?key={STEAM_API_KEY}&steamid={STEAM_ID}&include_played_free_games=1")
+    try:
+        jogos = requests.get(url, timeout=10).json().get("response", {}).get("games", [])
+        for g in jogos:
+            if str(g.get("appid")) == str(appid):
+                total = round(g.get("playtime_forever", 0) / 60, 1)
+                recente = round(g.get("playtime_2weeks", 0) / 60, 1)
+                lp = g.get("rtime_last_played")
+                return total, recente, (datetime.datetime.fromtimestamp(lp) if lp else None)
+    except Exception:
+        pass
+    return 0.0, 0.0, None
+
 # Palavras que denunciam parágrafo TÉCNICO/burocrático no "Sobre este jogo"
 # (specs de PC, acessibilidade, requisitos) — nada disso serve pra Luna comentar.
 # Palavras que denunciam parágrafo TÉCNICO/burocrático no "Sobre este jogo"
@@ -1558,14 +1578,18 @@ def _tarefa_monitorar_steam():
         atualizar_estado_luna("jogo_ativo", nome)
         print(f"[🎮 Steam: {nome} aberto]")
 
-        horas = _steam_horas(appid)
+        total, recente, ultima = _steam_dados_jogo(appid)
         info = _steam_info_jogo(appid)
         partes = [f"Jogo: {nome}."]
-        if horas >= 1:
+        if total >= 1:
             # horas inteiras: '642.4h' vira '642 horas' (a voz lê número quebrado mal)
-            partes.append(f"Você já tem {int(round(horas))} horas totais nele.")
-        if conq:
-            partes.append(f"Conquistas: {conq[0]} de {conq[1]} destravadas.")
+            partes.append(f"Você já tem {int(round(total))} horas totais nele.")
+        if recente >= 1:
+            partes.append(f"Nas últimas 2 semanas foram {int(round(recente))} horas.")
+        elif recente < 0.1 and ultima:      # não tocou nas 2 semanas -> quando foi a última vez
+            dias = (datetime.datetime.now() - ultima).days
+            if dias >= 3:
+                partes.append(f"Faz uns {dias} dias que você não abria esse jogo.")
         if info:
             partes.append(f"Sobre o jogo: {info}")
         dados = " ".join(partes)
@@ -1575,7 +1599,7 @@ def _tarefa_monitorar_steam():
             f"DADOS: {dados}\n"
             f"Comente a abertura da sessão de forma leve e amigável. Puxe UM detalhe ESPECÍFICO "
             f"do jogo (a história/premissa, um prêmio ou um modo de jogo — nunca algo genérico) "
-            f"E encaixe um dado dele (horas ou conquistas). {REGRA_PERSONA} "
+            f"E encaixe um dado de tempo dele (horas totais ou recentes). {REGRA_PERSONA} "
             f"(exceção: aqui pode usar até 3 frases pra caber o detalhe do jogo)."
         )
         texto = _gerar_fala_proativa(prompt, f"steam_abriu_{nome}")
