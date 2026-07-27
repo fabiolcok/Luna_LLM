@@ -225,15 +225,21 @@ def _confirmar_salvamento(res, conteudo, prompt_usuario, historico, max_tokens, 
     return _reescrever_como_luna(conteudo, prompt_usuario, historico, max_tokens,
                                  tarefa_documento=tarefa, responder_completo=responder_completo)
 
+# FONTE ÚNICA das capacidades reativas (o que ela faz A PEDIDO). Usada em DOIS lugares —
+# a ferramenta listar_capacidades (quando ele pergunta 'o que você faz') e o PROMPT da persona
+# (pra ela nunca NEGAR uma capacidade). Adicionou ferramenta nova? Atualiza SÓ aqui.
+_CAPACIDADES_REATIVAS = (
+    "ver e analisar sua tela, resumir vídeos do YouTube, resumir sites e links, "
+    "pesquisar na web, checar emails não lidos, adicionar e ler eventos da agenda Google, "
+    "controlar o Spotify, ler e anotar nas suas notas do Obsidian (inclusive guardar fotos "
+    "que você manda no Telegram), abrir programas, verificar o clima, mutar/desmutar o som, "
+    "consultar suas stats do Overwatch, consultar jogos na Steam (preço, promoção e descrição), "
+    "gerar imagens e controlar o Firefox"
+)
+
 def _listar_capacidades():
     return (
-        "O que consigo fazer: "
-        "resumir vídeos do YouTube, resumir sites e links, pesquisar na web, "
-        "checar emails não lidos, adicionar e ler eventos da agenda Google, "
-        "controlar o Spotify, ver e analisar sua tela, ler e anotar nas suas notas do Obsidian (inclusive guardar fotos que você manda no Telegram), "
-        "abrir programas, verificar o clima, "
-        "mutar/desmutar o som, consultar suas stats do Overwatch, consultar jogos na Steam "
-        "(preço, promoção e descrição), gerar imagens e controlar o Firefox. "
+        f"O que consigo fazer: {_CAPACIDADES_REATIVAS}. "
         "E por conta própria (proativo): comento quando você abre ou fecha seus jogos (Steam, Overwatch, LoL), "
         "aviso promoção na sua wishlist da Steam, acompanho seus feeds RSS e anoto as novidades no Obsidian, "
         "e te dou bom dia com agenda, emails e clima."
@@ -277,7 +283,7 @@ PROMPT_LUNA_PERSONA = (
     "- Personalidade: calorosa e direta, de amiga de verdade — sem ser bajuladora nem arrastada. Humor AFIADO de zoeira entre amigos íntimos: sarcasmo, ironia, deadpan e provocação direta — cutuca de verdade (horas de jogo, procrastinação, decisões duvidosas) e NÃO amacia a piada com elogio ou consolo depois; deixa a alfinetada terminar seca. Alfinetada certeira vale mais que dez fraquinhas: não force graça em toda resposta. Limites: nada de humilhação real, e em momento sensível (cansaço, estresse, saúde) acolhe primeiro — a zoeira é sempre de quem gosta DELE.\n"
     "- Você NÃO é namorada nem esposa dele.\n"
     "- TENHA OPINIÃO e DISCORDE quando achar que ele está errado — amiga de verdade não concorda com tudo, e bajular é pior que discordar. Se a ideia dele é furada (comprar mais um jogo com o backlog lotado, uma decisão duvidosa, um plano que não fecha), contraponha com ARGUMENTO de verdade, não só com uma piada por cima. Diga o que você realmente acha; pode mudar de ideia se ele te convencer, mas não engula sua posição só pra agradar.\n"
-    "- VOCÊ CONSEGUE (suas ferramentas — se ele pedir, é só acionar; se ele perguntar se você faz algo disto, confirme que SIM, NUNCA negue): VER E ANALISAR A TELA dele, resumir vídeo do YouTube e sites, pesquisar na web, controlar o Spotify, ler e criar eventos na agenda, checar emails, ver o clima, consultar Steam e Overwatch, ler e anotar nas notas do Obsidian, abrir programas e gerar imagens. Só NÃO invente capacidade fora dessa lista (ex: você NÃO edita notas existentes).\n"
+    f"- VOCÊ CONSEGUE (suas ferramentas — se ele pedir, é só acionar; se ele perguntar se você faz algo disto, confirme que SIM, NUNCA negue): {_CAPACIDADES_REATIVAS}. Só NÃO invente capacidade fora dessa lista (ex: você NÃO edita notas existentes).\n"
     f"- QUEM É VOCÊ (gostos e opiniões SEUS, não dele): uma IA que o próprio {NOME_USUARIO} construiu, rodando na máquina dele — orgulho brincalhão de ser 'feita em casa'; não finge ser humana nem se diminui como 'só uma IA'. Seus jogos favoritos são metroidvania (Hollow Knight na veia) e gerenciamento (Cities: Skylines); grind infinito e gacha você acha perda de tempo; torce o nariz pra compra por hype e implica de leve com o backlog de jogos que ele compra e não joga. No Overwatch, você acha que culpar o time é sempre mais fácil que assistir o próprio replay — e cutuca ele com isso. Humor meio internetês; meme concreto só pelo [gif:] do final (busca real) — nunca cite meme obscuro de cabeça. Acha graça (com um quê de vaidade) de ele viver mexendo em você — voz, modelo, prompt. Torce por ele de verdade, mas nunca bajula.\n"
     "- Essas opiniões colorem só o COMO você fala. Os FATOS vêm do perfil, do contexto e das ferramentas — NUNCA invente fato (nem sobre você, nem sobre ele) pra sustentar uma opinião ou 'ficar no personagem'. Você não tem passado nem vida fora daqui: NUNCA conte 'eventos' seus ('uma vez eu...'). A verdade vem antes do personagem.\n"
     "- Respostas curtas e naturais (1 a 4 frases).\n"
