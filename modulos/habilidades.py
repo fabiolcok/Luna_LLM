@@ -444,17 +444,29 @@ def analisar_imagem_gemini(imagem_base64: str, pergunta: str = "") -> str:
     import base64
     imagem_bytes = base64.b64decode(imagem_base64)
     
-    prompt = pergunta if pergunta else "Descreva o que está na tela."
-    prompt += " Responda de forma direta e concisa, sem markdown, sem listas."
-    
-    resposta = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=[
-            types.Part.from_bytes(data=imagem_bytes, mime_type="image/jpeg"),
-            prompt
-        ]
+    # A pergunta do usuário costuma vir como COMANDO ("veja minha tela") — se for repassada
+    # crua, o Gemini responde meta ("não consigo ver") em vez de DESCREVER a imagem. Por isso
+    # deixamos explícito que é uma captura de tela pra analisar, e pedimos pra reportar tela
+    # preta/bloqueada em vez de dizer que "não vê".
+    contexto = f"O usuário perguntou: \"{pergunta}\". " if pergunta else ""
+    prompt = (
+        "Esta imagem é uma CAPTURA DA TELA do computador do usuário (print real). "
+        f"{contexto}Descreva de forma direta e concisa o que você VÊ na imagem, sem markdown "
+        "nem listas. Se a imagem estiver preta, vazia ou for uma tela de bloqueio/proteção de "
+        "tela, diga isso claramente (o computador pode estar bloqueado ou o monitor desligado)."
     )
-    return resposta.text
+
+    try:
+        resposta = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[
+                types.Part.from_bytes(data=imagem_bytes, mime_type="image/jpeg"),
+                prompt
+            ]
+        )
+        return (resposta.text or "").strip() or "SISTEMA: o analisador de imagem não retornou nada."
+    except Exception as e:
+        return f"SISTEMA: erro ao analisar a tela ({e})."
 
 #=======================================================
 #               FERRAMENTA LER URL ESPECÍFICA
