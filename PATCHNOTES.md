@@ -8,6 +8,40 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 31/07/2026
+
+- 🎮 ✨ **Ela te zoa (com carinho) quando você morre no LoL.** Durante a partida, ao tomar uma
+  morte, a Luna comenta **na voz** — mas lendo o jogo de verdade: **quem te matou**, o **placar**
+  dos times e o **matchup** da sua rota. E escolhe o tom pelos dados: **cutuca** quando você deu
+  mole com o time ganhando (*"tá com 6 abates e ainda foi dar show pro Lee Sin?"*), ou **apoia
+  como parceira de duo** quando tá osso de verdade (*"Kayle contra Zed no early é sofrimento,
+  segura até teus itens"*). Ela até sabe que **suporte não farma** — não te cobra CS de support.
+  Com juízo: fala só em **algumas** mortes (não em todas) e no máximo **3 por partida**, pra não
+  encher. Usa a API **oficial** da Riot (a mesma dos overlays tipo Blitz) — **zero risco de ban**.
+  Dá pra desligar no toggle **"LoL: comentar mortes"**. E ela sai **rápido** (o modelo fica quente
+  durante a partida, pra não travar na hora da fala).
+- 🔧 **A config de tarefas ficou organizada.** Os toggles das tarefas proativas — que eram uma
+  lista corrida enorme e fácil de se perder — agora estão em **3 grupos**: 🎮 Jogos, ⏰ Rotina &
+  avisos, e 💬 Conversa & interesses.
+
+## 30/07/2026
+
+- 🔧 **A Luna ficou bem mais afiada e menos "assistente genérica".** Um pacote de ajustes de
+  personalidade, guiado pelo que apareceu no log real:
+  - **Acabou o "carimbo".** Antes, quando você desabafava ou decidia algo, ela respondia com
+    fórmula de biscoito da sorte (*"faz sentido, às vezes a gente..."*). Agora ela traz um
+    **ângulo específico** do teu caso, nunca eco vazio.
+  - **Ela discorda de verdade** e tem opinião própria — não concorda com tudo só pra agradar.
+  - **Chega de saudação-recheio** (*"tô aqui, o que manda?"*): toda fala vem com um gancho real.
+  - **Menos muleta:** ela abusava do *"Pois é"* pra abrir tudo — agora **varia** as aberturas.
+- 🔧 **Ela sabe onde está falando e ajusta o tamanho.** No **Telegram**, quando o assunto é
+  profundo, ela **desenvolve** o raciocínio; na **voz**, ela é **concisa** (pra você não ouvir um
+  textão no áudio). Papo casual continua curto nos dois.
+- 🔧 **"Olha minha tela" virou reação, não relatório.** Em vez de listar o que está aberto
+  (*"vi que você está com X e Y..."*), ela **repara numa coisa e reage/cutuca**.
+- 🐛 **Ela parou de negar que enxerga a tela.** Às vezes dizia que "não conseguia ver" mesmo
+  tendo a ferramenta — corrigido (e o motor de visão passou a receber a instrução certa).
+
 ## 26/07/2026
 
 - 🎮 **Ela entende melhor COMO você joga.** Ao **abrir** um jogo na Steam, agora ela sabe suas
