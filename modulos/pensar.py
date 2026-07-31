@@ -114,6 +114,17 @@ def garantir_modelo_turbollm():
         cor.vermelho(f"[⚠️ Não carreguei {MODELO_PERSONA} no TurboLLM ({e}). "
                      f"Carregue-o na mão na tela Models.]")
 
+def aquecer_modelo():
+    """Cutucão mínimo (max_tokens=1) que RESETA o idle-unload do TurboLLM — mantém o
+    modelo quente. Usado durante a partida de LoL pra o comentário de morte sair na hora
+    (senão cada fala paga cold-start de ~15s). Silencioso e barato."""
+    try:
+        cliente.chat.completions.create(
+            model=MODELO_PERSONA, messages=[{"role": "user", "content": "oi"}],
+            max_tokens=1, extra_body=THINK_OFF, timeout=8)
+    except Exception:
+        pass
+
 garantir_modelo_turbollm()
 
 

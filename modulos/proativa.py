@@ -8,7 +8,7 @@ import random
 import requests
 import ctypes
 from modulos.habilidades import checar_emails_nao_lidos, ler_agenda_google, obter_previsao_tempo, obter_janela_em_foco, controlar_firefox_via_extensao, NOME_USUARIO
-from modulos.pensar import gerar_resposta
+from modulos.pensar import gerar_resposta, aquecer_modelo
 from modulos.falar import falar_texto
 from modulos.memoria import carregar_vistos, salvar_vistos, atualizar_estado_luna
 from modulos import obsidian
@@ -202,7 +202,7 @@ TAREFAS_ATIVAS = {
     "jogos": True, "emails": True, "agenda": True,
     "pausa": True, "clima": True, "bom_dia": True, "steam": True, "navegador": True,
     "radar_rss": True, "autoconhecimento": True, "steam_jogo": True, "animes": True,
-    "memoria": True, "retomar": True, "habitos": True,
+    "memoria": True, "retomar": True, "habitos": True, "lol_mortes": True,
 }
 
 # Estado interno da tarefa de contexto de navegação
@@ -694,6 +694,8 @@ def _buscar_dados_lol():
 
     caminhos_lockfile = [
         r"C:\Riot Games\League of Legends\lockfile",
+        r"D:\Riot Games\League of Legends\lockfile",
+        r"E:\Riot Games\League of Legends\lockfile",
         os.path.join(os.path.expanduser("~"), r"AppData\Local\Riot Games\League of Legends\lockfile"),
     ]
     lockfile = next((p for p in caminhos_lockfile if os.path.exists(p)), None)
@@ -1434,6 +1436,220 @@ def _tarefa_detectar_habito():
         salvar_estado_proativo("habito_ultimo", insight)
 
 
+# ============================================================
+# COMENTÁRIO AO VIVO DE MORTE NO LOL (Live Client Data API :2999)
+# Read-only, API OFICIAL da Riot (feita pra overlays) — zero risco de ban.
+# Roda SÓ durante a partida (a 2999 só responde in-game). Fura o "Não Perturbe"
+# apenas no evento de morte, no esquema sim-não-sim (mortes 1,3,5) com teto de 3.
+# ============================================================
+_LOL_LIVE_URL = "https://127.0.0.1:2999/liveclientdata/allgamedata"
+_LOL_POLL_SEG = 5            # de quanto em quanto tempo checa a partida
+_LOL_MAX_COMENTARIOS = 3     # máximo de falas por partida
+_watcher_lol_ativo = False   # evita spawnar dois watchers
+
+def _lol_nomes_do_player(p: dict) -> set:
+    """Coleta os identificadores possíveis de um player (summoner + Riot ID)."""
+    s = set()
+    for k in ("summonerName", "riotIdGameName", "riotId"):
+        v = (p.get(k) or "").strip().lower()
+        if v:
+            s.add(v)
+            if "#" in v:
+                s.add(v.split("#")[0])
+    return s
+
+def _lol_eh_eu(nome: str, meus_nomes: set) -> bool:
+    nome = (nome or "").strip().lower()
+    if not nome:
+        return False
+    base = nome.split("#")[0]
+    return any(nome == n or base == n or (len(base) > 3 and (base in n or n in base)) for n in meus_nomes)
+
+def _buscar_lol_ao_vivo():
+    """Consulta a Live Client Data API (2999) da partida em andamento. Retorna um
+    dict-snapshot (minhas mortes + contexto pra fala) ou None se não estiver numa
+    partida ao vivo (client/loading/erro de conexão)."""
+    try:
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    except Exception:
+        pass
+    try:
+        r = requests.get(_LOL_LIVE_URL, verify=False, timeout=3)
+        if r.status_code != 200:
+            return None
+        data = r.json()
+    except Exception:
+        return None   # 2999 fora do ar = não está em partida ainda
+
+    all_players = data.get("allPlayers") or []
+    ap = data.get("activePlayer") or {}
+    meus_nomes = _lol_nomes_do_player(ap)
+    if not all_players or not meus_nomes:
+        return None
+    eu = next((p for p in all_players if _lol_nomes_do_player(p) & meus_nomes), None)
+    if not eu:
+        return None
+    sc = eu.get("scores") or {}
+    meu_time = eu.get("team")
+    minha_pos = (eu.get("position") or "").upper()
+
+    # Quem me matou (último ChampionKill onde a vítima sou eu)
+    matador_campeao = matador_kda = None
+    for ev in reversed((data.get("events") or {}).get("Events", []) or []):
+        if ev.get("EventName") == "ChampionKill" and _lol_eh_eu(ev.get("VictimName"), meus_nomes):
+            kp = next((p for p in all_players
+                       if _lol_eh_eu(ev.get("KillerName"), _lol_nomes_do_player(p))), None)
+            if kp:
+                ksc = kp.get("scores") or {}
+                matador_campeao = kp.get("championName")
+                matador_kda = f"{ksc.get('kills',0)}/{ksc.get('deaths',0)}/{ksc.get('assists',0)}"
+            break
+
+    oponente = next((p.get("championName") for p in all_players
+                     if p.get("team") != meu_time and (p.get("position") or "").upper() == minha_pos and minha_pos), None)
+    meu_time_kills = sum((p.get("scores") or {}).get("kills", 0) for p in all_players if p.get("team") == meu_time)
+    inimigo_kills = sum((p.get("scores") or {}).get("kills", 0) for p in all_players if p.get("team") != meu_time)
+    tempo_min = int((data.get("gameData") or {}).get("gameTime", 0) // 60)
+
+    return {
+        "mortes": sc.get("deaths", 0),
+        "meu_campeao": eu.get("championName", "seu campeão"),
+        "minha_kda": f"{sc.get('kills',0)}/{sc.get('deaths',0)}/{sc.get('assists',0)}",
+        "meu_cs": sc.get("creepScore", 0),
+        "meu_nivel": eu.get("level", 0),
+        "minha_role": minha_pos or "?",
+        "matador_campeao": matador_campeao,
+        "matador_kda": matador_kda,
+        "oponente_rota": oponente,
+        "meu_time_kills": meu_time_kills,
+        "inimigo_kills": inimigo_kills,
+        "tempo_min": tempo_min,
+    }
+
+def _falar_morte_lol(texto: str):
+    """Fala a reação na voz SEM o cooldown geral de proativo (o throttle dessa
+    feature é o sim-não-sim + teto de 3). Respeita só o 'luna livre'."""
+    if not texto or not str(texto).strip():
+        return
+    timeout = time.time() + 20
+    while not luna_esta_livre():
+        if time.time() > timeout:
+            return
+        time.sleep(1)
+    try:
+        import servidor as _srv
+        _srv.atualizar_legenda(texto)
+        _srv.atualizar_usuario("")
+    except Exception:
+        pass
+    if _historico_principal is not None:
+        _historico_principal.append({"role": "assistant", "content": texto})
+        if len(_historico_principal) > 12:
+            del _historico_principal[:-12]
+    falar_texto(texto)
+
+def _comentar_morte_lol(snap: dict):
+    """Monta o briefing da morte e dispara a fala. O 12B decide zoeira vs apoio pelos dados."""
+    partes = [
+        f"- Você ({NOME_USUARIO}) está de {snap['meu_campeao']} ({snap['minha_role']}), "
+        f"KDA {snap['minha_kda']}, {snap['meu_cs']} de CS, nível {snap['meu_nivel']}.",
+    ]
+    if snap.get("matador_campeao"):
+        partes.append(f"- Quem te matou: {snap['matador_campeao']} (KDA dele: {snap['matador_kda']}).")
+    else:
+        partes.append("- Você não morreu pra um campeão direto (execução, torre ou monstro).")
+    if snap.get("oponente_rota"):
+        partes.append(f"- Seu oponente de rota: {snap['oponente_rota']}.")
+    partes.append(f"- Placar de abates: seu time {snap['meu_time_kills']} x {snap['inimigo_kills']} inimigo.")
+    partes.append(f"- Tempo de jogo: {snap['tempo_min']} minutos. Essa é a sua {snap['mortes']}ª morte.")
+    dados = "\n".join(partes)
+
+    role = (snap.get("minha_role") or "").upper()
+    if role in ("UTILITY", "SUPPORT"):
+        contexto_role = ("CONTEXTO DE ROTA — VOCÊ É SUPORTE: CS/farm BAIXO é NORMAL e esperado (o farm é do ADC). "
+                         "NUNCA cobre farm nem 'zero de CS' de um suporte — isso é erro grosseiro de leitura. "
+                         "Morrer protegendo o carry faz parte do trabalho. Julgue por proteção do ADC, visão/wards, "
+                         "roams e assists — jamais por CS.")
+    elif role == "JUNGLE":
+        contexto_role = ("CONTEXTO DE ROTA — VOCÊ É JUNGLER: julgue por ganks, controle de objetivos "
+                         "(dragão/arauto) e presença nas rotas, não por CS de rota.")
+    elif role in ("BOTTOM", "MIDDLE", "TOP"):
+        contexto_role = "CONTEXTO DE ROTA — você é carry/laner: aí sim CS/farm E abates importam pra avaliar."
+    else:
+        contexto_role = ""
+
+    prompt = (
+        f"O usuário está JOGANDO League of Legends AGORA e ACABOU DE MORRER (NÃO é fim de jogo).\n"
+        f"DADOS DA PARTIDA neste instante:\n{dados}\n{contexto_role}\n\n"
+        f"Solte UMA fala curta (1 frase, no máx 2), na hora, reagindo a ESSA morte.\n"
+        f"DECIDA O TOM PELOS DADOS, NESTA ORDEM DE PRIORIDADE:\n"
+        f"- APOIA (como PARCEIRA DE DUO lendo o jogo — tático, NÃO consolo meloso) QUANDO TÁ FEIO DE VERDADE: "
+        f"o time está muito atrás (inimigo com quase o dobro de abates) OU você está numa fria clara (matchup "
+        f"horrível de early tipo Kayle/Kassadin contra bully, ou morte de gank). Aí RECONHEÇA que tá osso e "
+        f"aponta o caminho — NÃO esfregue na cara nem jogue a culpa nele. "
+        f"Ex: 'Kayle contra Zed no early é sofrimento mesmo, não teve o que fazer — segura até teus itens que no late você devolve.'\n"
+        f"- CUTUCA (zoeira afiada) QUANDO DÁ PRA RIR: você morreu à toa ou ganancioso COM O TIME GANHANDO/EQUILIBRADO, "
+        f"ou vacilou repetido. Aí a alfinetada é justa. "
+        f"Ex: '6 e 3 e mesmo assim foi buscar essa? deixa a ganância no cofre.'\n"
+        f"Cite algo ESPECÍFICO dos dados (o campeão que te matou, o placar, o matchup, o tempo) — "
+        f"NUNCA fale genérico tipo 'respira, foi só uma'.\n"
+        f"{REGRA_PERSONA}"
+    )
+    try:
+        resposta = gerar_resposta(prompt, [], analisar=False, salvar=False, max_tokens=120)
+    except Exception as e:
+        cor.vermelho(f"[Erro fala morte LoL: {e}]")
+        return
+    if resposta and re.search(r'\b(o|ao|do|pro)\s+usu[áa]rio\b', resposta, re.IGNORECASE):
+        cor.vermelho("[⚠️ Fala de morte vazou a instrução (eco) — descartada]")
+        return
+    if resposta:
+        cor.amarelo(f"[💀 LoL morte {snap['mortes']} → comentário na voz]")
+        _falar_morte_lol(resposta)
+
+def _watcher_mortes_lol():
+    """Thread própria enquanto a partida de LoL estiver ativa. Poll na 2999, detecta
+    novas mortes e comenta nas mortes 1,3,5 (sim-não-sim, teto de 3)."""
+    global _watcher_lol_ativo
+    if _watcher_lol_ativo:
+        return
+    _watcher_lol_ativo = True
+    cor.magenta("[💀 Watcher de mortes do LoL iniciado]")
+    ultima_morte_vista = None   # baseline no 1º poll (não comenta o que já rolou antes)
+    comentadas = 0
+    ultimo_warm = 0.0           # mantém o modelo quente na partida (senão a fala sai cold-start ~15s)
+    fim = time.time() + 90 * 60  # trava de segurança
+    try:
+        while _thread_rodando and time.time() < fim:
+            nomes = {p.info['name'].lower() for p in psutil.process_iter(['name'])}
+            if "league of legends.exe" not in nomes:
+                break   # partida acabou
+            if not TAREFAS_ATIVAS.get("lol_mortes", True):
+                time.sleep(_LOL_POLL_SEG); continue
+
+            if time.time() - ultimo_warm > 180:   # idle-unload do TurboLLM é 5min; cutuca a cada 3
+                aquecer_modelo()
+                ultimo_warm = time.time()
+
+            snap = _buscar_lol_ao_vivo()
+            if snap is not None:
+                mortes = snap["mortes"]
+                if ultima_morte_vista is None:
+                    ultima_morte_vista = mortes            # baseline
+                elif mortes > ultima_morte_vista:
+                    ultima_morte_vista = mortes
+                    if mortes % 2 == 1 and comentadas < _LOL_MAX_COMENTARIOS:  # sim-não-sim + teto
+                        comentadas += 1
+                        _comentar_morte_lol(snap)
+            time.sleep(_LOL_POLL_SEG)
+    except Exception as e:
+        cor.vermelho(f"[Erro no watcher de mortes LoL: {e}]")
+    finally:
+        _watcher_lol_ativo = False
+        cor.magenta("[💀 Watcher de mortes do LoL encerrado]")
+
+
 def _tarefa_monitorar_jogos():
     """Verifica se o usuário iniciou ou encerrou uma partida."""
     global ESTADO_JOGOS
@@ -1475,6 +1691,10 @@ def _tarefa_monitorar_jogos():
 
             texto = _gerar_fala_proativa(prompt, f"jogo_aberto_{nome_jogo}")
             if texto: _falar_proativamente(texto)
+
+            # LoL: liga o watcher de mortes ao vivo (Live Client Data :2999) durante a partida
+            if nome_jogo == "League of Legends" and TAREFAS_ATIVAS.get("lol_mortes", True):
+                threading.Thread(target=_watcher_mortes_lol, daemon=True).start()
 
         # CASO 2: Acabou de fechar o jogo
         elif not esta_rodando_agora and estava_rodando_antes:

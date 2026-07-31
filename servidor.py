@@ -60,7 +60,7 @@ _estado_config = {
     "tarefas": {"jogos": True, "emails": True, "agenda": True, "pausa": True,
                 "clima": True, "bom_dia": True, "retomar": True, "steam": True, "navegador": True,
                 "steam_jogo": True, "radar_rss": True, "animes": True,
-                "autoconhecimento": True, "memoria": True, "habitos": True},
+                "autoconhecimento": True, "memoria": True, "habitos": True, "lol_mortes": True},
     "voz": "jf_alpha",
     "velocidade": 0.9,
     "teclas": {"ptt": "ctrl+alt+f8", "interromper": "ctrl+f9", "suspenso": "ctrl+f7"},
