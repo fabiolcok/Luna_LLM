@@ -8,6 +8,17 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 01/08/2026
+
+- 🐛 **A "retomar assuntos" parou de cutucar o modelo à toa.** Quando você não tinha nenhum
+  assunto em aberto pra ela puxar, ela ficava perguntando pro modelo "tem pendência?" a cada
+  ~30 segundos — mantendo ele aceso sem motivo e enchendo o log. Agora ela só re-checa de
+  tempos em tempos. (Saiu de uma caçada de bug e tanto.)
+- 🔧 **O log do terminal ficou bem mais legível.** Cada linha agora mostra a **hora**
+  ([HH:MM:SS]), e as tarefas de fundo que consultam o modelo aparecem com **rótulo** (ex:
+  "Retomar: checando pendência", "Memória: extraindo fatos"). Dá pra saber na hora o que a
+  Luna tá fazendo por baixo — e se aparecer uma consulta sem rótulo, é bandeira pra investigar.
+
 ## 31/07/2026
 
 - 🎮 ✨ **Ela te zoa (com carinho) quando você morre no LoL.** Durante a partida, ao tomar uma
