@@ -13,6 +13,9 @@
 
 import collections
 import threading
+import json
+import os
+import time
 import numpy as np
 import modelos.cores as cor
 
@@ -34,6 +37,55 @@ _contador = 0
 _ultima_dica_idx = -999
 
 _hint_pendente = None   # dica pra proxima resposta (pensar.py le e limpa)
+
+# Persistencia da baseline: arquivo LOCAL (gitignored) — e por MAQUINA/mic, NUNCA vai pro
+# git (a base varia por voz/mic; engessar tagaria outra pessoa de cansado/animado). Vale por
+# _VALIDADE_H horas: fresca = reusa (nao reaquece no restart); velha = recalibra ("outro dia").
+_ARQUIVO_BASE = "modelos/tom_baseline.json"
+_VALIDADE_H = 12
+_SALVAR_A_CADA = 5      # grava no disco a cada N leituras (nao toda vez)
+_desde_salvou = 0
+_baseline_carregada = False
+
+
+def _carregar_baseline():
+    """1a leitura da sessao: reusa a baseline persistida se fresca (< _VALIDADE_H) —
+    pre-enche o _hist com o valor salvo pra ja detectar desvio SEM reaquecer 6 falas.
+    Se velha (outro dia) ou inexistente, ignora e recalibra do zero."""
+    global _baseline_carregada
+    if _baseline_carregada:
+        return
+    _baseline_carregada = True
+    try:
+        if not os.path.exists(_ARQUIVO_BASE):
+            return
+        with open(_ARQUIVO_BASE, "r") as f:
+            d = json.load(f)
+        idade_h = (time.time() - d.get("ts", 0)) / 3600
+        if "base" in d and idade_h < _VALIDADE_H:
+            for _ in range(_MIN_AMOSTRAS):
+                _hist.append(float(d["base"]))
+            cor.cinza(f"[🎚️ Tom: baseline do dia reusada ({float(d['base']):.2f}, {idade_h:.1f}h atrás)]")
+        else:
+            cor.cinza(f"[🎚️ Tom: baseline antiga ({idade_h:.1f}h) — recalibrando (outro dia)]")
+    except Exception:
+        pass
+
+
+def _salvar_baseline(base):
+    """Grava a baseline atual + timestamp (throttled). O timestamp 'renova' enquanto você
+    usa; um gap > _VALIDADE_H (ex: virou o dia) faz recalibrar na próxima."""
+    global _desde_salvou
+    _desde_salvou += 1
+    if _desde_salvou < _SALVAR_A_CADA:
+        return
+    _desde_salvou = 0
+    try:
+        os.makedirs(os.path.dirname(_ARQUIVO_BASE), exist_ok=True)
+        with open(_ARQUIVO_BASE, "w") as f:
+            json.dump({"base": round(float(base), 4), "ts": time.time()}, f)
+    except Exception:
+        pass
 
 
 def _carregar():
@@ -113,6 +165,7 @@ def observar(audio, taxa=_TAXA):
     """Le o arousal, atualiza a baseline e ARMA uma dica sutil (via _hint_pendente) SO
     quando o tom desvia notavelmente do normal. Roda em thread (nao bloqueia)."""
     global _contador, _ultima_dica_idx, _hint_pendente
+    _carregar_baseline()                        # 1a vez da sessao: reusa a baseline do dia se fresca
     a = _arousal(audio, taxa)
     if a is None:
         return
@@ -121,6 +174,7 @@ def observar(audio, taxa=_TAXA):
     _hist.append(a)
     if baseline is None:
         return                                  # ainda montando a baseline
+    _salvar_baseline(float(np.median(_hist)))   # persiste o normal atual (throttled)
     if _contador - _ultima_dica_idx < _COOLDOWN:
         return                                  # nao repete cedo demais
 
