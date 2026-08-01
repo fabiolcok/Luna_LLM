@@ -1309,6 +1309,11 @@ def _tarefa_retomar_assunto():
     fatos = [f for _, f in obsidian.listar_memoria_episodica() if f not in ja]
     if not fatos:
         return
+    # NÃO bater no 12B a TODA volta do loop (~30s/1min) só pra perguntar "tem pendência?":
+    # quando não há pendência em aberto, n=0 não conta cota, então sem isto ela ficava
+    # re-chamando o modelo a cada ciclo pra sempre (mantendo ele aceso à toa). Re-checa a cada 20min.
+    if not _passou_intervalo("retomar_check", 20):
+        return
     # passo 1: o 12B ESCOLHE um fato que seja pendência em aberto (ou 0 = nenhum)
     lista = "\n".join(f"{i+1}. {f}" for i, f in enumerate(fatos[:12]))
     escolha = (
@@ -1318,6 +1323,7 @@ def _tarefa_retomar_assunto():
         "Se NENHUM for pendência em aberto (gosto, fato fixo, coisa já resolvida), use 0.\n"
         'Responda só JSON: {"n": <número do fato ou 0>}'
     )
+    cor.cinza("[🌚 Retomar: perguntando ao 12B se há pendência em aberto pra puxar...]")
     try:
         bruto = gerar_resposta(escolha, [], analisar=False, salvar=False,
                                modo_memoria=True, max_tokens=60)
@@ -2018,6 +2024,7 @@ def _tarefa_extrair_memoria(forcar=False):
         "- Nada que valha lembrar? Retorne lista vazia.\n"
         'FORMATO (só JSON, nada mais): {"fatos": ["...", "..."]}'
     )
+    cor.cinza("[🧠 Memória: pedindo ao 12B pra extrair fatos das conversas novas...]")
     try:
         bruto = gerar_resposta(prompt, [], analisar=False, salvar=False, modo_memoria=True)
         m = re.search(r'\{.*\}', bruto or "", re.DOTALL)

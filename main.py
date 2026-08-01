@@ -10,6 +10,15 @@ if ctypes.windll.kernel32.GetLastError() == 183:   # ERROR_ALREADY_EXISTS
 import modelos.log as _log_setup
 _log_setup.configurar()
 
+# Timestamp em TODA linha do console (.bat) — pra saber QUANDO cada coisa foi registrada.
+# (o luna.log já tem hora via logging; isto é só pro terminal.) Envolve o print global,
+# então pega tanto os cor.xxx() quanto os print() crus.
+import builtins as _bi, datetime as _dt_ts
+_print_orig = _bi.print
+def _print_com_hora(*a, **k):
+    _print_orig(_dt_ts.datetime.now().strftime("[%H:%M:%S]"), *a, **k)
+_bi.print = _print_com_hora
+
 import os
 import logging
 import time
