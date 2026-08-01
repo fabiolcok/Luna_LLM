@@ -425,6 +425,19 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         canal_hint = ("\n- CANAL DE VOZ: sua resposta vira ÁUDIO falado. Seja concisa e direta "
                       "(1 a 3 frases); frase longa cansa no ouvido. Só estenda se ele pedir detalhe.")
 
+    # Tom da voz (SER acústico) — SÓ no canal de voz. Palpite SUTIL que colore o COMO.
+    dica_tom = ""
+    if not responder_completo:
+        try:
+            from modulos import tom as _tom
+            _th = _tom.obter_hint()
+            if _th:
+                dica_tom = ("\n- TOM DE VOZ (sinal SUTIL do áudio, PODE errar — trate como PALPITE que "
+                            "COLORE o jeito de responder; NÃO comente isso diretamente a não ser que caiba "
+                            f"muito natural, e NUNCA vire bordão): {_th}")
+        except Exception:
+            pass
+
     prompt_sistema = (
         f"Hoje é {data_hoje}. {periodo_atual()[1]}\n"
         f"Contexto atual: {contexto_situacional}.\n"
@@ -446,7 +459,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
            f"\n{memoria_relacionada}\n"
            if memoria_relacionada else "")
         + f"\nConversas anteriores: {contexto_db}\n\n"
-        f"{PROMPT_LUNA_PERSONA}{aviso_saudacao}{canal_hint}"
+        f"{PROMPT_LUNA_PERSONA}{aviso_saudacao}{canal_hint}{dica_tom}"
     )
 
     is_proativo = (prompt_usuario == "")
