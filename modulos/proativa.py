@@ -1323,7 +1323,7 @@ def _tarefa_retomar_assunto():
         "Se NENHUM for pendência em aberto (gosto, fato fixo, coisa já resolvida), use 0.\n"
         'Responda só JSON: {"n": <número do fato ou 0>}'
     )
-    cor.cinza("[🌚 Retomar: perguntando ao 12B se há pendência em aberto pra puxar...]")
+    cor.cinza("[🌚 Retomar: checando se há pendência em aberto pra puxar...]")
     try:
         bruto = gerar_resposta(escolha, [], analisar=False, salvar=False,
                                modo_memoria=True, max_tokens=60)
@@ -2024,7 +2024,7 @@ def _tarefa_extrair_memoria(forcar=False):
         "- Nada que valha lembrar? Retorne lista vazia.\n"
         'FORMATO (só JSON, nada mais): {"fatos": ["...", "..."]}'
     )
-    cor.cinza("[🧠 Memória: pedindo ao 12B pra extrair fatos das conversas novas...]")
+    cor.cinza("[🧠 Memória: extraindo fatos das conversas novas...]")
     try:
         bruto = gerar_resposta(prompt, [], analisar=False, salvar=False, modo_memoria=True)
         m = re.search(r'\{.*\}', bruto or "", re.DOTALL)

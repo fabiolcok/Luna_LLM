@@ -843,7 +843,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                     # o 12B errou o JSON (comum com URLs). Tenta salvar o que der; o essencial
                     # (url etc) ainda é recuperado pelos guards abaixo — não é falha real.
                     argumentos_dit = _args_do_json_torto(argumentos_json)
-                    cor.amarelo(f"[JSON dos argumentos veio torto do 12B — recuperado: "
+                    cor.amarelo(f"[JSON dos argumentos veio torto do roteador — recuperado: "
                                 f"{argumentos_dit or 'nada, deixando com os guards'}]")
 
                 if nome_funcao == "controlar_navegador":
