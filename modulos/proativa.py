@@ -117,6 +117,11 @@ CONFIGURACAO = {
         "intervalo_minutos": 30,
         "horario_silencio": (0, 7),   # não checa de madrugada
     },
+    "Radar_Promocoes": {
+        "ativo": True,
+        "intervalo_minutos": 30,
+        "horario_silencio": (0, 7),
+    },
     "Autoconhecimento": {
         "ativo": True,
         "intervalo_minutos": 240,     # ~a cada 4h — reflexão ocasional, não repetitiva
@@ -203,6 +208,7 @@ TAREFAS_ATIVAS = {
     "pausa": True, "clima": True, "bom_dia": True, "steam": True, "navegador": True,
     "radar_rss": True, "autoconhecimento": True, "steam_jogo": True, "animes": True,
     "memoria": True, "retomar": True, "habitos": True, "lol_mortes": True,
+    "radar_promocoes": True,
 }
 
 # Estado interno da tarefa de contexto de navegação
@@ -1101,6 +1107,90 @@ def _tarefa_radar_rss():
             )
         _falar_proativamente(_gerar_fala_proativa(prompt, "radar_rss", max_tokens=220))
         registrar_tentativa()
+
+def _sem_acento(s: str) -> str:
+    import unicodedata
+    s = unicodedata.normalize("NFKD", s or "")
+    return "".join(c for c in s if not unicodedata.combining(c)).lower()
+
+
+def _tarefa_radar_promocoes():
+    """Radar de Promoções: lê os canais do Telegram (config em Luna/RastrearPromocoes.md),
+    e quando uma mensagem bate com uma palavra-chave escreve o card em Promocoes.md (B) +
+    dá uma campainha na voz (A). Mesma lógica do radar de RSS: msg inédita que casa =
+    promoção; canal recém-adicionado é 'semeado' em silêncio (não despeja o histórico)."""
+    cfg = CONFIGURACAO["Radar_Promocoes"]
+    if not cfg["ativo"] or _em_horario_silencio(*cfg["horario_silencio"]) or not _passou_intervalo("radar_promocoes", cfg["intervalo_minutos"]):
+        return
+    canais, keywords = obsidian.ler_config_promocoes()
+    if not canais or not keywords:
+        return
+    from modulos import radar_promo
+
+    mensagens = radar_promo.buscar_mensagens(canais, limite=25)
+    if not mensagens:
+        return
+
+    vistos = carregar_vistos()
+    msgs_vistas = vistos.get("promo", {})               # 'canal:msg_id' -> True
+    canais_semeados = vistos.get("promo_canais", [])
+    canais_semeados = [c for c in canais_semeados if c in canais]   # descarta órfãos (saíram da nota)
+    canais_novos = {c for c in canais if c not in canais_semeados}  # 1a vez vendo esse canal
+    canais_com_msg = set()
+    # cada keyword vira uma lista de TOKENS; casa se TODOS aparecem na mensagem (qualquer
+    # ordem). Mais tolerante que substring: 'mouse gpro logitech' pega 'Logitech G Pro'.
+    # Exigir TODOS os tokens também neutraliza token curto (o '3' de 'quest 3' não casa sozinho).
+    kw_tokens = [(k, _sem_acento(k).split()) for k in keywords if _sem_acento(k).split()]
+
+    novos = []
+    for canal, mid, texto, link, _data, tem_foto in mensagens:
+        canais_com_msg.add(canal)
+        eid = f"{canal}:{mid}"
+        if msgs_vistas.get(eid):
+            continue
+        msgs_vistas[eid] = True
+        if canal in canais_novos:      # semeia baseline em silêncio (não anuncia histórico)
+            continue
+        alvo = _sem_acento(texto)
+        casou = next((k for k, toks in kw_tokens if all(t in alvo for t in toks)), None)
+        if casou:
+            resumo = re.sub(r'\s+', ' ', texto.strip())[:400]
+            imagem = ""
+            if tem_foto:   # baixa a foto do produto SÓ das que casaram (não das 25)
+                abs_p, nome = obsidian.preparar_img_promo(f"{canal.strip('@')}_{mid}.jpg")
+                if abs_p and radar_promo.baixar_foto(canal, mid, abs_p):
+                    imagem = nome
+            novos.append((casou, link, canal, resumo, imagem))
+
+    # só marca como semeado o canal novo que REALMENTE devolveu mensagem (senão retenta depois)
+    for c in canais_novos & canais_com_msg:
+        canais_semeados.append(c)
+    if len(msgs_vistas) > _RADAR_MAX_VISTOS:
+        msgs_vistas = dict(list(msgs_vistas.items())[-_RADAR_MAX_VISTOS:])
+    vistos["promo"] = msgs_vistas
+    vistos["promo_canais"] = canais_semeados
+    salvar_vistos(vistos)
+
+    if novos:
+        obsidian.adicionar_promocoes(novos)
+        n = len(novos)
+        cor.amarelo(f"[🏷️ Promoções: {n} achado(s) → Promocoes.md]")
+
+        destaque = random.choice(novos)
+        produto_d, canal_d = destaque[0], destaque[2]
+        if n == 1:
+            prompt = (
+                f"Apareceu 1 promoção de um produto que ele quer caçar: '{produto_d}' (vista no canal {canal_d}). "
+                f"Avise-o de leve em 1-2 frases, animado mas sem exagero, do seu jeito. {REGRA_PERSONA}"
+            )
+        else:
+            prompt = (
+                f"Apareceram {n} promoções de produtos que ele caça. A principal: '{produto_d}' (canal {canal_d}). "
+                f"Avise-o citando SÓ essa principal em 1-2 frases e diga que tem mais {n - 1} na nota Promoções. {REGRA_PERSONA}"
+            )
+        _falar_proativamente(_gerar_fala_proativa(prompt, "radar_promocoes", max_tokens=200))
+        registrar_tentativa()
+
 
 def _anilist_temporada_no_ar(nome):
     """Acha a temporada EM EXIBIÇÃO do anime pelo nome — (media_id, titulo) ou None.
@@ -2100,6 +2190,7 @@ def _loop_proativo():
                 if TAREFAS_ATIVAS.get("habitos", True): _tarefa_detectar_habito()
                 if TAREFAS_ATIVAS.get("navegador", True): _tarefa_contexto_navegador()
                 if TAREFAS_ATIVAS.get("radar_rss", True): _tarefa_radar_rss()
+                if TAREFAS_ATIVAS.get("radar_promocoes", True): _tarefa_radar_promocoes()
                 if TAREFAS_ATIVAS.get("animes", True): _tarefa_avisar_animes()
                 if TAREFAS_ATIVAS.get("autoconhecimento", True): _tarefa_autoconhecimento()
             else:

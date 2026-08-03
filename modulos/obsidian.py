@@ -512,6 +512,100 @@ def ler_feeds_radar() -> list:
     return feeds
 
 
+# ── RADAR DE PROMOÇÕES (canais do Telegram + palavras-chave, config no Obsidian) ──
+def ler_config_promocoes() -> tuple:
+    """Lê Luna/RastrearPromocoes.md e devolve (canais, palavras_chave). O arquivo tem
+    duas seções em bullets: '## Canais' (os @ ou links t.me) e '## Produtos' (as
+    palavras-chave). Só linhas em bullet ('-'/'*') contam — as dicas em citação (>) são
+    ignoradas. Devolve ([], []) se a nota não existir."""
+    caminho = os.path.join(_VAULT, "Luna", "RastrearPromocoes.md")
+    canais, keywords = [], []
+    secao = None
+    try:
+        with open(caminho, encoding="utf-8") as f:
+            for linha in f:
+                s = linha.strip()
+                low = s.lower()
+                if low.startswith("##"):
+                    if "canais" in low or "canal" in low:
+                        secao = "canais"
+                    elif "produto" in low or "palavra" in low or "chave" in low:
+                        secao = "produtos"
+                    else:
+                        secao = None
+                    continue
+                if s.startswith(">") or not s.startswith(("-", "*")):
+                    continue
+                valor = s[1:].strip().strip("[]`").strip()
+                if not valor:
+                    continue
+                if secao == "canais":
+                    # aceita '@canal', 'https://t.me/canal' ou 't.me/canal' -> normaliza p/ @canal
+                    m = re.search(r'(?:t\.me/|@)([A-Za-z0-9_]{3,})', valor)
+                    if m:
+                        canais.append("@" + m.group(1))
+                elif secao == "produtos":
+                    keywords.append(valor.lower())
+    except Exception:
+        return [], []
+    return canais, keywords
+
+
+def adicionar_promocoes(itens: list, max_horas: int = 168) -> None:
+    """Gêmeo do adicionar_novidades, mas escreve em Promocoes.md (janela padrão de 7 dias —
+    promoção dura mais que notícia). itens = lista de (produto, link, canal[, texto[, imagem]]).
+    Compartilha o CSS de cards do Novidades (mesma cssclass 'novidades-grid')."""
+    if not itens or not os.path.isdir(_VAULT):
+        return
+    caminho = os.path.join(_VAULT, "Promocoes.md")
+    agora = datetime.datetime.now()
+    novos = f"## {agora:%d/%m/%Y}\n\n" + "\n\n".join(_cartao_novidade(i) for i in itens)
+    try:
+        antigo = ""
+        if os.path.exists(caminho):
+            with open(caminho, encoding="utf-8") as f:
+                antigo = f.read()
+        conteudo = _reagrupar_novidades(novos + "\n\n" + antigo)
+        conteudo = _trim_novidades(conteudo, max_horas).strip()
+        with open(caminho, "w", encoding="utf-8") as f:
+            f.write(_FRONTMATTER_NOVIDADES + conteudo + "\n")
+        _limpar_imgs_promo_antigas(max_horas)   # some com a foto quando o card sai da janela
+    except Exception:
+        pass
+
+
+def _limpar_imgs_promo_antigas(max_horas: int) -> None:
+    """Apaga as imagens de promoção mais velhas que max_horas. O card some da nota nesse
+    prazo (janela rolante), então a imagem vira órfã e só ocuparia disco."""
+    pasta = os.path.join(_VAULT, *_PASTA_IMGS_PROMO)
+    if not os.path.isdir(pasta):
+        return
+    limite = datetime.datetime.now().timestamp() - max_horas * 3600
+    for nome in os.listdir(pasta):
+        caminho = os.path.join(pasta, nome)
+        try:
+            if os.path.isfile(caminho) and os.path.getmtime(caminho) < limite:
+                os.remove(caminho)
+        except Exception:
+            pass
+
+
+_PASTA_IMGS_PROMO = ("Luna", "promo_imgs")
+
+def preparar_img_promo(nome_arquivo: str):
+    """Garante a pasta de imagens de promoção DENTRO do vault e devolve (caminho_abs,
+    nome_arquivo). O card embute por NOME (wikilink), então o Obsidian acha o arquivo em
+    qualquer subpasta. (None, None) se não houver vault."""
+    if not os.path.isdir(_VAULT):
+        return None, None
+    pasta = os.path.join(_VAULT, *_PASTA_IMGS_PROMO)
+    try:
+        os.makedirs(pasta, exist_ok=True)
+    except Exception:
+        return None, None
+    return os.path.join(pasta, nome_arquivo), nome_arquivo
+
+
 # ── SEMEADURA (vault novo: cria as notas de CONFIG com template) ──
 # Só cria o que NÃO existe — nunca toca em nota existente. As notas de escrita
 # (Luna/Inbox, Novidades.md) a Luna já cria sozinha quando precisa.
@@ -560,6 +654,27 @@ te avisa quando sai novidade e anota tudo em **Novidades.md** (na raiz do vault)
 > (ex: `https://www.reddit.com/r/dota2/.rss`).
 > Exemplo de linha ativa (tire da citação pra valer):
 > `- https://www.adrenaline.com.br/feed/`
+""",
+    ("Luna", "RastrearPromocoes.md"): """# 🏷️ Rastrear Promoções — o que a Luna caça no Telegram
+
+> A Luna fica de olho nos CANAIS abaixo e, quando alguém posta uma promoção que bate
+> com uma das PALAVRAS-CHAVE, ela te avisa e anota em **Promocoes.md** (na raiz do vault).
+>
+> Regras: uma por linha, em bullet (`-`). As dicas em citação (>) são ignoradas.
+> ⚠️ Você precisa ter ENTRADO no canal pelo seu Telegram pra Luna conseguir ler.
+> 💡 Como a Luna casa: ela quebra a palavra-chave em PALAVRAS e exige que TODAS apareçam
+>    na mensagem (em qualquer ordem). Então:
+>    • Separe as palavras como o vendedor escreve: `g pro` (não `gpro`).
+>    • Seja ESPECÍFICO (`rtx 4070` em vez de só `placa`) — senão o canal te inunda.
+
+## Canais
+> Cole os @ dos canais (ou links t.me). Exemplos (tire da citação e ajuste):
+> `- @nomedocanal`
+> `- https://t.me/outrocanal`
+
+## Produtos (palavras-chave)
+- oculus quest 3
+- mouse logitech g pro
 """,
 }
 
@@ -689,7 +804,10 @@ def _cartao_novidade(item) -> str:
     imagem = item[4] if len(item) > 4 else ""
     cx = [f"> [!tip]+ [{titulo}]({link})"]
     if imagem:
-        cx.append(f"> ![|220]({imagem})")   # |220 = miniatura; sem isso vem em largura cheia
+        if imagem.startswith("http"):
+            cx.append(f"> ![|220]({imagem})")        # remota (RSS): markdown com URL
+        else:
+            cx.append(f"> ![[{imagem}|220]]")        # local (promo): wikilink — Obsidian acha por nome
     if fonte:
         cx.append(f"> `{fonte}`")
     for ln in (resumo or "").strip().splitlines():

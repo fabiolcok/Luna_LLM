@@ -21,6 +21,10 @@ modelos/contatos_whatsapp.json
 token.json
 *.token
 
+# Sessão do Telethon (radar de promoções) — é CREDENCIAL de login da conta, NUNCA versionar
+*.session
+*.session-journal
+
 # Banco de dados e dados gerados em runtime
 modelos/chromadb/
 modelos/memoria_permanente.json
