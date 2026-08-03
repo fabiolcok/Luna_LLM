@@ -190,6 +190,14 @@ def escutar_usuario():
             cor.cinza(f"[🔇 Alucinação Whisper descartada: '{texto_final[:60]}']")
             return ""
 
+        # Lê o TOM da voz em paralelo (SER acústico) — arma uma dica sutil pro prompt.
+        if texto_final:
+            try:
+                from modulos import tom
+                tom.observar_async(audio_1d, taxa_amostragem)
+            except Exception:
+                pass
+
         return texto_final
     except Exception as e:
         cor.vermelho(f"Erro na transcrição: {e}")
