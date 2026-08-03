@@ -8,6 +8,23 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 03/08/2026
+
+- 🛒 ✨ **A Luna agora caça promoções pra você no Telegram.** Em vez de raspar Kabum/Terabyte
+  (que vivem bloqueando isso e davam manutenção sem fim), ela lê os **canais de promoção**
+  que você segue — como se fosse você olhando. Você entra nos canais, e numa nota do Obsidian
+  (`RastrearPromocoes.md`) lista os **@ dos canais** + as **palavras-chave** dos produtos que
+  te interessam. Quando cai uma oferta que bate, ela **te avisa na voz** e monta um **card**
+  numa página `Promocoes.md` — com **foto do produto**, preço e link. Casa por palavra (ignora
+  acento/maiúscula), **semeia canal novo em silêncio** (não despeja o histórico todo na 1ª vez)
+  e **limpa promoção velha depois de 7 dias** pra não encher o HD. Liga/desliga no toggle
+  **"Promoções (Telegram)"**. (Precisa de um login único no Telegram — instruções no `.env.example`.)
+- 🎙️ ✨ **Ela começou a perceber o TOM da tua voz.** Um modelo de emoção acústica lê a **energia**
+  da tua fala e, quando você soa mais **pra baixo/cansado** ou mais **animado** que o teu normal,
+  ela ajusta sutilmente o **jeito** de responder — sem nunca virar o assunto pra "como você tá"
+  (colore o *como*, não o *quê*). Só na voz, e ela aprende teu "normal" sozinha (recalibra a cada
+  dia). É uma camada fininha, que vai afinando com o uso.
+
 ## 01/08/2026
 
 - 🐛 **A "retomar assuntos" parou de cutucar o modelo à toa.** Quando você não tinha nenhum
