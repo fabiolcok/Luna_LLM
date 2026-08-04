@@ -342,8 +342,6 @@ Trocar de modelo: mudar `BASE_LOCAL` e `MODELO_PERSONA`. Se o novo modelo não f
 
 - O TurboLLM precisa estar rodando (sobe no login; manual: `turbollm`). 1ª resposta após
   ocioso demora ~6s (recarga JIT).
-- O TurboLLM detecta a VRAM da RX 9060 XT errado (4,3 GB em vez de 16) → não segura 2
-  modelos ao mesmo tempo. Daí o desenho MONO.
 - A extração da memória episódica ainda propõe algum ruído (ex: trivia técnica de uma
   conversa) — por isso ela **pede sua confirmação** antes de salvar; nada entra sozinho.
   A memória permanente antiga (`ATIVAR_MEMORIA_PERMANENTE`) virou legado: ela extraía em

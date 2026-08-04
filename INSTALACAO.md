@@ -151,11 +151,25 @@ quebra. Todas as chaves e dicas também estão no `.env.example`.
 | 💬 **Bot do Telegram** | `TELEGRAM_TOKEN` / `TELEGRAM_CHAT_ID` | token no [@BotFather](https://t.me/BotFather); chat id no [@userinfobot](https://t.me/userinfobot) |
 | 📓 **Obsidian** | `OBSIDIAN_VAULT` | caminho do seu vault (a Luna cria as notas que faltam) |
 | ☁️ **Clima** | `CLIMA_LAT` / `CLIMA_LON` | sua lat/long em [latlong.net](https://www.latlong.net/) |
+| 🌐 **Controle do Firefox** (resumir/comentar aba) | *(extensão — veja abaixo)* | já incluída em `modelos/Extensao_Luna/` |
 | 🏷️ **Radar de promoções** | `TELEGRAM_API_ID` / `TELEGRAM_API_HASH` | veja a seção 6 |
 
 **Google Agenda (OAuth2):** ative a *Google Calendar API* no [Google Cloud Console](https://console.cloud.google.com/),
 crie uma credencial *OAuth Desktop*, baixe o `credentials.json` e coloque em `modelos/`. Na 1ª
 vez a Luna abre o navegador pra você autorizar (gera `modelos/token.json`).
+
+**Controle do Firefox (extensão):** as ferramentas `controlar_navegador` e `analisar_aba_atual`
+(resumir/comentar a aba aberta) usam uma extensão que **já vem no repo**, em
+`modelos/Extensao_Luna/`. Pra instalar no Firefox:
+
+1. Abra `about:debugging` → **Este Firefox** → **Carregar extensão temporária…**
+2. Escolha o **`manifest.json`** dentro de `modelos/Extensao_Luna/`.
+
+Ela conecta na Luna por WebSocket (`127.0.0.1:8765`) — quando ligar, aparece
+`[🌐 Firefox conectado à Luna]` no log.
+
+> ⚠️ Extensão *temporária* sai quando você fecha o Firefox — recarregue por `about:debugging`
+> na próxima sessão (ou instale de forma permanente numa versão *Developer/Nightly* do Firefox).
 
 ---
 
