@@ -19,6 +19,9 @@ interface web, integra com Telegram e toma iniciativa por conta própria (proati
 PT-BR caloroso, e o **núcleo de IA — pensar (LLM), ouvir (STT) e falar (TTS) — roda 100%
 local**, na sua própria máquina.
 
+> 🛠️ **Quer instalar do zero?** O passo a passo completo (TurboLLM, modelos, chaves, tudo)
+> está no **[`INSTALACAO.md`](INSTALACAO.md)**. Este README aqui é o mapa da *arquitetura*.
+
 ## 🎙️ Ouça a Luna
 
 A própria Luna se apresentando, na voz dela (Kokoro TTS, pt-BR) — **clique no ▶ pra ouvir**:
