@@ -1372,6 +1372,7 @@ Dê um 'bom dia' usando sua personalidade {REGRA_PERSONA} EXCEÇÃO ao limite de
 _RETOMAR_MAX_DIA = 2                    # no máx 2 retomadas por dia (régua do usuário)
 _RETOMAR_ATRASO_ABERTURA = 4 * 60      # s após ligar a Luna: a 1ª não sai "no susto"
 _RETOMAR_ESPACO_2A = 6 * 3600          # 6h entre a 1ª e a 2ª retomada
+_RETOMAR_REASK_DIAS = 21               # NÃO repõe o MESMO assunto por N dias (era o bug do "todo dia a mesma pergunta")
 
 def _tarefa_retomar_assunto():
     """Retoma um assunto em ABERTO de antes ('e aí, conseguiu consertar o PC?'). Régua:
@@ -1382,10 +1383,9 @@ def _tarefa_retomar_assunto():
     agora = time.time()
     hoje = datetime.date.today().isoformat()
     est = ler_estado_proativo()
-    if est.get("retomar_dia") != hoje:              # virou o dia -> zera contador e dedup
-        salvar_estado_proativo("retomar_dia", hoje)
-        salvar_estado_proativo("retomar_hoje", 0)
-        salvar_estado_proativo("retomar_assuntos", [])
+    if est.get("retomar_dia") != hoje:              # virou o dia -> zera SÓ o contador do dia
+        salvar_estado_proativo("retomar_dia", hoje)   # (a lista de assuntos já puxados PERSISTE entre
+        salvar_estado_proativo("retomar_hoje", 0)     #  dias — antes zerava aqui e ela repetia o mesmo)
         est = ler_estado_proativo()
     feitas = est.get("retomar_hoje", 0)
     if feitas >= _RETOMAR_MAX_DIA:                  # cota do dia estourada
@@ -1395,8 +1395,14 @@ def _tarefa_retomar_assunto():
             return
     elif (agora - est.get("retomar_ultima_ts", 0)) < _RETOMAR_ESPACO_2A:   # 2ª: 6h depois
         return
-    ja = set(est.get("retomar_assuntos", []))       # assuntos já puxados (não repete)
-    fatos = [f for _, f in obsidian.listar_memoria_episodica() if f not in ja]
+    # assuntos já puxados PERSISTEM entre dias, com validade: um assunto só volta a poder ser
+    # puxado depois de _RETOMAR_REASK_DIAS (senão ela pergunta a MESMA coisa todo dia).
+    asked = est.get("retomar_assuntos", {})
+    if isinstance(asked, list):                     # migra formato antigo (lista) -> dict {fato: data}
+        asked = {f: hoje for f in asked}
+    limite = (datetime.date.today() - datetime.timedelta(days=_RETOMAR_REASK_DIAS)).isoformat()
+    bloqueados = {f for f, d in asked.items() if d >= limite}
+    fatos = [f for _, f in obsidian.listar_memoria_episodica() if f not in bloqueados]
     if not fatos:
         return
     # NÃO bater no 12B a TODA volta do loop (~30s/1min) só pra perguntar "tem pendência?":
@@ -1408,9 +1414,11 @@ def _tarefa_retomar_assunto():
     lista = "\n".join(f"{i+1}. {f}" for i, f in enumerate(fatos[:12]))
     escolha = (
         "Estes são fatos recentes sobre o usuário:\n" + lista + "\n\n"
-        "Algum é uma INTENÇÃO, PLANO ou PENDÊNCIA EM ABERTO que valha retomar agora, "
-        "perguntando como foi ('e aí, conseguiu?', 'terminou?')? Escolha no máximo UM. "
-        "Se NENHUM for pendência em aberto (gosto, fato fixo, coisa já resolvida), use 0.\n"
+        "Algum é uma PENDÊNCIA PONTUAL EM ABERTO — algo com um desfecho claro ('conseguiu?', "
+        "'terminou?', 'deu certo?') que valha retomar UMA vez? Escolha no máximo UM.\n"
+        "Use 0 se NENHUM for isso: gosto, fato fixo, coisa já resolvida, OU projeto/atividade "
+        "CONTÍNUA sem um 'terminou?' claro (ex.: 'está desenvolvendo o projeto X', 'joga Y', "
+        "'trabalha em Z') — esses NÃO são pendências, não pergunte deles.\n"
         'Responda só JSON: {"n": <número do fato ou 0>}'
     )
     cor.cinza("[🌚 Retomar: checando se há pendência em aberto pra puxar...]")
@@ -1430,8 +1438,9 @@ def _tarefa_retomar_assunto():
               "conversa. NÃO invente nenhum detalhe além disso.")
     texto = _gerar_fala_proativa(prompt, "retomar assunto", max_tokens=120, variar=False)
     if texto and _falar_proativamente(texto):
-        ja.add(fato)
-        salvar_estado_proativo("retomar_assuntos", list(ja))
+        asked[fato] = hoje                          # marca com a DATA (pra valer a validade de reask)
+        asked = {f: d for f, d in asked.items() if d >= limite}   # poda os vencidos (já re-perguntáveis)
+        salvar_estado_proativo("retomar_assuntos", asked)
         salvar_estado_proativo("retomar_hoje", feitas + 1)
         salvar_estado_proativo("retomar_ultima_ts", agora)
 
