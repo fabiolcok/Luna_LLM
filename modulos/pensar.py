@@ -357,27 +357,38 @@ _RE_KAO_CONHECIDO = re.compile(
 def _extrair_kaomoji(texto: str):
     """Tira o kaomoji do fim do texto -> (kaomoji|None, texto_sem_ele). Cobre os 3 jeitos que
     o 12B escreve: em linha própria, colado no fim da frase, e dois seguidos."""
+    _SEPS = " \t·•∙・,;"        # ela às vezes cola DOIS com o separador do cardápio (' · ')
+    def _parece_kaomoji(s):
+        # tem que ter cara de carinha: caractere fora do ASCII ou parêntese/underscore.
+        # Sem isso, uma última linha curta tipo 'Ok.' seria confundida com kaomoji.
+        return bool(s) and len(s) <= 40 and not re.search(r'[A-Za-zÀ-ÿ]{4,}', s) \
+               and bool(re.search(r'[^\x00-\x7F()_^]|[()_^]', s))
+
     t = (texto or "").rstrip()
     achado = None
-    # 1) kaomoji conhecido no fim — em loop, porque às vezes ela cola DOIS
+    # 1) kaomoji CONHECIDO no fim — em loop, tolerando o separador entre dois
     while True:
         m = _RE_KAO_CONHECIDO.search(t)
         if not m:
             break
         achado = m.group(1).strip()
-        t = t[:m.start()].rstrip()
+        t = t[:m.start()].rstrip(_SEPS)
+    # 2) sobra: última LINHA só de símbolos (kaomoji adaptado OU pedaço que o loop não casou)
+    while True:
+        linhas = t.split("\n")
+        ult = linhas[-1].strip().rstrip(_SEPS).strip()
+        if not _parece_kaomoji(ult):
+            break
+        if achado is None:
+            achado = ult
+        t = "\n".join(linhas[:-1]).rstrip(_SEPS)
     if achado:
         return achado, t
-    # 2) última LINHA sem palavra de verdade (kaomoji adaptado, em linha própria)
-    linhas = t.split("\n")
-    ult = linhas[-1].strip()
-    if ult and len(ult) <= 40 and not re.search(r'[A-Za-zÀ-ÿ]{4,}', ult):
-        return ult, "\n".join(linhas[:-1]).rstrip()
     # 3) rabicho depois da última pontuação de fim de frase (kaomoji adaptado, colado)
     idx = max(t.rfind(c) for c in ".!?…")
     if idx != -1:
-        cauda = t[idx + 1:].strip()
-        if cauda and len(cauda) <= 40 and not re.search(r'[A-Za-zÀ-ÿ]{4,}', cauda):
+        cauda = t[idx + 1:].strip().rstrip(_SEPS).strip()
+        if _parece_kaomoji(cauda):
             return cauda, t[:idx + 1].rstrip()
     return None, texto
 

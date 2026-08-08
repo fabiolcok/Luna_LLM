@@ -264,6 +264,12 @@ def limpar_texto_para_voz(texto):
     # Kokoro NÃO usa as tags de expressão do Supertonic (<laugh>, <sigh>, <breath>...):
     # remove pra não serem lidas em voz alta nem exibidas.
     texto = re.sub(r'</?(?:laugh|breath|sigh|surprise|scream|throatclear|sad|angry|cough|yawn)>', '', texto, flags=re.IGNORECASE)
+    # REDE DE SEGURANÇA — kaomoji: a extração no pensar.py já tira a carinha, mas se sobrar
+    # QUALQUER pedaço aqui o TTS lê os símbolos em voz alta ("japanese symbol, japanese
+    # symbol..."). Tira blocos de símbolos/CJK e o rabicho de símbolos no fim das linhas.
+    texto = re.sub(r'[　-ヿㇰ-鿿＀-￯ˀ-˿̀-ͯ'
+                   r'─-➿؀-ۿঀ-෿]+', '', texto)
+    texto = re.sub(r'(?m)[\(\)\[\]{}<>_=~^·•\-\s]{3,}$', '', texto)
     # Remove aspas duplas que envolvem o texto inteiro (artefato do completion-style)
     texto = re.sub(r'^"(.*)"$', r'\1', texto, flags=re.DOTALL)
     # Remove artifacts de modelos fine-tuned (Dolphin etc) que simulam blocos de tool result
