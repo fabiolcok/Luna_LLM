@@ -313,20 +313,24 @@ PROMPT_LUNA_PERSONA = (
     # │ a extração de [gif:] aqui embaixo, _REACOES_GIF/atualizar_gif no servidor.py e o      │
     # │ trocarGif() no Index.html. É só o prompt voltar a emitir a tag.                       │
     # └──────────────────────────────────────────────────────────────────────────────────────┘
-    "- OBRIGATÓRIO: termine com UM kaomoji sozinho na ÚLTIMA LINHA, escolhido do cardápio abaixo pelo clima da SUA fala. UM só — NUNCA cole a linha inteira do cardápio nem dois juntos. Nada de emoji.\n"
-    "CARDÁPIO DE KAOMOJI (cada linha é um clima; os itens separados por ' · ' são ALTERNATIVAS — pegue uma):\n"
-    "  zoeira/safadeza: (¬‿¬) · ( ͡° ͜ʖ ͡°) · (￣ω￣) · ಠ‿ಠ\n"
-    "  revolta/vira-mesa: (╯°□°）╯︵ ┻━┻ · (ノಠ益ಠ)ノ彡┻━┻\n"
-    "  facepalm/vergonha alheia: (－‸ლ) · (¬_¬;) · orz\n"
-    "  choque/surpresa: Σ(°ロ°) · (⊙_⊙) · (☉_☉)\n"
-    "  carinho/acolhimento: (づ｡◕‿‿◕｡)づ · (´｡• ᵕ •｡`) · (っ˘̩╭╮˘̩)っ\n"
-    "  cansaço: (=_=) · (´-ω-`) · (⌣_⌣”)\n"
-    "  comemoração/hype: ヽ(•‿•)ノ · \\(^ヮ^)/ · (๑˃ᴗ˂)ﻭ\n"
-    "  orgulho/determinação: ( •̀ ω •́ )✧ · ٩(◕‿◕)۶\n"
-    "  suspeita/julgamento: ಠ_ಠ · (・_・ヾ · (¬_¬ )\n"
-    "  dúvida/pensando: (・・? · ╮(￣ω￣;)╭ · ( ˘⌣˘ )｡o○\n"
-    "  tédio: (￣～￣) · ╮(︶︿︶)╭\n"
-    "  deadpan/sem reação: ¯\\_(ツ)_/¯ · ( ･_･)\n"
+    "- OBRIGATÓRIO: termine com UM kaomoji sozinho na ÚLTIMA LINHA. Ele é o SEU ROSTO na interface (aparece dentro do teu 'rosto' na tela), então é sempre uma CARA — olhos e boca, nada de braços/objetos. Escolha do cardápio abaixo pelo clima da SUA fala. UM só — NUNCA cole a linha inteira do cardápio nem dois juntos. Nada de emoji.\n"
+    "CARDÁPIO DE ROSTOS (cada linha é um clima; os itens separados por ' · ' são ALTERNATIVAS — pegue uma):\n"
+    "  zoeira/safadeza: (¬‿¬) · (＾ω＾) · ( ˘ ‿ ˘ )\n"
+    "  revolta/irritação: ( ｀皿´ ) · (｀Д´) · (>_<#)\n"
+    "  facepalm/vergonha alheia: (－_－;) · (¬_¬;) · ( ˘_˘ )\n"
+    "  choque/surpresa: (⊙_⊙) · (°o°) · Σ(°ロ°)\n"
+    "  carinho/acolhimento: (˶ᵔ ᵕ ᵔ˶) · ( ´ ▽ ` ) · (｡◕‿◕｡)\n"
+    "  cansaço: (=_=) · (´-ω-`) · (ー_ー)\n"
+    "  comemoração/hype: (＞∇＜) · (✦‿✦) · (٩◕‿◕۶)\n"
+    "  orgulho/determinação: ( •̀ ω •́ ) · ( ￣^￣ ) · (｀・ω・´)\n"
+    "  suspeita/julgamento: (¬_¬ ) · ( ・_・) · (－ω－)\n"
+    "  dúvida/pensando: ( ˘⌣˘ ) · (・・?) · ( ˙_˙ )\n"
+    "  tédio: (￣～￣) · (´､ω､`)\n"
+    "  tristeza/dó: (｡•́﹀•̀｡) · ( ˘︿˘ )\n"
+    "  IMPORTANTE: case o rosto com o que VOCÊ acabou de dizer, não pegue sempre a cara neutra. "
+    "Acolheu/foi carinhosa -> rosto de carinho. Comemorou/elogiou -> comemoração. Se espantou -> choque. "
+    "Cutucou/zoou -> zoeira. Ficou sem paciência -> facepalm. A cara de julgamento/tédio é só quando você "
+    "ESTÁ julgando ou entediada de verdade — não é o padrão.\n"
 )
 
 # Kaomoji substituiu o [gif:] (experimento ago/2026). Anti-repetição DETERMINÍSTICA: o 12B
@@ -339,19 +343,21 @@ _kaomoji_pendente = None
 # Mesmo cardápio acima, em estrutura — serve pra TROCAR mecanicamente quando ela repete.
 # (Pedir "escolha um diferente" no prompt ajuda, mas o 12B ignora: a regra fica enterrada
 # no fim de um prompt longo. Determinístico > torcer pra ele obedecer.)
+# Só ROSTOS (o kaomoji virou a cara dela na interface) e SÓ com glifos verificados nas fontes
+# do Windows — o ಠ (Kannada) do cardápio antigo NÃO existe nelas e virava quadradinho.
 _KAOMOJI_POR_CLIMA = [
-    ["(¬‿¬)", "( ͡° ͜ʖ ͡°)", "(￣ω￣)", "ಠ‿ಠ"],
-    ["(╯°□°）╯︵ ┻━┻", "(ノಠ益ಠ)ノ彡┻━┻"],
-    ["(－‸ლ)", "(¬_¬;)", "orz"],
-    ["Σ(°ロ°)", "(⊙_⊙)", "(☉_☉)"],
-    ["(づ｡◕‿‿◕｡)づ", "(´｡• ᵕ •｡`)", "(っ˘̩╭╮˘̩)っ"],
-    ["(=_=)", "(´-ω-`)", "(⌣_⌣”)"],
-    ["ヽ(•‿•)ノ", "\\(^ヮ^)/", "(๑˃ᴗ˂)ﻭ"],
-    ["( •̀ ω •́ )✧", "٩(◕‿◕)۶"],
-    ["ಠ_ಠ", "(・_・ヾ", "(¬_¬ )"],
-    ["(・・?", "╮(￣ω￣;)╭", "( ˘⌣˘ )｡o○"],
-    ["(￣～￣)", "╮(︶︿︶)╭"],
-    ["¯\\_(ツ)_/¯", "( ･_･)"],
+    ["(¬‿¬)", "(＾ω＾)", "( ˘ ‿ ˘ )"],
+    ["( ｀皿´ )", "(｀Д´)", "(>_<#)"],
+    ["(－_－;)", "(¬_¬;)", "( ˘_˘ )"],
+    ["(⊙_⊙)", "(°o°)", "Σ(°ロ°)"],
+    ["(˶ᵔ ᵕ ᵔ˶)", "( ´ ▽ ` )", "(｡◕‿◕｡)"],
+    ["(=_=)", "(´-ω-`)", "(ー_ー)"],
+    ["(＞∇＜)", "(✦‿✦)", "(٩◕‿◕۶)"],
+    ["( •̀ ω •́ )", "( ￣^￣ )", "(｀・ω・´)"],
+    ["(¬_¬ )", "( ・_・)", "(－ω－)"],
+    ["( ˘⌣˘ )", "(・・?", "( ˙_˙ )"],
+    ["(￣～￣)", "(´､ω､`)"],
+    ["(｡•́﹀•̀｡)", "( ˘︿˘ )"],
 ]
 
 import random as _rnd

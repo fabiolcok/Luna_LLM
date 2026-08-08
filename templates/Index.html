@@ -69,11 +69,19 @@
         /* ═══ PRESENÇA (a lua + a órbita) ═══
            Dois canais independentes: a LUA é a presença dela (respira, brilha);
            a ÓRBITA é a atividade (velocidade/escala). SVG + CSS puro — sem lib. */
-        #presenca { display: flex; justify-content: center; padding: 4px 0 10px; }
-        #presenca svg { width: 178px; height: 178px; overflow: visible; }
+        #presenca { position: relative; display: flex; justify-content: center; padding: 4px 0 10px; }
+        #presenca svg { width: 196px; height: 196px; overflow: visible; }
+        /* o rosto ocupa o miolo livre dos anéis */
+        #rosto {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            font-size: 1.15rem; color: #b4f9f8; white-space: nowrap; letter-spacing: .5px;
+            pointer-events: none; text-shadow: 0 0 12px rgba(122,162,247,.5);
+            transition: opacity .28s ease, transform .28s cubic-bezier(.2,.9,.3,1.5);
+        }
+        #rosto.trocando { opacity: 0; transform: scale(.86); }
         /* view-box + origem no centro do viewBox: arco tem bbox DESCENTRADO, então
            'fill-box/center' faria ele bambear em vez de girar no eixo. */
-        #halo, #orbita, #orbita-escala, #arcos, #arco-1, #arco-2, #arco-3, #nucleo {
+        #halo, #orbita, #orbita-escala, #arcos, #arco-1, #arco-2, #arco-3 {
             transform-box: view-box; transform-origin: 100px 100px;
         }
         #halo    { animation: pres-halo 5.5s ease-in-out infinite; }
@@ -81,17 +89,14 @@
         #arco-1  { animation: pres-gira 26s linear infinite; }
         #arco-2  { animation: pres-gira-inv 18s linear infinite; }   /* sentido contrário */
         #arco-3  { animation: pres-gira 12s linear infinite; }
-        #nucleo  { animation: pres-nucleo 5.5s ease-in-out infinite; }
         #orbita-escala, #arcos { transition: transform .6s cubic-bezier(.2,.9,.3,1.2), opacity .6s ease; }
 
         @keyframes pres-halo     { 0%,100% { opacity:.20; transform: scale(1); } 50% { opacity:.38; transform: scale(1.08); } }
         @keyframes pres-gira     { to { transform: rotate(360deg);  } }
-        @keyframes pres-gira-inv { to { transform: rotate(-360deg); } }
-        @keyframes pres-nucleo   { 0%,100% { transform: scale(1); opacity:.75; } 50% { transform: scale(1.45); opacity:1; } }
+        @keyframes pres-gira-inv { to { transform: rotate(-360deg); } } 50% { transform: scale(1.45); opacity:1; } }
 
         /* 🌙 parada — tudo lento e apagado */
         .est-dormindo #halo   { animation-duration: 9s; opacity: .1; }
-        .est-dormindo #nucleo { animation-duration: 9s; }
         .est-dormindo #orbita { animation-duration: 110s; }
         .est-dormindo #arco-1 { animation-duration: 70s; }
         .est-dormindo #arco-2 { animation-duration: 55s; }
@@ -99,7 +104,6 @@
         .est-dormindo #arcos, .est-dormindo #orbita-escala { opacity: .35; transform: scale(.95); }
 
         /* 👂 ouvindo — tudo CONTRAI, fica atenta */
-        .est-ouvindo #nucleo { animation-duration: 2.6s; }
         .est-ouvindo #orbita { animation-duration: 16s; }
         .est-ouvindo #arco-1 { animation-duration: 20s; }
         .est-ouvindo #arco-2 { animation-duration: 14s; }
@@ -108,7 +112,6 @@
         .est-ouvindo #orbita-escala { opacity: .9; transform: scale(.8); }
 
         /* 💭 pensando — arcos ACELERAM e se separam */
-        .est-pensando #nucleo { animation-duration: 1.1s; }
         .est-pensando #orbita { animation-duration: 4s;  }
         .est-pensando #arco-1 { animation-duration: 5s;  }
         .est-pensando #arco-2 { animation-duration: 3.2s;}
@@ -118,20 +121,11 @@
 
         /* 🗣️ falando — o núcleo PULSA, arcos giram soltos */
         .est-falando #halo   { animation-duration: .9s; }
-        .est-falando #nucleo { animation-duration: .55s; }
         .est-falando #orbita { animation-duration: 12s; }
         .est-falando #arco-1 { animation-duration: 14s; }
         .est-falando #arco-2 { animation-duration: 10s; }
         .est-falando #arco-3 { animation-duration: 7s;  }
         .est-falando #arcos, .est-falando #orbita-escala { opacity: .95; transform: scale(1); }
-
-        /* kaomoji agora é um BADGE no cabeçalho da Luna (a reação; a animação é a presença) */
-        #kaomoji-badge {
-            font-size: 1.05rem; color: #b4f9f8; white-space: nowrap;
-            opacity: 0; transform: translateY(4px);
-            transition: opacity .35s ease, transform .35s cubic-bezier(.2,.9,.3,1.5);
-        }
-        #kaomoji-badge.ativo { opacity: 1; transform: none; }
 
         /* Termo do GIF — aparece só ao passar o mouse sobre o GIF */
         #gif-termo {
@@ -1145,15 +1139,17 @@
                         <stop offset="100%" stop-color="#7aa2f7" stop-opacity="0.5"/>
                     </radialGradient>
                 </defs>
-                <circle id="halo" cx="100" cy="100" r="54" fill="url(#g-halo)"/>
+                <circle id="halo" cx="100" cy="100" r="66" fill="url(#g-halo)"/>
                 <g id="orbita-escala"><g id="orbita"></g></g>
                 <g id="arcos">
                     <path id="arco-1" fill="none" stroke="#7aa2f7" stroke-width="1.6" stroke-linecap="round" opacity="0.85"/>
                     <path id="arco-2" fill="none" stroke="#b4f9f8" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
                     <path id="arco-3" fill="none" stroke="#bb9af7" stroke-width="1.1" stroke-linecap="round" opacity="0.6"/>
                 </g>
-                <circle id="nucleo" cx="100" cy="100" r="3.2" fill="#b4f9f8"/>
             </svg>
+            <!-- O ROSTO dela: o kaomoji vive DENTRO dos anéis (os arcos viram cabeça/aura).
+                 Segue o estado quando ela não está respondendo, e vira a reação quando responde. -->
+            <div id="rosto">( ˘ ω ˘ )</div>
         </div>
 
         <!-- GIF (na gaveta — só volta se a regra do prompt voltar a emitir [gif:]) -->
@@ -1169,7 +1165,6 @@
         <div id="luna-bloco" class="caixa-texto">
             <div class="bloco-cabecalho">
                 <label>Luna</label>
-                <span id="kaomoji-badge"></span>
                 <span id="status-luna">◗ Por aqui</span>
             </div>
             <div id="luna-texto">—</div>
@@ -1290,7 +1285,7 @@
             const g = document.getElementById('orbita');
             if (!g) return;
             // partículas soltas por fora
-            const N = 16, R = 66;
+            const N = 16, R = 80;
             let svg = '';
             for (let i = 0; i < N; i++) {
                 const a = (i / N) * Math.PI * 2;
@@ -1310,7 +1305,7 @@
                 const [x1, y1] = p(a1), [x2, y2] = p(a2);
                 return `M ${x1} ${y1} A ${r} ${r} 0 ${(a2 - a1) > 180 ? 1 : 0} 1 ${x2} ${y2}`;
             };
-            const defs = [['arco-1', 50, -55, 130], ['arco-2', 38, 150, 340], ['arco-3', 25, 20, 165]];
+            const defs = [['arco-1', 64, -55, 130], ['arco-2', 54, 150, 340], ['arco-3', 44, 20, 165]];
             defs.forEach(([id, r, a1, a2]) => {
                 const el = document.getElementById(id);
                 if (el) el.setAttribute('d', arco(r, a1, a2));
@@ -1318,21 +1313,47 @@
         })();
 
         const PRES_ESTADOS = ['dormindo', 'ouvindo', 'pensando', 'falando'];
+        // Rosto padrão de cada estado (quando ela não está reagindo a nada)
+        const ROSTO_ESTADO = {
+            dormindo: '( ˘ ω ˘ )',
+            ouvindo:  '( ･ ᴗ ･ )',
+            pensando: '( ˘⌣˘ )',
+        };
+        let _rostoReacao = null;      // último kaomoji que ELA escolheu
+        let _timerSono = null;
+
+        function trocarRosto(txt) {
+            const el = document.getElementById('rosto');
+            if (!el || !txt || el.textContent === txt) return;
+            el.classList.add('trocando');
+            setTimeout(() => {
+                el.textContent = txt;
+                requestAnimationFrame(() => el.classList.remove('trocando'));
+            }, 260);
+        }
+
         function aplicarPresenca(estado) {
             const el = document.getElementById('presenca');
             if (!el) return;
+            if (!PRES_ESTADOS.includes(estado)) estado = 'dormindo';
             PRES_ESTADOS.forEach(e => el.classList.remove('est-' + e));
-            el.classList.add('est-' + (PRES_ESTADOS.includes(estado) ? estado : 'dormindo'));
+            el.classList.add('est-' + estado);
+
+            clearTimeout(_timerSono);
+            if (estado === 'ouvindo' || estado === 'pensando') {
+                _rostoReacao = null;                 // conversa nova: esquece a reação anterior
+                trocarRosto(ROSTO_ESTADO[estado]);
+            } else if (estado === 'falando') {
+                trocarRosto(_rostoReacao || ROSTO_ESTADO.pensando);
+            } else {                                  // dormindo: segura a reação um pouco e cochila
+                _timerSono = setTimeout(() => trocarRosto(ROSTO_ESTADO.dormindo), 25000);
+            }
         }
 
         function mostrarKaomoji(k) {
-            const el = document.getElementById('kaomoji-badge');
-            if (!el) return;
-            el.classList.remove('ativo');
-            setTimeout(() => {
-                el.textContent = k || '';
-                if (k) requestAnimationFrame(() => el.classList.add('ativo'));
-            }, 160);
+            if (!k) return;
+            _rostoReacao = k;
+            trocarRosto(k);                           // a reação VIRA a cara dela
         }
 
         function trocarGif(url, termo) {
