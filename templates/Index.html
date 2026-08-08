@@ -65,6 +65,20 @@
         }
 
         #gif-placeholder { display: none; }
+        /* Kaomoji grande — ocupa o espaço que era do GIF (experimento: substitui o Giphy) */
+        #kaomoji-big {
+            font-size: clamp(2.2rem, 7vw, 4.2rem);
+            line-height: 1.35;
+            color: #b4f9f8;
+            text-align: center;
+            padding: 22px 10px;
+            white-space: nowrap;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: opacity .4s ease, transform .4s cubic-bezier(.2,.9,.3,1.4);
+            font-family: "Segoe UI Symbol", "Segoe UI", "Noto Sans Symbols 2", sans-serif;
+        }
+        #kaomoji-big.ativo { opacity: 1; transform: scale(1); }
 
         /* Termo do GIF — aparece só ao passar o mouse sobre o GIF */
         #gif-termo {
@@ -1071,6 +1085,7 @@
         <!-- GIF -->
         <div id="gif-container">
             <img id="gif-img" src="" alt="">
+            <div id="kaomoji-big"></div>
             <div id="gif-placeholder">◈</div>
             <div id="gif-termo"></div>
         </div>
@@ -1195,6 +1210,23 @@
                 setTimeout(() => { conteudoEl.style.height = 'auto'; }, 360);
             }
         });
+
+        function mostrarKaomoji(k) {
+            const container = document.getElementById('gif-container');
+            const img       = document.getElementById('gif-img');
+            const tip       = document.getElementById('gif-termo');
+            const el        = document.getElementById('kaomoji-big');
+            img.style.display = 'none';          // kaomoji ocupa o espaço do GIF
+            tip.style.display = 'none';
+            el.classList.remove('ativo');
+            setTimeout(() => {
+                el.textContent = k || '';
+                if (k) {
+                    container.classList.add('ativo');
+                    requestAnimationFrame(() => el.classList.add('ativo'));
+                }
+            }, 180);
+        }
 
         function trocarGif(url, termo) {
             const container = document.getElementById('gif-container');
@@ -1583,6 +1615,8 @@
             }
             if (dados.usuario !== undefined)
                 typewriter('usuario-texto', dados.usuario || 'Aguardando...', 18, 'voce');
+            if (dados.kaomoji !== undefined)
+                mostrarKaomoji(dados.kaomoji);
             if (dados.gif_url !== undefined)
                 trocarGif(dados.gif_url, dados.gif_termo);
             if (dados.tipo === 'status' && statusEl) {

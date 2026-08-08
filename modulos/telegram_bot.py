@@ -63,15 +63,23 @@ def iniciar_bot_telegram():
         import servidor as _srv
         import modelos.cores as cor
         try:
-            from modulos.pensar import gerar_resposta, obter_e_limpar_imagem_pendente
-            # Bloqueia broadcast de GIF para não consumir cota desnecessariamente
+            from modulos.pensar import (gerar_resposta, obter_e_limpar_imagem_pendente,
+                                        obter_e_limpar_kaomoji)
+            # Bloqueia broadcast de GIF/kaomoji: o que rola no Telegram não é pra pipocar no web
             _gif_original = _srv.atualizar_gif
+            _kao_original = _srv.atualizar_kaomoji
             _srv.atualizar_gif = lambda termo: None
+            _srv.atualizar_kaomoji = lambda k: None
 
             resposta = gerar_resposta(texto, _historico_telegram, responder_completo=True, presenca_pc=False)
             imagem = obter_e_limpar_imagem_pendente()
+            # No Telegram o kaomoji vai INLINE, colado no fim do texto (não há área de GIF aqui)
+            _kao = obter_e_limpar_kaomoji()
+            if _kao and resposta:
+                resposta = f"{resposta.rstrip()}\n\n{_kao}"
 
             _srv.atualizar_gif = _gif_original  # restaura
+            _srv.atualizar_kaomoji = _kao_original
 
             resposta_limpa = _limpar_resposta(resposta)
             if not resposta_limpa and not imagem:

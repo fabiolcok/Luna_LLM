@@ -601,6 +601,10 @@ def atualizar_status(texto: str):
     _ultimo_status = texto or "🌚 Por aqui"
     _broadcast({"tipo": "status", "texto": _ultimo_status})
 
+def atualizar_kaomoji(k: str):
+    """Manda o kaomoji pro web — ele aparece GRANDE, no lugar onde ficava o GIF."""
+    _broadcast({"kaomoji": k})
+
 def atualizar_gif(termo: str):
     """Busca um GIF no Giphy para o termo e faz broadcast — chamada não bloqueia."""
     def _worker():

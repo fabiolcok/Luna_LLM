@@ -304,8 +304,75 @@ PROMPT_LUNA_PERSONA = (
     "- Não invente fatos, eventos nem resultados que não estejam no contexto ou nos dados recebidos.\n"
     "- PROIBIDO prometer ação futura ('vou fazer', 'já te trago', 'daqui a pouco'): tudo que você consegue fazer já aconteceu ANTES desta resposta. Se algo não foi feito, diga que não conseguiu — nunca finja que vai fazer depois.\n"
     "- Sem emojis, asteriscos ou markdown.\n"
-    "- OBRIGATÓRIO: termine com [gif:REAÇÃO], escolhendo UMA reação desta lista conforme o clima da SUA fala (não invente outra, não use adjetivo solto): deboche, facepalm, cope, suspeita, orgulho, hype, aplauso, choque, cansaço, tédio, desisto, carinho, torcida, gg, carregar, pensando, sem reação, música, leitura. Ex: [gif:deboche] ao cutucar, [gif:choque] numa surpresa, [gif:música] ao falar de música/tocar algo, [gif:cansaço] se ele tá exausto, [gif:orgulho] quando ele mandou bem.\n"
+    "- OBRIGATÓRIO: termine com UM kaomoji sozinho na ÚLTIMA LINHA, escolhido do cardápio abaixo pelo clima da SUA fala. UM só — NUNCA cole a linha inteira do cardápio nem dois juntos. Nada de emoji.\n"
+    "CARDÁPIO DE KAOMOJI (cada linha é um clima; os itens separados por ' · ' são ALTERNATIVAS — pegue uma):\n"
+    "  zoeira/safadeza: (¬‿¬) · ( ͡° ͜ʖ ͡°) · (￣ω￣) · ಠ‿ಠ\n"
+    "  revolta/vira-mesa: (╯°□°）╯︵ ┻━┻ · (ノಠ益ಠ)ノ彡┻━┻\n"
+    "  facepalm/vergonha alheia: (－‸ლ) · (¬_¬;) · orz\n"
+    "  choque/surpresa: Σ(°ロ°) · (⊙_⊙) · (☉_☉)\n"
+    "  carinho/acolhimento: (づ｡◕‿‿◕｡)づ · (´｡• ᵕ •｡`) · (っ˘̩╭╮˘̩)っ\n"
+    "  cansaço: (=_=) · (´-ω-`) · (⌣_⌣”)\n"
+    "  comemoração/hype: ヽ(•‿•)ノ · \\(^ヮ^)/ · (๑˃ᴗ˂)ﻭ\n"
+    "  orgulho/determinação: ( •̀ ω •́ )✧ · ٩(◕‿◕)۶\n"
+    "  suspeita/julgamento: ಠ_ಠ · (・_・ヾ · (¬_¬ )\n"
+    "  dúvida/pensando: (・・? · ╮(￣ω￣;)╭ · ( ˘⌣˘ )｡o○\n"
+    "  tédio: (￣～￣) · ╮(︶︿︶)╭\n"
+    "  deadpan/sem reação: ¯\\_(ツ)_/¯ · ( ･_･)\n"
 )
+
+# Kaomoji substituiu o [gif:] (experimento ago/2026). Anti-repetição DETERMINÍSTICA: o 12B
+# sozinho vicia nas 2-3 carinhas mais comuns do treino — guardamos as últimas e PROIBIMOS no
+# prompt (mesmo truque do _falas_recentes do proativo). _kaomoji_pendente é lido pelo Telegram,
+# que cola o kaomoji no fim do texto (no web ele vai grande, no lugar do GIF).
+_kaomoji_recentes = []
+_kaomoji_pendente = None
+
+# Mesmo cardápio acima, em estrutura — serve pra TROCAR mecanicamente quando ela repete.
+# (Pedir "escolha um diferente" no prompt ajuda, mas o 12B ignora: a regra fica enterrada
+# no fim de um prompt longo. Determinístico > torcer pra ele obedecer.)
+_KAOMOJI_POR_CLIMA = [
+    ["(¬‿¬)", "( ͡° ͜ʖ ͡°)", "(￣ω￣)", "ಠ‿ಠ"],
+    ["(╯°□°）╯︵ ┻━┻", "(ノಠ益ಠ)ノ彡┻━┻"],
+    ["(－‸ლ)", "(¬_¬;)", "orz"],
+    ["Σ(°ロ°)", "(⊙_⊙)", "(☉_☉)"],
+    ["(づ｡◕‿‿◕｡)づ", "(´｡• ᵕ •｡`)", "(っ˘̩╭╮˘̩)っ"],
+    ["(=_=)", "(´-ω-`)", "(⌣_⌣”)"],
+    ["ヽ(•‿•)ノ", "\\(^ヮ^)/", "(๑˃ᴗ˂)ﻭ"],
+    ["( •̀ ω •́ )✧", "٩(◕‿◕)۶"],
+    ["ಠ_ಠ", "(・_・ヾ", "(¬_¬ )"],
+    ["(・・?", "╮(￣ω￣;)╭", "( ˘⌣˘ )｡o○"],
+    ["(￣～￣)", "╮(︶︿︶)╭"],
+    ["¯\\_(ツ)_/¯", "( ･_･)"],
+]
+
+import random as _rnd
+
+def _kaomoji_antirrepeticao(k: str) -> str:
+    """Se o kaomoji saiu repetido, troca por OUTRO DO MESMO CLIMA (preserva a emoção certa).
+    Se ele não estiver no cardápio (ela adaptou), devolve como veio — novidade não é repetição."""
+    # Normaliza pra comparar: ela escreve variantes ('(¬_¬)' vs '(¬_¬;)' vs '(¬_¬ )') que são
+    # a MESMA carinha — sem isso a troca não reconhece e a repetição passa.
+    def _n(s):
+        return re.sub(r'[\s;]', '', s or "")
+    recentes_n = [_n(x) for x in _kaomoji_recentes[-3:]]
+    if _n(k) not in recentes_n:
+        return k
+    for grupo in _KAOMOJI_POR_CLIMA:
+        if _n(k) in [_n(x) for x in grupo]:
+            alternativas = [x for x in grupo if _n(x) not in recentes_n]
+            if alternativas:
+                novo = _rnd.choice(alternativas)
+                cor.cinza(f"[🎭 Kaomoji repetido {k} -> trocado por {novo}]")
+                return novo
+            break
+    return k
+
+def obter_e_limpar_kaomoji():
+    """Pega e LIMPA o kaomoji da última resposta (o Telegram cola no texto). str ou None."""
+    global _kaomoji_pendente
+    k = _kaomoji_pendente
+    _kaomoji_pendente = None
+    return k
 
 # Anti-"boa noite" em toda resposta: o prompt sozinho não segura (o 12B não sabe
 # o que é "primeiro contato"). Rastreamos QUANDO a Luna cumprimentou por último e,
@@ -365,7 +432,7 @@ import contextvars as _cv
 _presenca_pc = _cv.ContextVar("presenca_pc", default=True)
 
 def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico: list, max_tokens=300, forcar_incluir=False, responder_completo=False, tarefa_documento=None) -> str:
-    global _ultima_saudacao_ts
+    global _ultima_saudacao_ts, _kaomoji_pendente
     resposta_tecnica = re.sub(r'<think>.*?</think>', '', resposta_tecnica, flags=re.DOTALL).strip()
 
     data_hoje = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
@@ -458,6 +525,12 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         "NÃO sugira nada que dependa do PC (abrir/revisar um programa, olhar a tela, mexer no sistema) — ele não "
         "pode fazer isso agora. Se for sugerir algo, que dê pra fazer no celular ou na cabeça.")
 
+    # Anti-repetição do kaomoji: proíbe explicitamente os últimos usados (o modelo sozinho vicia)
+    aviso_kaomoji = ""
+    if _kaomoji_recentes:
+        aviso_kaomoji = ("\n- KAOMOJI: você acabou de usar estes — escolha um DIFERENTE agora: "
+                         + "   ".join(_kaomoji_recentes[-3:]))
+
     prompt_sistema = (
         f"Hoje é {data_hoje}. {periodo_atual()[1]}\n"
         f"Contexto atual: {contexto_situacional}.\n"
@@ -479,7 +552,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
            f"\n{memoria_relacionada}\n"
            if memoria_relacionada else "")
         + f"\nConversas anteriores: {contexto_db}\n\n"
-        f"{PROMPT_LUNA_PERSONA}{aviso_saudacao}{canal_hint}{dica_tom}{presenca_hint}"
+        f"{PROMPT_LUNA_PERSONA}{aviso_saudacao}{canal_hint}{dica_tom}{presenca_hint}{aviso_kaomoji}"
     )
 
     is_proativo = (prompt_usuario == "")
@@ -646,6 +719,24 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             try:
                 import servidor as _srv
                 _srv.atualizar_gif(gif_termo)
+            except Exception:
+                pass
+
+        # KAOMOJI: última linha, curta e SEM palavra de verdade (kaomoji não tem palavras).
+        # Sai do texto -> a voz nunca lê e o web mostra grande; o Telegram pega pelo getter.
+        _linhas = texto_luna.rstrip().split("\n")
+        _ult = _linhas[-1].strip() if _linhas else ""
+        if _ult and len(_ult) <= 40 and not re.search(r'[A-Za-zÀ-ÿ]{4,}', _ult):
+            texto_luna = "\n".join(_linhas[:-1]).strip()
+            _ult = _kaomoji_antirrepeticao(_ult)     # garante variedade sem perder o clima
+            _kaomoji_pendente = _ult
+            _kaomoji_recentes.append(_ult)
+            if len(_kaomoji_recentes) > 6:
+                _kaomoji_recentes.pop(0)
+            cor.ciano(f"[🎭 Kaomoji: {_ult}]")
+            try:
+                import servidor as _srv
+                _srv.atualizar_kaomoji(_ult)
             except Exception:
                 pass
 
