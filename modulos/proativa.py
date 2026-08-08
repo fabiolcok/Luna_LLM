@@ -1886,6 +1886,61 @@ def _fmt_duracao(minutos: int) -> str:
     return f"{horas_txt} e {min_txt}" if m else horas_txt
 
 
+# ── Guarda de recursos: ao ABRIR um jogo, AVISA (só avisa, nunca mata) se um processo
+# NÃO-essencial está comendo muita RAM. Ajuda no aperto de RAM/VRAM (12B + jogo brigando).
+_RAM_HOG_MIN_MB = 3000          # só avisa acima disso (~3GB). Alto de propósito: 32GB de RAM
+                                # é folgado — só vale o toque quando algo REALMENTE está comendo
+_PROC_INTOCAVEIS = {           # nunca cita nem sugere mexer (sistema, a própria Luna, o TRABALHO)
+    "python.exe", "pythonw.exe", "node.exe",          # a Luna + o TurboLLM
+    "sqlservr.exe", "sqlwriter.exe",                  # SQL Server (trabalho — NUNCA cutucar)
+    # >>> adicione aqui o .exe do seu programa de suporte pra ela nunca mexer nele <<<
+    "explorer.exe", "dwm.exe", "system", "registry", "memcompression",
+    "svchost.exe", "csrss.exe", "wininit.exe", "services.exe", "lsass.exe",
+    "steam.exe", "steamwebhelper.exe",                # ecossistema do próprio jogo
+}
+
+def _ram_hog_nao_essencial(nome_jogo: str = ""):
+    """Processo que mais come RAM, ignorando sistema/Luna/intocáveis/o próprio jogo.
+    Devolve 'Nome (X.YGB)' se passar de _RAM_HOG_MIN_MB, senão None. Warn-only, nunca mata."""
+    try:
+        import psutil
+        import collections
+    except Exception:
+        return None
+    alvo = (nome_jogo or "").lower()
+    total = collections.defaultdict(float)   # SOMA por nome: navegador espalha em vários processos
+    for p in psutil.process_iter(['name', 'memory_info']):
+        try:
+            nome = p.info['name'] or ""
+            low = nome.lower()
+            if not low or low in _PROC_INTOCAVEIS:
+                continue
+            base = low[:-4] if low.endswith(".exe") else low
+            if alvo and (base in alvo or alvo[:6] in low):     # ignora o próprio jogo
+                continue
+            total[nome] += p.info['memory_info'].rss / (1024 * 1024)
+        except Exception:
+            continue
+    if not total:
+        return None
+    nome, mb = max(total.items(), key=lambda kv: kv[1])
+    if mb >= _RAM_HOG_MIN_MB:
+        rotulo = nome[:-4] if nome.lower().endswith(".exe") else nome   # 'firefox', não 'firefox.exe'
+        return f"{rotulo} ({mb / 1024:.1f}GB)"
+    return None
+
+def _dica_recursos_prompt(nome_jogo: str = "") -> str:
+    """Snippet pro prompt de abertura de jogo: se há um comilão de RAM, pede um toque LEVE
+    (só avisa). Devolve '' se não houver nada relevante."""
+    hog = _ram_hog_nao_essencial(nome_jogo)
+    if not hog:
+        return ""
+    cor.amarelo(f"[🧟 Recursos: {hog} pesado ao abrir o jogo]")
+    return (f" IMPORTANTE: no FIM, dá um toque CURTO e amigável de que o {hog} tá comendo bastante "
+            f"RAM e que talvez valha fechar pra sobrar memória pro jogo. É só um AVISO — nunca uma "
+            f"ordem, não insista, e NÃO ofereça fechar por ele (você não faz isso).")
+
+
 def _tarefa_monitorar_steam():
     """Detecta início/fim de QUALQUER jogo da Steam, de forma genérica, via API.
     Complementa _tarefa_monitorar_jogos: os jogos com API dedicada
@@ -1955,7 +2010,8 @@ def _tarefa_monitorar_steam():
             f"Comente a abertura da sessão de forma leve e amigável. Puxe UM detalhe ESPECÍFICO "
             f"do jogo (a história/premissa, um prêmio ou um modo de jogo — nunca algo genérico) "
             f"E encaixe um dado de tempo dele (horas totais ou recentes). {REGRA_PERSONA} "
-            f"(exceção: aqui pode usar até 3 frases pra caber o detalhe do jogo)."
+            f"(exceção: aqui pode usar até 3 frases pra caber o detalhe do jogo; +1 se precisar caber o aviso de RAM abaixo)."
+            f"{_dica_recursos_prompt(nome)}"
         )
         texto = _gerar_fala_proativa(prompt, f"steam_abriu_{nome}")
         if texto: _falar_proativamente(texto)
