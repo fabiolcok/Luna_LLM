@@ -1938,8 +1938,9 @@ def _dica_recursos_prompt(nome_jogo: str = "") -> str:
         return ""
     cor.amarelo(f"[🧟 Recursos: {hog} pesado ao abrir o jogo]")
     return (f" IMPORTANTE: no FIM, dá um toque CURTO e amigável de que o {hog} tá comendo bastante "
-            f"RAM e que talvez valha fechar pra sobrar memória pro jogo. É só um AVISO — nunca uma "
-            f"ordem, não insista, e NÃO ofereça fechar por ele (você não faz isso).")
+            f"RAM agora, caso ele queira liberar algo pra sobrar memória pro jogo. É SÓ um aviso "
+            f"INFORMATIVO — NÃO mande fechar nada nem sugira fechar o navegador (pode ser o trabalho "
+            f"de suporte dele, que roda no navegador), não insista, e não ofereça fechar por ele.")
 
 
 def _tarefa_monitorar_steam():
