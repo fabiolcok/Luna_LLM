@@ -347,6 +347,41 @@ _KAOMOJI_POR_CLIMA = [
 
 import random as _rnd
 
+# Regex dos kaomoji CONHECIDOS (mais longos primeiro, pra casar '(╯°□°）╯︵ ┻━┻' inteiro
+# antes de um pedaço). Pega mesmo quando ela cola no fim da frase, sem linha própria.
+_RE_KAO_CONHECIDO = re.compile(
+    "(" + "|".join(re.escape(k) for k in sorted(
+        [k for grupo in _KAOMOJI_POR_CLIMA for k in grupo], key=len, reverse=True)) + r")\s*$"
+)
+
+def _extrair_kaomoji(texto: str):
+    """Tira o kaomoji do fim do texto -> (kaomoji|None, texto_sem_ele). Cobre os 3 jeitos que
+    o 12B escreve: em linha própria, colado no fim da frase, e dois seguidos."""
+    t = (texto or "").rstrip()
+    achado = None
+    # 1) kaomoji conhecido no fim — em loop, porque às vezes ela cola DOIS
+    while True:
+        m = _RE_KAO_CONHECIDO.search(t)
+        if not m:
+            break
+        achado = m.group(1).strip()
+        t = t[:m.start()].rstrip()
+    if achado:
+        return achado, t
+    # 2) última LINHA sem palavra de verdade (kaomoji adaptado, em linha própria)
+    linhas = t.split("\n")
+    ult = linhas[-1].strip()
+    if ult and len(ult) <= 40 and not re.search(r'[A-Za-zÀ-ÿ]{4,}', ult):
+        return ult, "\n".join(linhas[:-1]).rstrip()
+    # 3) rabicho depois da última pontuação de fim de frase (kaomoji adaptado, colado)
+    idx = max(t.rfind(c) for c in ".!?…")
+    if idx != -1:
+        cauda = t[idx + 1:].strip()
+        if cauda and len(cauda) <= 40 and not re.search(r'[A-Za-zÀ-ÿ]{4,}', cauda):
+            return cauda, t[:idx + 1].rstrip()
+    return None, texto
+
+
 def _kaomoji_antirrepeticao(k: str) -> str:
     """Se o kaomoji saiu repetido, troca por OUTRO DO MESMO CLIMA (preserva a emoção certa).
     Se ele não estiver no cardápio (ela adaptou), devolve como veio — novidade não é repetição."""
@@ -724,10 +759,9 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
 
         # KAOMOJI: última linha, curta e SEM palavra de verdade (kaomoji não tem palavras).
         # Sai do texto -> a voz nunca lê e o web mostra grande; o Telegram pega pelo getter.
-        _linhas = texto_luna.rstrip().split("\n")
-        _ult = _linhas[-1].strip() if _linhas else ""
-        if _ult and len(_ult) <= 40 and not re.search(r'[A-Za-zÀ-ÿ]{4,}', _ult):
-            texto_luna = "\n".join(_linhas[:-1]).strip()
+        _ult, texto_luna = _extrair_kaomoji(texto_luna)
+        texto_luna = texto_luna.strip()
+        if _ult:
             _ult = _kaomoji_antirrepeticao(_ult)     # garante variedade sem perder o clima
             _kaomoji_pendente = _ult
             _kaomoji_recentes.append(_ult)
