@@ -135,10 +135,13 @@ Aponte `OBSIDIAN_VAULT` (no `.env`) pro seu vault e a Luna **cria o que falta na
 | `Luna/Memoria.md` | memória episódica (ela propõe, você confirma no painel web) |
 | `Luna/animes.md` | lista de animes pro aviso de episódio novo (formato `- Nome \| apelido`) |
 | `Luna/radar_rss.md` | feeds RSS que ela acompanha |
-| `.obsidian/snippets/luna-novidades.css` | deixa a nota **Novidades** em colunas |
+| `Luna/RastrearPromocoes.md` | canais do Telegram (`@`) + palavras-chave dos produtos que você caça |
+| `.obsidian/snippets/luna-novidades.css` | deixa as notas **Novidades** e **Promoções** em colunas |
 
-Ela também **escreve** em `Luna/Inbox/` (anotações que você pede) e em `Novidades.md`
-(o radar RSS, com janela rolante de 72h — não cresce sem fim).
+Ela também **escreve** em `Luna/Inbox/` (anotações que você pede), em `Novidades.md`
+(o radar RSS, janela rolante de 72h) e em `Promocoes.md` (o radar de promoções, janela de 7 dias
+— as fotos dos produtos ficam em `Luna/promo_imgs/` e somem junto com o card). Nenhuma das duas
+cresce sem fim.
 
 > 💡 **Pra ativar o layout bonito das Novidades:** Obsidian → *Configurações → Aparência →
 > Snippets de CSS* → recarregar e ligar o **luna-novidades**. Aí cada notícia vira um card
@@ -154,6 +157,20 @@ Ela também **escreve** em `Luna/Inbox/` (anotações que você pede) e em `Novi
    executa → o mesmo modelo escreve a resposta com persona (chamada 2, thinking off).
 4. **FALAR** → `falar.py`: limpa markdown/artefatos → Kokoro sintetiza → `sounddevice` toca.
 
+**3 canais, 2 dimensões** — cada entrada define o *estilo* (curto pra voz, desenvolvido pra
+texto) e a *presença* (se ela pode ou não sugerir algo que dependa do PC):
+
+| Canal | Estilo | TTS | Presença |
+|-------|--------|-----|----------|
+| 🎙️ Voz (PTT) | conciso (1–3 frases) | fala | no PC |
+| ⌨️ Texto no web | pode desenvolver | **só texto** | no PC |
+| 📱 Telegram | pode desenvolver | só texto | **provavelmente fora** |
+
+No Telegram o contexto situacional para de reportar o estado do PC (senão ela via "programa em
+uso: firefox" e concluía que você estava sentado na máquina) e passa a evitar qualquer sugestão
+que dependa do computador. Voz e texto do web **compartilham o mesmo histórico** — é uma conversa
+só (`presenca_pc` viaja por `ContextVar`, thread-safe entre os canais).
+
 **Interface:** Flask + WebSocket (`servidor.py`) em `localhost:5000`, aberta como janela
 nativa via `pywebview` (Edge WebView2). System tray (`pystray`): Abrir / Ver logs / Fechar.
 
@@ -166,9 +183,10 @@ que carrega o 12B (JIT); se o TurboLLM estiver desligado, a Luna avisa. Rodar ma
 ## 📁 Estrutura de arquivos
 
 ```
-main.py                — entry point, loop de voz, interceptadores de palavras-chave
+main.py                — entry point, loop de voz, texto do web, interceptadores
 servidor.py            — WebSocket/Flask: estado da interface, histórico, config, arquivos
 iniciar_turbollm.vbs   — lançador do TurboLLM no login
+setup_telegram_promo.py— login único do Telethon (gera a sessão do radar de promoções)
 modulos/
   pensar.py            — motor de inferência: tool calling + persona (mono 12B) + ChromaDB
   falar.py             — TTS Kokoro + limpeza de texto (limpar_texto_para_voz)
@@ -176,8 +194,10 @@ modulos/
   habilidades.py       — todas as integrações externas (APIs, Spotify, etc.)
   proativa.py          — thread autônoma: tarefas de background + extração de memória (ocioso)
   telegram_bot.py      — bot do Telegram (texto + mensagens de voz)
+  radar_promo.py       — lê canais de promoção do Telegram (Telethon, como o próprio usuário)
+  tom.py               — lê o TOM da voz (SER acústico) e colore a persona — só no canal de voz
   memoria.py           — ChromaDB + fila da memória episódica + JSON (estado, vistos)
-  obsidian.py          — vault: perfil.md, Memoria.md (episódica), notas, radar RSS, animes
+  obsidian.py          — vault: perfil.md, Memoria.md (episódica), notas, radares, animes
 modelos/
   estado_luna.json     — estado situacional em tempo real (jogo ativo, programa, sessão)
   estado_proativo.json — persistência das rotinas diárias (bom_dia, etc.)
@@ -205,17 +225,24 @@ Atalhos/
 | `analisar_aba_atual`   | lê e resume a aba ativa do Firefox |
 | `ver_tela`             | screenshot → Gemini descreve (e envia a foto no Telegram) |
 | `desenhar_imagem`      | gera imagem via Hugging Face (FLUX.1-schnell) |
-| `abrir_programa`       | abre jogos ou aplicativos por nome |
 | `obter_clima`          | previsão do tempo via Open-Meteo (sem chave) |
 | `alternar_mute`        | muta/desmuta o volume do sistema (pycaw) |
 | `consultar_overwatch`  | rank, winrate, KDA e main via OverFast API |
 | `consultar_jogo_steam` | preço, desconto, gênero e Metacritic de um jogo |
+| `duvida_do_jogo`       | responde dúvida sobre o jogo que você está jogando AGORA (dicas, mecânicas) |
+| `listar_processos_pesados` | os processos que mais consomem RAM/CPU no momento |
 | `ler_obsidian`         | acha e lê uma nota do vault |
 | `salvar_obsidian`      | guarda uma anotação em Luna/Inbox (inclui fotos do Telegram) |
 | `listar_capacidades`   | lista o que a Luna consegue fazer (auto-gerada do código) |
 
 *Fora do catálogo do roteador:* `ler_selecionado` (interceptador "traduz isso").
 *Desativado:* `enviar_whatsapp` (pywhatkit instável).
+
+> 🧹 **Removidas (ago/2026):** `abrir_programa` e `matar_processo`. Eram herança da fase
+> "Jarvis" e não tinham uso real — pior, o `abrir_programa` disparava sozinho quando o assunto
+> apenas *mencionava* abrir um programa. **Ferramenta morta não é neutra:** cada uma no catálogo
+> é mais uma chance do roteador errar. O `matar_processo` ainda era arriscado (podia derrubar o
+> SQL do trabalho). O que sobrou de útil virou aviso proativo (ver "guarda de recursos" abaixo).
 
 ---
 
@@ -240,12 +267,20 @@ clica no campo e aperta a combinação nova; vale na hora, sem reiniciar):
 
 Acesso: `http://localhost:5000` (janela nativa via pywebview).
 
-- Fala da Luna e do usuário em tempo real (efeito máquina de escrever).
+A tela é dividida em duas zonas: **saída** em cima (tudo que é da Luna) e **entrada** embaixo
+(tudo que é seu) — as duas formas de falar com ela, microfone e teclado, ficam juntas.
+
+- Fala da Luna e do usuário em tempo real (efeito máquina de escrever); o status dela
+  ("o que está fazendo agora") fica no próprio cabeçalho da caixa.
+- **Caixa de texto:** digite e aperte Enter pra conversar **sem falar** — ela responde só por
+  escrito (sem TTS), com a liberdade de tamanho do Telegram. Mesmo histórico da voz.
 - GIF animado via Giphy (termo extraído da resposta: `[gif:termo]`), com botão de repetir fala (▶️).
-- Painel de pensamento colapsável (ferramenta usada + resultado) e métricas de tok/s.
+- **Painel de pensamento** colapsável — o raio-X da 1ª chamada: ferramenta usada, **argumentos
+  enviados** e o retorno; quando nenhuma ferramenta roda, mostra o que o roteador gerou (e é
+  descartado). Serve pra diagnosticar acionamento errado sem caçar no log. Mais métricas de tok/s.
 - Histórico da sessão e drag & drop de arquivos (`.txt/.md/.py/.js/.json/.pdf`…) pro prompt.
-- **Configurações (engrenagem):** toggle do Proativo e de cada tarefa proativa
-  (jogos, emails, agenda, pausa, clima, bom_dia, steam, navegador, radar, animes),
+- **Configurações (engrenagem):** toggle do Proativo e de cada tarefa proativa (jogos, emails,
+  agenda, pausa, clima, bom_dia, steam, navegador, radar RSS, promoções, animes, mortes no LoL…),
   seleção de voz (Alpha/Bella/Nicole) e velocidade do TTS.
 
 ---
@@ -255,11 +290,17 @@ Acesso: `http://localhost:5000` (janela nativa via pywebview).
 Thread separada, loop a cada 30s.
 
 **Camada 1 — sempre ativa** (ignora suspensão e AFK): monitora jogos.
-- Detecta abertura/fechamento via `psutil`. Ao abrir Overwatch/Deadlock: briefing com
-  dados reais (rank/winrate). Ao fechar: consulta stats da partida (OverFast, LCU do
-  LoL via lockfile, deadlock-api).
+- Detecta abertura/fechamento via `psutil`. Ao fechar: consulta stats da partida (OverFast,
+  LCU do LoL via lockfile, deadlock-api).
+- **Overwatch — anti-repetição:** recitar rank+winrate de *carreira* fazia ela falar sempre a
+  mesma coisa (carreira não muda). Ao **abrir**, sorteia UM ângulo (cutucar um herói, comparar
+  os roles, um marco, ou zoeira sem número) e nunca repete o anterior; ao **fechar**, tira um
+  *delta da sessão* (snapshot na abertura vs no fim) e comenta **o que rolou hoje**.
 - **Steam:** ao abrir/fechar um jogo da Steam, comenta conquistas e tempo de sessão.
   Idle games (ex: Task Bar Hero) são ignorados.
+- **Guarda de recursos:** ao abrir um jogo, se algum processo não-essencial passa de ~3GB de RAM
+  (somado por nome — navegador se espalha em vários), ela **avisa** no briefing. Só avisa: nunca
+  mata, nunca oferece matar, e ignora sistema, a própria Luna, Steam, SQL Server e o navegador.
 
 **Camada 2 — ativa se não suspenso, AFK ≤ 5 min e sem jogo aberto:**
 
@@ -273,8 +314,18 @@ Thread separada, loop a cada 30s.
 | `bom_dia`            | 1x/dia (agenda + emails matinais) | fora de 8h–11h |
 | `autoconhecimento`   | ~4h (comenta algo real sobre o próprio funcionamento) | 0h–8h |
 | `radar_rss`          | 30min (feeds do vault, com teaser da 1ª novidade) | 0h–7h |
-| **`avisar_animes`**  | ~4x/dia (avisa no dia em que sai episódio novo — fonte AniList) | 0h–9h |
+| **`radar_promocoes`**| 30min (canais do Telegram via Telethon → card em `Promocoes.md`) | 0h–7h |
+| **`avisar_animes`**  | 2h (avisa episódio que saiu nas últimas 72h — fonte AniList) | 0h–9h |
+| `retomar_assunto`    | ≤2x/dia (puxa pendência em aberto; não repete o mesmo assunto por 21 dias) | — |
 | `contexto_navegador` | Firefox em foco na mesma URL há 10+ min (YouTube → oferece resumo; artigo → comenta o tema) | — |
+
+**Carência de boot (120s):** nos primeiros minutos o modelo ainda esquenta e várias tarefas
+querem falar juntas — a fala ficava *starved* (ela detectava e até escrevia a nota, mas a voz
+nunca saía). Agora os proativos de fala esperam o boot assentar.
+
+**Anúncio atômico:** as tarefas que escrevem arquivo + dão teaser de voz (radar RSS, promoções,
+animes) só marcam como "avisado" e gravam o card **depois que a fala sai de verdade**. Se a fala
+for engolida, elas **re-tentam** no ciclo seguinte em vez de sumir caladas.
 
 **Suspensão automática:** após 3 falas proativas sem resposta → suspende.
 Reseta com qualquer fala do usuário ou abertura de jogo.
@@ -297,10 +348,16 @@ Copie `.env.example` para `.env` e preencha. **Nunca** commite o `.env` real nem
 | `OW_BATTLETAG`   | BattleTag do Overwatch (ex: `SeuNome-1234`) |
 | `STEAM_API_KEY` / `STEAM_ID` | wishlist + jogos da Steam |
 | `TELEGRAM_TOKEN` / `TELEGRAM_CHAT_ID` | bot do Telegram |
+| `TELEGRAM_API_ID` / `TELEGRAM_API_HASH` | radar de promoções (API de cliente, em my.telegram.org) |
 | `OBSIDIAN_VAULT` | caminho do vault que a Luna lê (opcional) |
 | `CLIMA_LAT` / `CLIMA_LON` | localização pra previsão do tempo |
 
 Google Calendar usa OAuth2 (`token.json` + `credentials.json` em `modelos/`, locais).
+O radar de promoções faz um **login único** (`python setup_telegram_promo.py`) que gera
+`modelos/luna_promo.session` — é credencial da sua conta, fica no `.gitignore`.
+
+> 📖 Passo a passo de instalação (TurboLLM, modelos, cada chave e onde pegar):
+> **[`INSTALACAO.md`](INSTALACAO.md)**.
 
 ---
 
@@ -319,6 +376,23 @@ internet). Não cumprimenta ("boa noite" etc.) mais de uma vez a cada 6h — um 
 saudação segura isso, já que o prompt sozinho não sabe o que é "primeiro contato".
 O nome do usuário entra no prompt via `USUARIO_NOME` (.env); o resto do código fala
 só "o usuário".
+
+**Ousadia / imprevisibilidade (ago/2026).** A queixa era que ela ficara *previsível* — não por
+falta de memória (isso ela tem), mas por sempre reagir do mesmo jeito. A regra **SURPREENDA**
+pede que ela fuja do óbvio: pegue um ângulo de canto, vire o quadro, varie o registro e **crave
+a posição** em vez de ficar em cima do muro. A surpresa vem do **ângulo e da entrega** — nunca de
+inventar fato nem de narrar o que ele está fazendo (isso vira "narradora", o oposto do que se
+quer). `temperature` da persona subiu de 0.65 → **0.8**. Dois freios: em momento sensível
+(cansaço, estresse, saúde) ela **acolhe primeiro** e a zoeira fica pra outra hora; e pergunta é
+fecho **ocasional**, nunca padrão (o "devolver a bola" tinha virado tique — 9 de 10 respostas
+terminavam em "?").
+
+**Camada de tom (`tom.py`, só na voz).** Um modelo acústico (SER) lê a *energia* da fala,
+mantém uma baseline móvel do normal do usuário e, só quando o tom desvia, injeta uma dica
+**sutil** que colore o COMO ela responde. Nunca vira o assunto nem é comentada em voz alta.
+
+**Presença.** Voz e texto do web = ele está no PC; Telegram = provavelmente fora — nesse caso
+ela não sugere nada que dependa do computador (ver "Fluxo principal").
 
 O proativo usa `REGRA_PERSONA` (em `proativa.py`) com o mesmo tom.
 

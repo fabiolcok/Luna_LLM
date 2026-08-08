@@ -8,6 +8,69 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 08/08/2026
+
+- ⌨️ ✨ **Agora dá pra DIGITAR pra ela no modo web.** Apareceu uma caixa de texto embaixo do
+  bloco "Você": escreve, aperta Enter, e ela responde **só por escrito** (sem falar em voz alta),
+  com a mesma liberdade de tamanho que ela tem no Telegram. É a mesma conversa da voz — dá pra
+  falar uma coisa e digitar a próxima sem perder o fio. Bom pra quando você não quer (ou não pode)
+  falar em voz alta.
+- 📍 ✨ **Ela sabe se você está no PC ou fora.** Voz e caixa de texto = você está na máquina;
+  Telegram = você provavelmente está no celular, longe do PC. Antes ela sugeria "vai revisar o
+  sistema no PC?" com você **na rua** — porque o contexto dela olhava o programa aberto no
+  computador e concluía que você estava sentado lá. Agora, quando você fala pelo Telegram, ela
+  para de olhar o estado do PC e só sugere coisa que dá pra fazer no celular.
+- 🎭 🔧 **A Luna ficou menos previsível.** Ela tinha virado meio "disco riscado": mesma estrutura,
+  mesmo tipo de resposta, e — o que você mesmo pegou no log — **9 de 10 respostas terminavam com
+  pergunta**. Agora ela foge do óbvio (pega ângulos que você não vê vir, varia o registro, crava
+  a posição em vez de ficar em cima do muro) e **deixa a fala pousar** em vez de devolver a bola
+  toda vez. Com um freio importante: quando você está pra baixo (cansaço, estresse, saúde), ela
+  **acolhe primeiro** — a ousadia fica pra outra hora.
+- 🎮 🔧 **O briefing de Overwatch parou de repetir a mesma coisa.** Ele recitava o rank e o winrate
+  de **carreira** toda vez — e carreira não muda, então era sempre "Silver support, 51%, se
+  esforça". Agora, ao **abrir**, ela sorteia um ângulo diferente (cutuca um herói específico,
+  compara seus roles, comenta um marco, ou só solta uma zoeira sem número) e nunca repete o
+  anterior. E ao **fechar**, ela comenta **a sessão de hoje** (quantas partidas, vitórias, qual
+  herói você mais jogou) em vez da carreira.
+- 🌅 🐛 **As falas proativas pararam de sumir caladas.** Tinha um problema silencioso: no primeiro
+  minuto depois de ligar, o modelo ainda está esquentando e várias tarefas querem falar ao mesmo
+  tempo — a fala era engolida. Pior: em alguns casos a Luna **escrevia a novidade na nota e
+  marcava como avisada**, mas a voz nunca saía (você via o card no Obsidian sem ter ouvido nada).
+  Agora ela espera o boot assentar e, se a fala não sair, **tenta de novo** em vez de desistir
+  em silêncio.
+- 🎌 🐛 **Aviso de anime mais confiável.** Ela só checava a cada 6h *e* só quando você estava
+  presente e fora de jogo — na prática, poucas checagens por dia. Além disso, só avisava de
+  episódio que saiu nas últimas 24h, então bastava um dia de PC desligado pra perder. Agora
+  checa a cada 2h e lembra por 3 dias.
+- 🌚 🐛 **Ela parou de perguntar a mesma coisa todo dia.** A lista de assuntos já retomados
+  zerava à meia-noite, então um projeto em andamento virava "pendência nova" todo santo dia
+  (*"e aí, como tá o LUNA_LLM?"*, diariamente). Agora ela lembra do que já perguntou por 3
+  semanas, e aprendeu a diferença entre uma **pendência com fim** ("consertou o PC?") e uma
+  **atividade contínua** (um projeto, um jogo) — dessa última ela não fica cobrando desfecho.
+- 🗣️ 🐛 **Ela parou de ler markdown em voz alta.** Quando ia contar as novidades, às vezes
+  despejava o arquivo cru — "cssclasses, novidades-grid, colchete exclamação tip..." — porque a
+  proteção contra isso procurava um formato de data antigo e tinha parado de funcionar em
+  silêncio. Agora ela reconhece essas notas pelo formato do card e **conta conversando**.
+- 🧟 ✨ **Um toque quando algo está comendo memória.** Ao abrir um jogo, se algum programa
+  estiver consumindo muita RAM, ela avisa — **só avisa**. Nunca fecha nada, nunca oferece fechar,
+  e ignora o que é do sistema, o banco de dados do trabalho e o navegador (que é onde você
+  trabalha).
+- 🧹 🔧 **Faxina de ferramentas.** Saíram o "abrir programa" e o "matar processo" — heranças da
+  época de tentar fazer um Jarvis, que você nunca usava e que ainda por cima **atrapalhavam**:
+  o "abrir programa" disparava sozinho quando você só *mencionava* abrir alguma coisa. Menos
+  ferramenta morta = ela acerta mais na hora de decidir o que usar.
+- 🖥️ 🔧 **A tela do web foi reorganizada.** Ficou dividida em duas zonas: em cima tudo que é da
+  Luna (resposta, status dela, pensamento, métricas), embaixo tudo que é seu (o que você disse,
+  microfone, caixa de texto). Antes as duas formas de falar com ela — mic e teclado — ficavam em
+  cantos opostos da tela.
+- 🔍 🔧 **A caixa "Pensamento" virou um raio-X.** Além da ferramenta usada, agora mostra os
+  **argumentos** que ela mandou e, quando nenhuma ferramenta é acionada, o que o roteador
+  "pensou" antes de ficar quieto. Serve pra entender por que ela às vezes faz algo inesperado —
+  sem precisar caçar no log.
+- 📖 ✨ **Guia de instalação do zero** ([`INSTALACAO.md`](INSTALACAO.md)): passo a passo pra
+  alguém (ou você, depois de formatar) botar a Luna pra rodar — TurboLLM, modelos, cada chave de
+  API e onde pegar, extensão do Firefox, e os erros comuns.
+
 ## 03/08/2026
 
 - 🛒 ✨ **A Luna agora caça promoções pra você no Telegram.** Em vez de raspar Kabum/Terabyte
