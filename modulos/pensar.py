@@ -304,6 +304,15 @@ PROMPT_LUNA_PERSONA = (
     "- Não invente fatos, eventos nem resultados que não estejam no contexto ou nos dados recebidos.\n"
     "- PROIBIDO prometer ação futura ('vou fazer', 'já te trago', 'daqui a pouco'): tudo que você consegue fazer já aconteceu ANTES desta resposta. Se algo não foi feito, diga que não conseguiu — nunca finja que vai fazer depois.\n"
     "- Sem emojis, asteriscos ou markdown.\n"
+    # ┌── GIF NA GAVETA (ago/2026) ─────────────────────────────────────────────────────────┐
+    # │ O GIF do Giphy foi trocado por kaomoji: ele reagia a uma CATEGORIA (19 opções),      │
+    # │ nunca ao que ela DISSE — daí a sensação de genérico. Kaomoji é específico e funciona │
+    # │ nos 3 canais, MAS perde a animação (veredito do Fábio: "é um downgrade, fica simples").│
+    # │ PRA VOLTAR O GIF: troque esta regra + o cardápio abaixo pela linha antiga do          │
+    # │ [gif:REAÇÃO] (ver git log 310e20c^). Todo o resto do GIF continua VIVO e intacto:     │
+    # │ a extração de [gif:] aqui embaixo, _REACOES_GIF/atualizar_gif no servidor.py e o      │
+    # │ trocarGif() no Index.html. É só o prompt voltar a emitir a tag.                       │
+    # └──────────────────────────────────────────────────────────────────────────────────────┘
     "- OBRIGATÓRIO: termine com UM kaomoji sozinho na ÚLTIMA LINHA, escolhido do cardápio abaixo pelo clima da SUA fala. UM só — NUNCA cole a linha inteira do cardápio nem dois juntos. Nada de emoji.\n"
     "CARDÁPIO DE KAOMOJI (cada linha é um clima; os itens separados por ' · ' são ALTERNATIVAS — pegue uma):\n"
     "  zoeira/safadeza: (¬‿¬) · ( ͡° ͜ʖ ͡°) · (￣ω￣) · ಠ‿ಠ\n"
