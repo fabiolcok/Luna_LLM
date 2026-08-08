@@ -337,7 +337,7 @@ def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150, variar=True)
     cor.amarelo(f"[🌚 Proativo: {tarefa}]")
     try:
         import servidor as _srv
-        _srv.atualizar_status(f"🌚 Proativo: {tarefa}")
+        _srv.atualizar_status(f"◗ Proativo: {tarefa}")
     except Exception:
         pass
 
@@ -2362,7 +2362,7 @@ def _loop_proativo():
             if _ja_imprimiu_suspensa:   # estava suspensa e acordou agora
                 try:
                     import servidor as _srv
-                    _srv.atualizar_status("🌚 Por aqui")
+                    _srv.atualizar_status("◗ Por aqui")
                 except Exception:
                     pass
             _ja_imprimiu_suspensa = False
@@ -2403,7 +2403,7 @@ def _loop_proativo():
                 _ja_imprimiu_suspensa = True
                 try:
                     import servidor as _srv
-                    _srv.atualizar_status("🌑 Suspensa — aguardando interação")
+                    _srv.atualizar_status("○ Suspensa — aguardando interação")
                     _srv.atualizar_gif("sleeping")
                 except Exception:
                     pass

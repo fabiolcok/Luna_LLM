@@ -1009,7 +1009,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             cor.amarelo(f"[🌚⚙️ Motor Lógico ativando habilidade: {nome_funcao}]")
             try:
                 import servidor as _srv
-                _srv.atualizar_status(f"⚙️ Usando: {nome_funcao}")
+                _srv.atualizar_status(f"▸ Usando: {nome_funcao}")
             except Exception:
                 pass
 
