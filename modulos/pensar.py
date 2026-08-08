@@ -15,7 +15,7 @@ from modulos.habilidades import (
     obter_transcricao, adicionar_evento_google, ler_agenda_google,
     obter_previsao_tempo, gerenciador_spotify, pesquisar_na_web,
     enviar_mensagem_whatsapp, checar_emails_nao_lidos, controlar_firefox_via_extensao,
-    obter_contexto_navegador, listar_processos_pesados, abrir_programa, matar_processo,
+    obter_contexto_navegador, listar_processos_pesados,
     obter_janela_em_foco, analisar_imagem_gemini, capturar_tela_base64, ler_texto_selecionado,
     desenhar_imagem, executar_analise_aba, alternar_mute,
     ler_url_especifica, ler_link_copiado, consultar_overwatch, consultar_jogo_steam,
@@ -243,7 +243,7 @@ _CAPACIDADES_REATIVAS = (
     "ver e analisar sua tela, resumir vídeos do YouTube, resumir sites e links, "
     "pesquisar na web, checar emails não lidos, adicionar e ler eventos da agenda Google, "
     "controlar o Spotify, ler e anotar nas suas notas do Obsidian (inclusive guardar fotos "
-    "que você manda no Telegram), abrir programas, verificar o clima, mutar/desmutar o som, "
+    "que você manda no Telegram), verificar o clima, mutar/desmutar o som, "
     "consultar suas stats do Overwatch, consultar jogos na Steam (preço, promoção e descrição), "
     "gerar imagens e controlar o Firefox"
 )
@@ -268,8 +268,6 @@ FUNCOES_DISPONIVEIS = {
     "controlar_navegador": controlar_firefox_via_extensao,
     "analisar_aba_atual": executar_analise_aba,
     "listar_processos_pesados": listar_processos_pesados,
-    "abrir_programa": abrir_programa,
-    "matar_processo": matar_processo,
     "ver_tela": capturar_tela_base64,
     "ler_selecionado": ler_texto_selecionado,
     "desenhar_imagem": desenhar_imagem,

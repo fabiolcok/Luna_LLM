@@ -78,8 +78,6 @@ Funções Disponíveis:
 - controlar_firefox_via_extensao(acao: str, parametro: str = ""):Função que a Luna vai chamar para controlar o navegador (junto com as funcoes _manipulador conexão,_iniciar servidor,_rodar_thread_websocket,iniciar_servidor_extensao)
 - obter_contexto_navegador(): Pede à extensão o pacote completo de dados da aba ativa
 - listar_processos_pesados(): Retorna os 5 processos que mais estão consumindo RAM/CPU no momento.
-- abrir_programa(nome_programa): Permite a Luna abrir jogos ou aplicativos.
-- matar_processo(nome_processo): Permite a Luna forçar o fechamento de um programa que travou.
 - obter_janela_em_foco(): Descobre qual programa ou janela está em primeiro plano no Windows.
 - desenhar_imagem(prompt_imagem): Gera uma imagem baseada na descrição da Luna e abre no navegador.
 - alternar_mute(): Muta ou desmuta o volume do sistema via pycaw (Windows).
@@ -811,27 +809,6 @@ def listar_processos_pesados():
         
     return relatorio
 
-def abrir_programa(nome_programa):
-    """Permite a Luna abrir jogos ou aplicativos."""
-    # Um dicionário mapeando os nomes para os caminhos reais no PC
-    # (%LOCALAPPDATA% expande pro usuário atual — sem caminho pessoal fixo)
-    atalhos = {
-        "overwatch": "steam://rungameid/2357570",
-        "obsidian": os.path.expandvars(r"%LOCALAPPDATA%\Programs\Obsidian\Obsidian.exe"),
-        "firefox": "start firefox"
-    }
-    
-    comando = atalhos.get(nome_programa.lower())
-    if comando:
-        os.system(comando)
-        return f"SISTEMA: O {nome_programa} foi aberto. LUNA, avise o usuário que você abriu."
-    return "SISTEMA: Programa não encontrado nos atalhos."
-
-def matar_processo(nome_processo):
-    """Permite a Luna forçar o fechamento de um programa que travou."""
-    os.system(f"taskkill /f /im {nome_processo}.exe")
-    return f"SISTEMA: O processo {nome_processo} foi finalizado."
-
 def obter_janela_em_foco():
     """Descobre qual programa ou janela está em primeiro plano no Windows."""
     try:
@@ -1172,18 +1149,6 @@ ferramentas_disponiveis = [
             "name": "analisar_aba_atual",
             "description": "Lê o CONTEÚDO TEXTUAL da aba ativa do Firefox.",
             "parameters": {"type": "object", "properties": {}, "required": []}
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "abrir_programa",
-            "description": "Abre um programa ou jogo no computador do usuário.",
-            "parameters": {
-                "type": "object",
-                "properties": {"nome_programa": {"type": "string"}},
-                "required": ["nome_programa"]
-            }
         }
     },
     {
