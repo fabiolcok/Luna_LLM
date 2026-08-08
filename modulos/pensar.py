@@ -343,10 +343,10 @@ _kaomoji_pendente = None
 # Mesmo cardápio acima, em estrutura — serve pra TROCAR mecanicamente quando ela repete.
 # (Pedir "escolha um diferente" no prompt ajuda, mas o 12B ignora: a regra fica enterrada
 # no fim de um prompt longo. Determinístico > torcer pra ele obedecer.)
-# Só ROSTOS (o kaomoji virou a cara dela na interface) e SÓ com glifos verificados nas fontes
-# do Windows — o ಠ (Kannada) do cardápio antigo NÃO existe nelas e virava quadradinho.
+# Só ROSTOS (o kaomoji virou a cara dela na interface). Glifos conferidos no PC do Fábio —
+# se um dia aparecer quadradinho (tofu) numa máquina nova, é falta da fonte, troque a carinha.
 _KAOMOJI_POR_CLIMA = [
-    ["(¬‿¬)", "(＾ω＾)", "( ˘ ‿ ˘ )"],
+    ["(¬‿¬)", "(＾ω＾)", "ಠ‿ಠ", "( ˘ ‿ ˘ )"],
     ["( ｀皿´ )", "(｀Д´)", "(>_<#)"],
     ["(－_－;)", "(¬_¬;)", "( ˘_˘ )"],
     ["(⊙_⊙)", "(°o°)", "Σ(°ロ°)"],
@@ -354,7 +354,7 @@ _KAOMOJI_POR_CLIMA = [
     ["(=_=)", "(´-ω-`)", "(ー_ー)"],
     ["(＞∇＜)", "(✦‿✦)", "(٩◕‿◕۶)"],
     ["( •̀ ω •́ )", "( ￣^￣ )", "(｀・ω・´)"],
-    ["(¬_¬ )", "( ・_・)", "(－ω－)"],
+    ["ಠ_ಠ", "(¬_¬ )", "( ・_・)", "(－ω－)"],
     ["( ˘⌣˘ )", "(・・?", "( ˙_˙ )"],
     ["(￣～￣)", "(´､ω､`)"],
     ["(｡•́﹀•̀｡)", "( ˘︿˘ )"],
