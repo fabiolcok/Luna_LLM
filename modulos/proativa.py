@@ -282,6 +282,8 @@ _CD_PROATIVO_MIN = 60      # segundos (mínimo entre duas falas proativas)
 _CD_PROATIVO_MAX = 150     # segundos (máximo)
 _ultima_fala_proativa_ts = 0.0
 _cd_proativo_atual = 0.0   # sorteado a cada fala
+_GRACA_BOOT_S = 120        # nos 1ºs minutos o 12B esquenta e vários proativos querem falar juntos
+                           # (fala fica starved: detecta/escreve mas a voz não sai) — espera assentar
 
 def _pode_falar_proativo() -> bool:
     return (time.time() - _ultima_fala_proativa_ts) >= _cd_proativo_atual
@@ -1168,29 +1170,38 @@ def _tarefa_radar_promocoes():
         canais_semeados.append(c)
     if len(msgs_vistas) > _RADAR_MAX_VISTOS:
         msgs_vistas = dict(list(msgs_vistas.items())[-_RADAR_MAX_VISTOS:])
-    vistos["promo"] = msgs_vistas
-    vistos["promo_canais"] = canais_semeados
-    salvar_vistos(vistos)
 
-    if novos:
+    def _persistir():
+        vistos["promo"] = msgs_vistas
+        vistos["promo_canais"] = canais_semeados
+        salvar_vistos(vistos)
+
+    if not novos:
+        _persistir()          # nada casou: só persiste o visto/semeado
+        return
+
+    n = len(novos)
+    destaque = random.choice(novos)
+    produto_d, canal_d = destaque[0], destaque[2]
+    if n == 1:
+        prompt = (
+            f"Apareceu 1 promoção de um produto que ele quer caçar: '{produto_d}' (vista no canal {canal_d}). "
+            f"Avise-o de leve em 1-2 frases, animado mas sem exagero, do seu jeito. {REGRA_PERSONA}"
+        )
+    else:
+        prompt = (
+            f"Apareceram {n} promoções de produtos que ele caça. A principal: '{produto_d}' (canal {canal_d}). "
+            f"Avise-o citando SÓ essa principal em 1-2 frases e diga que tem mais {n - 1} na nota Promoções. {REGRA_PERSONA}"
+        )
+    # ATÔMICO: escreve o card + marca avisado SÓ DEPOIS que a fala sai de verdade — senão o card
+    # ficava na nota mas a voz era engolida no boot. Não falou = não comita e re-tenta no próximo ciclo.
+    if _falar_proativamente(_gerar_fala_proativa(prompt, "radar_promocoes", max_tokens=200)):
         obsidian.adicionar_promocoes(novos)
-        n = len(novos)
         cor.amarelo(f"[🏷️ Promoções: {n} achado(s) → Promocoes.md]")
-
-        destaque = random.choice(novos)
-        produto_d, canal_d = destaque[0], destaque[2]
-        if n == 1:
-            prompt = (
-                f"Apareceu 1 promoção de um produto que ele quer caçar: '{produto_d}' (vista no canal {canal_d}). "
-                f"Avise-o de leve em 1-2 frases, animado mas sem exagero, do seu jeito. {REGRA_PERSONA}"
-            )
-        else:
-            prompt = (
-                f"Apareceram {n} promoções de produtos que ele caça. A principal: '{produto_d}' (canal {canal_d}). "
-                f"Avise-o citando SÓ essa principal em 1-2 frases e diga que tem mais {n - 1} na nota Promoções. {REGRA_PERSONA}"
-            )
-        _falar_proativamente(_gerar_fala_proativa(prompt, "radar_promocoes", max_tokens=200))
+        _persistir()
         registrar_tentativa()
+    else:
+        _ultima_execucao["radar_promocoes"] = 0   # fala starved -> re-tenta já (não perde card nem voz)
 
 
 def _anilist_temporada_no_ar(nome):
@@ -2254,19 +2265,24 @@ def _loop_proativo():
             # O MODO "NÃO PERTURBE"
             if not jogando_agora:
                 _ja_imprimiu_jogando = False
-                if TAREFAS_ATIVAS.get("emails", True): _tarefa_checar_emails()
-                if TAREFAS_ATIVAS.get("agenda", True): _tarefa_checar_agenda()
-                if TAREFAS_ATIVAS.get("pausa", True): _tarefa_lembrete_pausa()
-                if TAREFAS_ATIVAS.get("clima", True): _tarefa_monitorar_clima()
-                if TAREFAS_ATIVAS.get("steam", True): _tarefa_steam_wishlist()
-                if TAREFAS_ATIVAS.get("bom_dia", True): _tarefa_bom_dia()
-                if TAREFAS_ATIVAS.get("retomar", True): _tarefa_retomar_assunto()
-                if TAREFAS_ATIVAS.get("habitos", True): _tarefa_detectar_habito()
-                if TAREFAS_ATIVAS.get("navegador", True): _tarefa_contexto_navegador()
-                if TAREFAS_ATIVAS.get("radar_rss", True): _tarefa_radar_rss()
-                if TAREFAS_ATIVAS.get("radar_promocoes", True): _tarefa_radar_promocoes()
-                if TAREFAS_ATIVAS.get("animes", True): _tarefa_avisar_animes()
-                if TAREFAS_ATIVAS.get("autoconhecimento", True): _tarefa_autoconhecimento()
+                # Carência de boot: nos 1ºs minutos o 12B ainda esquenta e vários proativos querem
+                # falar juntos -> a fala fica starved. Segura os proativos de FALA até assentar.
+                if _sessao_inicio and (time.time() - _sessao_inicio) < _GRACA_BOOT_S:
+                    pass
+                else:
+                    if TAREFAS_ATIVAS.get("emails", True): _tarefa_checar_emails()
+                    if TAREFAS_ATIVAS.get("agenda", True): _tarefa_checar_agenda()
+                    if TAREFAS_ATIVAS.get("pausa", True): _tarefa_lembrete_pausa()
+                    if TAREFAS_ATIVAS.get("clima", True): _tarefa_monitorar_clima()
+                    if TAREFAS_ATIVAS.get("steam", True): _tarefa_steam_wishlist()
+                    if TAREFAS_ATIVAS.get("bom_dia", True): _tarefa_bom_dia()
+                    if TAREFAS_ATIVAS.get("retomar", True): _tarefa_retomar_assunto()
+                    if TAREFAS_ATIVAS.get("habitos", True): _tarefa_detectar_habito()
+                    if TAREFAS_ATIVAS.get("navegador", True): _tarefa_contexto_navegador()
+                    if TAREFAS_ATIVAS.get("radar_rss", True): _tarefa_radar_rss()
+                    if TAREFAS_ATIVAS.get("radar_promocoes", True): _tarefa_radar_promocoes()
+                    if TAREFAS_ATIVAS.get("animes", True): _tarefa_avisar_animes()
+                    if TAREFAS_ATIVAS.get("autoconhecimento", True): _tarefa_autoconhecimento()
             else:
                 if not _ja_imprimiu_jogando:
                     cor.amarelo("[🔇 Modo Não Perturbe Ativado — Aguardando o fim da partida]")
