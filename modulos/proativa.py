@@ -1291,6 +1291,11 @@ def _tarefa_avisar_animes():
         vistos["animes"] = avisados
         salvar_vistos(vistos)
         registrar_tentativa()
+    else:
+        # A fala NÃO saiu (cooldown proativo no boot, Luna ocupada, etc.) e os episódios
+        # NÃO foram carimbados. Não queima o intervalo de 2h (senão a re-tentativa cairia
+        # só depois do silêncio, amanhã): zera o timer pra tentar de novo no próximo ciclo.
+        _ultima_execucao["animes"] = 0
 
 
 def _tarefa_autoconhecimento():
