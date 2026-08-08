@@ -1799,7 +1799,8 @@ def _tarefa_monitorar_jogos():
                     f"{REGRA_PERSONA}"
                 )
             else:
-                prompt = f"O usuário acabou de abrir o {nome_jogo}. Comente o início da sessão do seu jeito. {REGRA_PERSONA} 1 frase."
+                prompt = (f"O usuário acabou de abrir o {nome_jogo}. Comente o início da sessão do seu jeito. "
+                          f"{REGRA_PERSONA} 1 frase (2 se precisar caber o aviso de RAM abaixo).{_dica_recursos_prompt(nome_jogo)}")
 
             texto = _gerar_fala_proativa(prompt, f"jogo_aberto_{nome_jogo}")
             if texto: _falar_proativamente(texto)
