@@ -1082,34 +1082,41 @@ def _tarefa_radar_rss():
     # mostram só os recentes —, então descartar é seguro e não re-anuncia nada.
     if len(itens_vistos) > _RADAR_MAX_VISTOS:
         itens_vistos = dict(list(itens_vistos.items())[-_RADAR_MAX_VISTOS:])
-    vistos["radar"] = itens_vistos
-    vistos["radar_feeds"] = feeds_semeados
-    salvar_vistos(vistos)
 
-    if novos:
+    def _persistir():
+        vistos["radar"] = itens_vistos
+        vistos["radar_feeds"] = feeds_semeados
+        salvar_vistos(vistos)
+
+    if not novos:
+        _persistir()          # nada novo: só persiste o visto/semeado
+        return
+
+    n = len(novos)
+    # Teaser: resume UMA novidade em destaque e diz que tem mais na nota.
+    destaque = random.choice(novos)
+    titulo_d, resumo_d = destaque[0], destaque[3]
+    amostra = f"Título: {titulo_d}." + (f" Resumo: {resumo_d}" if resumo_d else "")
+    if n == 1:
+        prompt = (
+            f"Saiu 1 novidade nova nos feeds que você acompanha. Sobre ela: {amostra}\n"
+            f"Avise-o com um resuminho leve em 1-2 frases, do seu jeito (NÃO copie o texto acima). "
+            f"{REGRA_PERSONA}"
+        )
+    else:
+        prompt = (
+            f"Saíram {n} novidades novas nos feeds que você acompanha. A principal delas: {amostra}\n"
+            f"Avise-o resumindo SÓ essa principal em 1-2 frases (sem copiar o texto acima) e, no fim, "
+            f"diga que tem mais {n - 1} esperando na nota Novidades. {REGRA_PERSONA}"
+        )
+    # ATÔMICO: card + visto só depois que a fala sai; senão re-tenta no próximo ciclo (não perde nada).
+    if _falar_proativamente(_gerar_fala_proativa(prompt, "radar_rss", max_tokens=220)):
         obsidian.adicionar_novidades(novos)
-        n = len(novos)
         cor.amarelo(f"[📡 Radar: {n} novidade(s) → Novidades.md]")
-
-        # Teaser: resume UMA novidade em destaque e diz que tem mais na nota.
-        destaque = random.choice(novos)
-        titulo_d, resumo_d = destaque[0], destaque[3]
-        amostra = f"Título: {titulo_d}." + (f" Resumo: {resumo_d}" if resumo_d else "")
-
-        if n == 1:
-            prompt = (
-                f"Saiu 1 novidade nova nos feeds que você acompanha. Sobre ela: {amostra}\n"
-                f"Avise-o com um resuminho leve em 1-2 frases, do seu jeito (NÃO copie o texto acima). "
-                f"{REGRA_PERSONA}"
-            )
-        else:
-            prompt = (
-                f"Saíram {n} novidades novas nos feeds que você acompanha. A principal delas: {amostra}\n"
-                f"Avise-o resumindo SÓ essa principal em 1-2 frases (sem copiar o texto acima) e, no fim, "
-                f"diga que tem mais {n - 1} esperando na nota Novidades. {REGRA_PERSONA}"
-            )
-        _falar_proativamente(_gerar_fala_proativa(prompt, "radar_rss", max_tokens=220))
+        _persistir()
         registrar_tentativa()
+    else:
+        _ultima_execucao["radar_rss"] = 0   # fala starved -> re-tenta já
 
 def _sem_acento(s: str) -> str:
     import unicodedata
