@@ -359,6 +359,11 @@ def _hist_curto(historico: list, n: int, cap: int = 1500) -> list:
             for m in historico[-n:]]
 
 
+import contextvars as _cv
+# Presença física do usuário: True = no PC (voz/web), False = fora (Telegram, provável celular).
+# ContextVar é thread-safe: voz, Telegram e web (threads diferentes) não se atropelam.
+_presenca_pc = _cv.ContextVar("presenca_pc", default=True)
+
 def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico: list, max_tokens=300, forcar_incluir=False, responder_completo=False, tarefa_documento=None) -> str:
     global _ultima_saudacao_ts
     resposta_tecnica = re.sub(r'<think>.*?</think>', '', resposta_tecnica, flags=re.DOTALL).strip()
@@ -392,20 +397,29 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     jogo_ativo = estado.get("jogo_ativo")
 
     partes_situacao = []
-    if jogo_ativo:
-        partes_situacao.append(f"MODO GAMER ATIVO — jogo: {jogo_ativo}")
+    if not _presenca_pc.get():
+        # Ele está falando pelo CELULAR (Telegram): o estado do PC é irrelevante e ENGANA
+        # (dizer "Programa em uso: firefox" faz a Luna achar que ele está sentado no PC).
+        contexto_situacional = ("ELE NÃO ESTÁ NO COMPUTADOR — está te escrevendo pelo CELULAR, longe do PC "
+                                "(pode estar na rua, no trabalho ou em outro cômodo). LOGO: é IMPOSSÍVEL pra ele "
+                                "mexer no PC agora — NÃO sugira nem pergunte se ele vai programar, revisar código, "
+                                "mexer no Colibri/sistema, jogar ou olhar a tela. Qualquer sugestão sua tem que "
+                                "caber no celular ou fora de casa")
     else:
-        partes_situacao.append("MODO NORMAL")
-    partes_situacao.append(f"Programa em uso: {programa_em_uso}")
-    if horas_sessao > 0.1:
-        partes_situacao.append(f"sessão ativa há {horas_sessao:.1f}h")
-    programa_desde = estado.get("programa_desde")
-    if programa_desde and programa_em_uso:
-        mins = (time.time() - programa_desde) / 60
-        if mins >= 1:
-            label = f"{int(mins)}min" if mins < 60 else f"{mins / 60:.1f}h"
-            partes_situacao.append(f"há {label} nesse programa")
-    contexto_situacional = " | ".join(partes_situacao)
+        if jogo_ativo:
+            partes_situacao.append(f"MODO GAMER ATIVO — jogo: {jogo_ativo}")
+        else:
+            partes_situacao.append("MODO NORMAL")
+        partes_situacao.append(f"Programa em uso: {programa_em_uso}")
+        if horas_sessao > 0.1:
+            partes_situacao.append(f"sessão ativa há {horas_sessao:.1f}h")
+        programa_desde = estado.get("programa_desde")
+        if programa_desde and programa_em_uso:
+            mins = (time.time() - programa_desde) / 60
+            if mins >= 1:
+                label = f"{int(mins)}min" if mins < 60 else f"{mins / 60:.1f}h"
+                partes_situacao.append(f"há {label} nesse programa")
+        contexto_situacional = " | ".join(partes_situacao)
 
     # Já cumprimentou nas últimas horas? Então é PROIBIDO saudar de novo (determinístico).
     aviso_saudacao = ""
@@ -438,6 +452,12 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         except Exception:
             pass
 
+    # Presença: voz/web = no PC; Telegram = provavelmente fora (não sugerir tarefa de PC).
+    presenca_hint = ("" if _presenca_pc.get() else
+        "\n- ONDE ELE ESTÁ: ele provavelmente NÃO está no computador agora (te falando pelo celular / fora de casa). "
+        "NÃO sugira nada que dependa do PC (abrir/revisar um programa, olhar a tela, mexer no sistema) — ele não "
+        "pode fazer isso agora. Se for sugerir algo, que dê pra fazer no celular ou na cabeça.")
+
     prompt_sistema = (
         f"Hoje é {data_hoje}. {periodo_atual()[1]}\n"
         f"Contexto atual: {contexto_situacional}.\n"
@@ -459,7 +479,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
            f"\n{memoria_relacionada}\n"
            if memoria_relacionada else "")
         + f"\nConversas anteriores: {contexto_db}\n\n"
-        f"{PROMPT_LUNA_PERSONA}{aviso_saudacao}{canal_hint}{dica_tom}"
+        f"{PROMPT_LUNA_PERSONA}{aviso_saudacao}{canal_hint}{dica_tom}{presenca_hint}"
     )
 
     is_proativo = (prompt_usuario == "")
@@ -719,8 +739,9 @@ def _montar_prompt_imagem(pedido_usuario: str, dica: str = "") -> str:
     return ", ".join(partes)
 
 
-def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True, salvar=True, modo_memoria=False, max_tokens=800, responder_completo=False):
+def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True, salvar=True, modo_memoria=False, max_tokens=800, responder_completo=False, presenca_pc=True):
     global _imagem_pendente
+    _presenca_pc.set(presenca_pc)   # onde ele está (voz/web = no PC; Telegram = fora) — colore o prompt
     if responder_completo:
         _imagem_pendente = None   # começa limpo a cada turno do Telegram
 

@@ -41,7 +41,8 @@ from servidor import (
     atualizar_estado_rosto, atualizar_legenda,
     atualizar_usuario, registrar_callback_interrupcao,
     iniciar_servidor, registrar_config_handler, sincronizar_config,
-    obter_e_limpar_arquivo, obter_e_limpar_imagem_anexada, carregar_e_aplicar_config
+    obter_e_limpar_arquivo, obter_e_limpar_imagem_anexada, carregar_e_aplicar_config,
+    registrar_handler_texto_web
 )
 
 from pynput import keyboard as kb
@@ -177,8 +178,40 @@ def ao_interromper():
     _interromper.set()
     sd.stop()  # para o áudio imediatamente
 
+# Histórico da conversa — MÓDULO-level pra ser compartilhado entre a voz e a caixa de
+# texto do web (é UMA conversa só). gerar_resposta cuida de append/trim in-place.
+_historico_conversa = []
+
+def responder_texto_web(texto: str):
+    """Mensagem DIGITADA na caixa do web: mesmas regras do Telegram (desenvolve, SEM TTS),
+    mas presença = no PC. Compartilha o histórico com a voz."""
+    texto = (texto or "").strip()
+    if not texto:
+        return
+    from modulos.proativa import luna_esta_livre
+    _fim = time.time() + 120
+    while not luna_esta_livre() and time.time() < _fim:   # espera a Luna ficar livre (voz/proativo)
+        time.sleep(0.3)
+    registrar_interacao()          # usuário ativo -> reseta suspensão do proativo
+    marcar_luna_ocupada(True)
+    try:
+        cor.azul(f"[⌨️ Web] Você: {texto}")
+        _log.info(f"[Web texto] Usuário: {texto}")
+        atualizar_usuario(texto)                       # mostra "Você: ..." no web
+        resposta = gerar_resposta(texto, _historico_conversa, responder_completo=True, presenca_pc=True)
+        resposta = (resposta or "").strip()
+        atualizar_legenda(resposta)                    # mostra a resposta + registra o turno (SEM falar)
+        if resposta:
+            _log.info(f"[Web texto] Luna: {resposta[:200]}")
+    except Exception as e:
+        _log.exception(f"Erro no texto web: {e}")
+        atualizar_legenda("Deu um erro aqui, tenta de novo.")
+    finally:
+        marcar_luna_ocupada(False)
+
+
 def loop_voz():
-    historico = []
+    historico = _historico_conversa
     try:
         # Falas proativas entram neste histórico — follow-ups ("quais são?") ganham contexto
         from modulos import proativa
@@ -388,6 +421,7 @@ def main():
     iniciar_modo_proativo()
     iniciar_servidor_extensao()
     registrar_callback_interrupcao(ao_interromper)
+    registrar_handler_texto_web(responder_texto_web)
     registrar_config_handler("proativo", configurar_proativo)
     registrar_config_handler("memoria", configurar_memoria)
     registrar_config_handler("voz", lambda v: configurar_voz(voz=v))

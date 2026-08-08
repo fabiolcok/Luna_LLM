@@ -68,7 +68,7 @@ def iniciar_bot_telegram():
             _gif_original = _srv.atualizar_gif
             _srv.atualizar_gif = lambda termo: None
 
-            resposta = gerar_resposta(texto, _historico_telegram, responder_completo=True)
+            resposta = gerar_resposta(texto, _historico_telegram, responder_completo=True, presenca_pc=False)
             imagem = obter_e_limpar_imagem_pendente()
 
             _srv.atualizar_gif = _gif_original  # restaura

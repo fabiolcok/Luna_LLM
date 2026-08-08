@@ -118,6 +118,13 @@
 
         #luna-texto    { font-size: 1.15rem; line-height: 1.55; color: #b4f9f8; white-space: pre-wrap; }
         #usuario-texto { font-size: 1.15rem; font-style: italic; color: #cfc9c2; }
+        #texto-input-bloco { display: flex; gap: 8px; margin: 8px 0 4px; }
+        #texto-input { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid #3a3a5a;
+                       background: #16161e; color: #cfc9c2; font-size: 1rem; outline: none; }
+        #texto-input:focus { border-color: #bb9af7; }
+        #texto-enviar { padding: 0 16px; border-radius: 10px; border: none; background: #bb9af7;
+                        color: #16161e; font-size: 1.1rem; cursor: pointer; }
+        #texto-enviar:hover { background: #c8abf9; }
 
         /* Linha de status — o que a Luna está fazendo agora */
         #status-luna {
@@ -1079,6 +1086,12 @@
             <div id="usuario-texto">Aguardando...</div>
         </div>
 
+        <!-- Digitar em vez de falar: sem TTS, mesmas regras de tamanho do Telegram -->
+        <div id="texto-input-bloco">
+            <input type="text" id="texto-input" placeholder="ou digite aqui e aperte Enter…" maxlength="2000" autocomplete="off">
+            <button id="texto-enviar" title="Enviar">➤</button>
+        </div>
+
         <!-- Pensamento colapsável -->
         <details id="pensamento-details">
             <summary>Pensamento</summary>
@@ -1238,6 +1251,19 @@
         document.getElementById('btn-fechar-luna').onclick = function() {
             socket.send(JSON.stringify({ comando: 'fechar' }));
         };
+
+        // --- Caixa de texto (digitar em vez de falar) ---
+        const textoInput = document.getElementById('texto-input');
+        function enviarTexto() {
+            const txt = textoInput.value.trim();
+            if (!txt) return;
+            socket.send(JSON.stringify({ tipo: 'mensagem_texto', texto: txt }));
+            textoInput.value = '';
+        }
+        document.getElementById('texto-enviar').onclick = enviarTexto;
+        textoInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarTexto(); }
+        });
 
         // --- Drag & drop ---
         const dragOverlay = document.getElementById('drag-overlay');

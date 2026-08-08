@@ -114,6 +114,12 @@ def registrar_callback_interrupcao(fn):
     global _callback_interrupcao
     _callback_interrupcao = fn
 
+_handler_texto_web = None
+def registrar_handler_texto_web(fn):
+    """main.py registra aqui a função que processa uma mensagem DIGITADA na caixa do web."""
+    global _handler_texto_web
+    _handler_texto_web = fn
+
 def sincronizar_config(chave: str, valor):
     """Atualiza o estado de config e faz broadcast sem chamar os handlers Python."""
     _estado_config[chave] = valor
@@ -343,6 +349,13 @@ def websocket(ws):
                         falar.repetir_ultima_fala()
                     except Exception:
                         pass
+                elif dados.get('tipo') == 'mensagem_texto':
+                    # Usuário DIGITOU na caixa do web (não falou) -> mesmas regras do Telegram,
+                    # mas presença = no PC. Roda em thread pra não travar o WebSocket.
+                    _txt = (dados.get('texto') or '').strip()
+                    if _txt and _handler_texto_web:
+                        import threading as _th
+                        _th.Thread(target=_handler_texto_web, args=(_txt,), daemon=True).start()
                 # ---- Oficina (painel de config) ----
                 elif dados.get('comando') == 'abrir_arquivo':
                     if _eh_local:
