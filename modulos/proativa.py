@@ -689,6 +689,103 @@ def _buscar_dados_overwatch():
         print(f"\n[⚠️ ALERTA DEBUG: Falha na API do Overwatch: {e}]\n")
         return "SISTEMA: Erro ao contatar a Blizzard. Não há dados."
 
+
+# ── Overwatch: dados estruturados + VARIEDADE na abertura + DELTA de sessão no fim ──
+# (mata a repetição de recitar rank+winrate de carreira, que nunca muda de uma sessão pra outra)
+_OW_SESSAO = {"snap": None}   # snapshot dos stats na ABERTURA, pra comparar no FECHAMENTO
+
+def _ow_dados():
+    """OverFast estruturado: dict com ranks, totais, roles e heróis — ou None se falhar/privado."""
+    tag = os.getenv("OW_BATTLETAG", "")
+    try:
+        rp = requests.get(f"https://overfast-api.tekrop.fr/players/{tag}/summary", timeout=10)
+        rs = requests.get(f"https://overfast-api.tekrop.fr/players/{tag}/stats/summary", timeout=10)
+        if rp.status_code != 200 or rs.status_code != 200:
+            return None
+        perfil, stats = rp.json(), rs.json()
+        if perfil.get("privacy") == "private":
+            return None
+        comp = perfil.get("competitive", {}).get("pc", {}) or {}
+        ranks = []
+        for role in ("tank", "damage", "support"):
+            r = comp.get(role)
+            if r:
+                ranks.append(f"{role} {str(r.get('division', '?')).capitalize()} {r.get('tier', '')}".strip())
+        g = stats.get("general", {}) or {}
+        tot = g.get("total", {}) or {}
+        roles = {r: {"winrate": v.get("winrate", 0), "kda": v.get("kda", 0)}
+                 for r, v in (stats.get("roles", {}) or {}).items()}
+        herois = stats.get("heroes", {}) or {}
+        ordenados = sorted(herois.items(), key=lambda kv: -(kv[1].get("time_played", 0)))
+        heroes = [(n, round(h.get("time_played", 0) / 3600, 1), h.get("winrate", 0), h.get("kda", 0))
+                  for n, h in ordenados]
+        return {
+            "ranks": ", ".join(ranks) or "sem rank",
+            "games_played": g.get("games_played", 0), "games_won": g.get("games_won", 0),
+            "games_lost": g.get("games_lost", 0), "winrate": g.get("winrate", 0),
+            "elims": tot.get("eliminations", g.get("eliminations", 0)),
+            "deaths": tot.get("deaths", g.get("deaths", 0)),
+            "roles": roles, "heroes": heroes,
+            "herois_seg": {n: h.get("time_played", 0) for n, h in herois.items()},
+        }
+    except Exception:
+        return None
+
+def _ow_snap(d):
+    """Snapshot mínimo pro delta de sessão."""
+    if not d:
+        return None
+    return {"gp": d["games_played"], "gw": d["games_won"], "gl": d["games_lost"],
+            "el": d["elims"], "de": d["deaths"], "seg": dict(d["herois_seg"])}
+
+def _ow_angulo_abertura(d):
+    """Sorteia UM ângulo pra abertura (nunca o mesmo, nunca só o winrate) -> (foco, instrucao)."""
+    if not d:
+        return ("", "Comente a abertura da sessão do seu jeito, com uma zoeira leve — sem inventar número. 1 frase.")
+    opcoes = ["vibe"]
+    if d["heroes"]:
+        opcoes += ["heroi", "heroi"]           # herói é o mais rico -> peso maior
+    if len(d["roles"]) >= 2:
+        opcoes.append("roles")
+    if d["games_played"]:
+        opcoes.append("marco")
+    cands = [o for o in opcoes if o != _OW_SESSAO.get("ult_ang")] or opcoes   # não repete o último ângulo
+    ang = random.choice(cands)
+    _OW_SESSAO["ult_ang"] = ang
+    if ang == "heroi":
+        alvo = random.choice(d["heroes"][:5])
+        return (f"FOCO (um herói teu): {alvo[0].capitalize()} — {alvo[1]}h, {alvo[2]}% winrate, KDA {alvo[3]}.",
+                "Puxe SÓ esse herói (elogio se o número é bom, cutucada se é ruim). 1-2 frases.")
+    if ang == "roles":
+        rs = "; ".join(f"{r}: {v['winrate']}% winrate, KDA {v['kda']}" for r, v in d["roles"].items())
+        return (f"FOCO (teus roles): {rs}.", "Compare teus roles — qual carrega, qual pesa. 1-2 frases.")
+    if ang == "marco":
+        return (f"FOCO (carreira): {d['games_played']} partidas, {d['elims']} eliminações totais.",
+                "Solte um comentário sobre esse volume de jogo, do seu jeito. 1 frase.")
+    return ("", "Comente a abertura com uma zoeira leve, SEM número nem stat — só o clima de começar a sessão. 1 frase.")
+
+def _ow_delta_sessao(snap, d):
+    """O que rolou NESTA sessão (snapshot da abertura vs agora). None se não deu pra medir."""
+    if not snap or not d:
+        return None
+    jogos = d["games_played"] - snap["gp"]
+    if jogos <= 0:
+        return None   # a página da Blizzard ainda não atualizou as partidas da sessão (delay)
+    ganhos, perdidos = d["games_won"] - snap["gw"], d["games_lost"] - snap["gl"]
+    el, de = d["elims"] - snap["el"], d["deaths"] - snap["de"]
+    heroi, melhor = None, 0
+    for n, seg in d["herois_seg"].items():
+        dif = seg - snap["seg"].get(n, 0)
+        if dif > melhor:
+            melhor, heroi = dif, n
+    partes = [f"{jogos} partida(s) nesta sessão ({ganhos} vitórias, {perdidos} derrotas)"]
+    if heroi:
+        partes.append(f"jogou mais de {heroi.capitalize()}")
+    if el or de:
+        partes.append(f"{el} eliminações e {de} mortes na sessão")
+    return "SESSÃO DE HOJE: " + "; ".join(partes) + "."
+
+
 def _buscar_dados_lol():
     """Busca dados da última partida via LCU (API local do cliente do LoL).
     O lockfile fica ativo enquanto o LeagueClient.exe estiver rodando —
@@ -1800,12 +1897,13 @@ def _tarefa_monitorar_jogos():
             
             if nome_jogo == "Overwatch":
                 print("[📊 Buscando dados para briefing de sessão...]")
-                dados_abertura = _buscar_dados_overwatch()
+                d_ow = _ow_dados()
+                _OW_SESSAO["snap"] = _ow_snap(d_ow)          # guarda pra medir a sessão no fechamento
+                foco, instr = _ow_angulo_abertura(d_ow)      # UM ângulo sorteado, nunca o mesmo
                 prompt = (
                     f"O usuário acabou de abrir Overwatch.\n"
-                    f"DADOS ATUAIS DA CONTA: {dados_abertura}\n"
-                    f"Faça um briefing de sessão direto, do seu jeito: rank atual + uma observação sobre tendência de desempenho. "
-                    f"{REGRA_PERSONA}"
+                    f"{foco}\n"
+                    f"{instr} NÃO fique preso no rank/winrate de carreira (não muda e cansa). {REGRA_PERSONA}"
                 )
             elif nome_jogo == "Deadlock":
                 print("[📊 Buscando dados para briefing de sessão Deadlock...]")
@@ -1841,17 +1939,19 @@ def _tarefa_monitorar_jogos():
             # ROTEAMENTO DE APIS E DEBOCHES ESPECÍFICOS
             # ==========================================
             if nome_jogo == "Overwatch":
-                print("[🔎 Buscando estatísticas da conta de Overwatch...]")
-                dados_extras = _buscar_dados_overwatch()
-               
-                if dados_extras == "ERRO_DE_CONEXAO":
-                    instrucao_especifica = "Deu erro de rede ao buscar os dados. Registre o fim da sessão e pode soltar uma alfinetada leve na internet ou nos servidores da Blizzard — nunca nele."
+                print("[🔎 Medindo a sessão de Overwatch...]")
+                d_ow = _ow_dados()
+                delta = _ow_delta_sessao(_OW_SESSAO.get("snap"), d_ow)
+                _OW_SESSAO["snap"] = None
+                if delta:
+                    dados_extras = delta
+                    instrucao_especifica = ("Comente como foi a SESSÃO de hoje (não a carreira), com base nesses "
+                                            "números da sessão. 1-2 frases; alfinetada leve cabe, crueldade não.")
                 else:
-                    instrucao_especifica = (
-                        "Use os dados como observação factual. "
-                        "1 frase com o dado mais relevante (rank ou winrate). "
-                        "1 frase de análise de padrão — precisa; uma alfinetada leve cabe, crueldade não."
-                    )
+                    # perfil ainda não atualizou (delay da Blizzard) -> cai num ângulo variado, sem repetir winrate
+                    foco, instr = _ow_angulo_abertura(d_ow)
+                    dados_extras = foco or "Sem dado novo da sessão (a página da Blizzard demora a atualizar)."
+                    instrucao_especifica = f"{instr} NÃO recite o winrate de carreira."
             
             elif nome_jogo == "League of Legends":
                 print("[🔎 Aguardando dados da última partida via LCU (15s)...]")
