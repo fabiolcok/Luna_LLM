@@ -118,6 +118,9 @@
 
         #luna-texto    { font-size: 1.15rem; line-height: 1.55; color: #b4f9f8; white-space: pre-wrap; }
         #usuario-texto { font-size: 1.15rem; font-style: italic; color: #cfc9c2; }
+        /* Separa visualmente a zona de SAÍDA (Luna, em cima) da zona de ENTRADA (você, embaixo) */
+        .zona-divisor { height: 1px; background: linear-gradient(to right, transparent, #3a3a5a, transparent);
+                        margin: 18px 0 12px; }
         #texto-input-bloco { display: flex; gap: 8px; margin: 8px 0 4px; }
         #texto-input { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid #3a3a5a;
                        background: #16161e; color: #cfc9c2; font-size: 1rem; outline: none; }
@@ -1064,39 +1067,7 @@
             <div id="gif-termo"></div>
         </div>
 
-        <!-- Arquivo anexado -->
-        <div id="anexo-bar">
-            <span>📎</span>
-            <span id="anexo-nome">arquivo.txt</span>
-            <button id="btn-anexo-remover" title="Remover anexo">✕</button>
-        </div>
-
-        <!-- Status microfone -->
-        <div id="status-mic" class="aguardando">
-            <div id="status-mic-dot"></div>
-            <span id="status-mic-texto">Aguardando... Segure Ctrl+Alt+F8 para falar</span>
-        </div>
-
-        <!-- Letreiro de dicas — rotativo, só no ocioso -->
-        <div id="dica-ticker"></div>
-
-        <!-- Usuário -->
-        <div id="usuario-bloco" class="caixa-texto">
-            <label>Você</label>
-            <div id="usuario-texto">Aguardando...</div>
-        </div>
-
-        <!-- Digitar em vez de falar: sem TTS, mesmas regras de tamanho do Telegram -->
-        <div id="texto-input-bloco">
-            <input type="text" id="texto-input" placeholder="ou digite aqui e aperte Enter…" maxlength="2000" autocomplete="off">
-            <button id="texto-enviar" title="Enviar">➤</button>
-        </div>
-
-        <!-- Pensamento colapsável -->
-        <details id="pensamento-details">
-            <summary>Pensamento</summary>
-            <div id="pensamento-texto">—</div>
-        </details>
+        <!-- ══════════ ZONA DE SAÍDA (o que a Luna diz) ══════════ -->
 
         <!-- Status: o que a Luna está fazendo agora -->
         <div id="status-luna">🌚 Por aqui</div>
@@ -1117,10 +1088,47 @@
             <button id="aval-motivo-enviar">Enviar</button>
         </div>
 
+        <!-- Pensamento colapsável (como ela chegou lá — detalhe secundário) -->
+        <details id="pensamento-details">
+            <summary>Pensamento</summary>
+            <div id="pensamento-texto">—</div>
+        </details>
+
         <div id="metricas-bar">
             <span id="met-roteador">Roteador —</span>
             <span id="met-persona">Persona —</span>
         </div>
+
+        <!-- ══════════ ZONA DE ENTRADA (o que você manda) ══════════ -->
+        <div class="zona-divisor"></div>
+
+        <!-- Usuário -->
+        <div id="usuario-bloco" class="caixa-texto">
+            <label>Você</label>
+            <div id="usuario-texto">Aguardando...</div>
+        </div>
+
+        <!-- Arquivo anexado (vai junto da próxima mensagem) -->
+        <div id="anexo-bar">
+            <span>📎</span>
+            <span id="anexo-nome">arquivo.txt</span>
+            <button id="btn-anexo-remover" title="Remover anexo">✕</button>
+        </div>
+
+        <!-- Status microfone (entrada por VOZ) -->
+        <div id="status-mic" class="aguardando">
+            <div id="status-mic-dot"></div>
+            <span id="status-mic-texto">Aguardando... Segure Ctrl+Alt+F8 para falar</span>
+        </div>
+
+        <!-- Digitar em vez de falar: sem TTS, mesmas regras de tamanho do Telegram -->
+        <div id="texto-input-bloco">
+            <input type="text" id="texto-input" placeholder="ou digite aqui e aperte Enter…" maxlength="2000" autocomplete="off">
+            <button id="texto-enviar" title="Enviar">➤</button>
+        </div>
+
+        <!-- Letreiro de dicas — rotativo, só no ocioso -->
+        <div id="dica-ticker"></div>
 
         <div class="btn-row">
             <button id="btn-interromper">⬛ Parar fala</button>
