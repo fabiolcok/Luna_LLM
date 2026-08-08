@@ -65,20 +65,50 @@
         }
 
         #gif-placeholder { display: none; }
-        /* Kaomoji grande — ocupa o espaço que era do GIF (experimento: substitui o Giphy) */
-        #kaomoji-big {
-            font-size: clamp(2.2rem, 7vw, 4.2rem);
-            line-height: 1.35;
-            color: #b4f9f8;
-            text-align: center;
-            padding: 22px 10px;
-            white-space: nowrap;
-            opacity: 0;
-            transform: scale(0.9);
-            transition: opacity .4s ease, transform .4s cubic-bezier(.2,.9,.3,1.4);
-            font-family: "Segoe UI Symbol", "Segoe UI", "Noto Sans Symbols 2", sans-serif;
+
+        /* ═══ PRESENÇA (a lua + a órbita) ═══
+           Dois canais independentes: a LUA é a presença dela (respira, brilha);
+           a ÓRBITA é a atividade (velocidade/escala). SVG + CSS puro — sem lib. */
+        #presenca { display: flex; justify-content: center; padding: 4px 0 10px; }
+        #presenca svg { width: 178px; height: 178px; overflow: visible; }
+        #lua-grupo, #halo, #orbita, #orbita-escala { transform-box: fill-box; transform-origin: center; }
+        #lua-grupo      { animation: pres-respira 5.5s ease-in-out infinite; }
+        #halo           { animation: pres-halo 5.5s ease-in-out infinite; }
+        #orbita         { animation: pres-gira 44s linear infinite; }
+        #orbita-escala  { transition: transform .6s cubic-bezier(.2,.9,.3,1.2), opacity .6s ease; }
+
+        @keyframes pres-respira { 0%,100% { transform: scale(1);    } 50% { transform: scale(1.05); } }
+        @keyframes pres-halo    { 0%,100% { opacity:.22; transform: scale(1); } 50% { opacity:.42; transform: scale(1.08); } }
+        @keyframes pres-gira    { to { transform: rotate(360deg); } }
+
+        /* 🌙 parada — quase imóvel, apagada */
+        .est-dormindo #lua-grupo { animation-duration: 8.5s; }
+        .est-dormindo #orbita    { animation-duration: 110s; }
+        .est-dormindo #orbita-escala { opacity: .3; transform: scale(1); }
+        .est-dormindo #halo      { animation-duration: 8.5s; opacity: .12; }
+
+        /* 👂 ouvindo — a órbita CONTRAI, fica atenta */
+        .est-ouvindo #lua-grupo { animation-duration: 3.4s; }
+        .est-ouvindo #orbita    { animation-duration: 16s; }
+        .est-ouvindo #orbita-escala { opacity: .95; transform: scale(.78); }
+
+        /* 💭 pensando — a órbita ACELERA e abre */
+        .est-pensando #lua-grupo { animation-duration: 2.2s; }
+        .est-pensando #orbita    { animation-duration: 3.2s; }
+        .est-pensando #orbita-escala { opacity: 1; transform: scale(1.06); }
+
+        /* 🗣️ falando — a lua PULSA, a órbita gira solta */
+        .est-falando #lua-grupo { animation-duration: .85s; }
+        .est-falando #orbita    { animation-duration: 11s; }
+        .est-falando #orbita-escala { opacity: .8; transform: scale(1); }
+
+        /* kaomoji agora é um BADGE no cabeçalho da Luna (a reação; a animação é a presença) */
+        #kaomoji-badge {
+            font-size: 1.05rem; color: #b4f9f8; white-space: nowrap;
+            opacity: 0; transform: translateY(4px);
+            transition: opacity .35s ease, transform .35s cubic-bezier(.2,.9,.3,1.5);
         }
-        #kaomoji-big.ativo { opacity: 1; transform: scale(1); }
+        #kaomoji-badge.ativo { opacity: 1; transform: none; }
 
         /* Termo do GIF — aparece só ao passar o mouse sobre o GIF */
         #gif-termo {
@@ -1082,10 +1112,36 @@
 
     <div class="container">
 
-        <!-- GIF -->
+        <!-- PRESENÇA: a lua da Luna (centro) + a órbita (o que ela está fazendo).
+             Reage ao 'estado' que o backend JÁ transmite: dormindo/ouvindo/pensando/falando. -->
+        <div id="presenca" class="est-dormindo">
+            <svg viewBox="0 0 200 200" aria-hidden="true">
+                <defs>
+                    <radialGradient id="g-lua" cx="38%" cy="32%">
+                        <stop offset="0%"   stop-color="#dff0ff"/>
+                        <stop offset="55%"  stop-color="#7aa2f7"/>
+                        <stop offset="100%" stop-color="#39457a"/>
+                    </radialGradient>
+                    <radialGradient id="g-halo">
+                        <stop offset="52%"  stop-color="#7aa2f7" stop-opacity="0"/>
+                        <stop offset="100%" stop-color="#7aa2f7" stop-opacity="0.5"/>
+                    </radialGradient>
+                    <clipPath id="c-lua"><circle cx="100" cy="100" r="26"/></clipPath>
+                </defs>
+                <circle id="halo" cx="100" cy="100" r="54" fill="url(#g-halo)"/>
+                <g id="orbita-escala"><g id="orbita"></g></g>
+                <g id="lua-grupo">
+                    <circle cx="100" cy="100" r="26" fill="url(#g-lua)"/>
+                    <g clip-path="url(#c-lua)">
+                        <circle cx="120" cy="86" r="25" fill="#0e0e16" opacity="0.45"/>
+                    </g>
+                </g>
+            </svg>
+        </div>
+
+        <!-- GIF (na gaveta — só volta se a regra do prompt voltar a emitir [gif:]) -->
         <div id="gif-container">
             <img id="gif-img" src="" alt="">
-            <div id="kaomoji-big"></div>
             <div id="gif-placeholder">◈</div>
             <div id="gif-termo"></div>
         </div>
@@ -1096,6 +1152,7 @@
         <div id="luna-bloco" class="caixa-texto">
             <div class="bloco-cabecalho">
                 <label>Luna</label>
+                <span id="kaomoji-badge"></span>
                 <span id="status-luna">🌚 Por aqui</span>
             </div>
             <div id="luna-texto">—</div>
@@ -1211,21 +1268,39 @@
             }
         });
 
+        // ═══ PRESENÇA: monta a órbita e reage ao estado ═══
+        (function montarOrbita() {
+            const g = document.getElementById('orbita');
+            if (!g) return;
+            const N = 16, R = 62;
+            let svg = '';
+            for (let i = 0; i < N; i++) {
+                const a = (i / N) * Math.PI * 2;
+                const x = (100 + Math.cos(a) * R).toFixed(1);
+                const y = (100 + Math.sin(a) * R).toFixed(1);
+                const grande = i % 4 === 0;
+                svg += `<circle cx="${x}" cy="${y}" r="${grande ? 2.7 : 1.5}" `
+                     + `fill="${grande ? '#b4f9f8' : '#7aa2f7'}" opacity="${grande ? 0.95 : 0.5}"/>`;
+            }
+            g.innerHTML = svg;
+        })();
+
+        const PRES_ESTADOS = ['dormindo', 'ouvindo', 'pensando', 'falando'];
+        function aplicarPresenca(estado) {
+            const el = document.getElementById('presenca');
+            if (!el) return;
+            PRES_ESTADOS.forEach(e => el.classList.remove('est-' + e));
+            el.classList.add('est-' + (PRES_ESTADOS.includes(estado) ? estado : 'dormindo'));
+        }
+
         function mostrarKaomoji(k) {
-            const container = document.getElementById('gif-container');
-            const img       = document.getElementById('gif-img');
-            const tip       = document.getElementById('gif-termo');
-            const el        = document.getElementById('kaomoji-big');
-            img.style.display = 'none';          // kaomoji ocupa o espaço do GIF
-            tip.style.display = 'none';
+            const el = document.getElementById('kaomoji-badge');
+            if (!el) return;
             el.classList.remove('ativo');
             setTimeout(() => {
                 el.textContent = k || '';
-                if (k) {
-                    container.classList.add('ativo');
-                    requestAnimationFrame(() => el.classList.add('ativo'));
-                }
-            }, 180);
+                if (k) requestAnimationFrame(() => el.classList.add('ativo'));
+            }, 160);
         }
 
         function trocarGif(url, termo) {
@@ -1615,6 +1690,8 @@
             }
             if (dados.usuario !== undefined)
                 typewriter('usuario-texto', dados.usuario || 'Aguardando...', 18, 'voce');
+            if (typeof dados.estado === 'string')      // ouvindo/pensando/falando/dormindo
+                aplicarPresenca(dados.estado);
             if (dados.kaomoji !== undefined)
                 mostrarKaomoji(dados.kaomoji);
             if (dados.gif_url !== undefined)

@@ -198,6 +198,7 @@ def responder_texto_web(texto: str):
         cor.azul(f"[⌨️ Web] Você: {texto}")
         _log.info(f"[Web texto] Usuário: {texto}")
         atualizar_usuario(texto)                       # mostra "Você: ..." no web
+        atualizar_estado_rosto("pensando")             # anima a presença (a lua) também no texto
         resposta = gerar_resposta(texto, _historico_conversa, responder_completo=True, presenca_pc=True)
         resposta = (resposta or "").strip()
         atualizar_legenda(resposta)                    # mostra a resposta + registra o turno (SEM falar)
@@ -207,6 +208,7 @@ def responder_texto_web(texto: str):
         _log.exception(f"Erro no texto web: {e}")
         atualizar_legenda("Deu um erro aqui, tenta de novo.")
     finally:
+        atualizar_estado_rosto("dormindo")
         marcar_luna_ocupada(False)
 
 
