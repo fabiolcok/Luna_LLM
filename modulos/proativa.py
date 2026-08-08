@@ -129,7 +129,8 @@ CONFIGURACAO = {
     },
     "Animes": {
         "ativo": True,
-        "intervalo_minutos": 360,     # episódio é evento diário — checar ~4x/dia basta
+        "intervalo_minutos": 120,     # checa a cada 2h — como só roda quando você está livre
+                                      # (fora de jogo/presente), 6h deixava episódio passar batido
         "horario_silencio": (0, 9),
     },
 }
@@ -1233,7 +1234,8 @@ def _anilist_ultimo_episodio(media_id):
         return None
 
 
-_ANIMES_JANELA_H = 24   # avisa se o episódio saiu nas últimas N horas (não "vai sair")
+_ANIMES_JANELA_H = 72   # avisa se o episódio saiu nas últimas N horas (não "vai sair"); 72h =
+                        # não perde episódio que saiu enquanto a Luna estava off / você jogando
 
 def _tarefa_avisar_animes():
     """Avisa quando SAIU episódio novo dos animes da nota Luna/animes.md (janela de
