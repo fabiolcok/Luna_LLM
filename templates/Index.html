@@ -130,16 +130,24 @@
         #texto-enviar:hover { background: #c8abf9; }
 
         /* Linha de status — o que a Luna está fazendo agora */
+        /* Cabeçalho da caixa da Luna: rótulo à esquerda, status dela à direita */
+        .bloco-cabecalho {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .bloco-cabecalho label { margin-bottom: 6px; }
         #status-luna {
-            font-size: 12px;
+            font-size: 11.5px;
             color: #9aa5ce;
-            background: #11111a;
-            border-left: 4px solid #3a3a5a;
-            border-radius: 10px;
-            padding: 8px 14px;
-            margin-bottom: 10px;
-            display: block;
-            transition: color .3s, border-color .3s;
+            text-align: right;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            transition: color .3s;
         }
 
         /* Pensamento colapsável — mesmo visual das outras caixas */
@@ -1069,23 +1077,13 @@
 
         <!-- ══════════ ZONA DE SAÍDA (o que a Luna diz) ══════════ -->
 
-        <!-- Status: o que a Luna está fazendo agora -->
-        <div id="status-luna">🌚 Por aqui</div>
-
-        <!-- Luna -->
+        <!-- Luna (com o status dela no próprio cabeçalho) -->
         <div id="luna-bloco" class="caixa-texto">
-            <label>Luna</label>
+            <div class="bloco-cabecalho">
+                <label>Luna</label>
+                <span id="status-luna">🌚 Por aqui</span>
+            </div>
             <div id="luna-texto">—</div>
-        </div>
-
-        <div id="avaliacao-bar">
-            <button class="btn-aval" id="btn-repetir" title="Ouvir de novo">▶️</button>
-            <button class="btn-aval" data-rating="bom"  title="Resposta boa">👍</button>
-            <button class="btn-aval" data-rating="ruim" title="Resposta ruim">👎</button>
-        </div>
-        <div id="aval-motivo">
-            <input type="text" id="aval-motivo-input" placeholder="O que não funcionou? (opcional, Enter envia)" maxlength="200">
-            <button id="aval-motivo-enviar">Enviar</button>
         </div>
 
         <!-- Pensamento colapsável (como ela chegou lá — detalhe secundário) -->
@@ -1099,8 +1097,24 @@
             <span id="met-persona">Persona —</span>
         </div>
 
+        <div id="avaliacao-bar">
+            <button class="btn-aval" id="btn-repetir" title="Ouvir de novo">▶️</button>
+            <button class="btn-aval" data-rating="bom"  title="Resposta boa">👍</button>
+            <button class="btn-aval" data-rating="ruim" title="Resposta ruim">👎</button>
+        </div>
+        <div id="aval-motivo">
+            <input type="text" id="aval-motivo-input" placeholder="O que não funcionou? (opcional, Enter envia)" maxlength="200">
+            <button id="aval-motivo-enviar">Enviar</button>
+        </div>
+
         <!-- ══════════ ZONA DE ENTRADA (o que você manda) ══════════ -->
         <div class="zona-divisor"></div>
+
+        <!-- Status microfone (entrada por VOZ) -->
+        <div id="status-mic" class="aguardando">
+            <div id="status-mic-dot"></div>
+            <span id="status-mic-texto">Aguardando... Segure Ctrl+Alt+F8 para falar</span>
+        </div>
 
         <!-- Usuário -->
         <div id="usuario-bloco" class="caixa-texto">
@@ -1113,12 +1127,6 @@
             <span>📎</span>
             <span id="anexo-nome">arquivo.txt</span>
             <button id="btn-anexo-remover" title="Remover anexo">✕</button>
-        </div>
-
-        <!-- Status microfone (entrada por VOZ) -->
-        <div id="status-mic" class="aguardando">
-            <div id="status-mic-dot"></div>
-            <span id="status-mic-texto">Aguardando... Segure Ctrl+Alt+F8 para falar</span>
         </div>
 
         <!-- Digitar em vez de falar: sem TTS, mesmas regras de tamanho do Telegram -->
