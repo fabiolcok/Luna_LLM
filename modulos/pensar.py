@@ -956,13 +956,26 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             # Broadcast pensamento para interface web
             try:
                 import servidor as _srv
+                # A caixa "Pensamento" é o RAIO-X da 1ª chamada (o roteador) — serve pra entender
+                # POR QUE ela fez o que fez (ex: um "Legal demais!" que virou ler_obsidian à toa).
                 partes = []
                 if raciocinio:
                     partes.append(f"🧠 Raciocínio:\n{raciocinio.strip()[:600]}")
                 if ferramenta_chamada:
-                    partes.append(f"⚙️ Ferramenta: {nome_funcao}\n{str(resultado_ferramenta)[:400]}")
+                    partes.append(f"⚙️ Ferramenta: {nome_funcao}")
+                    try:
+                        if argumentos_dit:
+                            partes.append(f"📥 Argumentos: {argumentos_dit}")
+                    except NameError:
+                        pass
+                    partes.append(f"📤 Retorno:\n{str(resultado_ferramenta)[:400]}")
                 else:
-                    partes.append("💭 Resposta direta — nenhuma ferramenta acionada.")
+                    partes.append("💭 Nenhuma ferramenta acionada — resposta direta da persona.")
+                    # O roteador é instruído a ficar mudo; se veio texto, é sinal de que ele
+                    # ponderou (útil pra debug). Esse texto é descartado da resposta.
+                    _cru = (getattr(mensagem_modelo, "content", "") or "").strip()
+                    if _cru:
+                        partes.append(f"🗣️ Roteador falou (descartado):\n{_cru[:300]}")
                 _srv.atualizar_pensamento("\n\n".join(partes))
             except Exception:
                 pass
@@ -992,9 +1005,16 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 # Sinais de que a pergunta exige FILTRAR/calcular (ex: "quais NÃO paguei", "quanto falta")
                 _quer_filtrar = bool(re.search(r'\b(quais|n[aã]o|quanto|quantos|falta|pendent|pague|pago|apenas|filtr)\b',
                                                prompt_usuario, re.IGNORECASE))
-                # A nota Novidades (dump do radar RSS) NUNCA vem crua — é feita pra ser CONTADA
-                # conversando, senão a Luna "metralha" o markdown com links (avaliações 👎).
-                _eh_novidades = bool(re.search(r'(?m)^##\s*\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}', resultado_str))
+                # As notas de CARD (Novidades.md do radar RSS, Promocoes.md do radar de promoções)
+                # NUNCA vêm cruas — são feitas pra ser CONTADAS conversando, senão a Luna "metralha"
+                # o markdown com links (avaliações 👎). Detecta pela ASSINATURA da nota (frontmatter
+                # do grid ou os callouts), não pela data: o formato do cabeçalho já mudou uma vez
+                # (era '## 2026-08-08 15:03', virou '## 08/08/2026') e o guarda parou de pegar.
+                _eh_novidades = bool(
+                    re.search(r'cssclasses:\s*\n\s*-\s*novidades-grid', resultado_str)
+                    or re.search(r'(?m)^>\s*\[!tip\]', resultado_str)
+                    or re.search(r'(?m)^##\s*(?:\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}|\d{2}/\d{2}/\d{4})', resultado_str)
+                )
 
                 if nome_funcao == "ler_obsidian" and not _quer_resumo and not _quer_filtrar and not _eh_novidades:
                     # Nota do próprio usuário, sem resumo/filtro: devolve FIEL e determinístico
