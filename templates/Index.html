@@ -1416,7 +1416,7 @@
         };
         // Parada, ela ALTERNA entre estas — cara única o tempo todo dava impressão de
         // congelada. Troca ao entrar em repouso e de tempos em tempos enquanto fica parada.
-        const ROSTOS_IDLE = ['˘ ω ˘', '◜ᴗ◝', 'ᗜ⩊ᗜ', '•𐃷•', '• ₃ •'];
+        const ROSTOS_IDLE = ['˘ ω ˘', '◜3◝', 'ᗜ⩊ᗜ', '•𐃷•', '• ₃ •'];
         const ROSTO_AFK   = '_　_ 💤';        // você sumiu (proativo suspenso)
         const IDLE_TROCA_MS = 34000;
         let _idxIdle = -1, _timerIdle = null, _afk = false;
@@ -1483,7 +1483,9 @@
         const OLHAR_MAX = 9;        // deslocamento máximo, em px
         const OLHAR_ALCANCE = 300;  // distância do mouse pra chegar no máximo
         const OLHAR_SUAV = 0.1;     // 0-1: quanto menor, mais preguiçoso o olhar
+        const OLHAR_OCIOSO_MS = 2600;   // mouse parado por isso -> ela volta a divagar sozinha
         let _olhoAlvoX = 0, _olhoAlvoY = 0, _olhoX = 0, _olhoY = 0;
+        let _mouseTs = 0, _vagueiaAte = 0, _vagX = 0, _vagY = 0;
 
         document.addEventListener('mousemove', (e) => {
             const svg = document.querySelector('#presenca svg');
@@ -1495,11 +1497,34 @@
             const forca = Math.min(1, d / OLHAR_ALCANCE);   // perto = olha pouco; longe = o máximo
             _olhoAlvoX = (dx / d) * OLHAR_MAX * forca;
             _olhoAlvoY = (dy / d) * OLHAR_MAX * forca;
+            _mouseTs = Date.now();                          // você mexeu: ela te olha
         });
 
+        // Olhar AUTÔNOMO: de vez em quando ela dá uma espiada pra um lado e SEGURA lá um tempo.
+        // O segredo pra não parecer tique é ficar mais tempo PARADA do que se mexendo, e às
+        // vezes voltar pro centro. Só entra quando o mouse está quieto.
+        function vaguear(agora) {
+            if (agora < _vagueiaAte) return;
+            const parada = Math.random() < 0.35;            // 35% das vezes: volta ao centro e descansa
+            if (parada) {
+                _vagX = _vagY = 0;
+                _vagueiaAte = agora + 1800 + Math.random() * 2600;
+            } else {
+                const ang = Math.random() * Math.PI * 2;
+                const forca = 0.45 + Math.random() * 0.55;  // nem sempre no limite
+                _vagX = Math.cos(ang) * OLHAR_MAX * forca;
+                _vagY = Math.sin(ang) * OLHAR_MAX * forca * 0.7;   // menos vertical: parece olhar, não cair
+                _vagueiaAte = agora + 1400 + Math.random() * 2200;
+            }
+        }
+
         (function olhar() {
-            const alvoX = _afk ? 0 : _olhoAlvoX;            // dormindo, ela não segue nada
-            const alvoY = _afk ? 0 : _olhoAlvoY;
+            const agora = Date.now();
+            const seguindoMouse = (agora - _mouseTs) < OLHAR_OCIOSO_MS;
+            if (!seguindoMouse) vaguear(agora);
+            // dormindo não olha nada; mouse recente manda; senão, divaga sozinha
+            const alvoX = _afk ? 0 : (seguindoMouse ? _olhoAlvoX : _vagX);
+            const alvoY = _afk ? 0 : (seguindoMouse ? _olhoAlvoY : _vagY);
             _olhoX += (alvoX - _olhoX) * OLHAR_SUAV;
             _olhoY += (alvoY - _olhoY) * OLHAR_SUAV;
             const el = document.getElementById('rosto');
