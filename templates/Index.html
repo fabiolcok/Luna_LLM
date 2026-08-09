@@ -1346,6 +1346,8 @@
                 </g>
                 <!-- FOGUETES: pousam nela e incomodam até você chacoalhar -->
                 <g id="foguetes"></g>
+                <!-- SATELITES: ficam em ORBITA (nao pousam) e saem clicando um a um -->
+                <g id="satelites"></g>
                 <g id="ondas">
                     <circle cx="100" cy="100" r="70"/><circle cx="100" cy="100" r="70"/>
                     <circle cx="100" cy="100" r="70"/>
@@ -1571,7 +1573,7 @@
         function pararTrocaIdle() { clearInterval(_timerIdle); _timerIdle = null; }
         function iniciarTrocaIdle() {
             pararTrocaIdle();
-            _timerIdle = setInterval(() => { if (!_afk && !_reagindo && !_foguetesNaCabeca) trocarRosto(rostoIdle()); }, IDLE_TROCA_MS);
+            _timerIdle = setInterval(() => { if (!_afk && !_reagindo && !_foguetesNaCabeca && !_satelitesNaOrbita) trocarRosto(rostoIdle()); }, IDLE_TROCA_MS);
         }
         let _rostoReacao = null;      // último kaomoji que ELA escolheu
         let _timerSono = null;
@@ -1666,6 +1668,8 @@
         // let/const não são içados — usar antes da declaração derruba o script inteiro
         let _jogoAtivo = false;
         let _foguetesNaCabeca = 0;
+        let _botaoPreso = false, _arrastou = false;   // sacudir = AGARRAR e chacoalhar
+        let _satelitesNaOrbita = 0;
         const AFAGO_RAIO = 58;        // rosto + o alto da cabeça
         const AFAGO_SOBE = 14;        // desloca a área pra CIMA: carinho é na cabeça,
                                       // não embaixo do queixo
@@ -1706,10 +1710,14 @@
                 const dA = Math.hypot(e.clientX - (rA.left + rA.width / 2),
                                       e.clientY - (rA.top + rA.height / 2 - AFAGO_SOBE));
                 if (dA <= AFAGO_RAIO) {
-                    // com foguete pousado ela não quer carinho — quer que você TIRE eles
-                    if (_foguetesNaCabeca) registrarMovimento(
-                        Math.hypot(e.clientX - _mouseX, e.clientY - _mouseY));
-                    else _afagoUltimo = Date.now();
+                    if (_botaoPreso) {
+                        // AGARROU e está chacoalhando: é assim que se tira foguete
+                        _arrastou = true;
+                        if (_foguetesNaCabeca) registrarMovimento(
+                            Math.hypot(e.clientX - _mouseX, e.clientY - _mouseY));
+                    } else if (!_foguetesNaCabeca) {
+                        _afagoUltimo = Date.now();   // mão passando de leve = carinho
+                    }
                 }
             }
         });
@@ -2096,6 +2104,103 @@
             }, 300000 + Math.random() * 600000);
         })();
 
+        // ═══ 🛰️ SATÉLITES — a segunda história. Diferente do foguete: eles não POUSAM,
+        //     ficam em ÓRBITA (com a mesma profundidade do controle do modo jogo) e cada um
+        //     sai com um CLIQUE nele. Verbo diferente pra problema diferente. ═══
+        const SAT_MAX = 4, SAT_INTERVALO = 16000;
+        let _satelites = [], _satTimer = null, _animSat = null, _orbSat = { a: 0 };
+
+        function novoSatelite() {
+            const g = document.getElementById('satelites');
+            if (!g || !TEM_ANIME || _satelites.length >= SAT_MAX) return;
+            const el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            el.setAttribute('style', 'cursor:pointer');
+            el.innerHTML =
+                '<rect x="-3.4" y="-2.4" width="6.8" height="4.8" rx="1" fill="#cfe0ff"/>'
+              + '<rect x="-9" y="-1.5" width="4.6" height="3" rx="0.6" fill="#7aa2f7"/>'
+              + '<rect x="4.4" y="-1.5" width="4.6" height="3" rx="0.6" fill="#7aa2f7"/>'
+              + '<circle cx="0" cy="0" r="1" fill="#ff5a4d"/>';
+            g.appendChild(el);
+            const sat = { el: el, fase: Math.random() * 360, tirando: false };
+            _satelites.push(sat);
+            _satelitesNaOrbita = _satelites.length;
+            el.addEventListener('click', function (ev) { ev.stopPropagation(); tirarSatelite(sat); });
+            trocarRosto(ROSTO_INCOMODADA);
+            clearTimeout(_satTimer);
+            _satTimer = setTimeout(novoSatelite, SAT_INTERVALO);
+            if (!_animSat) girarSatelites();
+        }
+
+        function girarSatelites() {
+            const pres = document.getElementById('presenca');
+            const svgEl = pres && pres.querySelector('svg');
+            const halo = document.getElementById('halo');
+            const gSat = document.getElementById('satelites');
+            _orbSat.a = 0;
+            _animSat = anime({
+                targets: _orbSat, a: 360, duration: 7000, easing: 'linear', loop: true,
+                update: function () {
+                    let algumNaFrente = false;
+                    _satelites.forEach(function (sat) {
+                        if (sat.tirando) return;
+                        const rad = (_orbSat.a + sat.fase) * Math.PI / 180, R = 84;
+                        const sin = Math.sin(rad);
+                        if (sin >= 0) algumNaFrente = true;
+                        const x = 100 + Math.cos(rad) * R, y = 100 + sin * R * 0.4;
+                        const esc = 0.75 + (sin + 1) / 2 * 0.45;
+                        sat.el.setAttribute('transform',
+                            'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') scale(' + esc.toFixed(2) + ')');
+                        // mesma oclusão do controle: some ao passar por trás dela
+                        sat.el.setAttribute('opacity',
+                            (sin >= 0 ? 1 : Math.max(0, 1 + sin * 2.4)).toFixed(2));
+                        // e some pro CLIQUE também: não dá pra clicar no que está escondido
+                        sat.el.style.pointerEvents = sin < -0.15 ? 'none' : 'auto';
+                    });
+                    // a camada inteira vai pro fundo quando ninguém está na frente
+                    if (svgEl && gSat) {
+                        if (algumNaFrente) { if (gSat.nextSibling) svgEl.appendChild(gSat); }
+                        else if (gSat.nextSibling !== halo) svgEl.insertBefore(gSat, halo);
+                    }
+                },
+            });
+        }
+
+        function tirarSatelite(sat) {
+            if (sat.tirando) return;
+            sat.tirando = true;
+            const m = /translate\(([-\d.]+) ([-\d.]+)\)/.exec(sat.el.getAttribute('transform') || '');
+            const x0 = m ? +m[1] : 100, y0 = m ? +m[2] : 100;
+            const ang = Math.atan2(y0 - 100, x0 - 100);
+            const de = { x: x0, y: y0, r: 0, o: 1 };
+            anime({
+                targets: de, x: x0 + Math.cos(ang) * 220, y: y0 + Math.sin(ang) * 220,
+                r: 540, o: 0, duration: 800, easing: 'easeInQuad',
+                update: function () {
+                    sat.el.setAttribute('transform',
+                        'translate(' + de.x.toFixed(1) + ' ' + de.y.toFixed(1) + ') rotate(' + de.r.toFixed(0) + ')');
+                    sat.el.setAttribute('opacity', de.o.toFixed(2));
+                },
+                complete: function () {
+                    sat.el.remove();
+                    _satelites = _satelites.filter(function (x) { return x !== sat; });
+                    _satelitesNaOrbita = _satelites.length;
+                    if (!_satelites.length) {
+                        clearTimeout(_satTimer); _satTimer = null;
+                        if (_animSat) { _animSat.pause(); _animSat = null; }
+                        trocarRosto('◉‿◉');
+                        setTimeout(function () { if (!_afk) trocarRosto(rostoIdle()); }, 2600);
+                    }
+                },
+            });
+        }
+
+        (function agendarSatelites() {
+            setTimeout(function () {
+                if (!_afk && !_satelites.length && !_foguetesNaCabeca) novoSatelite();
+                agendarSatelites();
+            }, 420000 + Math.random() * 600000);
+        })();
+
         // ═══ COMETA (easter egg) — cruza o fundo de vez em quando. Ângulo, sentido, altura
         //     e velocidade sorteados: nunca passa igual duas vezes. ═══
         function cometa() {
@@ -2171,6 +2276,21 @@
             }, fim));
         }
 
+        (function ligarBotao() {
+            document.addEventListener('mousedown', () => { _botaoPreso = true; _arrastou = false; });
+            document.addEventListener('mouseup', () => {
+                _botaoPreso = false;
+                // solta o tremor se você largou no meio da sacudida
+                if (_chacoalhando) {
+                    _chacoalhando = false;
+                    const pr = document.getElementById('presenca');
+                    pr && pr.classList.remove('chacoalhando');
+                    if (_foguetesNaCabeca) trocarRosto(ROSTO_INCOMODADA);
+                }
+                setTimeout(() => { _arrastou = false; }, 60);   // deixa o click checar antes
+            });
+        })();
+
         (function ligarCutucar() {
             const pres = document.getElementById('presenca');
             if (!pres) return;
@@ -2183,6 +2303,7 @@
                 const r = svg.getBoundingClientRect();
                 const dx = e.clientX - (r.left + r.width / 2);
                 const dy = e.clientY - (r.top + r.height / 2);
+                if (_arrastou) return;                    // foi sacudida, não cutucão
                 if (Math.hypot(dx, dy) <= RAIO_CLIQUE) cutucar();
             });
         })();
@@ -2196,7 +2317,7 @@
 
         function podeBocejar() {
             const pres = document.getElementById('presenca');
-            if (!pres || _bocejando || _afk || _reagindo || _foguetesNaCabeca) return false;
+            if (!pres || _bocejando || _afk || _reagindo || _foguetesNaCabeca || _satelitesNaOrbita) return false;
             if (!pres.classList.contains('est-dormindo')) return false;               // tem que estar parada
             if (Object.values(FERRAMENTAS_VISUAL).some(v => pres.classList.contains('ferr-' + v)))
                 return false;                                                          // ferramenta rodando: não
