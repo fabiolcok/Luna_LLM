@@ -103,12 +103,8 @@
         @keyframes luz-pisca { 0%,100% { opacity: .35; } 50% { opacity: 1; } }
 
         /* 🤍 AFAGO: mouse parado em cima dela. Tudo desacelera e o brilho aquece. */
-        #presenca.afago #halo   { animation-duration: 4.4s; }
-        #presenca.afago #arco-1 { animation-duration: 60s; }
-        #presenca.afago #arco-2 { animation-duration: 46s; }
-        #presenca.afago #arco-3 { animation-duration: 34s; }
-        #presenca.afago #orbita { animation-duration: 80s; }
-        #presenca.afago #orbita-escala { transform: scale(.93); opacity: .75; }
+        #presenca.afago #orbita-escala { transform: scale(.94); opacity: .8; }
+        #presenca.afago #arcos { transform: scale(.97); opacity: .55; }
         #presenca.afago #rosto-txt { text-shadow: 0 0 18px rgba(255, 214, 165, .75); }
 
         /* tranco do clique: ela leva um susto de verdade. O rosto é uma camada HTML POR CIMA
@@ -1629,8 +1625,16 @@
         //     um instância nova a cada pixel. São 10 linhas e fica mais liso. ═══
         // declarados aqui em cima porque o handler de mousemove (logo abaixo) já os usa —
         // `let`/`const` não são içados, e usar antes da declaração derruba o script inteiro
-        const AFAGO_RAIO = 82, AFAGO_ESPERA = 900, AFAGO_TOLERANCIA = 5;
-        let _mouseX = -9999, _mouseY = -9999, _paradoDesde = 0, _afagando = false;
+        const AFAGO_RAIO = 46;        // só o ROSTO, não a cabeça toda
+        const AFAGO_JANELA = 380;     // sem movimento por isso -> parou de fazer carinho
+        let _mouseX = -9999, _mouseY = -9999, _afagoUltimo = 0, _afagando = false;
+
+        // Quando passa um cometa/OVNI ela ACOMPANHA com o olhar — tem prioridade sobre o
+        // mouse e sobre o divagar (é a coisa mais interessante na tela naquele momento).
+        let _olharObjeto = null;   // {x, y} em coordenadas do viewBox (0-200), ou null
+        function olharObjeto(x, y) {
+            _olharObjeto = (x === null) ? null : { x, y };
+        }
 
         const OLHAR_MAX = 9;        // deslocamento máximo, em px
         const OLHAR_ALCANCE = 300;  // distância do mouse pra chegar no máximo
@@ -1650,10 +1654,16 @@
             _olhoAlvoX = (dx / d) * OLHAR_MAX * forca;
             _olhoAlvoY = (dy / d) * OLHAR_MAX * forca;
             _mouseTs = Date.now();                          // você mexeu: ela te olha
-            // afago: só conta como 'parado' se mexeu MENOS que a tolerância
-            if (Math.hypot(e.clientX - _mouseX, e.clientY - _mouseY) > AFAGO_TOLERANCIA)
-                _paradoDesde = Date.now();
+            // CARINHO: é o mouse ARRASTANDO sobre o rosto dela (mouse parado não é afago).
+            const mexeu = Math.hypot(e.clientX - _mouseX, e.clientY - _mouseY) > 1.5;
             _mouseX = e.clientX; _mouseY = e.clientY;
+            const svgA = document.querySelector('#presenca svg');
+            if (mexeu && svgA) {
+                const rA = svgA.getBoundingClientRect();
+                const dA = Math.hypot(e.clientX - (rA.left + rA.width / 2),
+                                      e.clientY - (rA.top + rA.height / 2));
+                if (dA <= AFAGO_RAIO) _afagoUltimo = Date.now();
+            }
         });
 
         // Olhar AUTÔNOMO: de vez em quando ela dá uma espiada pra um lado e SEGURA lá um tempo.
@@ -1680,10 +1690,20 @@
         (function olhar() {
             const agora = Date.now();
             const seguindoMouse = (agora - _mouseTs) < OLHAR_OCIOSO_MS;
-            if (!seguindoMouse) vaguear(agora);
-            // dormindo não olha nada; mouse recente manda; senão, divaga sozinha
-            const alvoX = _afk ? 0 : (seguindoMouse ? _olhoAlvoX : _vagX);
-            const alvoY = _afk ? 0 : (seguindoMouse ? _olhoAlvoY : _vagY);
+            if (!seguindoMouse && !_olharObjeto) vaguear(agora);
+            let alvoX, alvoY;
+            if (_afk) {                       // dormindo não olha nada
+                alvoX = alvoY = 0;
+            } else if (_olharObjeto) {        // tem coisa passando no céu: acompanha
+                const dx = _olharObjeto.x - 100, dy = _olharObjeto.y - 100;
+                const d = Math.hypot(dx, dy) || 1;
+                alvoX = (dx / d) * OLHAR_MAX;
+                alvoY = (dy / d) * OLHAR_MAX * 0.8;
+            } else if (seguindoMouse) {
+                alvoX = _olhoAlvoX; alvoY = _olhoAlvoY;
+            } else {
+                alvoX = _vagX; alvoY = _vagY;
+            }
             _olhoX += (alvoX - _olhoX) * OLHAR_SUAV;
             _olhoY += (alvoY - _olhoY) * OLHAR_SUAV;
 
@@ -1790,13 +1810,9 @@
         function checarAfago() {
             const pres = document.getElementById('presenca');
             const el = document.getElementById('rosto-txt');
-            const svg = pres && pres.querySelector('svg');
-            if (!pres || !el || !svg) return;
-            const r = svg.getBoundingClientRect();
-            const perto = Math.hypot(_mouseX - (r.left + r.width / 2),
-                                     _mouseY - (r.top + r.height / 2)) <= AFAGO_RAIO;
-            const quieto = _paradoDesde && (Date.now() - _paradoDesde) > AFAGO_ESPERA;
-            const deve = perto && quieto && !_afk && !_reagindo && !_bocejando;
+            if (!pres || !el) return;
+            const acariciando = _afagoUltimo && (Date.now() - _afagoUltimo) < AFAGO_JANELA;
+            const deve = acariciando && !_afk && !_reagindo && !_bocejando;
 
             if (deve && !_afagando) {
                 _afagando = true;
@@ -1833,8 +1849,9 @@
                     ultimoX = pos.x;
                     g.setAttribute('transform',
                         `translate(${pos.x.toFixed(1)} ${pos.y.toFixed(1)}) rotate(${inclina.toFixed(1)})`);
+                    olharObjeto(pos.x, pos.y);               // ela acompanha o disco zanzando
                 },
-                complete: () => g.setAttribute('opacity', '0'),
+                complete: () => { g.setAttribute('opacity', '0'); olharObjeto(null); },
             });
             anime({ targets: g, opacity: [0, 0.95], duration: 700, easing: 'linear' });
             setTimeout(() => anime({ targets: g, opacity: 0, duration: 800, easing: 'linear' }), 9200);
@@ -1872,8 +1889,9 @@
                     g.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${graus.toFixed(1)})`);
                     // acende e apaga nas pontas: entra e sai do nada, sem "aparecer" de repente
                     g.setAttribute('opacity', Math.min(1, Math.min(pos.p, 1 - pos.p) * 5).toFixed(2));
+                    olharObjeto(x, y);                       // ela acompanha o cometa
                 },
-                complete: () => g.setAttribute('opacity', '0'),
+                complete: () => { g.setAttribute('opacity', '0'); olharObjeto(null); },
             });
         }
         (function agendarCometa() {
