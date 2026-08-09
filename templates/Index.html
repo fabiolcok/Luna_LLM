@@ -82,10 +82,10 @@
         #presenca { position: relative; display: flex; justify-content: center; padding: 4px 0 10px; }
         /* ✨ estrelas: só à noite. De dia ficam com opacidade 0 — o céu não "some", ele
            simplesmente não está lá. Cintilam devagar, cada uma no seu tempo. */
-        #estrelas circle { fill: #cfe0ff; opacity: 0; }
+        #estrelas rect { fill: #cfe0ff; opacity: 0; }
         /* à noite o brilho da cabeça só existe de um lado: vira arco de luz, não anel */
         #presenca.noite #halo { mask: url(#m-luar); -webkit-mask: url(#m-luar); }
-        #presenca.noite #estrelas circle { animation: cintila 4.5s ease-in-out infinite; }
+        #presenca.noite #estrelas rect { animation: cintila 4.5s ease-in-out infinite; }
         @keyframes cintila { 0%,100% { opacity: .12; } 50% { opacity: .55; } }
 
         /* 🎉 clarão da comemoração: a cabeça estoura de brilho junto com o confete */
@@ -108,7 +108,7 @@
         #presenca.afago #rosto-txt { text-shadow: 0 0 18px rgba(255, 214, 165, .75); }
 
         /* 🎮 MODO JOGO: as bolinhas viram PIXELS quadrados (estética 8-bit) */
-        #presenca.ferr-jogo #orbita circle { rx: 0; ry: 0; fill: #7bf98f; }
+        #presenca.ferr-jogo #orbita rect { rx: 0; fill: #7bf98f; }
         #presenca.ferr-jogo #arcos { opacity: .12; }
         #presenca.ferr-jogo #rosto-txt { text-shadow: 0 0 14px rgba(123,249,143,.7); }
 
@@ -194,23 +194,24 @@
 
         /* ═══ FERRAMENTA: 🎵 SPOTIFY — bolinhas viram EQUALIZADOR e os arcos batem no ritmo.
                A cabeça e o rosto ficam intactos (identidade não muda). ═══ */
-        .ferr-spotify #orbita circle {
+        .ferr-spotify #orbita rect {
             animation: eq-bolinha .58s ease-in-out infinite alternate;
             animation-delay: calc(var(--d-rand) * -.58s);      /* ritmo quebrado = parece música */
             fill: #1ed760;                                     /* verde vivo (o do Spotify, puxado) */
             filter: drop-shadow(0 0 4px #1db954);
         }
         /* as 4 grandes puxam pro verde-limão: dá relevo no anel */
-        .ferr-spotify #orbita circle:nth-child(4n+1) { fill: #7bf98f; }
+        .ferr-spotify #orbita rect:nth-child(4n+1) { fill: #7bf98f; }
         .ferr-spotify #orbita { animation-duration: 26s; }
         .ferr-spotify #arcos  { animation: eq-arcos .58s ease-in-out infinite alternate; }
         .ferr-spotify #halo   { animation-duration: .58s; }
 
         /* piso alto: no batidão elas não somem, pulsam */
-        @keyframes eq-bolinha { from { r: 1.5px; opacity: .5; } to { r: 4.6px; opacity: 1; } }
+        @keyframes eq-bolinha { from { transform: scale(.7); opacity: .5; } to { transform: scale(2.1); opacity: 1; } }
         @keyframes eq-arcos   { from { transform: scale(.97); } to { transform: scale(1.05); } }
 
         /* ondas do radar: herdam a cor da ferramenta; paradas até o radar ligar */
+        #orbita rect { transform-box: fill-box; transform-origin: center; }
         #ondas circle { fill: none; stroke: var(--cor-halo, #7aa2f7); stroke-width: 1.3; opacity: 0; }
 
         /* ═══ 🔍 RADAR (pesquisar_web) — arco externo VARRE rápido e as bolinhas
@@ -219,25 +220,25 @@
         .ferr-radar #arco-2 { animation-duration: 9s; opacity: .35; }
         .ferr-radar #arco-3 { animation-duration: 7s; opacity: .3; }
         .ferr-radar #orbita { animation-duration: 60s; }
-        .ferr-radar #orbita circle {
+        .ferr-radar #orbita rect {
             animation: radar-ping 1.5s linear infinite;
             animation-delay: calc(var(--d-seq) * -1.5s);       /* varredura girando ao redor */
             fill: #38bdf8;                                     /* azul claro vivo */
             filter: drop-shadow(0 0 4px #7dd3fc);
         }
         /* as 4 grandes quase brancas: o feixe passando por elas fica evidente */
-        .ferr-radar #orbita circle:nth-child(4n+1) { fill: #d8f2ff; }
+        .ferr-radar #orbita rect:nth-child(4n+1) { fill: #d8f2ff; }
         @keyframes radar-ping {
-            0%   { r: 1.2px; opacity: .25; }
-            12%  { r: 4.6px; opacity: 1;   }
-            45%  { r: 1.2px; opacity: .25; }
-            100% { r: 1.2px; opacity: .25; }
+            0%   { transform: scale(.6); opacity: .25; }
+            12%  { transform: scale(2.1); opacity: 1;  }
+            45%  { transform: scale(.6); opacity: .25; }
+            100% { transform: scale(.6); opacity: .25; }
         }
 
         /* ═══ 🎬 VÍDEO/LINK (resumir_youtube, resumir_site) — o anel ENGOLE o conteúdo
                (contrai e solta) e as bolinhas acendem em progresso lento, tipo timeline. ═══ */
         .ferr-video #orbita-escala { animation: video-engole 2.6s ease-in-out infinite; }
-        .ferr-video #orbita circle {
+        .ferr-video #orbita rect {
             animation: video-progresso 2.6s ease-in-out infinite;
             animation-delay: calc(var(--d-seq) * -2.6s);
             /* VERMELHAS VIVAS: o fill vem como atributo no SVG, mas CSS ganha dele.
@@ -246,18 +247,18 @@
             filter: drop-shadow(0 0 4px #ff3b30);
         }
         /* as 4 grandes (índices 0,4,8,12) puxam pro laranja: dá relevo no anel */
-        .ferr-video #orbita circle:nth-child(4n+1) { fill: #ff6a3d; }
+        .ferr-video #orbita rect:nth-child(4n+1) { fill: #ff6a3d; }
         .ferr-video #arco-1 { animation-duration: 30s; }
         .ferr-video #arco-2 { animation-duration: 22s; }
         .ferr-video #arco-3 { animation-duration: 16s; }
         @keyframes video-engole    { 0%,100% { transform: scale(1); } 55% { transform: scale(.84); } }
         /* piso mais alto que os outros modos: elas nunca "apagam", só respiram de brilho */
-        @keyframes video-progresso { 0%,100% { r: 1.6px; opacity: .5; } 30% { r: 4px; opacity: 1; } }
+        @keyframes video-progresso { 0%,100% { transform: scale(.8); opacity: .5; } 30% { transform: scale(1.9); opacity: 1; } }
 
         /* ═══ 👁️ TELA (ver_tela) — os arcos APAGAM e a linha do scanner (anime.js) varre. ═══ */
         .ferr-tela #arcos  { opacity: .18; }
         .ferr-tela #orbita { animation-duration: 90s; }
-        .ferr-tela #orbita circle { opacity: .25; fill: #f2f7ff; }   /* brancas e discretas: quem brilha é o scanner */
+        .ferr-tela #orbita rect { opacity: .25; fill: #f2f7ff; }   /* brancas e discretas: quem brilha é o scanner */
 
         /* 🗣️ falando — o núcleo PULSA, arcos giram soltos */
         .est-falando #halo   { animation-duration: .9s; }
@@ -1322,11 +1323,11 @@
                 <!-- ONDAS: só no modo RADAR (pesquisar_web). No idle atravessavam o rosto. -->
                 <!-- MODO JOGO: controle orbitando + barra de vida no lugar dos arcos -->
                 <g id="controle" opacity="0">
-                    <rect x="-7" y="-3.6" width="14" height="7.2" rx="3.4" fill="#7bf98f" opacity="0.9"/>
-                    <rect x="-4.6" y="-0.6" width="2.6" height="1.1" rx="0.5" fill="#0d0d12"/>
-                    <rect x="-4.05" y="-2" width="1.1" height="2.6" rx="0.5" fill="#0d0d12"/>
-                    <circle cx="3.2" cy="-0.9" r="0.85" fill="#0d0d12"/>
-                    <circle cx="4.9" cy="0.7" r="0.85" fill="#0d0d12"/>
+                    <rect x="-10.5" y="-5.4" width="21" height="10.8" rx="5.1" fill="#7bf98f" opacity="0.9"/>
+                    <rect x="-6.9" y="-0.9" width="3.9" height="1.65" rx="0.75" fill="#0d0d12"/>
+                    <rect x="-6.07" y="-3" width="1.65" height="3.9" rx="0.75" fill="#0d0d12"/>
+                    <circle cx="4.8" cy="-1.35" r="1.27" fill="#0d0d12"/>
+                    <circle cx="7.35" cy="1.05" r="1.27" fill="#0d0d12"/>
                 </g>
                 <g id="vida" opacity="0">
                     <rect x="60" y="150" width="80" height="4.5" rx="2.2" fill="#2a2a3a"/>
@@ -1502,12 +1503,16 @@
                 const x = (100 + Math.cos(a) * R).toFixed(1);
                 const y = (100 + Math.sin(a) * R).toFixed(1);
                 const grande = i % 4 === 0;
+                const lado = grande ? 2.4 : 1.4;
                 // Dois atrasos por bolinha, porque cada efeito quer um ritmo diferente:
                 //  --d-rand = pseudo-ALEATÓRIO -> equalizador de música (não parece onda certinha)
                 //  --d-seq  = SEQUENCIAL pela posição -> varredura girando ao redor (radar, progresso)
                 const dRand = (((i * 37) % 11) / 11).toFixed(3);
                 const dSeq  = (i / N).toFixed(3);
-                svg += `<circle cx="${x}" cy="${y}" r="${grande ? 2.4 : 1.4}" `
+                // rect (não circle): 'rx' arredonda os cantos, então dá pra virar PIXEL
+                // quadrado no modo jogo. Em <circle> o rx é ignorado — não funcionava.
+                svg += `<rect x="${(x - lado).toFixed(1)}" y="${(y - lado).toFixed(1)}" `
+                     + `width="${lado * 2}" height="${lado * 2}" rx="${lado}" `
                      + `fill="${grande ? '#b4f9f8' : '#7aa2f7'}" opacity="${grande ? 0.9 : 0.45}" `
                      + `style="--d-rand:${dRand}; --d-seq:${dSeq}"/>`;
             }
@@ -1760,7 +1765,9 @@
                 if (d < LIMITE) { dx *= LIMITE / d; dy *= LIMITE / d; }
                 const x = (100 + dx).toFixed(1);
                 const y = (100 + dy).toFixed(1);
-                svg += `<circle cx="${x}" cy="${y}" r="${(0.7 + Math.random() * 0.9).toFixed(1)}" `
+                const t = (0.7 + Math.random() * 0.9);      // estrelas quadradas: pixel no céu
+                svg += `<rect x="${(100 + dx - t).toFixed(1)}" y="${(100 + dy - t).toFixed(1)}" `
+                     + `width="${(t * 2).toFixed(1)}" height="${(t * 2).toFixed(1)}" `
                      + `style="animation-delay:-${(Math.random() * 4.5).toFixed(1)}s"/>`;
             }
             g.innerHTML = svg;
@@ -1852,14 +1859,31 @@
             vida.setAttribute('opacity', '0.85');
 
             // controle dando a volta nela
+            // Órbita com PROFUNDIDADE: na metade de trás ele fica ATRÁS da cabeça e menor;
+            // na da frente, à frente e maior. Em SVG a ordem de empilhamento é a ordem no
+            // documento — então movemos o elemento no DOM ao cruzar cada metade.
+            const svgEl = pres.querySelector('svg');
+            const halo = document.getElementById('halo');
+            let atras = null;
             const orb = { a: 0 };
             _animControle = anime({
                 targets: orb, a: 360, duration: 9000, easing: 'linear', loop: true,
                 update: () => {
-                    const rad = orb.a * Math.PI / 180, R = 78;
+                    const rad = orb.a * Math.PI / 180, R = 86;
+                    const sin = Math.sin(rad);
+                    const x = 100 + Math.cos(rad) * R;
+                    const y = 100 + sin * R * 0.42;
+                    const fundo = sin < 0;                       // metade de cima = por trás dela
+                    if (fundo !== atras) {                       // trocou de metade: reempilha
+                        atras = fundo;
+                        if (fundo) svgEl.insertBefore(ctrl, halo);
+                        else svgEl.appendChild(ctrl);
+                    }
+                    const escala = 0.72 + (sin + 1) / 2 * 0.5;   // longe menor, perto maior
                     ctrl.setAttribute('transform',
-                        `translate(${(100 + Math.cos(rad) * R).toFixed(1)} ${(100 + Math.sin(rad) * R * 0.55).toFixed(1)}) `
-                        + `rotate(${(Math.sin(rad) * 14).toFixed(1)})`);
+                        `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${(sin * 12).toFixed(1)}) `
+                        + `scale(${escala.toFixed(2)})`);
+                    ctrl.setAttribute('opacity', fundo ? '0.55' : '0.95');
                 },
             });
             // barra de vida sobe e desce (é decorativa: não temos HP real do jogo)
