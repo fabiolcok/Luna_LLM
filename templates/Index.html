@@ -117,6 +117,11 @@
         /* 🚀 sacudir NÃO é tremer: quem move ela é o seu mouse (transform inline no JS).
            O tremor de CSS foi embora — dava a sensação de "vibrou" e não de "puxei". */
 
+        /* 😨 MEDO: ela se ENCOLHE (as bolinhas recolhem) e o halo esfria. Vem depois das
+           regras de irritação de propósito: medo ganha da irritação na cor do halo. */
+        #presenca.medo #orbita-escala { transform: scale(.92); opacity: .5; }
+        #presenca.medo #arcos { opacity: .25; }
+
         /* 😤 IRRITAÇÃO por nº de HISTÓRIAS ativas ao mesmo tempo (não por nº de objetos:
            um enxame de foguete é UM problema; foguete + satélite são DOIS). A cabeça
            esquenta e ela treme sozinha — tremor diferente do de quando VOCÊ sacode. */
@@ -124,6 +129,7 @@
         #presenca.irrit-3 { --cor-halo: #ff3b30; }
         #presenca.irrit-2 svg, #presenca.irrit-2 #rosto-txt { animation: raiva .3s ease-in-out infinite; }
         #presenca.irrit-3 svg, #presenca.irrit-3 #rosto-txt { animation: raiva .17s ease-in-out infinite; }
+        #presenca.medo { --cor-halo: #7c6ba8; }    /* roxo frio; vence a cor da irritação */
         @keyframes raiva {
             0%,100% { transform: translate(-0.8px, 0); }
             50%     { transform: translate(0.8px, 0);  }
@@ -1152,6 +1158,7 @@
             <button class="lab-btn" data-lab="satelite">🛰️ satélite</button>
             <button class="lab-btn" data-lab="cometao">☄️ cometão</button>
             <button class="lab-btn" data-lab="sujeira">🌫️ fuligem</button>
+            <button class="lab-btn" data-lab="chuva">🌠 chuva</button>
         </div>
         <div class="lab-titulo">Passageiros</div>
         <div class="lab-grade">
@@ -1415,6 +1422,8 @@
                     <line x1="-30" y1="0" x2="0" y2="0" stroke="url(#g-cauda)" stroke-width="1.5" stroke-linecap="round"/>
                     <circle cx="0" cy="0" r="1.7" fill="#ffffff"/>
                 </g>
+                <!-- CHUVA DE ASTEROIDES: passam atras dela; a historia se resolve NAO mexendo -->
+                <g id="asteroides"></g>
                 <circle id="halo" cx="100" cy="100" r="66" fill="url(#g-halo)"/>
                 <g id="orbita-escala"><g id="orbita"></g></g>
                 <path id="scanner" fill="none" stroke="#b4f9f8" stroke-width="1.8" stroke-linecap="round" opacity="0"/>
@@ -1699,7 +1708,7 @@
         function piscar() {
             const el = document.getElementById('rosto-txt');
             // reagindo a um clique tem sequência própria de piscada — não atropela
-            const fechado = (_afk || _reagindo || _chacoalhando) ? null : versaoPiscada(_rostoAtual);
+            const fechado = (_afk || _reagindo || _chacoalhando || _medo) ? null : versaoPiscada(_rostoAtual);
             if (el && fechado) {
                 const eraEsse = _rostoAtual;
                 el.textContent = fechado;                                // instantâneo, sem transição
@@ -1760,7 +1769,8 @@
                     if (_afk) return;
                     // se ela está no meio de uma reação (tontura, cutucão), o rodízio de idle
                     // começa mas NÃO troca a cara — quem devolve é a própria sequência
-                    if (!_reagindo && !_chacoalhando) trocarRosto(rostoIdle());
+                    if (historiasAtivas()) atualizarIrritacao(true);          // tem coisa nela: não relaxa
+                    else if (!_reagindo && !_chacoalhando) trocarRosto(rostoIdle());
                     iniciarTrocaIdle();
                 }, 25000);
             }
@@ -1789,7 +1799,7 @@
         const ARRASTO_MAX = 52, ARRASTO_RESIST = 0.62;
         let _pegou = false, _pegouX = 0, _pegouY = 0, _arrX = 0, _arrY = 0, _animVolta = null;
         let _satelitesNaOrbita = 0, _cometaoNaCabeca = 0, _cometaoTimer = null;
-        let _sujeiraNaCara = 0;
+        let _sujeiraNaCara = 0, _medo = false;
         const AFAGO_RAIO = 58;        // rosto + o alto da cabeça
         const AFAGO_SOBE = 14;        // desloca a área pra CIMA: carinho é na cabeça,
                                       // não embaixo do queixo
@@ -1841,7 +1851,11 @@
                 // ESFREGAR passa na frente do carinho: enquanto ela está suja, a mão passando
                 // por cima está limpando, não fazendo cafuné. Cafuné em cima da fuligem seria
                 // esquisito — e tiraria o único jeito de resolver a história.
-                if (_sujeiraNaCara && esfregar(e.clientX, e.clientY, rA, percorreu)) {
+                if (_medo) {
+                    const dM = Math.hypot(e.clientX - (rA.left + rA.width / 2),
+                                          e.clientY - (rA.top + rA.height / 2 - AFAGO_SOBE));
+                    if (dM <= AFAGO_RAIO) atrapalhar();     // mexer com ela agora é atrapalhar
+                } else if (_sujeiraNaCara && esfregar(e.clientX, e.clientY, rA, percorreu)) {
                     _afagoUltimo = 0;
                 } else if (!_foguetesNaCabeca && !_sujeiraNaCara) {
                     const dA = Math.hypot(e.clientX - (rA.left + rA.width / 2),
@@ -2070,7 +2084,7 @@
             const el = document.getElementById('rosto-txt');
             if (!pres || !el) return;
             const acariciando = _afagoUltimo && (Date.now() - _afagoUltimo) < AFAGO_JANELA;
-            const deve = acariciando && !_afk && !_reagindo && !_bocejando && !_sujeiraNaCara;
+            const deve = acariciando && !_afk && !_reagindo && !_bocejando && !_sujeiraNaCara && !_medo;
 
             if (deve && !_afagando) {
                 _afagando = true;
@@ -2214,6 +2228,7 @@
         // do carinho (que é lento). Vale SEMPRE: sacudiu, ela fica tonta — ter foguete só
         // acrescenta uma consequência (eles caem), não é pré-requisito pra ela reagir.
         function registrarMovimento(dist) {
+            if (_medo) { atrapalhar(); return; }    // sacudir no meio da chuva é atrapalhar
             const agora = Date.now();
             _fogMov.push([agora, dist]);
             _fogMov = _fogMov.filter(([t]) => agora - t < FOG_JANELA);
@@ -2398,7 +2413,8 @@
 
         function historiasAtivas() {
             return (_foguetesNaCabeca ? 1 : 0) + (_satelitesNaOrbita ? 1 : 0)
-                 + (_cometaoNaCabeca ? 1 : 0) + (_sujeiraNaCara ? 1 : 0);
+                 + (_cometaoNaCabeca ? 1 : 0) + (_sujeiraNaCara ? 1 : 0)
+                 + (_medo ? 1 : 0);
         }
 
         function atualizarIrritacao(mostrarRosto) {
@@ -2408,7 +2424,7 @@
             pres.classList.remove('irrit-2', 'irrit-3');
             if (n >= 3) pres.classList.add('irrit-3');
             else if (n === 2) pres.classList.add('irrit-2');
-            if (mostrarRosto && n > 0 && !_chacoalhando) {
+            if (mostrarRosto && n > 0 && !_chacoalhando && !_medo) {
                 trocarRosto(ROSTOS_IRRITADA[Math.min(n, ROSTOS_IRRITADA.length) - 1]);
             }
         }
@@ -2441,6 +2457,7 @@
                 satelite: function () { novoSatelite(); },
                 cometao:  function () { if (typeof cometao === 'function') cometao(); },
                 sujeira:  function () { sujar(2); },
+                chuva:    function () { chuvaAsteroides(); },
                 cometa:   function () { cometa(); },
                 ovni:     function () { ovni(); },
                 confete:  function () { confete(); },
@@ -2463,6 +2480,7 @@
                     if (_afk) aplicarAfk(false);
                     espantarFoguetes();
                     limparSujeira();
+                    if (_medo) { _medoAte = 0; passouAChuva(); }
                     _satelites.slice().forEach(tirarSatelite);
                     aplicarPresenca('dormindo');
                 },
@@ -2474,6 +2492,108 @@
                 });
             });
         })();
+
+        // ═══ 🌠 CHUVA DE ASTEROIDES — a 5ª história, e a única cujo VERBO é NÃO FAZER NADA.
+        //     Todas as outras pedem uma ação (sacudir, clicar, martelar, esfregar); esta pede
+        //     o contrário: ela está encolhida e imóvel esperando passar, e mexer com ela no
+        //     meio disso ESTRAGA — cada interferência estica a chuva. A recompensa por segurar
+        //     a mão é o confete no fim; quem atrapalhou só ganha o alívio. ═══
+        const MEDO_BASE = 10000;      // quanto dura se você não encostar nela
+        const MEDO_CASTIGO = 3000;    // cada interferência estica isso
+        const MEDO_TETO = 24000;      // ...até aqui, senão vira castigo eterno
+        const MEDO_FRIO = 1100;       // intervalo entre interferências contadas
+        const ROSTO_MEDO = '°ᯅ°';
+        const ROSTO_SUSTO = '╥‸╥';
+        let _medoAte = 0, _medoTimer = null, _medoChuva = null;
+        let _medoAtrapalhou = 0, _medoUltimoSusto = 0;
+
+        function chuvaAsteroides() {
+            if (_medo || _afk) return;
+            const pres = document.getElementById('presenca');
+            const g = document.getElementById('asteroides');
+            if (!pres || !g) return;
+
+            _medo = true;
+            _medoAtrapalhou = 0;
+            _medoAte = Date.now() + MEDO_BASE;
+            pres.classList.add('medo');
+            trocarRosto(ROSTO_MEDO);
+            atualizarIrritacao(false);
+
+            _medoChuva = setInterval(soltarAsteroide, 170);
+            _medoTimer = setInterval(() => {
+                if (Date.now() >= _medoAte) passouAChuva();
+            }, 120);
+        }
+
+        function soltarAsteroide() {
+            const g = document.getElementById('asteroides');
+            if (!g || !TEM_ANIME) return;
+            const NS = 'http://www.w3.org/2000/svg';
+            const el = document.createElementNS(NS, 'g');
+            const r = 1.6 + Math.random() * 3.4;
+            el.innerHTML =
+                '<circle cx="0" cy="0" r="' + r.toFixed(1) + '" fill="#4a4256"/>'
+              + '<circle cx="' + (r * .4).toFixed(1) + '" cy="' + (-r * .3).toFixed(1) +
+                '" r="' + (r * .35).toFixed(1) + '" fill="#5a5168"/>';
+            g.appendChild(el);
+
+            // entram pela esquerda-alto e saem pela direita-baixo, em diagonal
+            const de = { x: -30 + Math.random() * 90, y: -25, giro: 0 };
+            const alvo = { x: de.x + 150 + Math.random() * 90, y: 240, giro: (Math.random() < .5 ? -1 : 1) * 540 };
+            anime({
+                targets: de, x: alvo.x, y: alvo.y, giro: alvo.giro,
+                duration: 1100 + Math.random() * 700, easing: 'linear',
+                update: () => el.setAttribute('transform',
+                    'translate(' + de.x.toFixed(1) + ' ' + de.y.toFixed(1) + ') rotate(' + de.giro.toFixed(0) + ')'),
+                complete: () => el.remove(),
+            });
+        }
+
+        // mexer com ela no meio da chuva: leva um susto e a chuva dura MAIS
+        function atrapalhar() {
+            const agora = Date.now();
+            if (agora - _medoUltimoSusto < MEDO_FRIO) return;   // um arrastão só não conta 20x
+            _medoUltimoSusto = agora;
+            _medoAtrapalhou++;
+            _medoAte = Math.min(_medoAte + MEDO_CASTIGO, agora + MEDO_TETO);
+
+            const pres = document.getElementById('presenca');
+            if (pres) {
+                pres.classList.remove('cutucada');
+                void pres.offsetWidth;
+                pres.classList.add('cutucada');
+                setTimeout(() => pres.classList.remove('cutucada'), 500);
+            }
+            rostoDireto(ROSTO_SUSTO);
+            setTimeout(() => { if (_medo) rostoDireto(ROSTO_MEDO); }, 700);
+        }
+
+        function passouAChuva() {
+            const pres = document.getElementById('presenca');
+            clearInterval(_medoChuva); _medoChuva = null;
+            clearInterval(_medoTimer); _medoTimer = null;
+            _medo = false;
+            if (pres) pres.classList.remove('medo');
+
+            if (historiasAtivas()) {                  // ainda tem coisa nela: volta pra irritação
+                atualizarIrritacao(true);
+                return;
+            }
+            atualizarIrritacao(false);
+            trocarRosto('◉‿◉');
+            if (!_medoAtrapalhou) confete();          // segurou a mão: ganhou a festinha
+            setTimeout(() => { if (!_afk && !_reagindo) trocarRosto(rostoIdle()); }, 2800);
+        }
+
+        (function agendarChuva() {   // raro, como as outras histórias
+            setTimeout(() => {
+                if (!_afk && !_medo) chuvaAsteroides();
+                agendarChuva();
+            }, 480000 + Math.random() * 720000);
+        })();
+
+        // ═══ 🌠 CHUVA DE ASTEROIDES (fim)
 
         // ═══ 🌫️ FULIGEM — a 4ª história, e o 4º VERBO: ESFREGAR. Não sai sacudindo (verbo
         //     do foguete), nem clicando (satélite), nem martelando (cometão) — sai passando o
@@ -2737,6 +2857,7 @@
             const pres = document.getElementById('presenca');
             const el = document.getElementById('rosto-txt');
             if (!pres || !el || _afk) return;                       // dormindo, deixa ela em paz
+            if (_medo) { atrapalhar(); return; }                    // cutucar durante a chuva: idem
             if (!pres.classList.contains('est-dormindo')) return;   // ocupada (ouvindo/pensando/falando)
 
             const agora = Date.now();
