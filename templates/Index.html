@@ -1354,7 +1354,6 @@
             }
             g.innerHTML = svg;
 
-            ondas();
         })();
 
         // ═══ ONDAS CONCÊNTRICAS (anime.js) — nascem pequenas no centro, crescem e apagam,
@@ -1377,6 +1376,10 @@
         }
         // ritmo por estado (fator: <1 acelera, >1 desacelera)
         const RITMO_ONDAS = { dormindo: 1.8, ouvindo: 1.0, pensando: 0.5, falando: 0.75 };
+        // IMPORTANTE: só DEPOIS das declarações acima. Chamar isso lá de dentro do IIFE de
+        // montagem dava ReferenceError (temporal dead zone do `let _animOndas`) e o erro
+        // matava o script INTEIRO — a interface parava de responder a tudo.
+        ondas(RITMO_ONDAS.dormindo);
 
         const PRES_ESTADOS = ['dormindo', 'ouvindo', 'pensando', 'falando'];
         // Rosto padrão de cada estado (quando ela não está reagindo a nada)
