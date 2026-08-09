@@ -86,6 +86,14 @@
         #presenca.noite #estrelas circle { animation: cintila 4.5s ease-in-out infinite; }
         @keyframes cintila { 0%,100% { opacity: .12; } 50% { opacity: .55; } }
 
+        /* 🎉 clarão da comemoração: a cabeça estoura de brilho junto com o confete */
+        #presenca.festejando #halo { animation: festa-clarao .9s ease-out; }
+        @keyframes festa-clarao {
+            0%   { opacity: .25; transform: scale(1);    }
+            18%  { opacity: .95; transform: scale(1.18); }
+            100% { opacity: .25; transform: scale(1);    }
+        }
+
         /* tranco do clique: ela leva um susto de verdade. O rosto é uma camada HTML POR CIMA
            do SVG, então não herda o transform dele — precisa levar o tranco junto, senão só
            a cabeça balança e a cara fica parada no meio. */
@@ -1686,26 +1694,39 @@
         function confete() {
             const g = document.getElementById('confete');
             if (!g || !TEM_ANIME) return;
-            const cores = ['#b4f9f8', '#7aa2f7', '#bb9af7', '#7bf98f', '#ffd580'];
+            const cores = ['#b4f9f8', '#7aa2f7', '#bb9af7', '#7bf98f', '#ffd580', '#ff9ecd', '#ffffff'];
             g.innerHTML = '';
-            const pecas = [];
-            for (let i = 0; i < 16; i++) {
+            const pres = document.getElementById('presenca');
+            if (pres) {                                  // clarão na cabeça, junto com o estouro
+                pres.classList.remove('festejando');
+                void pres.offsetWidth;
+                pres.classList.add('festejando');
+                setTimeout(() => pres.classList.remove('festejando'), 900);
+            }
+            const pecas = [], destinos = [];
+            for (let i = 0; i < 44; i++) {
                 const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                c.setAttribute('cx', (60 + Math.random() * 80).toFixed(1));
-                c.setAttribute('cy', '118');
-                c.setAttribute('r', (1 + Math.random() * 1.6).toFixed(1));
+                c.setAttribute('cx', (100 + (-8 + Math.random() * 16)).toFixed(1));
+                c.setAttribute('cy', (100 + (-8 + Math.random() * 16)).toFixed(1));
+                c.setAttribute('r', (1.4 + Math.random() * 2.8).toFixed(1));
                 c.setAttribute('fill', cores[(Math.random() * cores.length) | 0]);
                 g.appendChild(c);
                 pecas.push(c);
+                // ESTOURO radial com viés pra cima; depois a gravidade puxa um pouco de volta
+                const ang = Math.random() * Math.PI * 2;
+                const dist = 70 + Math.random() * 80;
+                destinos.push([100 + Math.cos(ang) * dist,
+                               100 + Math.sin(ang) * dist * 0.85 - 30 + Math.random() * 22]);
             }
             anime({
                 targets: pecas,
-                cy: (el) => 118 - (55 + Math.random() * 55),     // sobem alturas diferentes
-                cx: (el) => +el.getAttribute('cx') + (-26 + Math.random() * 52),
-                opacity: [{ value: 1, duration: 180 }, { value: 0, duration: 900 }],
-                duration: 1100,
-                delay: anime.stagger(45),
-                easing: 'easeOutQuad',
+                cx: (el, i) => destinos[i][0],
+                cy: (el, i) => destinos[i][1],
+                r:  (el) => +el.getAttribute('r') * 0.35,       // encolhem enquanto voam
+                opacity: [{ value: 1, duration: 120 }, { value: 0, duration: 1100 }],
+                duration: 1500,
+                delay: anime.stagger(14),                       // quase juntos: é ESTOURO, não chuva
+                easing: 'easeOutCubic',
                 complete: () => { g.innerHTML = ''; },
             });
         }
