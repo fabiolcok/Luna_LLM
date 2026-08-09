@@ -1375,19 +1375,17 @@
         // ═══ FERRAMENTA EM USO: muda SÓ a periferia (arcos + bolinhas).
         //     A cabeça (círculo) e o rosto (kaomoji) NÃO mudam — é a identidade dela. ═══
         const FERRAMENTAS_VISUAL = { controlar_spotify: 'spotify' };
-        let _timerFerr = null;
         function aplicarFerramenta(statusTxt) {
             const el = document.getElementById('presenca');
             if (!el) return;
             const m = /Usando:\s*([a-z_]+)/i.exec(statusTxt || '');
-            const modo = m ? FERRAMENTAS_VISUAL[m[1]] : null;
-            clearTimeout(_timerFerr);
+            // Status SEM ferramenta ("Por aqui", "Proativo: ...") não mexe em nada: o modo
+            // da última ferramenta PERSISTE até outra trocar. (O status volta pra "Por aqui"
+            // em 1-2s, então cronômetro fixo nunca dava pra ver o efeito direito.)
+            if (!m) return;
             Object.values(FERRAMENTAS_VISUAL).forEach(v => el.classList.remove('ferr-' + v));
-            if (modo) {
-                el.classList.add('ferr-' + modo);
-                // o status volta pra "Por aqui" logo; segura o efeito um tempinho pra dar pra ver
-                _timerFerr = setTimeout(() => el.classList.remove('ferr-' + modo), 12000);
-            }
+            const modo = FERRAMENTAS_VISUAL[m[1]];
+            if (modo) el.classList.add('ferr-' + modo);   // ferramenta sem visual próprio = volta ao normal
         }
 
         function trocarGif(url, termo) {
