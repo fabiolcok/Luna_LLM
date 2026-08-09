@@ -73,6 +73,11 @@
         /* A CABEÇA muda de cor conforme a ferramenta (cores de marca). Uma variável só,
            herdada pelo gradiente do SVG — os anéis e o rosto seguem no tom do tema. */
         #presenca { --cor-halo: #7aa2f7; }              /* padrão: azul da Luna */
+        /* 🗣️ falando: a cabeça esquenta junto com as bolinhas. Vem ANTES das ferramentas de
+           propósito — mesma especificidade, então quem vier depois vence, e a cor da
+           ferramenta (verde do Spotify, vermelho do YouTube...) tem que continuar mandando.
+           Irritação, medo e desistir estão lá embaixo e vencem os dois, que é o certo. */
+        #presenca.est-falando  { --cor-halo: #edc24a; } /* âmbar: ela está falando */
         #presenca.ferr-spotify { --cor-halo: #1db954; } /* verde Spotify   */
         #presenca.ferr-video   { --cor-halo: #ff3b30; } /* vermelho YouTube */
         #presenca.ferr-radar   { --cor-halo: #7dd3fc; } /* azul claro (web) */
@@ -183,6 +188,17 @@
             font-size: .76rem; font-family: inherit; transition: background .15s, color .15s;
         }
         .lab-btn:hover { background: #1a2a4e; color: #b4f9f8; }
+        /* botão de CARA: mostra a própria cara como rótulo, então precisa de fonte maior e
+           largura livre. O painel cresceu — daí o limite de altura com rolagem. */
+        .lab-cara {
+            background: #14182a; border: 1px solid #2a3a5a; color: #b4f9f8;
+            border-radius: 6px; padding: 4px 7px; cursor: pointer;
+            font-size: .92rem; font-family: inherit; line-height: 1.4;
+            white-space: nowrap; transition: background .15s, border-color .15s;
+        }
+        .lab-cara:hover { background: #1e2a4a; border-color: #7aa2f7; }
+        .lab-cara.posta { border-color: #7bf98f; color: #7bf98f; }
+        #lab-panel { max-height: 78vh; overflow-y: auto; }
         .lab-btn.limpar { border-color: #5a2a2a; color: #ff9e9e; }
         .lab-btn.limpar:hover { background: #2a1216; }
 
@@ -214,6 +230,21 @@
             transition: opacity .28s ease, transform .28s cubic-bezier(.2,.9,.3,1.5);
         }
         #rosto-txt.trocando { opacity: 0; transform: scale(.86); }
+        /* os três pedaços da cara. inline (não inline-block) de propósito: qualquer coisa que
+           gere caixa própria mudaria o espaçamento e a cara sairia diferente da de hoje. */
+        #rosto-txt .olho-e, #rosto-txt .olho-d { display: inline; }
+        /* A BOCA é VETORIAL. Trocar glifo não funcionava: cada caractere tem largura própria,
+           então a cara inteira tremia — e mesmo travando a vaga, glifo de boca não abre "um
+           pouco", ele pula entre formas prontas. Aqui ela é um <path> de 3 números, então
+           abre contínuo e a curva da emoção NÃO se perde enquanto ela fala. */
+        #rosto-txt .boca {
+            display: inline-block; width: .60em; height: .44em;
+            vertical-align: -.02em; overflow: visible;
+        }
+        #rosto-txt .boca path {
+            fill: currentColor; stroke: currentColor;   /* segue a cor do rosto sozinha */
+            stroke-width: 7; stroke-linejoin: round; stroke-linecap: round;
+        }
         /* view-box + origem no centro do viewBox: arco tem bbox DESCENTRADO, então
            'fill-box/center' faria ele bambear em vez de girar no eixo. */
         #halo, #orbita, #orbita-escala, #arcos, #arco-1, #arco-2, #arco-3, #ondas circle {
@@ -270,6 +301,21 @@
         .est-pensando #arco-3 { animation-duration: 1.9s;}
         .est-pensando #arcos  { opacity: 1; transform: scale(1.12); }
         .est-pensando #orbita-escala { opacity: 1; transform: scale(1.05); }
+        /* as 4 GRANDES piscam BRANCO, em sequência pela posição (--d-seq): dá a leitura de
+           algo sendo percorrido. Só as grandes — piscar as 16 vira ruído, não pensamento.
+           O :not() é o que deixa os modos de ferramenta continuarem mandando no anel: sem
+           ele esta regra é mais específica e apagaria o equalizador, o radar e o resto. */
+        #presenca.est-pensando:not(.ferr-spotify):not(.ferr-radar):not(.ferr-video):not(.ferr-tela):not(.ferr-jogo)
+            #orbita rect:nth-child(4n+1) {
+            animation: pens-pisca 1.3s ease-in-out infinite;
+            animation-delay: calc(var(--d-seq) * -1.3s);
+        }
+        @keyframes pens-pisca {
+            /* o drop-shadow transparente (em vez de 'none') é o que faz o brilho ENTRAR
+               suave: de 'none' pra filtro o navegador não tem o que interpolar */
+            0%, 100% { fill: #b4f9f8; opacity: .45; filter: drop-shadow(0 0 0 rgba(255,255,255,0)); }
+            50%      { fill: #ffffff; opacity: 1;   filter: drop-shadow(0 0 6px rgba(255,255,255,.85)); }
+        }
 
         /* ═══ FERRAMENTA: 🎵 SPOTIFY — bolinhas viram EQUALIZADOR e os arcos batem no ritmo.
                A cabeça e o rosto ficam intactos (identidade não muda). ═══ */
@@ -346,6 +392,32 @@
         .est-falando #arco-2 { animation-duration: 10s; }
         .est-falando #arco-3 { animation-duration: 7s;  }
         .est-falando #arcos, .est-falando #orbita-escala { opacity: .95; transform: scale(1); }
+        /* INVERSÃO das bolinhas + amarelo radiante. Não dá pra mexer em width/height: os
+           rects têm x/y já calculados pra centralizar naquele tamanho, então mudar a
+           geometria faria elas crescerem pro canto. Como cada rect tem transform-box:
+           fill-box com origem no centro, o scale() inverte de dentro pra fora e no lugar.
+           Os fatores são a razão exata dos lados (2.4 e 1.4): pequena vira grande e
+           vice-versa, sem chutar número.
+           O :not() das ferramentas pelo mesmo motivo do pensando — sem ele esta regra
+           passa por cima do equalizador, do radar e dos outros. */
+        #presenca.est-falando:not(.ferr-spotify):not(.ferr-radar):not(.ferr-video):not(.ferr-tela):not(.ferr-jogo)
+            #orbita rect {
+            fill: #ffd23f;
+            transform: scale(1.714);        /* 2.4/1.4 — as PEQUENAS assumem o tamanho grande */
+            opacity: .9;
+            animation: fala-radiante 1.15s ease-in-out infinite alternate;
+            animation-delay: calc(var(--d-seq) * -1.15s);
+        }
+        #presenca.est-falando:not(.ferr-spotify):not(.ferr-radar):not(.ferr-video):not(.ferr-tela):not(.ferr-jogo)
+            #orbita rect:nth-child(4n+1) {
+            transform: scale(.583);         /* 1.4/2.4 — e as GRANDES encolhem */
+            opacity: .5;
+        }
+        /* o radiante: o brilho respira, o tamanho fica quieto (senão briga com a inversão) */
+        @keyframes fala-radiante {
+            from { filter: drop-shadow(0 0 2px rgba(255,210,63,.35)); }
+            to   { filter: drop-shadow(0 0 7px rgba(255,210,63,.95)); }
+        }
 
         /* Termo do GIF — aparece só ao passar o mouse sobre o GIF */
         #gif-termo {
@@ -1196,6 +1268,12 @@
             <button class="lab-btn" data-lab="afk">💤 AFK</button>
             <button class="lab-btn" data-lab="noite">🌙 noite</button>
         </div>
+        <div class="lab-titulo">Caras — repouso e estados</div>
+        <div class="lab-grade" id="lab-caras-base"></div>
+        <div class="lab-titulo">Caras — histórias e reações</div>
+        <div class="lab-grade" id="lab-caras-hist"></div>
+        <div class="lab-titulo">Climas (os que a Luna escolhe)</div>
+        <div class="lab-grade" id="lab-caras-clima"></div>
         <div class="lab-titulo">&nbsp;</div>
         <div class="lab-grade">
             <button class="lab-btn limpar" data-lab="limpar">✕ limpar tudo</button>
@@ -1680,7 +1758,7 @@
         // Rosto padrão de cada estado (quando ela não está reagindo a nada)
         const ROSTO_ESTADO = {
             ouvindo:  '･ ᴗ ･',
-            pensando: '-,-',
+            pensando: '-⩊-',
         };
         // Parada, ela ALTERNA entre estas — cara única o tempo todo dava impressão de
         // congelada. Troca ao entrar em repouso e de tempos em tempos enquanto fica parada.
@@ -1715,6 +1793,40 @@
         const _RE_COMB = /[̀-ͯ᪰͜͡-᫿⃐-⃿]/;
         const _RE_NAO_OLHO = /[\s"';,.]/;
         let _rostoAtual = ROSTOS_IDLE[ROSTOS_IDLE.length - 1], _timerTroca = null;   // = o do HTML
+        // Ciclo de fala. NÃO é lip-sync: o áudio do TTS toca na máquina, não no navegador,
+        // então o front não tem sinal pra sincronizar. É abertura sorteada com ritmo
+        // irregular — regular demais lê como robô. Só a ABERTURA se mexe: a curvatura é da
+        // emoção e fica quieta, que é o motivo de a boca ser vetorial.
+        const FALA_ABRE_MIN = 0.06, FALA_ABRE_MAX = 0.85;
+        let _bocaTimer = null, _animBoca = null, _falandoBoca = false;
+
+        function comecarBoca() {
+            if (_falandoBoca) return;
+            _falandoBoca = true;
+            const passo = () => {
+                const alvo = FALA_ABRE_MIN + Math.random() * (FALA_ABRE_MAX - FALA_ABRE_MIN);
+                const dur = 70 + Math.random() * 90;
+                if (TEM_ANIME) {
+                    if (_animBoca) _animBoca.pause();
+                    const t = { a: _bocaAbre };
+                    _animBoca = anime({
+                        targets: t, a: alvo, duration: dur, easing: 'easeOutQuad',
+                        update: () => { _bocaAbre = t.a; desenharBoca(); },
+                    });
+                } else { _bocaAbre = alvo; desenharBoca(); }
+                _bocaTimer = setTimeout(passo, dur + 30 + Math.random() * 70);
+            };
+            passo();
+        }
+
+        function pararBoca() {
+            if (!_falandoBoca) return;
+            _falandoBoca = false;
+            clearTimeout(_bocaTimer); _bocaTimer = null;
+            if (_animBoca) { _animBoca.pause(); _animBoca = null; }
+            _bocaAbre = 0;
+            desenharBoca();                  // volta pra abertura de repouso da cara atual
+        }
 
         function versaoPiscada(face) {
             const ch = Array.from(face || '');
@@ -1735,9 +1847,9 @@
                           ? null : versaoPiscada(_rostoAtual);
             if (el && fechado) {
                 const eraEsse = _rostoAtual;
-                el.textContent = fechado;                                // instantâneo, sem transição
+                pintarRosto(fechado);                                    // instantâneo, sem transição
                 setTimeout(() => {
-                    if (el.textContent === fechado && _rostoAtual === eraEsse) el.textContent = eraEsse;
+                    if (el.textContent === fechado && _rostoAtual === eraEsse) pintarRosto(eraEsse);
                 }, 120);
             }
             // 22% das vezes agenda o próximo pra JÁ: é isso que vira piscada dupla
@@ -1751,6 +1863,57 @@
         // direto cairia na zona morta do let e derrubaria o script inteiro.
         setTimeout(() => rostoDireto(rostoIdle()), 0);
 
+        // ═══ 👄 A BOCA — até aqui a cara era UMA string, e falar SUBSTITUÍA a cara inteira:
+        //     ela não conseguia estar brava e falando ao mesmo tempo. Agora olho e boca são
+        //     partes separadas: a emoção mora nos olhos, e falar mexe só na boca.
+        //     A premissa já estava no código sem estar declarada — versaoPiscada() sempre
+        //     tratou o primeiro e o último caractere como olhos, logo o miolo já era a boca.
+        //     Aqui isso deixa de ser suposição escondida e vira estrutura.
+        //     O corte é nos MESMOS limites de antes e os espaços ficam DENTRO da boca, então
+        //     o texto renderizado sai caractere por caractere igual ao de hoje — spans inline
+        //     não acrescentam espaçamento. Era o risco de kerning, e ele não existe.
+        //     Cara que não dá pra partir (acento combinante, emoji) continua sendo desenhada
+        //     inteira, como sempre foi: perde a boca animada, não quebra.
+        function partirRosto(txt) {
+            const ch = Array.from(txt || '');
+            if (!ch.length) return null;
+            if (ch.some(c => _RE_COMB.test(c))) return null;             // acento combinante
+            if (ch.some(c => c.codePointAt(0) > 0x1F000)) return null;   // emoji (o AFK)
+            let i = 0, j = ch.length - 1;
+            while (i < j && _RE_NAO_OLHO.test(ch[i])) i++;
+            while (j > i && _RE_NAO_OLHO.test(ch[j])) j--;
+            if (i >= j) return null;
+            const boca = ch.slice(i + 1, j).join('');
+            if (!boca.trim()) return null;
+            // o que sobra nas pontas viaja junto com o olho (o " do ¬_¬" e o ; do ಄ᆺ಄;),
+            // então esq + boca + dir reconstrói a string ORIGINAL, sem perder caractere
+            return [ch.slice(0, i + 1).join(''), boca, ch.slice(j).join('')];
+        }
+
+        // ÚNICO lugar que escreve o rosto no DOM. Todo o resto passa por aqui — senão um
+        // textContent solto apaga os spans e a boca some.
+        function pintarRosto(txt) {
+            const el = document.getElementById('rosto-txt');
+            if (!el || !txt) return;
+            const partes = partirRosto(txt);
+            if (!partes) { el.textContent = txt; return; }   // sem boca separável: inteira
+            let e = el.querySelector('.olho-e');
+            if (!e) {                                        // primeira vez: monta a estrutura
+                el.textContent = '';
+                const cria = (cls) => { const sp = document.createElement('span'); sp.className = cls; el.appendChild(sp); return sp; };
+                e = cria('olho-e');
+                const vaga = cria('boca');
+                // o SVG da boca vive no lugar exato onde o glifo do miolo ficava
+                vaga.innerHTML = '<svg viewBox="-50 -30 100 60" xmlns="http://www.w3.org/2000/svg">'
+                               + '<path d=""/></svg>';
+                cria('olho-d');
+            }
+            el.querySelector('.olho-e').textContent = partes[0];
+            el.querySelector('.olho-d').textContent = partes[2];
+            _bocaForma = formaBoca(partes[1]);   // o miolo escolhe a FORMA, não é desenhado
+            desenharBoca();
+        }
+
         function trocarRosto(txt) {
             const el = document.getElementById('rosto-txt');
             _rostoAtual = txt;
@@ -1758,7 +1921,7 @@
             clearTimeout(_timerTroca);   // troca pendente NÃO pode aterrissar depois desta
             el.classList.add('trocando');
             _timerTroca = setTimeout(() => {
-                el.textContent = txt;
+                pintarRosto(txt);
                 requestAnimationFrame(() => el.classList.remove('trocando'));
             }, 260);
         }
@@ -1772,13 +1935,14 @@
             clearTimeout(_timerTroca);
             _rostoAtual = cara;
             el.classList.remove('trocando');
-            el.textContent = cara;
+            pintarRosto(cara);
         }
 
         function aplicarPresenca(estado) {
             const el = document.getElementById('presenca');
             if (!el) return;
             if (!PRES_ESTADOS.includes(estado)) estado = 'dormindo';
+            if (estado !== 'falando') pararBoca();     // parou de falar: a boca descansa
             PRES_ESTADOS.forEach(e => el.classList.remove('est-' + e));
             el.classList.add('est-' + estado);
 
@@ -1793,6 +1957,7 @@
             } else if (estado === 'falando') {
                 pararTrocaIdle();
                 trocarRosto(_rostoReacao || ROSTO_ESTADO.pensando);
+                comecarBoca();
             } else {                                  // parada: segura a reação um pouco e repousa
                 _timerSono = setTimeout(() => {
                     if (_afk) return;
@@ -2123,11 +2288,11 @@
                 _afagando = true;
                 pres.classList.add('afago');
                 const fechado = versaoPiscada(_rostoAtual);
-                if (fechado) el.textContent = fechado;      // olhos fechados, relaxada
+                if (fechado) pintarRosto(fechado);          // olhos fechados, relaxada
             } else if (!deve && _afagando) {
                 _afagando = false;
                 pres.classList.remove('afago');
-                el.textContent = _rostoAtual;               // reabre os olhos
+                pintarRosto(_rostoAtual);                   // reabre os olhos
             }
         }
         setInterval(checarAfago, 200);
@@ -2181,7 +2346,7 @@
         const FOG_CHACOALHO = 220;         // px percorridos sobre ela pra contar como sacudida
         const FOG_JANELA = 500;            // ...dentro desta janela (senão é carinho, não sacudida)
         const ROSTO_INCOMODADA = 'Ò﹏Ó';
-        const ROSTO_CHACOALHO = '಄ᆺ಄;';
+        const ROSTO_CHACOALHO = '಄ᆺ಄';
         let _foguetes = [], _fogTimer = null, _fogMov = [], _chacoalhando = false;
 
         function novoFoguete() {
@@ -2481,6 +2646,108 @@
             return (Date.now() - _ultimaHistoria) >= HISTORIA_ESPACO;
         }
         function marcarHistoria() { _ultimaHistoria = Date.now(); }
+
+        // ═══ 🙂 CARAS NO LABORATÓRIO — depois de separar olho/boca, dava pra ver cada cara
+        //     só esperando ela acontecer. Aqui elas ficam todas a um clique, e o rótulo do
+        //     botão é a PRÓPRIA cara: você compara o desenho antes de clicar.
+        //     Combine com o botão 🗣️ falando pra ver a boca mexendo com aquela emoção.
+        //     Os climas abaixo espelham o _ROSTOS do pensar.py — há um teste que compara os
+        //     dois e acusa quando um sai do outro. ═══
+        // ═══ 👄 A BOCA VETORIAL — três números, não um glifo:
+        //       curvatura  -1 (triste) .. 0 (reta) .. +1 (sorriso)
+        //       abertura    0 (fechada) .. 1 (escancarada)
+        //       largura   0.6 .. 1.4
+        //     O miolo do kaomoji não é mais DESENHADO: ele só ESCOLHE o trio. É isso que
+        //     permite falar animando SÓ a abertura — a curva da emoção fica de pé, e ela
+        //     abre e fecha a boca brava, triste ou sorrindo, em vez de trocar entre glifos.
+        const BOCAS = {
+            '_':  [ 0.00, 0.00, 0.90],   // reta, neutra
+            '₋₍': [ 0.00, 0.00, 0.80],
+            '‸':  [-0.45, 0.00, 0.60],   // caret pequeno: tensa
+            '‿':  [ 0.90, 0.05, 1.00],   // sorriso
+            '◡':  [ 0.85, 0.05, 0.95],
+            'ᵕ':  [ 0.80, 0.05, 0.80],
+            'ᴗ':  [ 0.80, 0.05, 0.85],
+            'ᗜ':  [ 0.90, 0.45, 1.00],   // sorriso ABERTO
+            '⩊':  [ 0.70, 0.40, 0.95],
+            '﹏':  [-0.50, 0.00, 1.15],   // desgosto, larga
+            'ᯅ':  [-0.15, 0.75, 0.80],   // aberta de susto
+            '𐃷':  [ 0.20, 0.15, 0.70],
+            '皿':  [-0.25, 0.85, 1.30],   // grito
+            'Д':  [-0.30, 0.90, 1.15],
+            'ᆺ':  [-0.60, 0.25, 0.70],   // boca de gato, tensa
+            '₃':  [ 0.50, 0.20, 0.60],   // bico
+            'o':  [ 0.00, 0.60, 0.70],
+            '○':  [ 0.00, 0.80, 0.80],
+        };
+        const BOCA_PADRAO = [0, 0, 0.90];
+        const K_CURVA = 26, K_ABRE = 30, K_MEIA = 30;
+
+        function formaBoca(miolo) {
+            return BOCAS[(miolo || '').trim()] || BOCA_PADRAO;
+        }
+        // dois arcos espelhados: o de cima leva a CURVATURA, o de baixo leva curvatura +
+        // abertura. Com abertura 0 os dois coincidem e sobra só o traço do stroke — que é
+        // exatamente uma boca fechada. Não precisa de caso especial.
+        function caminhoBoca(c, a, w) {
+            const meia = K_MEIA * w, topo = c * K_CURVA, base = topo + a * K_ABRE;
+            return 'M ' + (-meia).toFixed(1) + ' 0'
+                 + ' Q 0 ' + topo.toFixed(1) + ' ' + meia.toFixed(1) + ' 0'
+                 + ' Q 0 ' + base.toFixed(1) + ' ' + (-meia).toFixed(1) + ' 0 Z';
+        }
+
+        let _bocaForma = BOCA_PADRAO, _bocaAbre = 0;
+
+        function desenharBoca() {
+            const path = document.querySelector('#rosto-txt .boca path');
+            if (!path) return;
+            const abre = _falandoBoca ? _bocaAbre : _bocaForma[1];   // falando? a abertura é animada
+            path.setAttribute('d', caminhoBoca(_bocaForma[0], abre, _bocaForma[2]));
+        }
+
+        // FUNÇÕES, não arrays: um `const X = [...ROSTO_SUJA...]` avalia a lista NA HORA da
+        // declaração, e metade dessas constantes nasce mais abaixo no arquivo. Adiar o IIFE
+        // não bastava — o estouro era na própria declaração. Assim a lista só é montada
+        // quando alguém chama, e aí tudo já existe.
+        const CARAS_BASE = () => [
+            ...ROSTOS_IDLE, ROSTO_ESTADO.ouvindo, ROSTO_ESTADO.pensando,
+            ROSTO_AFK, ROSTO_JOGO, '- _ -', '- ○ -', '˘ o ˘',
+        ];
+        const CARAS_HIST = () => [
+            ...ROSTOS_IRRITADA, ROSTO_CHACOALHO, ROSTO_SUJA, ROSTO_ESFREGA,
+            ROSTO_MEDO, ROSTO_SUSTO, '◉‿◉', '≖_≖', '• _ •', 'ᗒ_ᗕ', '>_<',
+        ];
+        const CARAS_CLIMA = () => [      // espelho do _ROSTOS (pensar.py) — os 12 climas
+            'ᗒᗜᗕ', 'Ò﹏Ó', '¬_¬', 'ಠ_ಠ', 'O_O', 'ᵔ ᵕ ᵔ',
+            '╥‸╥', '◞_◟', '◉‿◉', 'ᵔᗜᵔ', 'ꈍ◡ꈍ', 'ㆆ_ㆆ', '≖_≖',
+            '⚈₋₍⚈', '￢_￢', '- ‸ -', 'T_T',
+        ];
+
+
+        // setTimeout(0) obrigatório: CARAS_HIST lê ROSTO_SUJA, ROSTO_MEDO e companhia, que são
+        // declaradas mais ABAIXO no arquivo. Montar na hora cai na zona morta do const e
+        // derruba o script inteiro — o harness pegou isso antes de virar tela preta.
+        setTimeout(function montarCaras() {
+            const grupos = [['lab-caras-base', CARAS_BASE()], ['lab-caras-hist', CARAS_HIST()],
+                            ['lab-caras-clima', CARAS_CLIMA()]];
+            grupos.forEach(([id, lista]) => {
+                const alvo = document.getElementById(id);
+                if (!alvo) return;
+                [...new Set(lista)].forEach(cara => {
+                    const b = document.createElement('button');
+                    b.className = 'lab-cara';
+                    b.textContent = cara;
+                    // marca as que não partem em olho/boca: essas não ganham boca animada
+                    if (!partirRosto(cara)) { b.title = 'sem boca separável (acento/emoji)'; b.style.opacity = '.55'; }
+                    b.addEventListener('click', () => {
+                        document.querySelectorAll('.lab-cara.posta').forEach(o => o.classList.remove('posta'));
+                        b.classList.add('posta');
+                        rostoDireto(cara);      // direto: sem transição, pra comparar rápido
+                    });
+                    alvo.appendChild(b);
+                });
+            });
+        }, 0);
 
         // ═══ 🧪 LABORATÓRIO — o konami revela um botão que abre um painel de gatilhos.
         //     Sem isso, testar qualquer história vira espera de 10 minutos. ═══
@@ -3003,7 +3270,7 @@
                 raxa.setAttribute('d', 'M ' + (-L / 2) + ' -3 L 0 1 L ' + (L / 3) + ' -2 L ' + (L / 2) + ' 4');
                 raxa.setAttribute('opacity', (0.25 + frac * 0.75).toFixed(2));
             }
-            trocarRosto(_cometaoVida > 2 ? '಄ᆺ಄;' : '>_<');
+            trocarRosto(_cometaoVida > 2 ? '಄ᆺ಄' : '>_<');
 
             if (_cometaoVida <= 0) estilhacar();
         }
@@ -3242,11 +3509,11 @@
             const passos = [['˘ o ˘', 300], ['- ○ -', 900], ['˘ o ˘', 250]];
             let t = 0;
             passos.forEach(([cara, dur]) => {
-                setTimeout(() => { el.textContent = cara; }, t);
+                setTimeout(() => pintarRosto(cara), t);
                 t += dur;
             });
             setTimeout(() => {
-                el.textContent = volta;
+                pintarRosto(volta);
                 pres.classList.remove('bocejando');
                 _bocejando = false;
             }, t);

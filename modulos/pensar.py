@@ -322,19 +322,24 @@ PROMPT_LUNA_PERSONA = (
 # uma PALAVRA — tarefa trivial, que ele já fazia bem no tempo do [gif:]. Deixar ele escrever o
 # kaomoji dava: carinha quebrada ('= कर_ω_', devanágari), parênteses de volta, 4 formatos
 # diferentes e vício nas 3 caras mais comuns do treino. Agora a saída é sempre válida.
+# CURADORIA (a boca virou SVG): as caras aqui agora servem de duas formas — os OLHOS são
+# desenhados como texto e o MIOLO só ESCOLHE a forma da boca, que é vetorial. Por isso saíram
+# as caras cujos "olhos" não se sustentavam sozinhos: acento combinante solto (•̀ ᴗ -, ╭ರ_•́),
+# dois acentos no lugar de olhos (´ཀ`) e três curvas sem olho nenhum (︶︹︺). Nenhum clima
+# ficou sem cara. Ver a tabela BOCAS no Index.html: é lá que cada miolo vira forma.
 _ROSTOS = {
-    "zoeira":   ["ᗒᗜᗕ", "   ͡° ͜ʖ ͡°"],
-    "revolta":  ["Ò﹏Ó", '¬_¬"'],
-    "facepalm": ["°ᯅ°", "ಠ_ಠ"],
-    "choque":   ["಄ᆺ಄;", "O_O"],
-    "carinho":  ["ᵔ ᵕ ᵔ", "•̀ ᴗ -"],
-    "cansaco":  ["╥‸╥", "´ཀ`", "◞_◟"],
+    "zoeira":   ["ᗒᗜᗕ"],
+    "revolta":  ["Ò﹏Ó", "¬_¬"],
+    "facepalm": ["ಠ_ಠ"],
+    "choque":   ["O_O"],
+    "carinho":  ["ᵔ ᵕ ᵔ"],
+    "cansaco":  ["╥‸╥", "◞_◟"],
     "festa":    ["◉‿◉", "ᵔᗜᵔ"],
     "orgulho":  ["ꈍ◡ꈍ"],
     "suspeita": ["ㆆ_ㆆ", "≖_≖"],
-    "duvida":   ["⚈₋₍⚈", "╭ರ_•́"],
+    "duvida":   ["⚈₋₍⚈"],
     "tedio":    ["￢_￢", "- ‸ -"],
-    "tristeza": ["︶︹︺", "T_T"],
+    "tristeza": ["T_T"],
 }
 
 # O Telegram lê _kaomoji_pendente e cola o rosto no fim do texto; no web ele vai grande,
