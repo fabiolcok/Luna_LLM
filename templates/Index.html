@@ -1856,9 +1856,9 @@
                           ? null : versaoPiscada(_rostoAtual);
             if (el && fechado) {
                 const eraEsse = _rostoAtual;
-                pintarRosto(fechado);                                    // instantâneo, sem transição
+                pintarRosto(fechado, eraEsse);                           // instantâneo, sem transição
                 setTimeout(() => {
-                    if (el.textContent === fechado && _rostoAtual === eraEsse) pintarRosto(eraEsse);
+                    if (el.textContent === fechado && _rostoAtual === eraEsse) pintarRosto(eraEsse, eraEsse);
                 }, 120);
             }
             // 22% das vezes agenda o próximo pra JÁ: é isso que vira piscada dupla
@@ -1892,7 +1892,6 @@
         function partirRosto(txt) {
             const ch = Array.from(txt || '');
             if (!ch.length) return null;
-            if (ROSTO_INTEIRO.has(txt)) return null;                     // repouso: glifo original
             if (ch.some(c => _RE_COMB.test(c))) return null;             // acento combinante
             if (ch.some(c => c.codePointAt(0) > 0x1F000)) return null;   // emoji (o AFK)
             let i = 0, j = ch.length - 1;
@@ -1908,10 +1907,17 @@
 
         // ÚNICO lugar que escreve o rosto no DOM. Todo o resto passa por aqui — senão um
         // textContent solto apaga os spans e a boca some.
-        function pintarRosto(txt) {
+        //
+        // `base` é a cara de ORIGEM, quando `txt` é uma variação dela (piscada, cafuné). O modo
+        // de desenho tem que sair da BASE, não do que está na tela: piscar troca os olhos e
+        // gera outra string — • ₃ • vira - ₃ - — que cairia no modo errado no meio da piscada,
+        // e a boca de repouso pulava pra vetorial só enquanto os olhos estavam fechados.
+        // Comparar a base também evita uma colisão real: a piscada de ᗜ⩊ᗜ é -⩊-, que por acaso
+        // é a cara de "pensando". Ir pela string faria a de pensar herdar o modo do repouso.
+        function pintarRosto(txt, base) {
             const el = document.getElementById('rosto-txt');
             if (!el || !txt) return;
-            const partes = partirRosto(txt);
+            const partes = ROSTO_INTEIRO.has(base || txt) ? null : partirRosto(txt);
             if (!partes) { el.textContent = txt; return; }   // sem boca separável: inteira
             let e = el.querySelector('.olho-e');
             if (!e) {                                        // primeira vez: monta a estrutura
@@ -2308,7 +2314,7 @@
                 _afagando = true;
                 pres.classList.add('afago');
                 const fechado = versaoPiscada(_rostoAtual);
-                if (fechado) pintarRosto(fechado);          // olhos fechados, relaxada
+                if (fechado) pintarRosto(fechado, _rostoAtual);   // olhos fechados, relaxada
             } else if (!deve && _afagando) {
                 _afagando = false;
                 pres.classList.remove('afago');
@@ -2778,7 +2784,11 @@
                     b.className = 'lab-cara';
                     b.textContent = cara;
                     // marca as que não partem em olho/boca: essas não ganham boca animada
-                    if (!partirRosto(cara)) { b.title = 'sem boca separável (acento/emoji)'; b.style.opacity = '.55'; }
+                    if (ROSTO_INTEIRO.has(cara) || !partirRosto(cara)) {
+                        b.title = ROSTO_INTEIRO.has(cara) ? 'repouso: guarda o kaomoji original'
+                                                          : 'sem boca separável (acento/emoji)';
+                        b.style.opacity = '.55';
+                    }
                     b.addEventListener('click', () => {
                         document.querySelectorAll('.lab-cara.posta').forEach(o => o.classList.remove('posta'));
                         b.classList.add('posta');
