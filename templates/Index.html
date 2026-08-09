@@ -130,7 +130,7 @@
         .est-ouvindo #arco-2 { animation-duration: 14s; }
         .est-ouvindo #arco-3 { animation-duration: 9s;  }
         .est-ouvindo #arcos  { opacity: 1; transform: scale(.82); }
-        .est-ouvindo #orbita-escala { opacity: .9; transform: scale(.8); }
+        .est-ouvindo #orbita-escala { opacity: .9; transform: scale(.86); }
 
         /* 💭 pensando — arcos ACELERAM e se separam */
         .est-pensando #orbita { animation-duration: 4s;  }
@@ -1370,7 +1370,7 @@
             const g = document.getElementById('orbita');
             if (!g) return;
             // partículas soltas por fora
-            const N = 16, R = 80;
+            const N = 16, R = 90;   // bem fora da cabeça (halo r=66)
             let svg = '';
             for (let i = 0; i < N; i++) {
                 const a = (i / N) * Math.PI * 2;
