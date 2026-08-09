@@ -79,7 +79,11 @@
         #presenca.ferr-tela    { --cor-halo: #f2f7ff; } /* branco (tela)    */
         #g-halo stop { stop-color: var(--cor-halo, #7aa2f7); transition: stop-color .7s ease; }
 
-        #presenca { position: relative; display: flex; justify-content: center; padding: 4px 0 10px; }
+        #presenca { position: relative; display: flex; justify-content: center; padding: 4px 0 10px;
+                    cursor: pointer; }
+        /* tranco do clique: ela leva um susto de verdade */
+        #presenca.cutucada svg { animation: cutuco .42s cubic-bezier(.2,.9,.3,1.6); }
+        @keyframes cutuco { 0% { transform: scale(1); } 28% { transform: scale(1.07); } 100% { transform: scale(1); } }
         #presenca svg { width: 196px; height: 196px; overflow: visible; }
         /* o rosto ocupa o miolo livre dos anéis */
         #rosto {
@@ -1471,7 +1475,7 @@
         function pararTrocaIdle() { clearInterval(_timerIdle); _timerIdle = null; }
         function iniciarTrocaIdle() {
             pararTrocaIdle();
-            _timerIdle = setInterval(() => { if (!_afk) trocarRosto(rostoIdle()); }, IDLE_TROCA_MS);
+            _timerIdle = setInterval(() => { if (!_afk && !_reagindo) trocarRosto(rostoIdle()); }, IDLE_TROCA_MS);
         }
         let _rostoReacao = null;      // último kaomoji que ELA escolheu
         let _timerSono = null;
@@ -1498,7 +1502,8 @@
 
         function piscar() {
             const el = document.getElementById('rosto-txt');
-            const fechado = _afk ? null : versaoPiscada(_rostoAtual);   // dormindo já está de olho fechado
+            // reagindo a um clique tem sequência própria de piscada — não atropela
+            const fechado = (_afk || _reagindo) ? null : versaoPiscada(_rostoAtual);
             if (el && fechado) {
                 const eraEsse = _rostoAtual;
                 el.textContent = fechado;                                // instantâneo, sem transição
@@ -1623,6 +1628,55 @@
             requestAnimationFrame(olhar);
         })();
 
+        // ═══ CUTUCAR — clicar nela: leva um susto, te encara, pisca e volta ao normal.
+        //     Se você INSISTIR, ela se irrita e fica de cara feia por mais tempo. ═══
+        const CLIQUE_JANELA = 6000;   // cliques dentro disso contam como "insistência"
+        const CLIQUE_PACIENCIA = 3;   // a partir do 4º clique seguido ela se irrita
+        let _cliques = [], _timersClique = [], _reagindo = false;
+
+        function limparReacaoClique() {
+            _timersClique.forEach(clearTimeout);
+            _timersClique = [];
+        }
+
+        function cutucar() {
+            const pres = document.getElementById('presenca');
+            const el = document.getElementById('rosto-txt');
+            if (!pres || !el || _afk) return;                       // dormindo, deixa ela em paz
+            if (!pres.classList.contains('est-dormindo')) return;   // ocupada (ouvindo/pensando/falando)
+
+            const agora = Date.now();
+            _cliques = _cliques.filter(t => agora - t < CLIQUE_JANELA);
+            _cliques.push(agora);
+            const irritada = _cliques.length > CLIQUE_PACIENCIA;
+
+            limparReacaoClique();
+            _reagindo = true;
+            _ultimaInteracao = agora;        // cutucar conta como interação: adia bocejo/AFK visual
+            pres.classList.remove('cutucada');
+            void pres.offsetWidth;           // reinicia a animação de tranco se clicar em sequência
+            pres.classList.add('cutucada');
+
+            // [cara, quando aparece] — o susto é curto, o encarar é que segura
+            const passos = irritada
+                ? [['≖_≖', 0], ['• _ •', 2400], ['- _ -', 3100], ['• _ •', 3220]]
+                : [['ᗒ_ᗕ', 0], ['• _ •', 260], ['- _ -', 1100], ['• _ •', 1220]];
+            const fim = irritada ? 3900 : 1900;
+
+            passos.forEach(([cara, quando]) =>
+                _timersClique.push(setTimeout(() => { el.textContent = cara; }, quando)));
+            _timersClique.push(setTimeout(() => {
+                pres.classList.remove('cutucada');
+                _reagindo = false;
+                trocarRosto(rostoIdle());     // volta pro repouso
+            }, fim));
+        }
+
+        (function ligarCutucar() {
+            const pres = document.getElementById('presenca');
+            if (pres) pres.addEventListener('click', cutucar);
+        })();
+
         // ═══ BOCEJO — só no repouso DE VERDADE: parada, sem ferramenta rodando e sem você
         //     interagindo há um tempo. (Bocejar gingando na música ficaria absurdo.)
         //     É uma SEQUÊNCIA, não uma troca de cara: abre rápido, SEGURA quase 1s, fecha
@@ -1632,7 +1686,7 @@
 
         function podeBocejar() {
             const pres = document.getElementById('presenca');
-            if (!pres || _bocejando || _afk) return false;
+            if (!pres || _bocejando || _afk || _reagindo) return false;
             if (!pres.classList.contains('est-dormindo')) return false;               // tem que estar parada
             if (Object.values(FERRAMENTAS_VISUAL).some(v => pres.classList.contains('ferr-' + v)))
                 return false;                                                          // ferramenta rodando: não
