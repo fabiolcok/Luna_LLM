@@ -313,129 +313,60 @@ PROMPT_LUNA_PERSONA = (
     # │ a extração de [gif:] aqui embaixo, _REACOES_GIF/atualizar_gif no servidor.py e o      │
     # │ trocarGif() no Index.html. É só o prompt voltar a emitir a tag.                       │
     # └──────────────────────────────────────────────────────────────────────────────────────┘
-    "- OBRIGATÓRIO: termine com UM rosto sozinho na ÚLTIMA LINHA. Ele é a SUA CARA na interface: aparece DENTRO de um círculo que já é a tua cabeça, então são SÓ OS OLHOS E A BOCA — sem parênteses em volta (o círculo já faz isso) e sem braços/objetos. Escolha do cardápio abaixo pelo clima da SUA fala. UM só — NUNCA cole a linha inteira do cardápio nem dois juntos. Nada de emoji.\n"
-    "CARDÁPIO DE ROSTOS (cada linha é um clima; os itens separados por ' · ' são ALTERNATIVAS — pegue uma):\n"
-    "  zoeira/safadeza: ¬‿¬ · ಠ‿ಠ · ＾ω＾ · ˘ ‿ ˘\n"
-    "  revolta/irritação: ｀皿´ · ｀Д´ · >_<\n"
-    "  facepalm/vergonha alheia: －_－; · ¬_¬; · ˘_˘\n"
-    "  choque/surpresa: ⊙_⊙ · °o° · °ロ°\n"
-    "  carinho/acolhimento: ˶ᵔ ᵕ ᵔ˶ · ´ ▽ ` · ｡◕‿◕｡\n"
-    "  cansaço: =_= · ´-ω-` · ー_ー\n"
-    "  comemoração/hype: ＞∇＜ · ✦‿✦ · ◕‿◕\n"
-    "  orgulho/determinação: •̀ ω •́ · ￣^￣ · ｀・ω・´\n"
-    "  suspeita/julgamento: ಠ_ಠ · ¬_¬ · ・_・ · －ω－\n"
-    "  dúvida/pensando: ˘⌣˘ · ・・? · ˙_˙\n"
-    "  tédio: ￣～￣ · ´､ω､`\n"
-    "  tristeza/dó: ｡•́﹀•̀｡ · ˘︿˘\n"
-    "  IMPORTANTE: case o rosto com o que VOCÊ acabou de dizer, não pegue sempre a cara neutra. "
-    "Acolheu/foi carinhosa -> rosto de carinho. Comemorou/elogiou -> comemoração. Se espantou -> choque. "
-    "Cutucou/zoou -> zoeira. Ficou sem paciência -> facepalm. A cara de julgamento/tédio é só quando você "
-    "ESTÁ julgando ou entediada de verdade — não é o padrão.\n"
+    "- OBRIGATÓRIO: termine com [clima:X], escolhendo UMA palavra desta lista conforme o clima da SUA fala (não invente outra): zoeira, revolta, facepalm, choque, carinho, cansaco, festa, orgulho, suspeita, duvida, tedio, tristeza. "
+    "Case com o que VOCÊ acabou de dizer, não use sempre a mesma: acolheu/foi carinhosa -> [clima:carinho]; comemorou/elogiou -> [clima:festa]; se espantou -> [clima:choque]; cutucou/zoou -> [clima:zoeira]; ficou sem paciência -> [clima:facepalm]. "
+    "'suspeita' e 'tedio' são só quando você ESTÁ julgando ou entediada de verdade — não são o padrão.\n"
 )
 
-# Kaomoji substituiu o [gif:] (experimento ago/2026). Anti-repetição DETERMINÍSTICA: o 12B
-# sozinho vicia nas 2-3 carinhas mais comuns do treino — guardamos as últimas e PROIBIMOS no
-# prompt (mesmo truque do _falas_recentes do proativo). _kaomoji_pendente é lido pelo Telegram,
-# que cola o kaomoji no fim do texto (no web ele vai grande, no lugar do GIF).
+# O clima vira ROSTO aqui no Python, não no modelo (ideia do Fábio, ago/2026). O 12B só escolhe
+# uma PALAVRA — tarefa trivial, que ele já fazia bem no tempo do [gif:]. Deixar ele escrever o
+# kaomoji dava: carinha quebrada ('= कर_ω_', devanágari), parênteses de volta, 4 formatos
+# diferentes e vício nas 3 caras mais comuns do treino. Agora a saída é sempre válida.
+_ROSTOS = {
+    "zoeira":   ["¬‿¬", "＾ω＾", "ಠ‿ಠ", "˘ ‿ ˘"],
+    "revolta":  ["｀皿´", "｀Д´", ">_<"],
+    "facepalm": ["－_－;", "¬_¬;", "˘_˘"],
+    "choque":   ["⊙_⊙", "°o°", "°ロ°"],
+    "carinho":  ["˶ᵔ ᵕ ᵔ˶", "´ ▽ `", "｡◕‿◕｡"],
+    "cansaco":  ["=_=", "´-ω-`", "ー_ー"],
+    "festa":    ["＞∇＜", "✦‿✦", "◕‿◕"],
+    "orgulho":  ["•̀ ω •́", "￣^￣", "｀・ω・´"],
+    "suspeita": ["ಠ_ಠ", "¬_¬", "・_・", "－ω－"],
+    "duvida":   ["˘⌣˘", "・・?", "˙_˙"],
+    "tedio":    ["￣～￣", "´､ω､`"],
+    "tristeza": ["｡•́﹀•̀｡", "˘︿˘"],
+}
+
+# O Telegram lê _kaomoji_pendente e cola o rosto no fim do texto; no web ele vai grande,
+# dentro do círculo (que é a cabeça dela).
+import random as _rnd
 _kaomoji_recentes = []
 _kaomoji_pendente = None
 
-# Mesmo cardápio acima, em estrutura — serve pra TROCAR mecanicamente quando ela repete.
-# (Pedir "escolha um diferente" no prompt ajuda, mas o 12B ignora: a regra fica enterrada
-# no fim de um prompt longo. Determinístico > torcer pra ele obedecer.)
-# Só ROSTOS (o kaomoji virou a cara dela na interface). Glifos conferidos no PC do Fábio —
-# se um dia aparecer quadradinho (tofu) numa máquina nova, é falta da fonte, troque a carinha.
-_KAOMOJI_POR_CLIMA = [
-    ["¬‿¬", "＾ω＾", "ಠ‿ಠ", "˘ ‿ ˘"],
-    ["｀皿´", "｀Д´", ">_<"],
-    ["－_－;", "¬_¬;", "˘_˘"],
-    ["⊙_⊙", "°o°", "°ロ°"],
-    ["˶ᵔ ᵕ ᵔ˶", "´ ▽ `", "｡◕‿◕｡"],
-    ["=_=", "´-ω-`", "ー_ー"],
-    ["＞∇＜", "✦‿✦", "◕‿◕"],
-    ["•̀ ω •́", "￣^￣", "｀・ω・´"],
-    ["ಠ_ಠ", "¬_¬", "・_・", "－ω－"],
-    ["˘⌣˘", "・・?", "˙_˙"],
-    ["￣～￣", "´､ω､`"],
-    ["｡•́﹀•̀｡", "˘︿˘"],
-]
+_RE_CLIMA = re.compile(r'\[\s*clima\s*:\s*([A-Za-zÀ-ÿ]+)\s*\]', re.IGNORECASE)
 
-import random as _rnd
+def _sem_acento_min(s: str) -> str:
+    import unicodedata
+    s = unicodedata.normalize("NFKD", s or "")
+    return "".join(c for c in s if not unicodedata.combining(c)).lower()
 
-# Sem os parênteses de âncora o 12B às vezes INVENTA carinha quebrada (saiu '= कर_ω_',
-# com devanágari). Só aceitamos rostos feitos dos caracteres que existem no cardápio —
-# permite recombinar, mas barra alfabeto aleatório virando cara.
-_KAOMOJI_CHARS = set("".join(k for g in _KAOMOJI_POR_CLIMA for k in g)) | set(" ˘ω･ᴗ⌣")
-_KAOMOJI_NEUTRO = "・_・"
+_ROSTOS_NORM = {_sem_acento_min(k): v for k, v in _ROSTOS.items()}
 
-def _kaomoji_valido(k: str) -> bool:
-    return bool(k) and all(c in _KAOMOJI_CHARS for c in k)
-
-# Regex dos kaomoji CONHECIDOS (mais longos primeiro, pra casar '(╯°□°）╯︵ ┻━┻' inteiro
-# antes de um pedaço). Pega mesmo quando ela cola no fim da frase, sem linha própria.
-_RE_KAO_CONHECIDO = re.compile(
-    "(" + "|".join(re.escape(k) for k in sorted(
-        [k for grupo in _KAOMOJI_POR_CLIMA for k in grupo], key=len, reverse=True)) + r")\s*$"
-)
-
-def _extrair_kaomoji(texto: str):
-    """Tira o kaomoji do fim do texto -> (kaomoji|None, texto_sem_ele). Cobre os 3 jeitos que
-    o 12B escreve: em linha própria, colado no fim da frase, e dois seguidos."""
-    _SEPS = " \t·•∙・,;"        # ela às vezes cola DOIS com o separador do cardápio (' · ')
-    def _parece_kaomoji(s):
-        # tem que ter cara de carinha: caractere fora do ASCII ou parêntese/underscore.
-        # Sem isso, uma última linha curta tipo 'Ok.' seria confundida com kaomoji.
-        return bool(s) and len(s) <= 40 and not re.search(r'[A-Za-zÀ-ÿ]{4,}', s) \
-               and bool(re.search(r'[^\x00-\x7F()_^]|[()_^]', s))
-
-    t = (texto or "").rstrip()
-    achado = None
-    # 1) kaomoji CONHECIDO no fim — em loop, tolerando o separador entre dois
-    while True:
-        m = _RE_KAO_CONHECIDO.search(t)
-        if not m:
-            break
-        achado = m.group(1).strip()
-        t = t[:m.start()].rstrip(_SEPS)
-    # 2) sobra: última LINHA só de símbolos (kaomoji adaptado OU pedaço que o loop não casou)
-    while True:
-        linhas = t.split("\n")
-        ult = linhas[-1].strip().rstrip(_SEPS).strip()
-        if not _parece_kaomoji(ult):
-            break
-        if achado is None:
-            achado = ult
-        t = "\n".join(linhas[:-1]).rstrip(_SEPS)
-    if achado:
-        return achado, t
-    # 3) rabicho depois da última pontuação de fim de frase (kaomoji adaptado, colado)
-    idx = max(t.rfind(c) for c in ".!?…")
-    if idx != -1:
-        cauda = t[idx + 1:].strip().rstrip(_SEPS).strip()
-        if _parece_kaomoji(cauda):
-            return cauda, t[:idx + 1].rstrip()
-    return None, texto
-
-
-def _kaomoji_antirrepeticao(k: str) -> str:
-    """Se o kaomoji saiu repetido, troca por OUTRO DO MESMO CLIMA (preserva a emoção certa).
-    Se ele não estiver no cardápio (ela adaptou), devolve como veio — novidade não é repetição."""
-    # Normaliza pra comparar: ela escreve variantes ('(¬_¬)' vs '(¬_¬;)' vs '(¬_¬ )') que são
-    # a MESMA carinha — sem isso a troca não reconhece e a repetição passa.
-    def _n(s):
-        return re.sub(r'[\s;]', '', s or "")
-    recentes_n = [_n(x) for x in _kaomoji_recentes[-3:]]
-    if _n(k) not in recentes_n:
-        return k
-    for grupo in _KAOMOJI_POR_CLIMA:
-        if _n(k) in [_n(x) for x in grupo]:
-            alternativas = [x for x in grupo if _n(x) not in recentes_n]
-            if alternativas:
-                novo = _rnd.choice(alternativas)
-                cor.cinza(f"[🎭 Kaomoji repetido {k} -> trocado por {novo}]")
-                return novo
-            break
-    return k
+def _extrair_clima(texto: str):
+    """Tira o [clima:X] do fim do texto -> (rosto|None, texto_limpo). O Python escolhe o
+    rosto: sempre um do grupo daquele clima, evitando os usados há pouco (variedade
+    garantida sem depender da obediência do modelo)."""
+    t = texto or ""
+    m = _RE_CLIMA.search(t)
+    if not m:
+        return None, t
+    t = _RE_CLIMA.sub("", t).strip()
+    faces = _ROSTOS_NORM.get(_sem_acento_min(m.group(1)))
+    if not faces:                                   # inventou um clima fora da lista
+        cor.vermelho(f"[⚠️ Clima desconhecido: {m.group(1)!r}]")
+        return None, t
+    novas = [f for f in faces if f not in _kaomoji_recentes[-3:]] or faces
+    return _rnd.choice(novas), t
 
 def obter_e_limpar_kaomoji():
     """Pega e LIMPA o kaomoji da última resposta (o Telegram cola no texto). str ou None."""
@@ -767,6 +698,10 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         # Limpa tags HTML que modelos locais às vezes injetam
         texto_luna = re.sub(r'<br\s*/?>', ' ', texto_luna, flags=re.IGNORECASE).strip()
 
+        # ROSTO primeiro: o apanha-tudo do GIF logo abaixo (\[palavra\]$, feito pra [streak])
+        # engolia o [clima:X] antes da hora. Extrair aqui resolve na ordem.
+        _ult, texto_luna = _extrair_clima(texto_luna)
+
         # Extrai [gif:termo] — aceita variantes mal-formatadas de modelos locais
         gif_termo = None
         m = re.search(r'\[gif:\s*([^\]]+)\]', texto_luna)          # [gif:termo]
@@ -794,24 +729,13 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
 
         # KAOMOJI: última linha, curta e SEM palavra de verdade (kaomoji não tem palavras).
         # Sai do texto -> a voz nunca lê e o web mostra grande; o Telegram pega pelo getter.
-        _ult, texto_luna = _extrair_kaomoji(texto_luna)
         texto_luna = texto_luna.strip()
         if _ult:
-            # O círculo da interface JÁ é a cabeça dela — parênteses em volta ficariam
-            # duplicados. O 12B foi treinado com kaomoji entre parênteses e recoloca do
-            # mesmo jeito, então tiramos aqui em vez de só pedir no prompt.
-            _m_par = re.fullmatch(r'\(\s*(.+?)\s*\)', _ult)
-            if _m_par:
-                _ult = _m_par.group(1).strip()
-            if not _kaomoji_valido(_ult):
-                cor.vermelho(f"[⚠️ Rosto inválido ({_ult!r}) — usando neutro]")
-                _ult = _KAOMOJI_NEUTRO
-            _ult = _kaomoji_antirrepeticao(_ult)     # garante variedade sem perder o clima
             _kaomoji_pendente = _ult
             _kaomoji_recentes.append(_ult)
             if len(_kaomoji_recentes) > 6:
                 _kaomoji_recentes.pop(0)
-            cor.ciano(f"[🎭 Kaomoji: {_ult}]")
+            cor.ciano(f"[🎭 Rosto: {_ult}]")
             try:
                 import servidor as _srv
                 _srv.atualizar_kaomoji(_ult)
