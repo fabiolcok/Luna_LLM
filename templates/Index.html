@@ -119,6 +119,18 @@
         .est-pensando #arcos  { opacity: 1; transform: scale(1.12); }
         .est-pensando #orbita-escala { opacity: 1; transform: scale(1.05); }
 
+        /* ═══ FERRAMENTA: 🎵 SPOTIFY — bolinhas viram EQUALIZADOR e os arcos batem no ritmo.
+               A cabeça e o rosto ficam intactos (identidade não muda). ═══ */
+        .ferr-spotify #orbita circle {
+            animation: eq-bolinha .58s ease-in-out infinite alternate;
+        }
+        .ferr-spotify #orbita { animation-duration: 26s; }
+        .ferr-spotify #arcos  { animation: eq-arcos .58s ease-in-out infinite alternate; }
+        .ferr-spotify #halo   { animation-duration: .58s; }
+
+        @keyframes eq-bolinha { from { r: 1.1px; opacity: .35; } to { r: 4.4px; opacity: 1; } }
+        @keyframes eq-arcos   { from { transform: scale(.97); } to { transform: scale(1.05); } }
+
         /* 🗣️ falando — o núcleo PULSA, arcos giram soltos */
         .est-falando #halo   { animation-duration: .9s; }
         .est-falando #orbita { animation-duration: 12s; }
@@ -1292,8 +1304,12 @@
                 const x = (100 + Math.cos(a) * R).toFixed(1);
                 const y = (100 + Math.sin(a) * R).toFixed(1);
                 const grande = i % 4 === 0;
+                // atraso PSEUDO-ALEATÓRIO por bolinha: é o que faz o equalizador do Spotify
+                // parecer música, e não uma onda certinha girando.
+                const atraso = (((i * 37) % 11) / 11 * 0.58).toFixed(2);
                 svg += `<circle cx="${x}" cy="${y}" r="${grande ? 2.4 : 1.4}" `
-                     + `fill="${grande ? '#b4f9f8' : '#7aa2f7'}" opacity="${grande ? 0.9 : 0.45}"/>`;
+                     + `fill="${grande ? '#b4f9f8' : '#7aa2f7'}" opacity="${grande ? 0.9 : 0.45}" `
+                     + `style="animation-delay:${atraso}s"/>`;
             }
             g.innerHTML = svg;
 
@@ -1354,6 +1370,24 @@
             if (!k) return;
             _rostoReacao = k;
             trocarRosto(k);                           // a reação VIRA a cara dela
+        }
+
+        // ═══ FERRAMENTA EM USO: muda SÓ a periferia (arcos + bolinhas).
+        //     A cabeça (círculo) e o rosto (kaomoji) NÃO mudam — é a identidade dela. ═══
+        const FERRAMENTAS_VISUAL = { controlar_spotify: 'spotify' };
+        let _timerFerr = null;
+        function aplicarFerramenta(statusTxt) {
+            const el = document.getElementById('presenca');
+            if (!el) return;
+            const m = /Usando:\s*([a-z_]+)/i.exec(statusTxt || '');
+            const modo = m ? FERRAMENTAS_VISUAL[m[1]] : null;
+            clearTimeout(_timerFerr);
+            Object.values(FERRAMENTAS_VISUAL).forEach(v => el.classList.remove('ferr-' + v));
+            if (modo) {
+                el.classList.add('ferr-' + modo);
+                // o status volta pra "Por aqui" logo; segura o efeito um tempinho pra dar pra ver
+                _timerFerr = setTimeout(() => el.classList.remove('ferr-' + modo), 12000);
+            }
         }
 
         function trocarGif(url, termo) {
@@ -1750,7 +1784,8 @@
             if (dados.gif_url !== undefined)
                 trocarGif(dados.gif_url, dados.gif_termo);
             if (dados.tipo === 'status' && statusEl) {
-                statusEl.textContent = dados.texto || '🌚 Por aqui';
+                statusEl.textContent = dados.texto || '◗ Por aqui';
+                aplicarFerramenta(dados.texto || '');
             }
             if (dados.pensamento !== undefined) {
                 conteudoEl.textContent = dados.pensamento || '—';
