@@ -123,6 +123,7 @@
                A cabeça e o rosto ficam intactos (identidade não muda). ═══ */
         .ferr-spotify #orbita circle {
             animation: eq-bolinha .58s ease-in-out infinite alternate;
+            animation-delay: calc(var(--d-rand) * -.58s);      /* ritmo quebrado = parece música */
         }
         .ferr-spotify #orbita { animation-duration: 26s; }
         .ferr-spotify #arcos  { animation: eq-arcos .58s ease-in-out infinite alternate; }
@@ -130,6 +131,36 @@
 
         @keyframes eq-bolinha { from { r: 1.1px; opacity: .35; } to { r: 4.4px; opacity: 1; } }
         @keyframes eq-arcos   { from { transform: scale(.97); } to { transform: scale(1.05); } }
+
+        /* ═══ 🔍 RADAR (pesquisar_web) — arco externo VARRE rápido e as bolinhas
+               acendem EM SEQUÊNCIA, como se o feixe passasse por cada uma. ═══ */
+        .ferr-radar #arco-1 { animation-duration: 1.5s; opacity: 1; stroke-width: 2.4; }
+        .ferr-radar #arco-2 { animation-duration: 9s; opacity: .35; }
+        .ferr-radar #arco-3 { animation-duration: 7s; opacity: .3; }
+        .ferr-radar #orbita { animation-duration: 60s; }
+        .ferr-radar #orbita circle {
+            animation: radar-ping 1.5s linear infinite;
+            animation-delay: calc(var(--d-seq) * -1.5s);       /* varredura girando ao redor */
+        }
+        @keyframes radar-ping {
+            0%   { r: 1.2px; opacity: .25; }
+            12%  { r: 4.6px; opacity: 1;   }
+            45%  { r: 1.2px; opacity: .25; }
+            100% { r: 1.2px; opacity: .25; }
+        }
+
+        /* ═══ 🎬 VÍDEO/LINK (resumir_youtube, resumir_site) — o anel ENGOLE o conteúdo
+               (contrai e solta) e as bolinhas acendem em progresso lento, tipo timeline. ═══ */
+        .ferr-video #orbita-escala { animation: video-engole 2.6s ease-in-out infinite; }
+        .ferr-video #orbita circle {
+            animation: video-progresso 2.6s ease-in-out infinite;
+            animation-delay: calc(var(--d-seq) * -2.6s);
+        }
+        .ferr-video #arco-1 { animation-duration: 30s; }
+        .ferr-video #arco-2 { animation-duration: 22s; }
+        .ferr-video #arco-3 { animation-duration: 16s; }
+        @keyframes video-engole    { 0%,100% { transform: scale(1); } 55% { transform: scale(.84); } }
+        @keyframes video-progresso { 0%,100% { r: 1.3px; opacity: .3; } 30% { r: 3.4px; opacity: .95; } }
 
         /* 🗣️ falando — o núcleo PULSA, arcos giram soltos */
         .est-falando #halo   { animation-duration: .9s; }
@@ -1304,12 +1335,14 @@
                 const x = (100 + Math.cos(a) * R).toFixed(1);
                 const y = (100 + Math.sin(a) * R).toFixed(1);
                 const grande = i % 4 === 0;
-                // atraso PSEUDO-ALEATÓRIO por bolinha: é o que faz o equalizador do Spotify
-                // parecer música, e não uma onda certinha girando.
-                const atraso = (((i * 37) % 11) / 11 * 0.58).toFixed(2);
+                // Dois atrasos por bolinha, porque cada efeito quer um ritmo diferente:
+                //  --d-rand = pseudo-ALEATÓRIO -> equalizador de música (não parece onda certinha)
+                //  --d-seq  = SEQUENCIAL pela posição -> varredura girando ao redor (radar, progresso)
+                const dRand = (((i * 37) % 11) / 11).toFixed(3);
+                const dSeq  = (i / N).toFixed(3);
                 svg += `<circle cx="${x}" cy="${y}" r="${grande ? 2.4 : 1.4}" `
                      + `fill="${grande ? '#b4f9f8' : '#7aa2f7'}" opacity="${grande ? 0.9 : 0.45}" `
-                     + `style="animation-delay:${atraso}s"/>`;
+                     + `style="--d-rand:${dRand}; --d-seq:${dSeq}"/>`;
             }
             g.innerHTML = svg;
 
@@ -1358,6 +1391,7 @@
             clearTimeout(_timerSono);
             if (estado === 'ouvindo' || estado === 'pensando') {
                 _rostoReacao = null;                 // conversa nova: esquece a reação anterior
+                limparFerramenta();                  // ...e o modo da última ferramenta
                 trocarRosto(ROSTO_ESTADO[estado]);
             } else if (estado === 'falando') {
                 trocarRosto(_rostoReacao || ROSTO_ESTADO.pensando);
@@ -1374,7 +1408,16 @@
 
         // ═══ FERRAMENTA EM USO: muda SÓ a periferia (arcos + bolinhas).
         //     A cabeça (círculo) e o rosto (kaomoji) NÃO mudam — é a identidade dela. ═══
-        const FERRAMENTAS_VISUAL = { controlar_spotify: 'spotify' };
+        const FERRAMENTAS_VISUAL = {
+            controlar_spotify: 'spotify',
+            pesquisar_web:     'radar',
+            resumir_youtube:   'video',
+            resumir_site:      'video',
+        };
+        function limparFerramenta() {          // nova conversa: volta ao normal
+            const el = document.getElementById('presenca');
+            if (el) Object.values(FERRAMENTAS_VISUAL).forEach(v => el.classList.remove('ferr-' + v));
+        }
         function aplicarFerramenta(statusTxt) {
             const el = document.getElementById('presenca');
             if (!el) return;
