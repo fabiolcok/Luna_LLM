@@ -79,7 +79,9 @@
         #presenca.ferr-tela    { --cor-halo: #f2f7ff; } /* branco (tela)    */
         #g-halo stop { stop-color: var(--cor-halo, #7aa2f7); transition: stop-color .7s ease; }
 
-        #presenca { position: relative; display: flex; justify-content: center; padding: 4px 0 10px; }
+        #presenca { position: relative; display: flex; justify-content: center; padding: 4px 0 10px;
+                    /* arrastar sobre ela nao pode virar selecao de texto (atrapalha a sacudida) */
+                    user-select: none; -webkit-user-select: none; }
         /* ✨ estrelas: só à noite. De dia ficam com opacidade 0 — o céu não "some", ele
            simplesmente não está lá. Cintilam devagar, cada uma no seu tempo. */
         #estrelas rect { fill: #cfe0ff; opacity: 0; }
