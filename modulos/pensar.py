@@ -323,18 +323,18 @@ PROMPT_LUNA_PERSONA = (
 # kaomoji dava: carinha quebrada ('= कर_ω_', devanágari), parênteses de volta, 4 formatos
 # diferentes e vício nas 3 caras mais comuns do treino. Agora a saída é sempre válida.
 _ROSTOS = {
-    "zoeira":   ["¬‿¬", "＾ω＾", "ಠ‿ಠ", "˘ ‿ ˘"],
-    "revolta":  ["｀皿´", "｀Д´", ">_<"],
-    "facepalm": ["－_－;", "¬_¬;", "˘_˘"],
-    "choque":   ["⊙_⊙", "°o°", "°ロ°"],
-    "carinho":  ["˶ᵔ ᵕ ᵔ˶", "´ ▽ `", "｡◕‿◕｡"],
-    "cansaco":  ["=_=", "´-ω-`", "ー_ー"],
-    "festa":    ["＞∇＜", "✦‿✦", "◕‿◕"],
-    "orgulho":  ["•̀ ω •́", "￣^￣", "｀・ω・´"],
-    "suspeita": ["ಠ_ಠ", "¬_¬", "・_・", "－ω－"],
-    "duvida":   ["˘⌣˘", "・・?", "˙_˙"],
-    "tedio":    ["￣～￣", "´､ω､`"],
-    "tristeza": ["｡•́﹀•̀｡", "˘︿˘"],
+    "zoeira":   ["ᗒᗜᗕ", " ͡° ͜ʖ ͡°"],
+    "revolta":  ["Ò﹏Ó", '¬_¬"'],
+    "facepalm": ["°ᯅ°", "ಠ_ಠ"],
+    "choque":   ["಄ᆺ಄;", "O_O"],
+    "carinho":  ["ᵔ ᵕ ᵔ", "•̀ ᴗ -"],
+    "cansaco":  ["╥‸╥", "´ཀ`", "◞_◟"],
+    "festa":    ["◉‿◉", "ᵔᗜᵔ"],
+    "orgulho":  ["ꈍ◡ꈍ"],
+    "suspeita": ["ㆆ_ㆆ", "≖_≖"],
+    "duvida":   ["⚈₋₍⚈", "╭ರ_•́"],
+    "tedio":    ["￢_￢", "- ‸ -"],
+    "tristeza": ["︶︹︺", "T_T"],
 }
 
 # O Telegram lê _kaomoji_pendente e cola o rosto no fim do texto; no web ele vai grande,
@@ -365,7 +365,13 @@ def _extrair_clima(texto: str):
     if not faces:                                   # inventou um clima fora da lista
         cor.vermelho(f"[⚠️ Clima desconhecido: {m.group(1)!r}]")
         return None, t
-    novas = [f for f in faces if f not in _kaomoji_recentes[-3:]] or faces
+    # Evita os 3 últimos; se o grupo é pequeno e todos já saíram, garante ao menos não
+    # repetir o IMEDIATAMENTE anterior (senão dava '╥‸╥ ╥‸╥' seguido em grupo de 3).
+    ultimo = _kaomoji_recentes[-1] if _kaomoji_recentes else None
+    recentes = set(_kaomoji_recentes[-3:])
+    novas = ([f for f in faces if f not in recentes]
+             or [f for f in faces if f != ultimo]
+             or faces)
     return _rnd.choice(novas), t
 
 def obter_e_limpar_kaomoji():
