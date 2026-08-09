@@ -1651,7 +1651,9 @@
         // `let`/`const` não são içados, e usar antes da declaração derruba o script inteiro
         // declarado aqui em cima: o laço do olhar roda na CARGA e consulta isto via vaguear()
         let _jogoAtivo = false;
-        const AFAGO_RAIO = 46;        // só o ROSTO, não a cabeça toda
+        const AFAGO_RAIO = 58;        // rosto + o alto da cabeça
+        const AFAGO_SOBE = 14;        // desloca a área pra CIMA: carinho é na cabeça,
+                                      // não embaixo do queixo
         const AFAGO_JANELA = 380;     // sem movimento por isso -> parou de fazer carinho
         let _mouseX = -9999, _mouseY = -9999, _afagoUltimo = 0, _afagando = false;
 
@@ -1687,7 +1689,7 @@
             if (mexeu && svgA) {
                 const rA = svgA.getBoundingClientRect();
                 const dA = Math.hypot(e.clientX - (rA.left + rA.width / 2),
-                                      e.clientY - (rA.top + rA.height / 2));
+                                      e.clientY - (rA.top + rA.height / 2 - AFAGO_SOBE));
                 if (dA <= AFAGO_RAIO) _afagoUltimo = Date.now();
             }
         });
