@@ -74,6 +74,9 @@
         /* o rosto ocupa o miolo livre dos anéis */
         #rosto {
             position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            /* olhos um pouco ACIMA do centro (no meio exato dava cara de boneco).
+               Feito com padding, não transform — o transform é da animação de troca. */
+            padding-bottom: 30px;
             font-size: 2.75rem; color: #b4f9f8; white-space: nowrap; letter-spacing: .5px;
             pointer-events: none; text-shadow: 0 0 12px rgba(122,162,247,.5);
             transition: opacity .28s ease, transform .28s cubic-bezier(.2,.9,.3,1.5);
