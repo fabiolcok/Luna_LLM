@@ -79,8 +79,7 @@
         #presenca.ferr-tela    { --cor-halo: #f2f7ff; } /* branco (tela)    */
         #g-halo stop { stop-color: var(--cor-halo, #7aa2f7); transition: stop-color .7s ease; }
 
-        #presenca { position: relative; display: flex; justify-content: center; padding: 4px 0 10px;
-                    cursor: pointer; }
+        #presenca { position: relative; display: flex; justify-content: center; padding: 4px 0 10px; }
         /* tranco do clique: ela leva um susto de verdade */
         #presenca.cutucada svg { animation: cutuco .42s cubic-bezier(.2,.9,.3,1.6); }
         @keyframes cutuco { 0% { transform: scale(1); } 28% { transform: scale(1.07); } 100% { transform: scale(1); } }
@@ -1659,9 +1658,9 @@
 
             // [cara, quando aparece] — o susto é curto, o encarar é que segura
             const passos = irritada
-                ? [['≖_≖', 0], ['• _ •', 2400], ['- _ -', 3100], ['• _ •', 3220]]
-                : [['ᗒ_ᗕ', 0], ['• _ •', 260], ['- _ -', 1100], ['• _ •', 1220]];
-            const fim = irritada ? 3900 : 1900;
+                ? [['≖_≖', 0], ['• _ •', 4800], ['- _ -', 5500], ['• _ •', 5620]]
+                : [['ᗒ_ᗕ', 0], ['• _ •', 260],  ['- _ -', 1100], ['• _ •', 1220]];
+            const fim = irritada ? 7100 : 2700;   // a última encarada segura ~1.5s antes do idle
 
             passos.forEach(([cara, quando]) =>
                 _timersClique.push(setTimeout(() => { el.textContent = cara; }, quando)));
@@ -1674,7 +1673,18 @@
 
         (function ligarCutucar() {
             const pres = document.getElementById('presenca');
-            if (pres) pres.addEventListener('click', cutucar);
+            if (!pres) return;
+            // O contêiner ocupa a LARGURA TODA da página; sem esse teste, clicar no vazio ao
+            // lado dela contava. Só vale dentro do raio dela (cabeça + a aura das bolinhas).
+            const RAIO_CLIQUE = 82;
+            pres.addEventListener('click', (e) => {
+                const svg = pres.querySelector('svg');
+                if (!svg) return;
+                const r = svg.getBoundingClientRect();
+                const dx = e.clientX - (r.left + r.width / 2);
+                const dy = e.clientY - (r.top + r.height / 2);
+                if (Math.hypot(dx, dy) <= RAIO_CLIQUE) cutucar();
+            });
         })();
 
         // ═══ BOCEJO — só no repouso DE VERDADE: parada, sem ferramenta rodando e sem você
