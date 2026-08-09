@@ -352,6 +352,19 @@ def _sem_acento_min(s: str) -> str:
 
 _ROSTOS_NORM = {_sem_acento_min(k): v for k, v in _ROSTOS.items()}
 
+# Sobra de kaomoji no fim da fala: mesmo com a tag [clima:X], o 12B às vezes solta um
+# pedaço de carinha por conta própria (resquício do treino) — vazou um 'ω' solto pro TEXTO
+# e pra VOZ. Tira um rabicho CURTO de caracteres que não são letra latina/número/pontuação,
+# e só quando ele vem separado por espaço (pra não comer o fim de uma palavra).
+_RE_LIXO_FIM = re.compile(r'(?<=[\s.!?…])[^A-Za-zÀ-ÿ0-9.,!?;:%()\[\]"\'\s…-]{1,14}\s*$')
+
+def _limpar_sobra_kaomoji(t: str) -> str:
+    novo = _RE_LIXO_FIM.sub('', t or '').rstrip()
+    if novo != (t or '').rstrip():
+        cor.cinza(f"[🧹 Sobra de kaomoji removida do fim da fala]")
+    return novo
+
+
 def _extrair_clima(texto: str):
     """Tira o [clima:X] do fim do texto -> (rosto|None, texto_limpo). O Python escolhe o
     rosto: sempre um do grupo daquele clima, evitando os usados há pouco (variedade
@@ -359,8 +372,8 @@ def _extrair_clima(texto: str):
     t = texto or ""
     m = _RE_CLIMA.search(t)
     if not m:
-        return None, t
-    t = _RE_CLIMA.sub("", t).strip()
+        return None, _limpar_sobra_kaomoji(t)     # sem tag, ainda pode ter sobrado carinha
+    t = _limpar_sobra_kaomoji(_RE_CLIMA.sub("", t).strip())
     faces = _ROSTOS_NORM.get(_sem_acento_min(m.group(1)))
     if not faces:                                   # inventou um clima fora da lista
         cor.vermelho(f"[⚠️ Clima desconhecido: {m.group(1)!r}]")
