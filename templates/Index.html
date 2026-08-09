@@ -103,6 +103,15 @@
         .est-dormindo #arco-3 { animation-duration: 40s; }
         .est-dormindo #arcos, .est-dormindo #orbita-escala { opacity: .35; transform: scale(.95); }
 
+        /* 💤 AFK — você sumiu: tudo desacelera e apaga (sem parar, pra não parecer travado) */
+        #presenca.afk #halo   { animation-duration: 13s; opacity: .07; }
+        #presenca.afk #orbita { animation-duration: 160s; }
+        #presenca.afk #arco-1 { animation-duration: 100s; }
+        #presenca.afk #arco-2 { animation-duration: 80s;  }
+        #presenca.afk #arco-3 { animation-duration: 60s;  }
+        #presenca.afk #arcos, #presenca.afk #orbita-escala { opacity: .2; transform: scale(.9); }
+        #presenca.afk #rosto  { opacity: .55; }
+
         /* 👂 ouvindo — tudo CONTRAI, fica atenta */
         .est-ouvindo #orbita { animation-duration: 16s; }
         .est-ouvindo #arco-1 { animation-duration: 20s; }
@@ -1198,7 +1207,7 @@
             </svg>
             <!-- O ROSTO dela: o kaomoji vive DENTRO dos anéis (os arcos viram cabeça/aura).
                  Segue o estado quando ela não está respondendo, e vira a reação quando responde. -->
-            <div id="rosto">˘ ω ˘</div>
+            <div id="rosto">◜ᴗ◝</div>
         </div>
 
         <!-- GIF (na gaveta — só volta se a regra do prompt voltar a emitir [gif:]) -->
@@ -1375,10 +1384,28 @@
         const PRES_ESTADOS = ['dormindo', 'ouvindo', 'pensando', 'falando'];
         // Rosto padrão de cada estado (quando ela não está reagindo a nada)
         const ROSTO_ESTADO = {
-            dormindo: '˘ ω ˘',
             ouvindo:  '･ ᴗ ･',
             pensando: '˘⌣˘',
         };
+        // Parada, ela ALTERNA entre estas — cara única o tempo todo dava impressão de
+        // congelada. Troca ao entrar em repouso e de tempos em tempos enquanto fica parada.
+        const ROSTOS_IDLE = ['˘ ω ˘', '◜ᴗ◝', 'ᗜ⩊ᗜ', '•𐃷•', '• ₃ •'];
+        const ROSTO_AFK   = '_　_ 💤';        // você sumiu (proativo suspenso)
+        const IDLE_TROCA_MS = 34000;
+        let _idxIdle = -1, _timerIdle = null, _afk = false;
+
+        function rostoIdle() {                 // sorteia sem repetir o anterior
+            let i;
+            do { i = Math.floor(Math.random() * ROSTOS_IDLE.length); }
+            while (ROSTOS_IDLE.length > 1 && i === _idxIdle);
+            _idxIdle = i;
+            return ROSTOS_IDLE[i];
+        }
+        function pararTrocaIdle() { clearInterval(_timerIdle); _timerIdle = null; }
+        function iniciarTrocaIdle() {
+            pararTrocaIdle();
+            _timerIdle = setInterval(() => { if (!_afk) trocarRosto(rostoIdle()); }, IDLE_TROCA_MS);
+        }
         let _rostoReacao = null;      // último kaomoji que ELA escolheu
         let _timerSono = null;
 
@@ -1403,11 +1430,16 @@
             if (estado === 'ouvindo' || estado === 'pensando') {
                 _rostoReacao = null;                 // conversa nova: esquece a reação anterior
                 limparFerramenta();                  // ...e o modo da última ferramenta
+                _afk = false; el.classList.remove('afk');
+                pararTrocaIdle();
                 trocarRosto(ROSTO_ESTADO[estado]);
             } else if (estado === 'falando') {
+                pararTrocaIdle();
                 trocarRosto(_rostoReacao || ROSTO_ESTADO.pensando);
-            } else {                                  // dormindo: segura a reação um pouco e cochila
-                _timerSono = setTimeout(() => trocarRosto(ROSTO_ESTADO.dormindo), 25000);
+            } else {                                  // parada: segura a reação um pouco e repousa
+                _timerSono = setTimeout(() => {
+                    if (!_afk) { trocarRosto(rostoIdle()); iniciarTrocaIdle(); }
+                }, 25000);
             }
         }
 
@@ -1415,6 +1447,16 @@
             if (!k) return;
             _rostoReacao = k;
             trocarRosto(k);                           // a reação VIRA a cara dela
+        }
+
+        // Você sumiu (proativo suspenso): ela cochila de verdade e tudo desacelera.
+        function aplicarAfk(estaAfk) {
+            const el = document.getElementById('presenca');
+            if (!el || estaAfk === _afk) return;
+            _afk = estaAfk;
+            el.classList.toggle('afk', estaAfk);
+            if (estaAfk) { pararTrocaIdle(); trocarRosto(ROSTO_AFK); }
+            else { trocarRosto(rostoIdle()); iniciarTrocaIdle(); }
         }
 
         // ═══ FERRAMENTA EM USO: muda SÓ a periferia (arcos + bolinhas).
@@ -1869,6 +1911,7 @@
             if (dados.tipo === 'status' && statusEl) {
                 statusEl.textContent = dados.texto || '◗ Por aqui';
                 aplicarFerramenta(dados.texto || '');
+                aplicarAfk(/suspensa/i.test(dados.texto || ''));
             }
             if (dados.pensamento !== undefined) {
                 conteudoEl.textContent = dados.pensamento || '—';
