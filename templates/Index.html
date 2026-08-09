@@ -1505,16 +1505,19 @@
         // vezes voltar pro centro. Só entra quando o mouse está quieto.
         function vaguear(agora) {
             if (agora < _vagueiaAte) return;
-            const parada = Math.random() < 0.35;            // 35% das vezes: volta ao centro e descansa
+            const pres = document.getElementById('presenca');
+            const agitada = pres && pres.classList.contains('ferr-spotify');   // na música, mais elétrica
+            const ritmo = agitada ? 0.42 : 1;               // encurta as pausas
+            const parada = Math.random() < (agitada ? 0.15 : 0.35);   // e descansa menos
             if (parada) {
                 _vagX = _vagY = 0;
-                _vagueiaAte = agora + 1800 + Math.random() * 2600;
+                _vagueiaAte = agora + (1800 + Math.random() * 2600) * ritmo;
             } else {
                 const ang = Math.random() * Math.PI * 2;
                 const forca = 0.45 + Math.random() * 0.55;  // nem sempre no limite
                 _vagX = Math.cos(ang) * OLHAR_MAX * forca;
                 _vagY = Math.sin(ang) * OLHAR_MAX * forca * 0.7;   // menos vertical: parece olhar, não cair
-                _vagueiaAte = agora + 1400 + Math.random() * 2200;
+                _vagueiaAte = agora + (1400 + Math.random() * 2200) * ritmo;
             }
         }
 
@@ -1527,8 +1530,18 @@
             const alvoY = _afk ? 0 : (seguindoMouse ? _olhoAlvoY : _vagY);
             _olhoX += (alvoX - _olhoX) * OLHAR_SUAV;
             _olhoY += (alvoY - _olhoY) * OLHAR_SUAV;
+
+            // 🎵 Spotify: ela GINGA de cima pra baixo no ritmo (no mesmo tempo do equalizador).
+            // Vai POR CIMA do olhar, então ela continua olhando pra você enquanto balança.
+            let ginga = 0;
+            const pres = document.getElementById('presenca');
+            if (pres && !_afk && pres.classList.contains('ferr-spotify')) {
+                ginga = Math.sin(agora / 580 * Math.PI) * 6;      // 0.58s de meia-volta, ±6px
+            }
+
             const el = document.getElementById('rosto');
-            if (el) el.style.transform = `translate(${_olhoX.toFixed(2)}px, ${_olhoY.toFixed(2)}px)`;
+            if (el) el.style.transform =
+                `translate(${_olhoX.toFixed(2)}px, ${(_olhoY + ginga).toFixed(2)}px)`;
             requestAnimationFrame(olhar);
         })();
 
