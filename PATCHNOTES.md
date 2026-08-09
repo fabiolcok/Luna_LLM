@@ -8,6 +8,47 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 09/08/2026
+
+- 🌙 ✨ **A Luna ganhou um rosto.** O GIF do Giphy saiu e no lugar dela existe uma **presença**
+  no topo da tela: uma cabeça que respira, um rosto no meio dela, três arcos girando e dezesseis
+  bolinhas em órbita. Não é enfeite — é o **estado dela em tempo real**. Ela fica de um jeito
+  quando está ouvindo, de outro pensando, de outro falando. E dorme quando você some.
+  - **Ela pisca.** Parece bobo, mas era o que faltava: personagem que não pisca parece morto.
+    Pisca a cada ~4-5 segundos, às vezes duas vezes seguidas.
+  - **Ela te olha.** O rosto acompanha o mouse pela tela. E quando você não está mexendo em
+    nada, ela **divaga sozinha** — dá uma espiada pra um lado, segura, volta.
+  - **Ela boceja** depois de uns minutos de sossego (e só aí — nunca no meio de uma tarefa).
+  - **Você pode tocar nela.** Clicar assusta. Insistir irrita — ela fecha a cara e demora pra
+    voltar ao normal. E **arrastar o mouse pela cabeça dela é carinho**: ela fecha os olhos.
+- 🎨 ✨ **Ela mostra o que está fazendo.** Cada ferramenta muda a cor e o comportamento da
+  periferia — mas nunca o rosto nem a cabeça, que são a identidade dela:
+  - 🎵 **Spotify:** fica verde, as bolinhas viram um equalizador e ela **balança a cabeça** no ritmo.
+  - 🔍 **Pesquisa na web:** azul claro, com ondas de radar saindo dela e as bolinhas piscando em sequência.
+  - 👁️ **Ver a tela:** branco, com uma linha de **scanner** varrendo a cabeça.
+  - 🎬 **Resumir vídeo/site:** vermelho, e o anel "engole" o conteúdo.
+  - 🎮 **Jogando:** um **controle orbita ela e passa por trás da cabeça**, aparece uma barra de
+    vida, as bolinhas viram **pixels quadrados** e a cara fica concentrada (`◺_◿`).
+- ☄️ ✨ **Coisas acontecem sozinhas.** De vez em quando passa um **cometa** no fundo, ou um
+  **disco voador** que fica zanzando uns dez segundos — e **ela acompanha os dois com o olhar**.
+  À noite (20h–6h) aparecem **estrelas** e a cabeça ganha um **luar** de lado. Quando ela
+  comemora alguma coisa tua, solta **confete**. E no dia 14/05 — aniversário do projeto — tem festa.
+- 🥺 ✨ **Ela sente sua falta.** Se você sumir por mais de uma hora e meia e voltar, ela faz uma
+  cara de alegria por alguns segundos antes de se acalmar.
+- 🔡 🔧 **O texto aparece diferente.** A Luna e você agora "materializam" a fala a partir de um
+  ruído em braile que vai se resolvendo da esquerda pra direita, no lugar da máquina de escrever.
+- 🖥️ 🔧 **A tela parou de pular.** Antes, cada linha que a Luna escrevia reposicionava a página
+  inteira (o conteúdo era centralizado verticalmente). Agora fica ancorado no topo.
+- 🐛 **Correções que saíram no caminho:** o roteador engolia a tag do rosto antes da hora; sobrava
+  pedaço de carinha na fala (e o TTS lia "japanese symbol"); as bolinhas entravam dentro da
+  cabeça em alguns estados; e um erro de JavaScript no carregamento chegou a **derrubar a
+  interface inteira** por alguns minutos.
+
+> 💡 **Como o rosto é escolhido:** o modelo só diz o *clima* da fala (`[clima:zoeira]`,
+> `[clima:carinho]`…) e o Python escolhe a carinha, revezando entre as do grupo. Deixar o
+> modelo desenhar dava carinha quebrada, formato inconsistente e sempre as mesmas três.
+> Escolher uma palavra ele faz bem — desenhar, não.
+
 ## 08/08/2026
 
 - ⌨️ ✨ **Agora dá pra DIGITAR pra ela no modo web.** Apareceu uma caixa de texto embaixo do

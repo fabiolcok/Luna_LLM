@@ -42,7 +42,7 @@ nuvem. As **ferramentas** ligam pra serviços externos só quando você as acion
 | Transcrição de voz (Faster-Whisper) | Gerar imagem → Hugging Face |
 | Síntese de voz (Kokoro) | Agenda → Google · E-mail → Gmail |
 | Memória (perfil, episódica, ChromaDB) | Música → Spotify · Jogos → Steam / OverFast |
-| Persona e camada proativa | Clima, pesquisa web, animes, GIFs, Telegram |
+| Persona, presença visual e camada proativa | Clima, pesquisa web, animes, Telegram |
 
 > 💡 Este README também serve de **contexto para a LLM**: dá pra colar ele inteiro
 > num chat com a Claude/ChatGPT pra ela entender o projeto de cara.
@@ -190,6 +190,8 @@ setup_telegram_promo.py— login único do Telethon (gera a sessão do radar de 
 modulos/
   pensar.py            — motor de inferência: tool calling + persona (mono 12B) + ChromaDB
   falar.py             — TTS Kokoro + limpeza de texto (limpar_texto_para_voz)
+static/
+  anime.min.js         — anime.js v3 (MIT), servido local: a Luna roda offline
   ouvir.py             — STT Faster-Whisper + PTT (também transcreve áudio do Telegram)
   habilidades.py       — todas as integrações externas (APIs, Spotify, etc.)
   proativa.py          — thread autônoma: tarefas de background + extração de memória (ocioso)
@@ -203,7 +205,7 @@ modelos/
   estado_proativo.json — persistência das rotinas diárias (bom_dia, etc.)
   chromadb/            — banco de conversas
 templates/
-  Index.html           — interface web (GIF, histórico, config, drag & drop, métricas)
+  Index.html           — interface web (presença/rosto, histórico, config, drag & drop)
 Atalhos/
   Luna.vbs             — launcher silencioso   |   Luna.bat — launcher com terminal (debug)
 ```
@@ -270,11 +272,11 @@ Acesso: `http://localhost:5000` (janela nativa via pywebview).
 A tela é dividida em duas zonas: **saída** em cima (tudo que é da Luna) e **entrada** embaixo
 (tudo que é seu) — as duas formas de falar com ela, microfone e teclado, ficam juntas.
 
-- Fala da Luna e do usuário em tempo real (efeito máquina de escrever); o status dela
-  ("o que está fazendo agora") fica no próprio cabeçalho da caixa.
+- **A PRESENÇA** (topo): a Luna tem um rosto. Ver a seção abaixo.
+- Fala da Luna e do usuário em tempo real (o texto se resolve a partir de ruído em braile);
+  o status dela ("o que está fazendo agora") fica no próprio cabeçalho da caixa.
 - **Caixa de texto:** digite e aperte Enter pra conversar **sem falar** — ela responde só por
   escrito (sem TTS), com a liberdade de tamanho do Telegram. Mesmo histórico da voz.
-- GIF animado via Giphy (termo extraído da resposta: `[gif:termo]`), com botão de repetir fala (▶️).
 - **Painel de pensamento** colapsável — o raio-X da 1ª chamada: ferramenta usada, **argumentos
   enviados** e o retorno; quando nenhuma ferramenta roda, mostra o que o roteador gerou (e é
   descartado). Serve pra diagnosticar acionamento errado sem caçar no log. Mais métricas de tok/s.
@@ -282,6 +284,58 @@ A tela é dividida em duas zonas: **saída** em cima (tudo que é da Luna) e **e
 - **Configurações (engrenagem):** toggle do Proativo e de cada tarefa proativa (jogos, emails,
   agenda, pausa, clima, bom_dia, steam, navegador, radar RSS, promoções, animes, mortes no LoL…),
   seleção de voz (Alpha/Bella/Nicole) e velocidade do TTS.
+
+---
+
+## 🌙 A presença (o "rosto" da Luna)
+
+No topo da interface ela **existe** — não é um enfeite, é o estado dela em tempo real. Tudo em
+**SVG + CSS**, com [anime.js](https://animejs.com/) (v3, MIT, servido de `static/`, **sem CDN**)
+só onde o CSS não chega.
+
+**Anatomia:** uma **cabeça** (círculo que respira e muda de cor), o **rosto** (um kaomoji no
+miolo), **3 arcos** girando em sentidos diferentes e **16 bolinhas** em órbita.
+
+**O rosto é o kaomoji — e quem escolhe é o Python.** O modelo termina a fala com uma TAG de
+clima (`[clima:zoeira]`, `[clima:carinho]`, …, 12 opções) e o `pensar.py` traduz num rosto do
+grupo, evitando os últimos usados. *Por que assim:* deixar o 12B escrever a carinha dava vício
+nas 3 mais comuns do treino, parênteses reaparecendo, 4 formatos diferentes de escrita e até
+carinha inventada com devanágari. Escolher uma PALAVRA ele faz bem; desenhar, não.
+
+| Ela está… | O que você vê |
+|-----------|---------------|
+| parada | 5 rostos de repouso alternando, arcos lentos |
+| ouvindo | órbita contrai, rosto atento |
+| pensando | tudo acelera e abre |
+| falando | o rosto vira a **reação** que ela escolheu |
+| AFK | `_　_ 💤`, tudo desacelera (sem parar — parado parece travado) |
+
+**Vida:** ela **pisca** (~a cada 4.6s, às vezes duplo), **te olha** (o rosto desloca até 9px na
+direção do mouse), **divaga sozinha** quando o mouse está parado, e **boceja** depois de ~2min de
+sossego — só em repouso de verdade, nunca no meio de uma tarefa.
+
+**Você pode tocar nela:** *clicar* assusta (`ᗒ_ᗕ` → te encara → volta); insistir irrita
+(`≖_≖` por 4.8s). *Arrastar o mouse* pela cabeça é **carinho**: ela fecha os olhos e relaxa.
+
+**Ela reage ao que faz** — muda cor e periferia por ferramenta, sem nunca mexer no rosto nem na
+cabeça (a identidade não muda):
+
+| Ferramenta | Cabeça | Periferia |
+|-----------|--------|-----------|
+| 🎵 Spotify | verde | bolinhas viram equalizador; ela **ginga** no ritmo |
+| 🔍 pesquisar web | azul claro | ondas de radar + ping em sequência |
+| 👁️ ver tela | branco | linha de **scanner** varrendo (largura recalculada por quadro) |
+| 🎬 YouTube/site | vermelho | o anel "engole" o conteúdo |
+| 🎮 **jogando** | — | controle **orbitando atrás dela**, barra de vida, bolinhas viram **pixels**, cara `◺_◿` |
+
+**E tem o que aparece sozinho:** ☄️ um cometa cruza o fundo de vez em quando · 🛸 um OVNI zanza
+uns 10s (ela **acompanha os dois com o olhar**) · ✨ estrelas quadradas e um **luar** de lado das
+20h às 6h · 🎉 confete quando ela comemora · 🎂 e, no dia 14/05 (aniversário do projeto), festa.
+
+> Antes disso a reação era um **GIF do Giphy**. Ele saiu porque reagia a uma *categoria*, nunca ao
+> que ela tinha dito — e só existia no web. O código do GIF continua no repo, dormente: pra
+> voltar, basta a regra do prompt emitir `[gif:]` de novo (há um comentário no `pensar.py`
+> explicando).
 
 ---
 
@@ -342,7 +396,7 @@ Copie `.env.example` para `.env` e preencha. **Nunca** commite o `.env` real nem
 | `USUARIO_NOME`   | seu nome — como a Luna te chama (privacidade: fora do código) |
 | `GEMINI_API_KEY` | visão (`ver_tela`, análise de imagem) — não é usado na persona |
 | `HF_TOKEN`       | geração de imagem (FLUX.1-schnell) — precisa da permissão "Inference Providers" |
-| `GIPHY_API_KEY`  | GIFs na interface web (opcional) |
+| `GIPHY_API_KEY`  | GIFs na interface web — **não usado hoje** (a reação virou a presença) |
 | `SPOTIPY_*`      | Spotify (client id/secret/redirect) |
 | `EMAIL_USUARIO` / `EMAIL_SENHA` | Gmail IMAP (senha de app de 16 letras) |
 | `OW_BATTLETAG`   | BattleTag do Overwatch (ex: `SeuNome-1234`) |
@@ -371,8 +425,8 @@ o nome da esposa, vêm do `perfil.md` privado do Obsidian, não do código).
 
 Regras do prompt: 1ª pessoa sempre, 1 a 4 frases, datas em linguagem falada
 ("29 de julho às duas da tarde", nunca formato cru), não inventar fatos, proibido prometer
-ação futura, sem emojis/markdown, e termina com `[gif:termo]` em inglês (meme/cultura
-internet). Não cumprimenta ("boa noite" etc.) mais de uma vez a cada 6h — um rastreador de
+ação futura, sem emojis/markdown, e termina com `[clima:X]` — a tag que vira o ROSTO dela na
+interface (ver "A presença"). Não cumprimenta ("boa noite" etc.) mais de uma vez a cada 6h — um rastreador de
 saudação segura isso, já que o prompt sozinho não sabe o que é "primeiro contato".
 O nome do usuário entra no prompt via `USUARIO_NOME` (.env); o resto do código fala
 só "o usuário".
