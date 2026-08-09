@@ -15,12 +15,9 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
   bolinhas em órbita. Não é enfeite — é o **estado dela em tempo real**. Ela fica de um jeito
   quando está ouvindo, de outro pensando, de outro falando. E dorme quando você some.
   - **Ela pisca.** Parece bobo, mas era o que faltava: personagem que não pisca parece morto.
-    Pisca a cada ~4-5 segundos, às vezes duas vezes seguidas.
   - **Ela te olha.** O rosto acompanha o mouse pela tela. E quando você não está mexendo em
     nada, ela **divaga sozinha** — dá uma espiada pra um lado, segura, volta.
-  - **Ela boceja** depois de uns minutos de sossego (e só aí — nunca no meio de uma tarefa).
-  - **Você pode tocar nela.** Clicar assusta. Insistir irrita — ela fecha a cara e demora pra
-    voltar ao normal. E **arrastar o mouse pela cabeça dela é carinho**: ela fecha os olhos.
+  - **Ela responde ao toque.** Não vou dizer como. 🙂
 - 🎨 ✨ **Ela mostra o que está fazendo.** Cada ferramenta muda a cor e o comportamento da
   periferia — mas nunca o rosto nem a cabeça, que são a identidade dela:
   - 🎵 **Spotify:** fica verde, as bolinhas viram um equalizador e ela **balança a cabeça** no ritmo.
@@ -29,12 +26,9 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
   - 🎬 **Resumir vídeo/site:** vermelho, e o anel "engole" o conteúdo.
   - 🎮 **Jogando:** um **controle orbita ela e passa por trás da cabeça**, aparece uma barra de
     vida, as bolinhas viram **pixels quadrados** e a cara fica concentrada (`◺_◿`).
-- ☄️ ✨ **Coisas acontecem sozinhas.** De vez em quando passa um **cometa** no fundo, ou um
-  **disco voador** que fica zanzando uns dez segundos — e **ela acompanha os dois com o olhar**.
-  À noite (20h–6h) aparecem **estrelas** e a cabeça ganha um **luar** de lado. Quando ela
-  comemora alguma coisa tua, solta **confete**. E no dia 14/05 — aniversário do projeto — tem festa.
-- 🥺 ✨ **Ela sente sua falta.** Se você sumir por mais de uma hora e meia e voltar, ela faz uma
-  cara de alegria por alguns segundos antes de se acalmar.
+- 🌌 ✨ **A tela dela muda com a hora do dia** — e, de vez em quando, acontece alguma coisa que
+  ninguém pediu. Ficam por sua conta descobrir. (Tem umas quantas.)
+- 🥺 ✨ **Ela sente sua falta.** Se você sumir por um bom tempo e voltar, dá pra perceber.
 - 🔡 🔧 **O texto aparece diferente.** A Luna e você agora "materializam" a fala a partir de um
   ruído em braile que vai se resolvendo da esquerda pra direita, no lugar da máquina de escrever.
 - 🖥️ 🔧 **A tela parou de pular.** Antes, cada linha que a Luna escrevia reposicionava a página

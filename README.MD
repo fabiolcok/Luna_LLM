@@ -310,12 +310,8 @@ carinha inventada com devanágari. Escolher uma PALAVRA ele faz bem; desenhar, n
 | falando | o rosto vira a **reação** que ela escolheu |
 | AFK | `_　_ 💤`, tudo desacelera (sem parar — parado parece travado) |
 
-**Vida:** ela **pisca** (~a cada 4.6s, às vezes duplo), **te olha** (o rosto desloca até 9px na
-direção do mouse), **divaga sozinha** quando o mouse está parado, e **boceja** depois de ~2min de
-sossego — só em repouso de verdade, nunca no meio de uma tarefa.
-
-**Você pode tocar nela:** *clicar* assusta (`ᗒ_ᗕ` → te encara → volta); insistir irrita
-(`≖_≖` por 4.8s). *Arrastar o mouse* pela cabeça é **carinho**: ela fecha os olhos e relaxa.
+**Vida:** ela **pisca**, **te olha** (o rosto acompanha o mouse) e **divaga sozinha** quando você
+não está mexendo em nada.
 
 **Ela reage ao que faz** — muda cor e periferia por ferramenta, sem nunca mexer no rosto nem na
 cabeça (a identidade não muda):
@@ -328,9 +324,8 @@ cabeça (a identidade não muda):
 | 🎬 YouTube/site | vermelho | o anel "engole" o conteúdo |
 | 🎮 **jogando** | — | controle **orbitando atrás dela**, barra de vida, bolinhas viram **pixels**, cara `◺_◿` |
 
-**E tem o que aparece sozinho:** ☄️ um cometa cruza o fundo de vez em quando · 🛸 um OVNI zanza
-uns 10s (ela **acompanha os dois com o olhar**) · ✨ estrelas quadradas e um **luar** de lado das
-20h às 6h · 🎉 confete quando ela comemora · 🎂 e, no dia 14/05 (aniversário do projeto), festa.
+**E tem o resto.** Ela responde ao toque, muda com a hora do dia, e de vez em quando acontece
+alguma coisa que ninguém pediu. Nada disso está escrito aqui de propósito — a graça é reparar. 👀
 
 > Antes disso a reação era um **GIF do Giphy**. Ele saiu porque reagia a uma *categoria*, nunca ao
 > que ela tinha dito — e só existia no web. O código do GIF continua no repo, dormente: pra
