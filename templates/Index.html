@@ -184,12 +184,19 @@
         .ferr-video #orbita circle {
             animation: video-progresso 2.6s ease-in-out infinite;
             animation-delay: calc(var(--d-seq) * -2.6s);
+            /* VERMELHAS VIVAS: o fill vem como atributo no SVG, mas CSS ganha dele.
+               O brilho é o que dá o "vivo" — sem ele fica só um ponto vermelho apagado. */
+            fill: #ff2d20;
+            filter: drop-shadow(0 0 4px #ff3b30);
         }
+        /* as 4 grandes (índices 0,4,8,12) puxam pro laranja: dá relevo no anel */
+        .ferr-video #orbita circle:nth-child(4n+1) { fill: #ff6a3d; }
         .ferr-video #arco-1 { animation-duration: 30s; }
         .ferr-video #arco-2 { animation-duration: 22s; }
         .ferr-video #arco-3 { animation-duration: 16s; }
         @keyframes video-engole    { 0%,100% { transform: scale(1); } 55% { transform: scale(.84); } }
-        @keyframes video-progresso { 0%,100% { r: 1.3px; opacity: .3; } 30% { r: 3.4px; opacity: .95; } }
+        /* piso mais alto que os outros modos: elas nunca "apagam", só respiram de brilho */
+        @keyframes video-progresso { 0%,100% { r: 1.6px; opacity: .5; } 30% { r: 4px; opacity: 1; } }
 
         /* ═══ 👁️ TELA (ver_tela) — os arcos APAGAM e a linha do scanner (anime.js) varre. ═══ */
         .ferr-tela #arcos  { opacity: .18; }
