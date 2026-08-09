@@ -2162,7 +2162,7 @@
             setTimeout(() => anime({ targets: g, opacity: 0, duration: 800, easing: 'linear' }), 9200);
         }
         (function agendarOvni() {
-            setTimeout(() => { ovni(); agendarOvni(); }, 240000 + Math.random() * 480000);
+            setTimeout(() => { ovni(); agendarOvni(); }, 840000 + Math.random() * 1200000);   // 14 a 34 min
         })();
 
         // ═══ ANIVERSÁRIO DA LUNA — 14/05, dia do primeiro commit do projeto. ═══
@@ -2177,7 +2177,7 @@
         //     Se você ignorar, chegam mais. Pra tirar: CHACOALHAR (arrastar rápido, vai-e-vem).
         //     Eles saem espantados, que nem mosquito. ═══
         const FOG_MAX = 5;                 // teto: mais que isso vira bagunça
-        const FOG_INTERVALO = 14000;       // ignorou? chega mais um
+        const FOG_INTERVALO = 32000;       // ignorou? chega mais um
         const FOG_CHACOALHO = 220;         // px percorridos sobre ela pra contar como sacudida
         const FOG_JANELA = 500;            // ...dentro desta janela (senão é carinho, não sacudida)
         const ROSTO_INCOMODADA = 'Ò﹏Ó';
@@ -2248,7 +2248,7 @@
             _foguetes = [];
             _foguetesNaCabeca = 0;
             // o motor cospe fuligem na decolagem: resolver uma história pode abrir outra
-            if (Math.random() < 0.5) setTimeout(() => sujar(1), 1500);
+            if (historiasAtivas() < HISTORIA_TETO && Math.random() < 0.5) setTimeout(() => sujar(1), 1500);
             if (historiasAtivas()) {                 // ainda sobrou problema: continua irritada
                 atualizarIrritacao(true);
             } else {
@@ -2331,15 +2331,15 @@
 
         (function agendarFoguete() {   // raro: é um evento, não um enfeite
             setTimeout(() => {
-                if (!_afk && !_foguetes.length) novoFoguete();     // pode somar com satélite
+                if (!_foguetes.length && podeComecarHistoria()) { marcarHistoria(); novoFoguete(); }
                 agendarFoguete();
-            }, 300000 + Math.random() * 600000);
+            }, 900000 + Math.random() * 1500000);      // 15 a 40 min
         })();
 
         // ═══ 🛰️ SATÉLITES — a segunda história. Diferente do foguete: eles não POUSAM,
         //     ficam em ÓRBITA (com a mesma profundidade do controle do modo jogo) e cada um
         //     sai com um CLIQUE nele. Verbo diferente pra problema diferente. ═══
-        const SAT_MAX = 4, SAT_INTERVALO = 16000;
+        const SAT_MAX = 4, SAT_INTERVALO = 34000;
         let _satelites = [], _satTimer = null, _animSat = null, _orbSat = { a: 0 };
 
         function novoSatelite() {
@@ -2435,9 +2435,9 @@
 
         (function agendarSatelites() {
             setTimeout(function () {
-                if (!_afk && !_satelites.length) novoSatelite();   // pode somar com foguete
+                if (!_satelites.length && podeComecarHistoria()) { marcarHistoria(); novoSatelite(); }
                 agendarSatelites();
-            }, 420000 + Math.random() * 600000);
+            }, 1080000 + Math.random() * 1620000);     // 18 a 45 min
         })();
 
         // ═══ IRRITAÇÃO — sobe por quantas HISTÓRIAS estão ativas ao mesmo tempo, não por
@@ -2463,6 +2463,24 @@
                 trocarRosto(ROSTOS_IRRITADA[Math.min(n, ROSTOS_IRRITADA.length) - 1]);
             }
         }
+
+        // ═══ ⏳ RITMO — o que fazia parecer que "tudo acontece ao mesmo tempo" não era o
+        //     intervalo de cada história, era não haver NADA coordenando as seis. Seis
+        //     agendamentos independentes eventualmente caem juntos, e cada um ainda escala
+        //     sozinho. Este portão é o que faltava: um espaçamento MÍNIMO entre o início de
+        //     duas histórias e um teto de quantas podem estar abertas.
+        //     Ele mora só nos AGENDAMENTOS — o laboratório do konami chama as funções direto
+        //     e continua disparando na hora, que é pra isso que ele existe. ═══
+        const HISTORIA_ESPACO = 300000;   // 5 min entre o INÍCIO de duas histórias
+        const HISTORIA_TETO = 3;          // no máximo 3 abertas (o bastante pro "desistir")
+        let _ultimaHistoria = 0;
+
+        function podeComecarHistoria() {
+            if (_afk || _desistiu) return false;
+            if (historiasAtivas() >= HISTORIA_TETO) return false;
+            return (Date.now() - _ultimaHistoria) >= HISTORIA_ESPACO;
+        }
+        function marcarHistoria() { _ultimaHistoria = Date.now(); }
 
         // ═══ 🧪 LABORATÓRIO — o konami revela um botão que abre um painel de gatilhos.
         //     Sem isso, testar qualquer história vira espera de 10 minutos. ═══
@@ -2718,9 +2736,9 @@
 
         (function agendarInvasao() {
             setTimeout(() => {
-                if (!_afk && !_medo) invasaoOvnis();
+                if (!_medo && podeComecarHistoria()) { marcarHistoria(); invasaoOvnis(); }
                 agendarInvasao();
-            }, 540000 + Math.random() * 780000);
+            }, 1560000 + Math.random() * 1920000);     // 26 a 58 min
         })();
 
         // ═══ 🛸 INVASÃO (fim)
@@ -2806,7 +2824,7 @@
             _medo = false;
             if (pres) pres.classList.remove('medo');
             // pedra passando raspando levanta poeira — a chuva também suja ela
-            if (Math.random() < 0.6) setTimeout(() => sujar(Math.random() < 0.4 ? 2 : 1), 1300);
+            if (historiasAtivas() < HISTORIA_TETO && Math.random() < 0.6) setTimeout(() => sujar(Math.random() < 0.4 ? 2 : 1), 1300);
 
             if (historiasAtivas()) {                  // ainda tem coisa nela: volta pra irritação
                 atualizarIrritacao(true);
@@ -2819,9 +2837,9 @@
 
         (function agendarChuva() {   // raro, como as outras histórias
             setTimeout(() => {
-                if (!_afk && !_medo) chuvaAsteroides();
+                if (!_medo && podeComecarHistoria()) { marcarHistoria(); chuvaAsteroides(); }
                 agendarChuva();
-            }, 480000 + Math.random() * 720000);
+            }, 1320000 + Math.random() * 1680000);     // 22 a 50 min
         })();
 
         // ═══ 🌠 CHUVA DE ASTEROIDES (fim)
@@ -2836,7 +2854,7 @@
         const SUJ_MAX = 4;
         const SUJ_VIDA = 130;        // px de esfregada pra dissolver uma mancha
         const SUJ_RAIO = 21;         // alcance do pano, em unidades do viewBox
-        const SUJ_INTERVALO = 20000; // ignorou -> junta mais sujeira
+        const SUJ_INTERVALO = 42000; // ignorou -> junta mais sujeira
         const SUJ_PARADO = 420;      // sem esfregar por isso -> ela volta a fazer cara de suja
         const ROSTO_SUJA = 'ಠ_ಠ';    // "sério isso?"
         const ROSTO_ESFREGA = 'ᵔ ᵕ ᵔ';
@@ -2927,9 +2945,9 @@
 
         (function agendarSujeira() {   // poeira estelar que assenta sozinha: raro
             setTimeout(() => {
-                if (!_afk && !_sujeira.length) sujar(1);
+                if (!_sujeira.length && podeComecarHistoria()) { marcarHistoria(); sujar(1); }
                 agendarSujeira();
-            }, 420000 + Math.random() * 660000);
+            }, 1200000 + Math.random() * 1800000);     // 20 a 50 min
         })();
 
         // ═══ 🌫️ FULIGEM (fim)
@@ -3023,7 +3041,7 @@
             g.innerHTML = '';
             _cometaoEl = null;
             _cometaoNaCabeca = 0;
-            if (Math.random() < 0.55) setTimeout(() => sujar(2), 1200);   // poeira do estilhaço
+            if (historiasAtivas() < HISTORIA_TETO && Math.random() < 0.55) setTimeout(() => sujar(2), 1200);   // poeira do estilhaço
 
             // estilhaços voando
             if (conf && TEM_ANIME) {
@@ -3060,9 +3078,9 @@
 
         (function agendarCometao() {
             setTimeout(function () {
-                if (!_afk && _cometaoVida <= 0) cometao();
+                if (_cometaoVida <= 0 && podeComecarHistoria()) { marcarHistoria(); cometao(); }
                 agendarCometao();
-            }, 540000 + Math.random() * 720000);
+            }, 1500000 + Math.random() * 1800000);     // 25 a 55 min
         })();
 
         // ═══ COMETA (easter egg) — cruza o fundo de vez em quando. Ângulo, sentido, altura
@@ -3093,7 +3111,7 @@
         }
         (function agendarCometa() {
             // raro: é easter egg. Se passasse toda hora deixaria de ser achado.
-            setTimeout(() => { cometa(); agendarCometa(); }, 240000 + Math.random() * 480000);
+            setTimeout(() => { cometa(); agendarCometa(); }, 720000 + Math.random() * 1080000);   // 12 a 30 min
         })();
 
         // ═══ CUTUCAR — clicar nela: leva um susto, te encara, pisca e volta ao normal.
