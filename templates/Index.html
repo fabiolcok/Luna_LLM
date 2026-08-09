@@ -1679,7 +1679,7 @@
         //     ela fica ~25s com a cara da reação depois de falar. ═══
         const _RE_COMB = /[̀-ͯ᪰͜͡-᫿⃐-⃿]/;
         const _RE_NAO_OLHO = /[\s"';,.]/;
-        let _rostoAtual = '◜ᴗ◝';
+        let _rostoAtual = '◜ᴗ◝', _timerTroca = null;
 
         function versaoPiscada(face) {
             const ch = Array.from(face || '');
@@ -1714,11 +1714,24 @@
             const el = document.getElementById('rosto-txt');
             _rostoAtual = txt;
             if (!el || !txt || el.textContent === txt) return;
+            clearTimeout(_timerTroca);   // troca pendente NÃO pode aterrissar depois desta
             el.classList.add('trocando');
-            setTimeout(() => {
+            _timerTroca = setTimeout(() => {
                 el.textContent = txt;
                 requestAnimationFrame(() => el.classList.remove('trocando'));
             }, 260);
+        }
+
+        // Troca SECA, sem transição — é o que as sequências de reação usam (cutucão, volta da
+        // tontura). Escrever direto no textContent deixava _rostoAtual mentindo e permitia que
+        // uma troca suave pendente sobrescrevesse o passo da sequência.
+        function rostoDireto(cara) {
+            const el = document.getElementById('rosto-txt');
+            if (!el) return;
+            clearTimeout(_timerTroca);
+            _rostoAtual = cara;
+            el.classList.remove('trocando');
+            el.textContent = cara;
         }
 
         function aplicarPresenca(estado) {
@@ -1741,7 +1754,11 @@
                 trocarRosto(_rostoReacao || ROSTO_ESTADO.pensando);
             } else {                                  // parada: segura a reação um pouco e repousa
                 _timerSono = setTimeout(() => {
-                    if (!_afk) { trocarRosto(rostoIdle()); iniciarTrocaIdle(); }
+                    if (_afk) return;
+                    // se ela está no meio de uma reação (tontura, cutucão), o rodízio de idle
+                    // começa mas NÃO troca a cara — quem devolve é a própria sequência
+                    if (!_reagindo && !_chacoalhando) trocarRosto(rostoIdle());
+                    iniciarTrocaIdle();
                 }, 25000);
             }
         }
@@ -2176,7 +2193,7 @@
             } else {
                 atualizarIrritacao(false);
                 setTimeout(() => trocarRosto('◉‿◉'), 700);        // aliviada
-                setTimeout(() => { if (!_afk) trocarRosto(rostoIdle()); }, 3000);
+                setTimeout(() => { if (!_afk && !_reagindo) trocarRosto(rostoIdle()); }, 3000);
             }
         }
 
@@ -2243,7 +2260,7 @@
             const fim = tontura + (julgando ? 6300 : 2400);
 
             passos.forEach(([cara, quando]) =>
-                _timersClique.push(setTimeout(() => { el.textContent = cara; }, tontura + quando)));
+                _timersClique.push(setTimeout(() => rostoDireto(cara), tontura + quando)));
             _timersClique.push(setTimeout(() => {
                 _reagindo = false;
                 trocarRosto(rostoIdle());               // enfim, de volta ao normal
@@ -2347,7 +2364,7 @@
                         } else {
                             atualizarIrritacao(false);
                             trocarRosto('◉‿◉');
-                            setTimeout(function () { if (!_afk) trocarRosto(rostoIdle()); }, 2600);
+                            setTimeout(function () { if (!_afk && !_reagindo) trocarRosto(rostoIdle()); }, 2600);
                         }
                     }
                 },
@@ -2535,7 +2552,7 @@
             } else {
                 atualizarIrritacao(false);
                 trocarRosto('◉‿◉');
-                setTimeout(function () { if (!_afk) trocarRosto(rostoIdle()); }, 2600);
+                setTimeout(function () { if (!_afk && !_reagindo) trocarRosto(rostoIdle()); }, 2600);
             }
         }
 
@@ -2618,7 +2635,7 @@
             const fim = irritada ? 7100 : 2700;   // a última encarada segura ~1.5s antes do idle
 
             passos.forEach(([cara, quando]) =>
-                _timersClique.push(setTimeout(() => { el.textContent = cara; }, quando)));
+                _timersClique.push(setTimeout(() => rostoDireto(cara), quando)));
             _timersClique.push(setTimeout(() => {
                 pres.classList.remove('cutucada');
                 _reagindo = false;
@@ -2751,7 +2768,7 @@
                 const sumiuMuito = _afkDesde && (Date.now() - _afkDesde) > FALTA_MIN_MS;
                 if (sumiuMuito) {
                     trocarRosto('◉‿◉');
-                    setTimeout(() => { if (!_afk) trocarRosto(rostoIdle()); }, 3200);
+                    setTimeout(() => { if (!_afk && !_reagindo) trocarRosto(rostoIdle()); }, 3200);
                 } else {
                     trocarRosto(rostoIdle());
                 }
