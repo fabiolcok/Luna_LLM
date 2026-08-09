@@ -69,6 +69,15 @@
         /* ═══ PRESENÇA (a lua + a órbita) ═══
            Dois canais independentes: a LUA é a presença dela (respira, brilha);
            a ÓRBITA é a atividade (velocidade/escala). SVG + CSS puro — sem lib. */
+        /* A CABEÇA muda de cor conforme a ferramenta (cores de marca). Uma variável só,
+           herdada pelo gradiente do SVG — os anéis e o rosto seguem no tom do tema. */
+        #presenca { --cor-halo: #7aa2f7; }              /* padrão: azul da Luna */
+        #presenca.ferr-spotify { --cor-halo: #1db954; } /* verde Spotify   */
+        #presenca.ferr-video   { --cor-halo: #ff3b30; } /* vermelho YouTube */
+        #presenca.ferr-radar   { --cor-halo: #7dd3fc; } /* azul claro (web) */
+        #presenca.ferr-tela    { --cor-halo: #f2f7ff; } /* branco (tela)    */
+        #g-halo stop { stop-color: var(--cor-halo, #7aa2f7); transition: stop-color .7s ease; }
+
         #presenca { position: relative; display: flex; justify-content: center; padding: 4px 0 10px; }
         #presenca svg { width: 196px; height: 196px; overflow: visible; }
         /* o rosto ocupa o miolo livre dos anéis */
@@ -1194,9 +1203,11 @@
         <div id="presenca" class="est-dormindo">
             <svg viewBox="0 0 200 200" aria-hidden="true">
                 <defs>
+                    <!-- a cor vem do CSS (var --cor-halo), pra mudar conforme a ferramenta.
+                         stop-color como ATRIBUTO não aceita var() — tem que ser via CSS. -->
                     <radialGradient id="g-halo">
-                        <stop offset="52%"  stop-color="#7aa2f7" stop-opacity="0"/>
-                        <stop offset="100%" stop-color="#7aa2f7" stop-opacity="0.5"/>
+                        <stop offset="52%"  stop-opacity="0"/>
+                        <stop offset="100%" stop-opacity="0.5"/>
                     </radialGradient>
                 </defs>
                 <circle id="halo" cx="100" cy="100" r="66" fill="url(#g-halo)"/>
