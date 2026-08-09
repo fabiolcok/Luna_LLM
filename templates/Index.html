@@ -123,6 +123,18 @@
             100% { transform: translate(-2px, 1px)  rotate(-1.2deg); }
         }
 
+        /* 😤 IRRITAÇÃO por nº de HISTÓRIAS ativas ao mesmo tempo (não por nº de objetos:
+           um enxame de foguete é UM problema; foguete + satélite são DOIS). A cabeça
+           esquenta e ela treme sozinha — tremor diferente do de quando VOCÊ sacode. */
+        #presenca.irrit-2 { --cor-halo: #ff8a4d; }
+        #presenca.irrit-3 { --cor-halo: #ff3b30; }
+        #presenca.irrit-2 svg, #presenca.irrit-2 #rosto-txt { animation: raiva .3s ease-in-out infinite; }
+        #presenca.irrit-3 svg, #presenca.irrit-3 #rosto-txt { animation: raiva .17s ease-in-out infinite; }
+        @keyframes raiva {
+            0%,100% { transform: translate(-0.8px, 0); }
+            50%     { transform: translate(0.8px, 0);  }
+        }
+
         /* tranco do clique: ela leva um susto de verdade. O rosto é uma camada HTML POR CIMA
            do SVG, então não herda o transform dele — precisa levar o tranco junto, senão só
            a cabeça balança e a cara fica parada no meio. */
@@ -2027,12 +2039,13 @@
             const de = { x: alvoX + (Math.random() < 0.5 ? -180 : 180), y: -40, r: 90 };
             _foguetes.push({ el, x: alvoX, y: alvoY });
             _foguetesNaCabeca = _foguetes.length;
+            atualizarIrritacao(false);
             anime({
                 targets: de, x: alvoX, y: alvoY, r: Math.random() * 40 - 20,
                 duration: 1300, easing: 'easeOutQuad',
                 update: () => el.setAttribute('transform',
                     `translate(${de.x.toFixed(1)} ${de.y.toFixed(1)}) rotate(${de.r.toFixed(1)})`),
-                complete: () => { if (_foguetes.length) trocarRosto(ROSTO_INCOMODADA); },
+                complete: () => { if (_foguetes.length) atualizarIrritacao(true); },
             });
             clearTimeout(_fogTimer);
             _fogTimer = setTimeout(novoFoguete, FOG_INTERVALO);   // ignorou -> vem mais
@@ -2061,8 +2074,13 @@
             });
             _foguetes = [];
             _foguetesNaCabeca = 0;
-            setTimeout(() => trocarRosto('◉‿◉'), 700);            // aliviada
-            setTimeout(() => { if (!_afk) trocarRosto(rostoIdle()); }, 3000);
+            if (historiasAtivas()) {                 // ainda sobrou problema: continua irritada
+                atualizarIrritacao(true);
+            } else {
+                atualizarIrritacao(false);
+                setTimeout(() => trocarRosto('◉‿◉'), 700);        // aliviada
+                setTimeout(() => { if (!_afk) trocarRosto(rostoIdle()); }, 3000);
+            }
         }
 
         // Chacoalhar = percorrer MUITA distância sobre ela em pouco tempo. É o que separa
@@ -2099,7 +2117,7 @@
 
         (function agendarFoguete() {   // raro: é um evento, não um enfeite
             setTimeout(() => {
-                if (!_afk && !_foguetes.length) novoFoguete();
+                if (!_afk && !_foguetes.length) novoFoguete();     // pode somar com satélite
                 agendarFoguete();
             }, 300000 + Math.random() * 600000);
         })();
@@ -2125,7 +2143,7 @@
             _satelites.push(sat);
             _satelitesNaOrbita = _satelites.length;
             el.addEventListener('click', function (ev) { ev.stopPropagation(); tirarSatelite(sat); });
-            trocarRosto(ROSTO_INCOMODADA);
+            atualizarIrritacao(true);
             clearTimeout(_satTimer);
             _satTimer = setTimeout(novoSatelite, SAT_INTERVALO);
             if (!_animSat) girarSatelites();
@@ -2187,8 +2205,13 @@
                     if (!_satelites.length) {
                         clearTimeout(_satTimer); _satTimer = null;
                         if (_animSat) { _animSat.pause(); _animSat = null; }
-                        trocarRosto('◉‿◉');
-                        setTimeout(function () { if (!_afk) trocarRosto(rostoIdle()); }, 2600);
+                        if (historiasAtivas()) {
+                            atualizarIrritacao(true);
+                        } else {
+                            atualizarIrritacao(false);
+                            trocarRosto('◉‿◉');
+                            setTimeout(function () { if (!_afk) trocarRosto(rostoIdle()); }, 2600);
+                        }
                     }
                 },
             });
@@ -2196,10 +2219,31 @@
 
         (function agendarSatelites() {
             setTimeout(function () {
-                if (!_afk && !_satelites.length && !_foguetesNaCabeca) novoSatelite();
+                if (!_afk && !_satelites.length) novoSatelite();   // pode somar com foguete
                 agendarSatelites();
             }, 420000 + Math.random() * 600000);
         })();
+
+        // ═══ IRRITAÇÃO — sobe por quantas HISTÓRIAS estão ativas ao mesmo tempo, não por
+        //     quantos objetos. Uma função só manda no rosto e na intensidade, pra as duas
+        //     histórias não brigarem pelo controle da cara. ═══
+        const ROSTOS_IRRITADA = ['Ò﹏Ó', '｀皿´', '｀Д´'];   // 1, 2, 3+ histórias
+
+        function historiasAtivas() {
+            return (_foguetesNaCabeca ? 1 : 0) + (_satelitesNaOrbita ? 1 : 0);
+        }
+
+        function atualizarIrritacao(mostrarRosto) {
+            const pres = document.getElementById('presenca');
+            if (!pres) return;
+            const n = historiasAtivas();
+            pres.classList.remove('irrit-2', 'irrit-3');
+            if (n >= 3) pres.classList.add('irrit-3');
+            else if (n === 2) pres.classList.add('irrit-2');
+            if (mostrarRosto && n > 0 && !_chacoalhando) {
+                trocarRosto(ROSTOS_IRRITADA[Math.min(n, ROSTOS_IRRITADA.length) - 1]);
+            }
+        }
 
         // ═══ COMETA (easter egg) — cruza o fundo de vez em quando. Ângulo, sentido, altura
         //     e velocidade sorteados: nunca passa igual duas vezes. ═══
