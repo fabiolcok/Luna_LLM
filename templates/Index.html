@@ -80,6 +80,12 @@
         #g-halo stop { stop-color: var(--cor-halo, #7aa2f7); transition: stop-color .7s ease; }
 
         #presenca { position: relative; display: flex; justify-content: center; padding: 4px 0 10px; }
+        /* ✨ estrelas: só à noite. De dia ficam com opacidade 0 — o céu não "some", ele
+           simplesmente não está lá. Cintilam devagar, cada uma no seu tempo. */
+        #estrelas circle { fill: #cfe0ff; opacity: 0; }
+        #presenca.noite #estrelas circle { animation: cintila 4.5s ease-in-out infinite; }
+        @keyframes cintila { 0%,100% { opacity: .12; } 50% { opacity: .55; } }
+
         /* tranco do clique: ela leva um susto de verdade. O rosto é uma camada HTML POR CIMA
            do SVG, então não herda o transform dele — precisa levar o tranco junto, senão só
            a cabeça balança e a cara fica parada no meio. */
@@ -1255,6 +1261,8 @@
                 </defs>
                 <!-- COMETA (easter egg): primeiro no SVG = passa ATRÁS de tudo, inclusive do
                      brilho da cabeça, que é o que vende a profundidade. -->
+                <g id="estrelas"></g>
+                <g id="confete"></g>
                 <g id="cometa" opacity="0">
                     <line x1="-30" y1="0" x2="0" y2="0" stroke="url(#g-cauda)" stroke-width="1.5" stroke-linecap="round"/>
                     <circle cx="0" cy="0" r="1.7" fill="#ffffff"/>
@@ -1569,6 +1577,7 @@
             if (!k) return;
             _rostoReacao = k;
             trocarRosto(k);                           // a reação VIRA a cara dela
+            if (ROSTOS_FESTA.includes(k)) confete();  // comemorou: solta as partículas
         }
 
         // ═══ OLHAR: o rosto se desloca UM POUCO na direção do mouse — parece que ela repara
@@ -1639,6 +1648,67 @@
                 `translate(${_olhoX.toFixed(2)}px, ${(_olhoY + ginga).toFixed(2)}px)`;
             requestAnimationFrame(olhar);
         })();
+
+        // ═══ ESTRELAS — só à noite (20h às 6h). Espalhadas FORA do corpo dela, pra não
+        //     poluir o rosto. Cada uma cintila no seu ritmo. ═══
+        (function montarEstrelas() {
+            const g = document.getElementById('estrelas');
+            if (!g) return;
+            let svg = '';
+            const LIMITE = 102;                                 // as bolinhas dela ficam em 90
+            for (let i = 0; i < 14; i++) {
+                const ang = Math.random() * Math.PI * 2;
+                const r = 100 + Math.random() * 45;
+                let dx = Math.cos(ang) * r;
+                let dy = Math.sin(ang) * r * 0.75;              // achatado: espalha em elipse
+                // o achatamento APROXIMA as que caem perto da vertical (chegavam a 76, dentro
+                // do corpo dela) — empurra de volta pra fora se ficou perto demais
+                const d = Math.hypot(dx, dy);
+                if (d < LIMITE) { dx *= LIMITE / d; dy *= LIMITE / d; }
+                const x = (100 + dx).toFixed(1);
+                const y = (100 + dy).toFixed(1);
+                svg += `<circle cx="${x}" cy="${y}" r="${(0.7 + Math.random() * 0.9).toFixed(1)}" `
+                     + `style="animation-delay:-${(Math.random() * 4.5).toFixed(1)}s"/>`;
+            }
+            g.innerHTML = svg;
+        })();
+        function checarNoite() {
+            const h = new Date().getHours();
+            const pres = document.getElementById('presenca');
+            if (pres) pres.classList.toggle('noite', h >= 20 || h < 6);
+        }
+        checarNoite();
+        setInterval(checarNoite, 300000);      // reavalia a cada 5min (vira a noite sem recarregar)
+
+        // ═══ CONFETE — só no clima 'festa'. O front não recebe o nome do clima, só o rosto,
+        //     então reconhecemos pelos rostos daquele grupo (zero mudança no backend). ═══
+        const ROSTOS_FESTA = ['◉‿◉', 'ᵔᗜᵔ'];
+        function confete() {
+            const g = document.getElementById('confete');
+            if (!g || !TEM_ANIME) return;
+            const cores = ['#b4f9f8', '#7aa2f7', '#bb9af7', '#7bf98f', '#ffd580'];
+            g.innerHTML = '';
+            const pecas = [];
+            for (let i = 0; i < 16; i++) {
+                const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                c.setAttribute('cx', (60 + Math.random() * 80).toFixed(1));
+                c.setAttribute('cy', '118');
+                c.setAttribute('r', (1 + Math.random() * 1.6).toFixed(1));
+                c.setAttribute('fill', cores[(Math.random() * cores.length) | 0]);
+                g.appendChild(c);
+                pecas.push(c);
+            }
+            anime({
+                targets: pecas,
+                cy: (el) => 118 - (55 + Math.random() * 55),     // sobem alturas diferentes
+                cx: (el) => +el.getAttribute('cx') + (-26 + Math.random() * 52),
+                opacity: [{ value: 1, duration: 180 }, { value: 0, duration: 900 }],
+                duration: 1100,
+                delay: anime.stagger(45),
+                easing: 'easeOutQuad',
+                complete: () => { g.innerHTML = ''; },
+            });
+        }
 
         // ═══ COMETA (easter egg) — cruza o fundo de vez em quando. Ângulo, sentido, altura
         //     e velocidade sorteados: nunca passa igual duas vezes. ═══
