@@ -93,15 +93,14 @@
         #rosto.trocando { opacity: 0; transform: scale(.86); }
         /* view-box + origem no centro do viewBox: arco tem bbox DESCENTRADO, então
            'fill-box/center' faria ele bambear em vez de girar no eixo. */
-        #halo, #orbita, #orbita-escala, #arcos, #arco-1, #arco-2, #arco-3 {
+        #halo, #orbita, #orbita-escala, #ondas circle {
             transform-box: view-box; transform-origin: 100px 100px;
         }
+        /* as ondas herdam a COR da ferramenta ativa (mesma variável da cabeça) */
+        #ondas circle { fill: none; stroke: var(--cor-halo, #7aa2f7); stroke-width: 1.4; opacity: 0; }
         #halo    { animation: pres-halo 5.5s ease-in-out infinite; }
         #orbita  { animation: pres-gira 44s linear infinite; }
-        #arco-1  { animation: pres-gira 26s linear infinite; }
-        #arco-2  { animation: pres-gira-inv 18s linear infinite; }   /* sentido contrário */
-        #arco-3  { animation: pres-gira 12s linear infinite; }
-        #orbita-escala, #arcos { transition: transform .6s cubic-bezier(.2,.9,.3,1.2), opacity .6s ease; }
+        #orbita-escala { transition: transform .6s cubic-bezier(.2,.9,.3,1.2), opacity .6s ease; }
 
         @keyframes pres-halo     { 0%,100% { opacity:.20; transform: scale(1); } 50% { opacity:.38; transform: scale(1.08); } }
         @keyframes pres-gira     { to { transform: rotate(360deg);  } }
@@ -110,34 +109,20 @@
         /* 🌙 parada — tudo lento e apagado */
         .est-dormindo #halo   { animation-duration: 9s; opacity: .1; }
         .est-dormindo #orbita { animation-duration: 110s; }
-        .est-dormindo #arco-1 { animation-duration: 70s; }
-        .est-dormindo #arco-2 { animation-duration: 55s; }
-        .est-dormindo #arco-3 { animation-duration: 40s; }
-        .est-dormindo #arcos, .est-dormindo #orbita-escala { opacity: .35; transform: scale(.95); }
+        .est-dormindo #orbita-escala { opacity: .35; transform: scale(.95); }
 
         /* 💤 AFK — você sumiu: tudo desacelera e apaga (sem parar, pra não parecer travado) */
         #presenca.afk #halo   { animation-duration: 13s; opacity: .07; }
         #presenca.afk #orbita { animation-duration: 160s; }
-        #presenca.afk #arco-1 { animation-duration: 100s; }
-        #presenca.afk #arco-2 { animation-duration: 80s;  }
-        #presenca.afk #arco-3 { animation-duration: 60s;  }
-        #presenca.afk #arcos, #presenca.afk #orbita-escala { opacity: .2; transform: scale(.9); }
+        #presenca.afk #orbita-escala { opacity: .2; transform: scale(.9); }
         #presenca.afk #rosto  { opacity: .55; }
 
         /* 👂 ouvindo — tudo CONTRAI, fica atenta */
         .est-ouvindo #orbita { animation-duration: 16s; }
-        .est-ouvindo #arco-1 { animation-duration: 20s; }
-        .est-ouvindo #arco-2 { animation-duration: 14s; }
-        .est-ouvindo #arco-3 { animation-duration: 9s;  }
-        .est-ouvindo #arcos  { opacity: 1; transform: scale(.82); }
         .est-ouvindo #orbita-escala { opacity: .9; transform: scale(.8); }
 
         /* 💭 pensando — arcos ACELERAM e se separam */
         .est-pensando #orbita { animation-duration: 4s;  }
-        .est-pensando #arco-1 { animation-duration: 5s;  }
-        .est-pensando #arco-2 { animation-duration: 3.2s;}
-        .est-pensando #arco-3 { animation-duration: 1.9s;}
-        .est-pensando #arcos  { opacity: 1; transform: scale(1.12); }
         .est-pensando #orbita-escala { opacity: 1; transform: scale(1.05); }
 
         /* ═══ FERRAMENTA: 🎵 SPOTIFY — bolinhas viram EQUALIZADOR e os arcos batem no ritmo.
@@ -147,17 +132,12 @@
             animation-delay: calc(var(--d-rand) * -.58s);      /* ritmo quebrado = parece música */
         }
         .ferr-spotify #orbita { animation-duration: 26s; }
-        .ferr-spotify #arcos  { animation: eq-arcos .58s ease-in-out infinite alternate; }
         .ferr-spotify #halo   { animation-duration: .58s; }
 
-        @keyframes eq-bolinha { from { r: 1.1px; opacity: .35; } to { r: 4.4px; opacity: 1; } }
-        @keyframes eq-arcos   { from { transform: scale(.97); } to { transform: scale(1.05); } }
+        @keyframes eq-bolinha { from { r: 1.1px; opacity: .35; } to { r: 4.4px; opacity: 1; } } to { transform: scale(1.05); } }
 
         /* ═══ 🔍 RADAR (pesquisar_web) — arco externo VARRE rápido e as bolinhas
                acendem EM SEQUÊNCIA, como se o feixe passasse por cada uma. ═══ */
-        .ferr-radar #arco-1 { animation-duration: 1.5s; opacity: 1; stroke-width: 2.4; }
-        .ferr-radar #arco-2 { animation-duration: 9s; opacity: .35; }
-        .ferr-radar #arco-3 { animation-duration: 7s; opacity: .3; }
         .ferr-radar #orbita { animation-duration: 60s; }
         .ferr-radar #orbita circle {
             animation: radar-ping 1.5s linear infinite;
@@ -177,24 +157,17 @@
             animation: video-progresso 2.6s ease-in-out infinite;
             animation-delay: calc(var(--d-seq) * -2.6s);
         }
-        .ferr-video #arco-1 { animation-duration: 30s; }
-        .ferr-video #arco-2 { animation-duration: 22s; }
-        .ferr-video #arco-3 { animation-duration: 16s; }
         @keyframes video-engole    { 0%,100% { transform: scale(1); } 55% { transform: scale(.84); } }
         @keyframes video-progresso { 0%,100% { r: 1.3px; opacity: .3; } 30% { r: 3.4px; opacity: .95; } }
 
         /* ═══ 👁️ TELA (ver_tela) — os arcos APAGAM e a linha do scanner (anime.js) varre. ═══ */
-        .ferr-tela #arcos  { opacity: .18; }
         .ferr-tela #orbita { animation-duration: 90s; }
         .ferr-tela #orbita circle { opacity: .25; }
 
         /* 🗣️ falando — o núcleo PULSA, arcos giram soltos */
         .est-falando #halo   { animation-duration: .9s; }
         .est-falando #orbita { animation-duration: 12s; }
-        .est-falando #arco-1 { animation-duration: 14s; }
-        .est-falando #arco-2 { animation-duration: 10s; }
-        .est-falando #arco-3 { animation-duration: 7s;  }
-        .est-falando #arcos, .est-falando #orbita-escala { opacity: .95; transform: scale(1); }
+        .est-falando #orbita-escala { opacity: .95; transform: scale(1); }
 
         /* Termo do GIF — aparece só ao passar o mouse sobre o GIF */
         #gif-termo {
@@ -1213,10 +1186,11 @@
                 <circle id="halo" cx="100" cy="100" r="66" fill="url(#g-halo)"/>
                 <g id="orbita-escala"><g id="orbita"></g></g>
                 <path id="scanner" fill="none" stroke="#b4f9f8" stroke-width="1.8" stroke-linecap="round" opacity="0"/>
-                <g id="arcos">
-                    <path id="arco-1" fill="none" stroke="#7aa2f7" stroke-width="1.6" stroke-linecap="round" opacity="0.85"/>
-                    <path id="arco-2" fill="none" stroke="#b4f9f8" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
-                    <path id="arco-3" fill="none" stroke="#bb9af7" stroke-width="1.1" stroke-linecap="round" opacity="0.6"/>
+                <!-- ONDAS: nascem no centro, crescem e apagam. Só escala + opacidade,
+                     nada de redesenhar forma (foi o que fez os arcos tremerem). -->
+                <g id="ondas">
+                    <circle cx="100" cy="100" r="62"/><circle cx="100" cy="100" r="62"/>
+                    <circle cx="100" cy="100" r="62"/><circle cx="100" cy="100" r="62"/>
                 </g>
             </svg>
             <!-- O ROSTO dela: o kaomoji vive DENTRO dos anéis (os arcos viram cabeça/aura).
@@ -1380,20 +1354,29 @@
             }
             g.innerHTML = svg;
 
-            // arcos ABERTOS (não fecham o círculo) — é o que tira a cara de "astro/emoji"
-            const arco = (r, a1, a2) => {
-                const rad = d => d * Math.PI / 180;
-                const p = (d) => [(100 + Math.cos(rad(d)) * r).toFixed(1),
-                                  (100 + Math.sin(rad(d)) * r).toFixed(1)];
-                const [x1, y1] = p(a1), [x2, y2] = p(a2);
-                return `M ${x1} ${y1} A ${r} ${r} 0 ${(a2 - a1) > 180 ? 1 : 0} 1 ${x2} ${y2}`;
-            };
-            const defs = [['arco-1', 64, -55, 130], ['arco-2', 54, 150, 340], ['arco-3', 44, 20, 165]];
-            defs.forEach(([id, r, a1, a2]) => {
-                const el = document.getElementById(id);
-                if (el) el.setAttribute('d', arco(r, a1, a2));
-            });
+            ondas();
         })();
+
+        // ═══ ONDAS CONCÊNTRICAS (anime.js) — nascem pequenas no centro, crescem e apagam,
+        //     uma atrás da outra. Anima SÓ escala e opacidade: liso por natureza, sem a
+        //     tremedeira de redesenhar path. O RITMO segue o estado dela. ═══
+        let _animOndas = null;
+        function ondas(fator = 1) {
+            if (!TEM_ANIME) return;
+            if (_animOndas) _animOndas.pause();
+            const dur = 3000 * fator;
+            _animOndas = anime({
+                targets: '#ondas circle',
+                scale: [0.18, 1],
+                opacity: [{ value: 0.5, duration: dur * 0.25 }, { value: 0, duration: dur * 0.75 }],
+                duration: dur,
+                delay: anime.stagger(dur / 4),   // 4 ondas espaçadas = fluxo contínuo
+                easing: 'easeOutSine',
+                loop: true,
+            });
+        }
+        // ritmo por estado (fator: <1 acelera, >1 desacelera)
+        const RITMO_ONDAS = { dormindo: 1.8, ouvindo: 1.0, pensando: 0.5, falando: 0.75 };
 
         const PRES_ESTADOS = ['dormindo', 'ouvindo', 'pensando', 'falando'];
         // Rosto padrão de cada estado (quando ela não está reagindo a nada)
@@ -1439,6 +1422,7 @@
             if (!PRES_ESTADOS.includes(estado)) estado = 'dormindo';
             PRES_ESTADOS.forEach(e => el.classList.remove('est-' + e));
             el.classList.add('est-' + estado);
+            if (!_afk) ondas(RITMO_ONDAS[estado] || 1);      // ondas no ritmo do momento
 
             clearTimeout(_timerSono);
             if (estado === 'ouvindo' || estado === 'pensando') {
@@ -1469,6 +1453,7 @@
             if (!el || estaAfk === _afk) return;
             _afk = estaAfk;
             el.classList.toggle('afk', estaAfk);
+            ondas(estaAfk ? 2.8 : RITMO_ONDAS.dormindo);     // AFK: ondas bem lentas
             if (estaAfk) { pararTrocaIdle(); trocarRosto(ROSTO_AFK); }
             else { trocarRosto(rostoIdle()); iniciarTrocaIdle(); }
         }
