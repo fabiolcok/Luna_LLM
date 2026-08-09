@@ -1666,7 +1666,9 @@
         function pararTrocaIdle() { clearInterval(_timerIdle); _timerIdle = null; }
         function iniciarTrocaIdle() {
             pararTrocaIdle();
-            _timerIdle = setInterval(() => { if (!_afk && !_reagindo && !historiasAtivas()) trocarRosto(rostoIdle()); }, IDLE_TROCA_MS);
+            _timerIdle = setInterval(() => {
+                if (!_afk && !_reagindo && !_chacoalhando && !historiasAtivas()) trocarRosto(rostoIdle());
+            }, IDLE_TROCA_MS);
         }
         let _rostoReacao = null;      // último kaomoji que ELA escolheu
         let _timerSono = null;
@@ -1694,7 +1696,7 @@
         function piscar() {
             const el = document.getElementById('rosto-txt');
             // reagindo a um clique tem sequência própria de piscada — não atropela
-            const fechado = (_afk || _reagindo) ? null : versaoPiscada(_rostoAtual);
+            const fechado = (_afk || _reagindo || _chacoalhando) ? null : versaoPiscada(_rostoAtual);
             if (el && fechado) {
                 const eraEsse = _rostoAtual;
                 el.textContent = fechado;                                // instantâneo, sem transição
@@ -1812,7 +1814,7 @@
                 _arrY = limitar((e.clientY - _pegouY) * ARRASTO_RESIST);
                 aplicarArrasto();
                 if (Math.hypot(_arrX, _arrY) > 4) _arrastou = true;   // puxão, não cutucão
-                if (_foguetesNaCabeca) registrarMovimento(percorreu);
+                registrarMovimento(percorreu);                       // tontura vale sempre
             } else if (mexeu && svgA && !_foguetesNaCabeca) {
                 const rA = svgA.getBoundingClientRect();
                 const dA = Math.hypot(e.clientX - (rA.left + rA.width / 2),
@@ -2179,18 +2181,18 @@
         }
 
         // Chacoalhar = percorrer MUITA distância sobre ela em pouco tempo. É o que separa
-        // do carinho (que é lento). Só vale quando tem foguete pra espantar.
+        // do carinho (que é lento). Vale SEMPRE: sacudiu, ela fica tonta — ter foguete só
+        // acrescenta uma consequência (eles caem), não é pré-requisito pra ela reagir.
         function registrarMovimento(dist) {
-            if (!_foguetes.length) return;
             const agora = Date.now();
             _fogMov.push([agora, dist]);
             _fogMov = _fogMov.filter(([t]) => agora - t < FOG_JANELA);
             const total = _fogMov.reduce((a, [, d]) => a + d, 0);
-            if (total > FOG_CHACOALHO * 0.35 && !_chacoalhando) {   // começou a sacudir
+            if (total > FOG_CHACOALHO * 0.35 && !_chacoalhando) {   // ficou tonta
                 _chacoalhando = true;
                 trocarRosto(ROSTO_CHACOALHO);
             }
-            if (total > FOG_CHACOALHO) {                            // sacudiu o bastante
+            if (total > FOG_CHACOALHO && _foguetes.length) {        // sacudiu o bastante
                 _chacoalhando = false;
                 _fogMov = [];
                 espantarFoguetes();
@@ -2201,7 +2203,9 @@
             const agora = Date.now();
             if (!_fogMov.length || agora - _fogMov[_fogMov.length - 1][0] > FOG_JANELA) {
                 _chacoalhando = false;
-                if (_foguetes.length) trocarRosto(ROSTO_INCOMODADA);
+                _fogMov = [];
+                if (historiasAtivas()) atualizarIrritacao(true);           // ainda tem problema nela
+                else if (!_afk && !_reagindo) trocarRosto(rostoIdle());    // a tonteira passou
             }
         }, 200);
 
@@ -2615,10 +2619,6 @@
                             update: () => { _arrX = alvo.x; _arrY = alvo.y; aplicarArrasto(); },
                         });
                     } else { _arrX = _arrY = 0; aplicarArrasto(); }
-                }
-                if (_chacoalhando) {                           // largou no meio da sacudida
-                    _chacoalhando = false;
-                    if (_foguetesNaCabeca) trocarRosto(ROSTO_INCOMODADA);
                 }
                 setTimeout(() => { _arrastou = false; }, 60);   // deixa o click checar antes
             });
