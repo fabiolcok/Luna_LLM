@@ -1248,7 +1248,17 @@
                         <stop offset="52%"  stop-opacity="0"/>
                         <stop offset="100%" stop-opacity="0.5"/>
                     </radialGradient>
+                    <linearGradient id="g-cauda" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%"   stop-color="#dff0ff" stop-opacity="0"/>
+                        <stop offset="100%" stop-color="#ffffff" stop-opacity="0.9"/>
+                    </linearGradient>
                 </defs>
+                <!-- COMETA (easter egg): primeiro no SVG = passa ATRÁS de tudo, inclusive do
+                     brilho da cabeça, que é o que vende a profundidade. -->
+                <g id="cometa" opacity="0">
+                    <line x1="-30" y1="0" x2="0" y2="0" stroke="url(#g-cauda)" stroke-width="1.5" stroke-linecap="round"/>
+                    <circle cx="0" cy="0" r="1.7" fill="#ffffff"/>
+                </g>
                 <circle id="halo" cx="100" cy="100" r="66" fill="url(#g-halo)"/>
                 <g id="orbita-escala"><g id="orbita"></g></g>
                 <path id="scanner" fill="none" stroke="#b4f9f8" stroke-width="1.8" stroke-linecap="round" opacity="0"/>
@@ -1462,7 +1472,7 @@
         };
         // Parada, ela ALTERNA entre estas — cara única o tempo todo dava impressão de
         // congelada. Troca ao entrar em repouso e de tempos em tempos enquanto fica parada.
-        const ROSTOS_IDLE = ['˘ ω ˘', 'ᗜ⩊ᗜ', '•𐃷•', '• ₃ •'];
+        const ROSTOS_IDLE = ['ᗜ⩊ᗜ', '•𐃷•', '• ₃ •'];
         const ROSTO_AFK   = '_　_ 💤';        // você sumiu (proativo suspenso)
         const IDLE_TROCA_MS = 34000;
         let _idxIdle = -1, _timerIdle = null, _afk = false;
@@ -1628,6 +1638,36 @@
             if (el) el.style.transform =
                 `translate(${_olhoX.toFixed(2)}px, ${(_olhoY + ginga).toFixed(2)}px)`;
             requestAnimationFrame(olhar);
+        })();
+
+        // ═══ COMETA (easter egg) — cruza o fundo de vez em quando. Ângulo, sentido, altura
+        //     e velocidade sorteados: nunca passa igual duas vezes. ═══
+        function cometa() {
+            const g = document.getElementById('cometa');
+            if (!g || !TEM_ANIME) return;
+            const ang = (-32 + Math.random() * 64) * Math.PI / 180;   // quase horizontal
+            const dir = Math.random() < 0.5 ? 1 : -1;                 // vem da esquerda ou da direita
+            const desvio = -62 + Math.random() * 124;                 // altura da passagem
+            const graus = ang * 180 / Math.PI + (dir > 0 ? 0 : 180);
+            const pos = { p: 0 };
+            anime({
+                targets: pos, p: 1,
+                duration: 1400 + Math.random() * 800,
+                easing: 'linear',
+                update: () => {
+                    const d = (-150 + pos.p * 300) * dir;
+                    const x = 100 + Math.cos(ang) * d - Math.sin(ang) * desvio;
+                    const y = 100 + Math.sin(ang) * d + Math.cos(ang) * desvio;
+                    g.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${graus.toFixed(1)})`);
+                    // acende e apaga nas pontas: entra e sai do nada, sem "aparecer" de repente
+                    g.setAttribute('opacity', Math.min(1, Math.min(pos.p, 1 - pos.p) * 5).toFixed(2));
+                },
+                complete: () => g.setAttribute('opacity', '0'),
+            });
+        }
+        (function agendarCometa() {
+            // raro: é easter egg. Se passasse toda hora deixaria de ser achado.
+            setTimeout(() => { cometa(); agendarCometa(); }, 240000 + Math.random() * 480000);
         })();
 
         // ═══ CUTUCAR — clicar nela: leva um susto, te encara, pisca e volta ao normal.
