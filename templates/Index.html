@@ -135,6 +135,50 @@
             50%     { transform: translate(0.8px, 0);  }
         }
 
+        /* 🎮 LABORATÓRIO (konami) — botão que só existe depois do código, e o painel de
+           gatilhos. Serve pra testar as histórias sem esperar elas acontecerem sozinhas. */
+        #btn-lab {
+            position: fixed; top: 64px; right: 16px;
+            background: #11111a; border: 1px solid #2a4a2a; color: #7bf98f;
+            width: 40px; height: 40px; border-radius: 8px; cursor: pointer;
+            font-size: 1rem; display: none; align-items: center; justify-content: center;
+            z-index: 100; transition: background .2s, border-color .2s;
+            animation: lab-nasce .5s cubic-bezier(.2,.9,.3,1.5);
+        }
+        #btn-lab.ativo { display: flex; }
+        #btn-lab:hover { background: #0d2612; border-color: #7bf98f; }
+        @keyframes lab-nasce { from { transform: scale(0) rotate(-90deg); } to { transform: none; } }
+
+        #lab-panel {
+            position: fixed; top: 112px; right: 16px; z-index: 100;
+            background: #0f1520; border: 1px solid #2a4a2a; border-radius: 10px;
+            padding: 12px; width: 232px; display: none;
+            box-shadow: 0 8px 30px rgba(0,0,0,.5);
+        }
+        #lab-panel.aberto { display: block; }
+        .lab-titulo {
+            font-size: .68rem; text-transform: uppercase; letter-spacing: 1.4px;
+            color: #4a6a4a; margin: 10px 0 6px;
+        }
+        .lab-titulo:first-child { margin-top: 0; }
+        .lab-grade { display: flex; flex-wrap: wrap; gap: 5px; }
+        .lab-btn {
+            background: #16213e; border: 1px solid #2a3a5a; color: #9ecbff;
+            border-radius: 6px; padding: 5px 9px; cursor: pointer;
+            font-size: .76rem; font-family: inherit; transition: background .15s, color .15s;
+        }
+        .lab-btn:hover { background: #1a2a4e; color: #b4f9f8; }
+        .lab-btn.limpar { border-color: #5a2a2a; color: #ff9e9e; }
+        .lab-btn.limpar:hover { background: #2a1216; }
+
+        /* ☄️ COMETÃO grudado: cada martelada dá um tranco nele */
+        #cometao.batida { animation: cometao-batida .18s cubic-bezier(.2,.9,.3,1.6); }
+        @keyframes cometao-batida {
+            0%   { transform: scale(1) rotate(0);      }
+            40%  { transform: scale(.86) rotate(-7deg); }
+            100% { transform: scale(1) rotate(0);      }
+        }
+
         /* tranco do clique: ela leva um susto de verdade. O rosto é uma camada HTML POR CIMA
            do SVG, então não herda o transform dele — precisa levar o tranco junto, senão só
            a cabeça balança e a cara fica parada no meio. */
@@ -1106,6 +1150,42 @@
         </div>
     </div>
 
+    <button id="btn-lab" title="Laboratório (você achou!)">🧪</button>
+    <div id="lab-panel">
+        <div class="lab-titulo">Histórias</div>
+        <div class="lab-grade">
+            <button class="lab-btn" data-lab="foguete">🚀 foguete</button>
+            <button class="lab-btn" data-lab="satelite">🛰️ satélite</button>
+            <button class="lab-btn" data-lab="cometao">☄️ cometão</button>
+        </div>
+        <div class="lab-titulo">Passageiros</div>
+        <div class="lab-grade">
+            <button class="lab-btn" data-lab="cometa">☄️ cometa</button>
+            <button class="lab-btn" data-lab="ovni">🛸 OVNI</button>
+            <button class="lab-btn" data-lab="confete">🎉 confete</button>
+        </div>
+        <div class="lab-titulo">Ferramentas</div>
+        <div class="lab-grade">
+            <button class="lab-btn" data-lab="spotify">🎵 música</button>
+            <button class="lab-btn" data-lab="radar">🔍 web</button>
+            <button class="lab-btn" data-lab="video">🎬 vídeo</button>
+            <button class="lab-btn" data-lab="tela">👁️ tela</button>
+            <button class="lab-btn" data-lab="jogo">🎮 jogo</button>
+        </div>
+        <div class="lab-titulo">Estados</div>
+        <div class="lab-grade">
+            <button class="lab-btn" data-lab="ouvindo">👂 ouvindo</button>
+            <button class="lab-btn" data-lab="pensando">💭 pensando</button>
+            <button class="lab-btn" data-lab="falando">🗣️ falando</button>
+            <button class="lab-btn" data-lab="afk">💤 AFK</button>
+            <button class="lab-btn" data-lab="noite">🌙 noite</button>
+        </div>
+        <div class="lab-titulo">&nbsp;</div>
+        <div class="lab-grade">
+            <button class="lab-btn limpar" data-lab="limpar">✕ limpar tudo</button>
+        </div>
+    </div>
+
     <button id="btn-config" title="Configurações">⚙<span id="config-badge"></span></button>
     <div id="config-overlay"></div>
 
@@ -1360,6 +1440,8 @@
                 <g id="foguetes"></g>
                 <!-- SATELITES: ficam em ORBITA (nao pousam) e saem clicando um a um -->
                 <g id="satelites"></g>
+                <!-- COMETAO: cai nela, GRUDA, e so sai a marteladas -->
+                <g id="cometao" opacity="0" style="cursor:pointer"></g>
                 <g id="ondas">
                     <circle cx="100" cy="100" r="70"/><circle cx="100" cy="100" r="70"/>
                     <circle cx="100" cy="100" r="70"/>
@@ -1585,7 +1667,7 @@
         function pararTrocaIdle() { clearInterval(_timerIdle); _timerIdle = null; }
         function iniciarTrocaIdle() {
             pararTrocaIdle();
-            _timerIdle = setInterval(() => { if (!_afk && !_reagindo && !_foguetesNaCabeca && !_satelitesNaOrbita) trocarRosto(rostoIdle()); }, IDLE_TROCA_MS);
+            _timerIdle = setInterval(() => { if (!_afk && !_reagindo && !historiasAtivas()) trocarRosto(rostoIdle()); }, IDLE_TROCA_MS);
         }
         let _rostoReacao = null;      // último kaomoji que ELA escolheu
         let _timerSono = null;
@@ -1681,7 +1763,7 @@
         let _jogoAtivo = false;
         let _foguetesNaCabeca = 0;
         let _botaoPreso = false, _arrastou = false;   // sacudir = AGARRAR e chacoalhar
-        let _satelitesNaOrbita = 0;
+        let _satelitesNaOrbita = 0, _cometaoNaCabeca = 0, _cometaoTimer = null;
         const AFAGO_RAIO = 58;        // rosto + o alto da cabeça
         const AFAGO_SOBE = 14;        // desloca a área pra CIMA: carinho é na cabeça,
                                       // não embaixo do queixo
@@ -2230,7 +2312,8 @@
         const ROSTOS_IRRITADA = ['Ò﹏Ó', '｀皿´', '｀Д´'];   // 1, 2, 3+ histórias
 
         function historiasAtivas() {
-            return (_foguetesNaCabeca ? 1 : 0) + (_satelitesNaOrbita ? 1 : 0);
+            return (_foguetesNaCabeca ? 1 : 0) + (_satelitesNaOrbita ? 1 : 0)
+                 + (_cometaoNaCabeca ? 1 : 0);
         }
 
         function atualizarIrritacao(mostrarRosto) {
@@ -2244,6 +2327,174 @@
                 trocarRosto(ROSTOS_IRRITADA[Math.min(n, ROSTOS_IRRITADA.length) - 1]);
             }
         }
+
+        // ═══ 🧪 LABORATÓRIO — o konami revela um botão que abre um painel de gatilhos.
+        //     Sem isso, testar qualquer história vira espera de 10 minutos. ═══
+        const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown',
+                        'ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+        let _konami = [];
+        document.addEventListener('keydown', function (e) {
+            const alvo = e.target && e.target.tagName;
+            if (alvo === 'INPUT' || alvo === 'TEXTAREA') return;   // não atrapalha a digitação
+            _konami.push(e.key.length === 1 ? e.key.toLowerCase() : e.key);
+            if (_konami.length > KONAMI.length) _konami.shift();
+            if (_konami.join(',') === KONAMI.join(',')) {
+                const b = document.getElementById('btn-lab');
+                if (b && !b.classList.contains('ativo')) { b.classList.add('ativo'); confete(); }
+                _konami = [];
+            }
+        });
+
+        (function ligarLab() {
+            const btn = document.getElementById('btn-lab');
+            const painel = document.getElementById('lab-panel');
+            if (!btn || !painel) return;
+            btn.addEventListener('click', function () { painel.classList.toggle('aberto'); });
+
+            const acoes = {
+                foguete:  function () { novoFoguete(); },
+                satelite: function () { novoSatelite(); },
+                cometao:  function () { if (typeof cometao === 'function') cometao(); },
+                cometa:   function () { cometa(); },
+                ovni:     function () { ovni(); },
+                confete:  function () { confete(); },
+                spotify:  function () { aplicarFerramenta('▸ Usando: controlar_spotify'); },
+                radar:    function () { aplicarFerramenta('▸ Usando: pesquisar_web'); },
+                video:    function () { aplicarFerramenta('▸ Usando: resumir_youtube'); },
+                tela:     function () { aplicarFerramenta('▸ Usando: ver_tela'); },
+                jogo:     function () { modoJogo(_jogoAtivo ? null : 'Teste'); },
+                ouvindo:  function () { aplicarPresenca('ouvindo'); },
+                pensando: function () { aplicarPresenca('pensando'); },
+                falando:  function () { aplicarPresenca('falando'); },
+                afk:      function () { aplicarAfk(!_afk); },
+                noite:    function () {
+                    const pres = document.getElementById('presenca');
+                    pres && pres.classList.toggle('noite');
+                },
+                limpar:   function () {
+                    limparFerramenta();
+                    modoJogo(null);
+                    if (_afk) aplicarAfk(false);
+                    espantarFoguetes();
+                    _satelites.slice().forEach(tirarSatelite);
+                    aplicarPresenca('dormindo');
+                },
+            };
+            painel.querySelectorAll('.lab-btn').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    const fn = acoes[b.dataset.lab];
+                    if (fn) fn();
+                });
+            });
+        })();
+
+        // ═══ ☄️ COMETÃO — a 3ª história, com VERBO próprio: ele não sai chacoalhando nem
+        //     com um clique. Cai nela, GRUDA, e você tem que MARRETAR (clicar várias vezes).
+        //     Cada batida racha um pouco mais; na última ele estilhaça. ═══
+        const COMETAO_VIDA = 6;
+        let _cometaoVida = 0, _cometaoEl = null;
+
+        function cometao() {
+            const g = document.getElementById('cometao');
+            if (!g || !TEM_ANIME || _cometaoVida > 0) return;
+            _cometaoVida = COMETAO_VIDA;
+            _cometaoNaCabeca = 1;
+            g.innerHTML =
+                '<circle cx="0" cy="0" r="15" fill="#4a4a5a"/>'
+              + '<circle cx="-4" cy="-4" r="3.4" fill="#3a3a48"/>'
+              + '<circle cx="5" cy="3" r="2.6" fill="#3a3a48"/>'
+              + '<circle cx="-2" cy="6" r="2" fill="#3a3a48"/>'
+              + '<path class="raxa" d="" stroke="#ff8a4d" stroke-width="1.2" fill="none" opacity="0"/>';
+            g.setAttribute('opacity', '1');
+
+            // cai de cima e ENCAIXA nela
+            const alvoX = 82 + Math.random() * 36, alvoY = 72;
+            const de = { x: alvoX, y: -60, r: 0 };
+            anime({
+                targets: de, x: alvoX, y: alvoY, r: 180,
+                duration: 900, easing: 'easeInQuad',
+                update: function () {
+                    g.setAttribute('transform',
+                        'translate(' + de.x.toFixed(1) + ' ' + de.y.toFixed(1) + ') rotate(' + de.r.toFixed(0) + ')');
+                },
+                complete: function () {
+                    _cometaoEl = { x: alvoX, y: alvoY };
+                    atualizarIrritacao(true);
+                },
+            });
+            clearTimeout(_cometaoTimer);
+        }
+
+        function marretar() {
+            const g = document.getElementById('cometao');
+            if (!g || _cometaoVida <= 0 || !_cometaoEl) return;
+            _cometaoVida--;
+            g.classList.remove('batida');
+            void g.offsetWidth;
+            g.classList.add('batida');
+
+            // vai rachando: a trinca cresce a cada martelada
+            const frac = 1 - _cometaoVida / COMETAO_VIDA;
+            const raxa = g.querySelector('.raxa');
+            if (raxa) {
+                const L = 6 + frac * 16;
+                raxa.setAttribute('d', 'M ' + (-L / 2) + ' -3 L 0 1 L ' + (L / 3) + ' -2 L ' + (L / 2) + ' 4');
+                raxa.setAttribute('opacity', (0.25 + frac * 0.75).toFixed(2));
+            }
+            trocarRosto(_cometaoVida > 2 ? '಄ᆺ಄;' : '>_<');
+
+            if (_cometaoVida <= 0) estilhacar();
+        }
+
+        function estilhacar() {
+            const g = document.getElementById('cometao');
+            const conf = document.getElementById('confete');
+            if (!g) return;
+            const base = _cometaoEl || { x: 100, y: 72 };
+            g.setAttribute('opacity', '0');
+            g.innerHTML = '';
+            _cometaoEl = null;
+            _cometaoNaCabeca = 0;
+
+            // estilhaços voando
+            if (conf && TEM_ANIME) {
+                const pedacos = [];
+                for (let i = 0; i < 14; i++) {
+                    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    c.setAttribute('cx', base.x); c.setAttribute('cy', base.y);
+                    c.setAttribute('r', (1.2 + Math.random() * 2.6).toFixed(1));
+                    c.setAttribute('fill', Math.random() < 0.5 ? '#4a4a5a' : '#6a6a7a');
+                    conf.appendChild(c); pedacos.push(c);
+                }
+                anime({
+                    targets: pedacos,
+                    cx: function () { return base.x + (-90 + Math.random() * 180); },
+                    cy: function () { return base.y + (-40 + Math.random() * 150); },
+                    opacity: [{ value: 1, duration: 100 }, { value: 0, duration: 800 }],
+                    duration: 1000, delay: anime.stagger(18), easing: 'easeOutQuad',
+                    complete: function () { pedacos.forEach(function (c) { c.remove(); }); },
+                });
+            }
+            if (historiasAtivas()) {
+                atualizarIrritacao(true);
+            } else {
+                atualizarIrritacao(false);
+                trocarRosto('◉‿◉');
+                setTimeout(function () { if (!_afk) trocarRosto(rostoIdle()); }, 2600);
+            }
+        }
+
+        (function ligarCometao() {
+            const g = document.getElementById('cometao');
+            if (g) g.addEventListener('click', function (ev) { ev.stopPropagation(); marretar(); });
+        })();
+
+        (function agendarCometao() {
+            setTimeout(function () {
+                if (!_afk && _cometaoVida <= 0) cometao();
+                agendarCometao();
+            }, 540000 + Math.random() * 720000);
+        })();
 
         // ═══ COMETA (easter egg) — cruza o fundo de vez em quando. Ângulo, sentido, altura
         //     e velocidade sorteados: nunca passa igual duas vezes. ═══
@@ -2361,7 +2612,7 @@
 
         function podeBocejar() {
             const pres = document.getElementById('presenca');
-            if (!pres || _bocejando || _afk || _reagindo || _foguetesNaCabeca || _satelitesNaOrbita) return false;
+            if (!pres || _bocejando || _afk || _reagindo || historiasAtivas()) return false;
             if (!pres.classList.contains('est-dormindo')) return false;               // tem que estar parada
             if (Object.values(FERRAMENTAS_VISUAL).some(v => pres.classList.contains('ferr-' + v)))
                 return false;                                                          // ferramenta rodando: não
