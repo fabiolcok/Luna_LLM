@@ -2706,7 +2706,10 @@
             'ᵔ': -0.05, '˘': -0.05, '°': -0.06, '｀': -0.05, '¬': -0.07, '￢': -0.07,
             // olhos que ocupam a linha INTEIRA: a boca tem que descer mais pra não colar
             'T': -0.22, 'O': -0.22, 'ಠ': -0.21, '಄': -0.21, 'Ò': -0.21,
-            '◺': -0.20, '╥': -0.20, 'ᗒ': -0.19, 'ᗜ': -0.19,
+            '◺': -0.20, '╥': -0.20, 'ᗒ': -0.19,
+            // As três caras de REPOUSO (ᗜ⩊ᗜ, •𐃷•, • ₃ •) ficam de fora de propósito: são as
+            // que passam quase todo o tempo na tela, então elas é que calibram o padrão.
+            // Afinar BOCA_DESCE = afinar o que você mais vê.
         };
         function alturaBoca(olho) {
             const c = (olho || '').trim().slice(-1);   // o olho é o último caractere do pedaço
