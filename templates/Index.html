@@ -1396,6 +1396,11 @@
                     <mask id="m-luar">
                         <circle cx="100" cy="100" r="90" fill="url(#g-luar)"/>
                     </mask>
+                    <linearGradient id="g-fogo" x1="0" y1="1" x2="0" y2="0">
+                        <stop offset="0%"   stop-color="#ffd580" stop-opacity="0.95"/>
+                        <stop offset="45%"  stop-color="#ff8a4d" stop-opacity="0.7"/>
+                        <stop offset="100%" stop-color="#ff3b30" stop-opacity="0"/>
+                    </linearGradient>
                     <linearGradient id="g-cauda" x1="0" y1="0" x2="1" y2="0">
                         <stop offset="0%"   stop-color="#dff0ff" stop-opacity="0"/>
                         <stop offset="100%" stop-color="#ffffff" stop-opacity="0.9"/>
@@ -1798,7 +1803,10 @@
             _olhoAlvoY = (dy / d) * OLHAR_MAX * forca;
             _mouseTs = Date.now();                          // você mexeu: ela te olha
             // CARINHO: é o mouse ARRASTANDO sobre o rosto dela (mouse parado não é afago).
-            const mexeu = Math.hypot(e.clientX - _mouseX, e.clientY - _mouseY) > 1.5;
+            // guarda o percurso ANTES de atualizar a posicao — medir depois dava sempre ZERO
+            // e a sacudida nunca acumulava (bug: o foguete não saía de jeito nenhum)
+            const percorreu = Math.hypot(e.clientX - _mouseX, e.clientY - _mouseY);
+            const mexeu = percorreu > 1.5;
             _mouseX = e.clientX; _mouseY = e.clientY;
             const svgA = document.querySelector('#presenca svg');
             if (mexeu && svgA) {
@@ -1809,8 +1817,7 @@
                     if (_botaoPreso) {
                         // AGARROU e está chacoalhando: é assim que se tira foguete
                         _arrastou = true;
-                        if (_foguetesNaCabeca) registrarMovimento(
-                            Math.hypot(e.clientX - _mouseX, e.clientY - _mouseY));
+                        if (_foguetesNaCabeca) registrarMovimento(percorreu);
                     } else if (!_foguetesNaCabeca) {
                         _afagoUltimo = Date.now();   // mão passando de leve = carinho
                     }
@@ -2218,7 +2225,9 @@
             const el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             el.setAttribute('style', 'cursor:pointer');
             el.innerHTML =
-                '<rect x="-3.4" y="-2.4" width="6.8" height="4.8" rx="1" fill="#cfe0ff"/>'
+                // alvo INVISIVEL bem maior que o desenho: eram dificeis demais de acertar
+                '<circle cx="0" cy="0" r="14" fill="transparent"/>'
+              + '<rect x="-3.4" y="-2.4" width="6.8" height="4.8" rx="1" fill="#cfe0ff"/>'
               + '<rect x="-9" y="-1.5" width="4.6" height="3" rx="0.6" fill="#7aa2f7"/>'
               + '<rect x="4.4" y="-1.5" width="4.6" height="3" rx="0.6" fill="#7aa2f7"/>'
               + '<circle cx="0" cy="0" r="1" fill="#ff5a4d"/>';
@@ -2240,7 +2249,7 @@
             const gSat = document.getElementById('satelites');
             _orbSat.a = 0;
             _animSat = anime({
-                targets: _orbSat, a: 360, duration: 7000, easing: 'linear', loop: true,
+                targets: _orbSat, a: 360, duration: 13000, easing: 'linear', loop: true,
                 update: function () {
                     let algumNaFrente = false;
                     _satelites.forEach(function (sat) {
@@ -2402,7 +2411,9 @@
             _cometaoVida = COMETAO_VIDA;
             _cometaoNaCabeca = 1;
             g.innerHTML =
-                '<circle cx="0" cy="0" r="15" fill="#4a4a5a"/>'
+                // rastro de fogo: so aparece na queda, e some quando ele encaixa nela
+                '<path class="fogo" d="M 0 -14 Q 9 -46 0 -80 Q -9 -46 0 -14 Z" fill="url(#g-fogo)" opacity="0.95"/>'
+              + '<circle cx="0" cy="0" r="15" fill="#4a4a5a"/>'
               + '<circle cx="-4" cy="-4" r="3.4" fill="#3a3a48"/>'
               + '<circle cx="5" cy="3" r="2.6" fill="#3a3a48"/>'
               + '<circle cx="-2" cy="6" r="2" fill="#3a3a48"/>'
@@ -2421,6 +2432,8 @@
                 },
                 complete: function () {
                     _cometaoEl = { x: alvoX, y: alvoY };
+                    const fogo = g.querySelector('.fogo');
+                    if (fogo && TEM_ANIME) anime({ targets: fogo, opacity: 0, duration: 450, easing: 'linear' });
                     atualizarIrritacao(true);
                 },
             });
