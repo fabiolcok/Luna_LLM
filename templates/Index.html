@@ -1159,6 +1159,7 @@
             <button class="lab-btn" data-lab="cometao">☄️ cometão</button>
             <button class="lab-btn" data-lab="sujeira">🌫️ fuligem</button>
             <button class="lab-btn" data-lab="chuva">🌠 chuva</button>
+            <button class="lab-btn" data-lab="invasao">🛸 invasão</button>
         </div>
         <div class="lab-titulo">Passageiros</div>
         <div class="lab-grade">
@@ -1396,6 +1397,10 @@
                     <mask id="m-luar">
                         <circle cx="100" cy="100" r="90" fill="url(#g-luar)"/>
                     </mask>
+                    <linearGradient id="g-feixe" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%"   stop-color="#b4f9f8" stop-opacity="0.85"/>
+                        <stop offset="100%" stop-color="#7aa2f7" stop-opacity="0.05"/>
+                    </linearGradient>
                     <linearGradient id="g-fogo" x1="0" y1="1" x2="0" y2="0">
                         <stop offset="0%"   stop-color="#ffd580" stop-opacity="0.95"/>
                         <stop offset="45%"  stop-color="#ff8a4d" stop-opacity="0.7"/>
@@ -1424,6 +1429,9 @@
                 </g>
                 <!-- CHUVA DE ASTEROIDES: passam atras dela; a historia se resolve NAO mexendo -->
                 <g id="asteroides"></g>
+                <!-- INVASAO: uma frota rondando; se voce se APROXIMAR eles fecham o cerco -->
+                <g id="frota"></g>
+                <g id="feixes"></g>
                 <circle id="halo" cx="100" cy="100" r="66" fill="url(#g-halo)"/>
                 <g id="orbita-escala"><g id="orbita"></g></g>
                 <path id="scanner" fill="none" stroke="#b4f9f8" stroke-width="1.8" stroke-linecap="round" opacity="0"/>
@@ -1806,7 +1814,7 @@
         const ARRASTO_MAX = 52, ARRASTO_RESIST = 0.62;
         let _pegou = false, _pegouX = 0, _pegouY = 0, _arrX = 0, _arrY = 0, _animVolta = null;
         let _satelitesNaOrbita = 0, _cometaoNaCabeca = 0, _cometaoTimer = null;
-        let _sujeiraNaCara = 0, _medo = false;
+        let _sujeiraNaCara = 0, _medo = false, _invasao = false;
         const AFAGO_RAIO = 58;        // rosto + o alto da cabeça
         const AFAGO_SOBE = 14;        // desloca a área pra CIMA: carinho é na cabeça,
                                       // não embaixo do queixo
@@ -1859,9 +1867,12 @@
                 // por cima está limpando, não fazendo cafuné. Cafuné em cima da fuligem seria
                 // esquisito — e tiraria o único jeito de resolver a história.
                 if (_medo) {
+                    // a chuva só liga pra quem ENCOSTA nela; a invasão liga pra quem CHEGA
+                    // PERTO — os discos são atraídos pelo movimento do cursor por perto
+                    const raio = _invasao ? INV_ATENCAO : AFAGO_RAIO;
                     const dM = Math.hypot(e.clientX - (rA.left + rA.width / 2),
                                           e.clientY - (rA.top + rA.height / 2 - AFAGO_SOBE));
-                    if (dM <= AFAGO_RAIO) atrapalhar();     // mexer com ela agora é atrapalhar
+                    if (dM <= raio) atrapalhar();
                 } else if (_sujeiraNaCara && esfregar(e.clientX, e.clientY, rA, percorreu)) {
                     _afagoUltimo = 0;
                 } else if (!_foguetesNaCabeca && !_sujeiraNaCara) {
@@ -2465,6 +2476,7 @@
                 cometao:  function () { if (typeof cometao === 'function') cometao(); },
                 sujeira:  function () { sujar(2); },
                 chuva:    function () { chuvaAsteroides(); },
+                invasao:  function () { invasaoOvnis(); },
                 cometa:   function () { cometa(); },
                 ovni:     function () { ovni(); },
                 confete:  function () { confete(); },
@@ -2487,7 +2499,7 @@
                     if (_afk) aplicarAfk(false);
                     espantarFoguetes();
                     limparSujeira();
-                    if (_medo) { _medoAte = 0; passouAChuva(); }
+                    if (_medo) { _medoAte = 0; if (_invasao) passouAInvasao(); else passouAChuva(); }
                     _satelites.slice().forEach(tirarSatelite);
                     aplicarPresenca('dormindo');
                 },
@@ -2499,6 +2511,138 @@
                 });
             });
         })();
+
+        // ═══ 🛸 INVASÃO — a 6ª história, e a SEGUNDA de "não fazer nada". Mas a contenção é
+        //     de outro tipo: a chuva de asteroides só liga pra quem ENCOSTA nela; aqui os
+        //     discos são atraídos por MOVIMENTO POR PERTO. Não basta não clicar — tem que
+        //     tirar o cursor de perto dela e esperar. Chegou perto? Eles fecham o cerco e
+        //     acendem os feixes. Ficou longe? Perdem o interesse e vão embora.
+        const INV_BASE = 12000;
+        const INV_ATENCAO = 132;     // px de raio: dentro disso o cursor chama a atenção deles
+        const INV_QUANTOS = 4;
+        const INV_LONGE = 96, INV_PERTO = 60;   // raio da ronda: relaxados x em cima dela
+        let _frota = [], _invAlerta = 0, _invDriver = null;
+
+        function invasaoOvnis() {
+            if (_medo || _afk) return;
+            const pres = document.getElementById('presenca');
+            const gF = document.getElementById('frota');
+            const modelo = document.getElementById('ovni');
+            if (!pres || !gF || !modelo) return;
+
+            _medo = true; _invasao = true;
+            _medoAte = Date.now() + INV_BASE;
+            _invAlerta = 0;
+            pres.classList.add('medo');
+            trocarRosto(ROSTO_MEDO);
+            atualizarIrritacao(false);
+
+            const NS = 'http://www.w3.org/2000/svg';
+            const gFx = document.getElementById('feixes');
+            for (let i = 0; i < INV_QUANTOS; i++) {
+                const el = document.createElementNS(NS, 'g');
+                el.innerHTML = modelo.innerHTML;         // reaproveita o disco do easter egg
+                el.style.opacity = '0';
+                gF.appendChild(el);
+                const fx = document.createElementNS(NS, 'path');
+                fx.setAttribute('fill', 'url(#g-feixe)');
+                fx.setAttribute('opacity', '0');
+                gFx && gFx.appendChild(fx);
+                _frota.push({
+                    el, fx,
+                    ang: (i / INV_QUANTOS) * Math.PI * 2 + Math.random(),
+                    vel: (0.24 + Math.random() * 0.16) * (Math.random() < 0.5 ? -1 : 1),
+                    raio: 150,                            // entram de fora
+                    x: 100, y: 100,
+                });
+                if (TEM_ANIME) anime({ targets: el, opacity: 0.95, duration: 700, delay: i * 130, easing: 'linear' });
+                else el.style.opacity = '0.95';
+            }
+
+            _invDriver = setInterval(voarFrota, 33);
+            _medoTimer = setInterval(() => {
+                if (Date.now() >= _medoAte) passouAInvasao();
+            }, 120);
+        }
+
+        function voarFrota() {
+            const agora = Date.now();
+            const emAlerta = agora < _invAlerta;
+            const alvo = emAlerta ? INV_PERTO : INV_LONGE;
+            let maisPerto = null, dMin = 1e9;
+
+            _frota.forEach(o => {
+                o.ang += o.vel * (emAlerta ? 0.055 : 0.028);
+                o.raio += (alvo - o.raio) * 0.07;         // aproxima/afasta suave
+                o.x = 100 + Math.cos(o.ang) * o.raio;
+                o.y = 100 + Math.sin(o.ang) * o.raio * 0.72;   // órbita achatada: parece perspectiva
+                const inclina = Math.max(-16, Math.min(16, -Math.sin(o.ang) * 14));
+                o.el.setAttribute('transform',
+                    'translate(' + o.x.toFixed(1) + ' ' + o.y.toFixed(1) + ') rotate(' + inclina.toFixed(1) + ')');
+
+                if (o.fx) {                                // feixe: só acende no cerco
+                    o.fx.setAttribute('opacity', emAlerta ? '0.3' : '0');
+                    if (emAlerta) o.fx.setAttribute('d', desenharFeixe(o.x, o.y));
+                }
+                const d = Math.hypot(o.x - 100, o.y - 100);
+                if (d < dMin) { dMin = d; maisPerto = o; }
+            });
+            if (maisPerto) olharObjeto(maisPerto.x, maisPerto.y);   // ela não tira o olho do mais próximo
+        }
+
+        // cone do disco até a cabeça dela, em coordenadas do viewBox
+        function desenharFeixe(ux, uy) {
+            const dx = 100 - ux, dy = 100 - uy;
+            const d = Math.hypot(dx, dy) || 1;
+            const ux1 = dx / d, uy1 = dy / d;              // direção
+            const nx = -uy1, ny = ux1;                     // perpendicular
+            const L = d * 0.88, W = 15, B = 3;
+            const px = ux + ux1 * L, py = uy + uy1 * L;
+            return 'M ' + (ux - nx * B).toFixed(1) + ' ' + (uy - ny * B).toFixed(1) +
+                   ' L ' + (px - nx * W).toFixed(1) + ' ' + (py - ny * W).toFixed(1) +
+                   ' L ' + (px + nx * W).toFixed(1) + ' ' + (py + ny * W).toFixed(1) +
+                   ' L ' + (ux + nx * B).toFixed(1) + ' ' + (uy + ny * B).toFixed(1) + ' Z';
+        }
+
+        function passouAInvasao() {
+            const pres = document.getElementById('presenca');
+            clearInterval(_invDriver); _invDriver = null;
+            clearInterval(_medoTimer); _medoTimer = null;
+            _medo = false; _invasao = false;
+            if (pres) pres.classList.remove('medo');
+            olharObjeto(null);
+
+            _frota.forEach((o, i) => {                     // debandam pra fora
+                if (!TEM_ANIME) { o.el.remove(); o.fx && o.fx.remove(); return; }
+                const fuga = { r: o.raio, a: o.ang, op: 0.95 };
+                anime({
+                    targets: fuga, r: 260, a: o.ang + o.vel * 6, op: 0,
+                    duration: 900, delay: i * 90, easing: 'easeInQuad',
+                    update: () => {
+                        o.el.setAttribute('transform', 'translate(' +
+                            (100 + Math.cos(fuga.a) * fuga.r).toFixed(1) + ' ' +
+                            (100 + Math.sin(fuga.a) * fuga.r * 0.72).toFixed(1) + ')');
+                        o.el.style.opacity = fuga.op.toFixed(2);
+                    },
+                    complete: () => { o.el.remove(); o.fx && o.fx.remove(); },
+                });
+            });
+            _frota = [];
+
+            if (historiasAtivas()) { atualizarIrritacao(true); return; }
+            atualizarIrritacao(false);
+            trocarRosto('◉‿◉');
+            setTimeout(() => { if (!_afk && !_reagindo && !historiasAtivas()) trocarRosto(rostoIdle()); }, 2800);
+        }
+
+        (function agendarInvasao() {
+            setTimeout(() => {
+                if (!_afk && !_medo) invasaoOvnis();
+                agendarInvasao();
+            }, 540000 + Math.random() * 780000);
+        })();
+
+        // ═══ 🛸 INVASÃO (fim)
 
         // ═══ 🌠 CHUVA DE ASTEROIDES — a 5ª história, e a única cujo VERBO é NÃO FAZER NADA.
         //     Todas as outras pedem uma ação (sacudir, clicar, martelar, esfregar); esta pede
@@ -2569,6 +2713,7 @@
                 pres.classList.add('cutucada');
                 setTimeout(() => pres.classList.remove('cutucada'), 500);
             }
+            if (_invasao) _invAlerta = agora + 2600;   // eles perceberam: fecham o cerco
             rostoDireto(ROSTO_SUSTO);
             setTimeout(() => { if (_medo) rostoDireto(ROSTO_MEDO); }, 700);
         }
