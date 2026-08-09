@@ -162,6 +162,11 @@
         @keyframes video-engole    { 0%,100% { transform: scale(1); } 55% { transform: scale(.84); } }
         @keyframes video-progresso { 0%,100% { r: 1.3px; opacity: .3; } 30% { r: 3.4px; opacity: .95; } }
 
+        /* ═══ 👁️ TELA (ver_tela) — os arcos APAGAM e a linha do scanner (anime.js) varre. ═══ */
+        .ferr-tela #arcos  { opacity: .18; }
+        .ferr-tela #orbita { animation-duration: 90s; }
+        .ferr-tela #orbita circle { opacity: .25; }
+
         /* 🗣️ falando — o núcleo PULSA, arcos giram soltos */
         .est-falando #halo   { animation-duration: .9s; }
         .est-falando #orbita { animation-duration: 12s; }
@@ -1184,6 +1189,7 @@
                 </defs>
                 <circle id="halo" cx="100" cy="100" r="66" fill="url(#g-halo)"/>
                 <g id="orbita-escala"><g id="orbita"></g></g>
+                <path id="scanner" fill="none" stroke="#b4f9f8" stroke-width="1.8" stroke-linecap="round" opacity="0"/>
                 <g id="arcos">
                     <path id="arco-1" fill="none" stroke="#7aa2f7" stroke-width="1.6" stroke-linecap="round" opacity="0.85"/>
                     <path id="arco-2" fill="none" stroke="#b4f9f8" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
@@ -1272,8 +1278,13 @@
 
     </div>
 
+    <!-- anime.js v3.2.2 (MIT) — servido LOCAL, de static/. Sem CDN: a Luna roda offline.
+         Serve pro que o CSS não faz: morph de forma (path SVG), coreografia encadeada e
+         animação a partir de valor calculado. O que é loop/rotação/opacidade fica em CSS. -->
+    <script src="/static/anime.min.js"></script>
     <script>
         const socket = new WebSocket('ws://' + window.location.host + '/ws');
+        const TEM_ANIME = typeof anime !== 'undefined';   // degrada sem quebrar se faltar
 
         // --- Typewriter ---
         const _tw = { luna: null, voce: null };
@@ -1413,10 +1424,39 @@
             pesquisar_web:     'radar',
             resumir_youtube:   'video',
             resumir_site:      'video',
+            ver_tela:          'tela',
+            analisar_aba_atual:'tela',
         };
         function limparFerramenta() {          // nova conversa: volta ao normal
             const el = document.getElementById('presenca');
             if (el) Object.values(FERRAMENTAS_VISUAL).forEach(v => el.classList.remove('ferr-' + v));
+            pararScanner();
+        }
+
+        // ═══ SCANNER (ver_tela) — o caso que o CSS NÃO faz: a linha varre a cabeça e a
+        //     LARGURA dela é recalculada a cada quadro pela corda do círculo naquela altura
+        //     (fica estreita nas pontas, larga no meio). Precisa de valor calculado por frame. ═══
+        let _animScanner = null;
+        function iniciarScanner() {
+            const linha = document.getElementById('scanner');
+            if (!linha || !TEM_ANIME || _animScanner) return;
+            const R = 62, pos = { y: 100 - R };
+            _animScanner = anime({
+                targets: pos, y: 100 + R,
+                duration: 1900, easing: 'easeInOutSine', loop: true, direction: 'alternate',
+                update: () => {
+                    const dy = pos.y - 100;
+                    const meia = Math.sqrt(Math.max(0, R * R - dy * dy));   // corda naquela altura
+                    linha.setAttribute('d', `M ${(100 - meia).toFixed(1)} ${pos.y.toFixed(1)} `
+                                          + `L ${(100 + meia).toFixed(1)} ${pos.y.toFixed(1)}`);
+                    linha.setAttribute('opacity', (meia / R * 0.95).toFixed(2));
+                }
+            });
+        }
+        function pararScanner() {
+            if (_animScanner) { _animScanner.pause(); _animScanner = null; }
+            const linha = document.getElementById('scanner');
+            if (linha) linha.setAttribute('opacity', '0');
         }
         function aplicarFerramenta(statusTxt) {
             const el = document.getElementById('presenca');
@@ -1427,8 +1467,10 @@
             // em 1-2s, então cronômetro fixo nunca dava pra ver o efeito direito.)
             if (!m) return;
             Object.values(FERRAMENTAS_VISUAL).forEach(v => el.classList.remove('ferr-' + v));
+            pararScanner();
             const modo = FERRAMENTAS_VISUAL[m[1]];
             if (modo) el.classList.add('ferr-' + modo);   // ferramenta sem visual próprio = volta ao normal
+            if (modo === 'tela') iniciarScanner();
         }
 
         function trocarGif(url, termo) {
