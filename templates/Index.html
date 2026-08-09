@@ -2231,14 +2231,19 @@
             _reagindo = true;                           // segura o rodízio de idle e a piscada
             _ultimaInteracao = agora;                   // sacudir é interação: adia bocejo/AFK
 
-            // [cara, quando aparece] — a tonta já está na tela; daqui é a recomposição
+            // A tonta já está na tela: ela SEGURA um tempo antes da recomposição começar —
+            // tontura que passa no instante em que você solta não parece tontura. Quem
+            // insistiu fica zonza mais tempo.
+            const tontura = julgando ? 2100 : 1500;
+
+            // [cara, quando aparece], contando a partir do fim da tontura
             const passos = julgando
                 ? [['≖_≖', 0], ['- _ -', 4400], ['• _ •', 4520]]
                 : [['• _ •', 0], ['- _ -', 900],  ['• _ •', 1020]];
-            const fim = julgando ? 6300 : 2400;
+            const fim = tontura + (julgando ? 6300 : 2400);
 
             passos.forEach(([cara, quando]) =>
-                _timersClique.push(setTimeout(() => { el.textContent = cara; }, quando)));
+                _timersClique.push(setTimeout(() => { el.textContent = cara; }, tontura + quando)));
             _timersClique.push(setTimeout(() => {
                 _reagindo = false;
                 trocarRosto(rostoIdle());               // enfim, de volta ao normal
