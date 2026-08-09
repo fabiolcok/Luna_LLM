@@ -80,8 +80,11 @@
         #g-halo stop { stop-color: var(--cor-halo, #7aa2f7); transition: stop-color .7s ease; }
 
         #presenca { position: relative; display: flex; justify-content: center; padding: 4px 0 10px; }
-        /* tranco do clique: ela leva um susto de verdade */
-        #presenca.cutucada svg { animation: cutuco .42s cubic-bezier(.2,.9,.3,1.6); }
+        /* tranco do clique: ela leva um susto de verdade. O rosto é uma camada HTML POR CIMA
+           do SVG, então não herda o transform dele — precisa levar o tranco junto, senão só
+           a cabeça balança e a cara fica parada no meio. */
+        #presenca.cutucada svg,
+        #presenca.cutucada #rosto-txt { animation: cutuco .42s cubic-bezier(.2,.9,.3,1.6); }
         @keyframes cutuco { 0% { transform: scale(1); } 28% { transform: scale(1.07); } 100% { transform: scale(1); } }
         #presenca svg { width: 196px; height: 196px; overflow: visible; }
         /* o rosto ocupa o miolo livre dos anéis */
