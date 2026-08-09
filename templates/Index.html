@@ -230,6 +230,9 @@
             transition: opacity .28s ease, transform .28s cubic-bezier(.2,.9,.3,1.5);
         }
         #rosto-txt.trocando { opacity: 0; transform: scale(.86); }
+        /* medidas da boca num lugar só: é o que você vai querer afinar olhando na tela.
+           --boca-sobe é o vertical-align: mais negativo desce, mais positivo sobe. */
+        #rosto-txt { --boca-larg: .58em; --boca-alt: .40em; --boca-sobe: -.04em; }
         /* os três pedaços da cara. inline (não inline-block) de propósito: qualquer coisa que
            gere caixa própria mudaria o espaçamento e a cara sairia diferente da de hoje. */
         #rosto-txt .olho-e, #rosto-txt .olho-d { display: inline; }
@@ -238,9 +241,13 @@
            pouco", ele pula entre formas prontas. Aqui ela é um <path> de 3 números, então
            abre contínuo e a curva da emoção NÃO se perde enquanto ela fala. */
         #rosto-txt .boca {
-            display: inline-block; width: .60em; height: .44em;
-            vertical-align: -.02em; overflow: visible;
+            display: inline-block; width: var(--boca-larg); height: var(--boca-alt);
+            vertical-align: var(--boca-sobe);
         }
+        /* dimensionar SÓ o span não bastava: um <svg> inline sem width/height cai no tamanho
+           padrão de elemento substituído (300x150px). Ele estourava a vaga e empurrava os
+           olhos pra baixo — a boca aparecia enorme, acima e à direita da cara. */
+        #rosto-txt .boca svg { display: block; width: 100%; height: 100%; overflow: visible; }
         #rosto-txt .boca path {
             fill: currentColor; stroke: currentColor;   /* segue a cor do rosto sozinha */
             stroke-width: 7; stroke-linejoin: round; stroke-linecap: round;
@@ -1903,8 +1910,11 @@
                 const cria = (cls) => { const sp = document.createElement('span'); sp.className = cls; el.appendChild(sp); return sp; };
                 e = cria('olho-e');
                 const vaga = cria('boca');
-                // o SVG da boca vive no lugar exato onde o glifo do miolo ficava
-                vaga.innerHTML = '<svg viewBox="-50 -30 100 60" xmlns="http://www.w3.org/2000/svg">'
+                // o SVG da boca vive no lugar exato onde o glifo do miolo ficava.
+                // width/height explícitos além do CSS: sem eles um <svg> inline nasce 300x150
+                // e, num quadro antes do CSS pegar, a cara pula
+                vaga.innerHTML = '<svg viewBox="-50 -30 100 60" width="100%" height="100%" '
+                               + 'preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">'
                                + '<path d=""/></svg>';
                 cria('olho-d');
             }
