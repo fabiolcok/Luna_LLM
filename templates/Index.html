@@ -186,13 +186,10 @@
         .lab-btn.limpar { border-color: #5a2a2a; color: #ff9e9e; }
         .lab-btn.limpar:hover { background: #2a1216; }
 
-        /* ☄️ COMETÃO grudado: cada martelada dá um tranco nele */
-        #cometao.batida { animation: cometao-batida .18s cubic-bezier(.2,.9,.3,1.6); }
-        @keyframes cometao-batida {
-            0%   { transform: scale(1) rotate(0);      }
-            40%  { transform: scale(.86) rotate(-7deg); }
-            100% { transform: scale(1) rotate(0);      }
-        }
+        /* ☄️ COMETÃO: o tranco da martelada NÃO mora aqui — ver marretar() no JS.
+           Uma animação de transform no CSS SUBSTITUI o atributo transform do SVG, e o
+           cometão é posicionado por atributo: ele perdia o translate e ia parar na origem
+           do viewBox durante a batida. */
 
         /* tranco do clique: ela leva um susto de verdade. O rosto é uma camada HTML POR CIMA
            do SVG, então não herda o transform dele — precisa levar o tranco junto, senão só
@@ -2941,7 +2938,7 @@
         //     com um clique. Cai nela, GRUDA, e você tem que MARRETAR (clicar várias vezes).
         //     Cada batida racha um pouco mais; na última ele estilhaça. ═══
         const COMETAO_VIDA = 6;
-        let _cometaoVida = 0, _cometaoEl = null;
+        let _cometaoVida = 0, _cometaoEl = null, _animTranco = null;
 
         function cometao() {
             const g = document.getElementById('cometao');
@@ -2978,9 +2975,7 @@
             const g = document.getElementById('cometao');
             if (!g || _cometaoVida <= 0 || !_cometaoEl) return;
             _cometaoVida--;
-            g.classList.remove('batida');
-            void g.offsetWidth;
-            g.classList.add('batida');
+            trancoNoCometao(g);
 
             // vai rachando: a trinca cresce a cada martelada
             const frac = 1 - _cometaoVida / COMETAO_VIDA;
@@ -2995,11 +2990,35 @@
             if (_cometaoVida <= 0) estilhacar();
         }
 
+        // O tranco tem que ser escrito JUNTO com a posição, num transform só. Quando ele vinha
+        // de uma classe CSS, a animação de transform substituía o atributo transform do SVG e
+        // o cometão perdia o translate: piscava na origem do viewBox e voltava. Só aparecia às
+        // vezes porque `void g.offsetWidth` é undefined em SVG — o truque de reiniciar a
+        // animação não funcionava, então em cliques seguidos ela nem chegava a rodar de novo.
+        function trancoNoCometao(g) {
+            const base = _cometaoEl;
+            if (!base) return;
+            const poe = (r, s) => g.setAttribute('transform',
+                'translate(' + base.x.toFixed(1) + ' ' + base.y.toFixed(1) +
+                ') rotate(' + r.toFixed(1) + ') scale(' + s.toFixed(3) + ')');
+            if (!TEM_ANIME) { poe(0, 1); return; }
+            if (_animTranco) _animTranco.pause();
+            const t = { r: 0, s: 1 };
+            _animTranco = anime({
+                targets: t,
+                keyframes: [{ r: -8, s: 0.84, duration: 70 },
+                            { r: 0,  s: 1,    duration: 150 }],
+                easing: 'easeOutBack',
+                update: () => poe(t.r, t.s),
+            });
+        }
+
         function estilhacar() {
             const g = document.getElementById('cometao');
             const conf = document.getElementById('confete');
             if (!g) return;
             const base = _cometaoEl || { x: 100, y: 72 };
+            if (_animTranco) { _animTranco.pause(); _animTranco = null; }   // tranco pendente não reescreve o transform
             g.setAttribute('opacity', '0');
             g.innerHTML = '';
             _cometaoEl = null;
