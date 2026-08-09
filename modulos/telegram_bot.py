@@ -73,10 +73,9 @@ def iniciar_bot_telegram():
 
             resposta = gerar_resposta(texto, _historico_telegram, responder_completo=True, presenca_pc=False)
             imagem = obter_e_limpar_imagem_pendente()
-            # No Telegram o kaomoji vai INLINE, colado no fim do texto (não há área de GIF aqui)
-            _kao = obter_e_limpar_kaomoji()
-            if _kao and resposta:
-                resposta = f"{resposta.rstrip()}\n\n{_kao}"
+            # O rosto é do WEB (lá ele aparece DENTRO do círculo, que é a cabeça dela — solto
+            # no texto perde o sentido). Aqui só limpamos o pendente pra não vazar depois.
+            obter_e_limpar_kaomoji()
 
             _srv.atualizar_gif = _gif_original  # restaura
             _srv.atualizar_kaomoji = _kao_original
