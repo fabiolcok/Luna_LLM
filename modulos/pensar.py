@@ -323,7 +323,7 @@ PROMPT_LUNA_PERSONA = (
 # kaomoji dava: carinha quebrada ('= कर_ω_', devanágari), parênteses de volta, 4 formatos
 # diferentes e vício nas 3 caras mais comuns do treino. Agora a saída é sempre válida.
 _ROSTOS = {
-    "zoeira":   ["ᗒᗜᗕ", " ͡° ͜ʖ ͡°"],
+    "zoeira":   ["ᗒᗜᗕ", "   ͡° ͜ʖ ͡°"],
     "revolta":  ["Ò﹏Ó", '¬_¬"'],
     "facepalm": ["°ᯅ°", "ಠ_ಠ"],
     "choque":   ["಄ᆺ಄;", "O_O"],
