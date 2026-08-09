@@ -601,6 +601,10 @@ def atualizar_status(texto: str):
     _ultimo_status = texto or "🌚 Por aqui"
     _broadcast({"tipo": "status", "texto": _ultimo_status})
 
+def atualizar_jogo(nome):
+    """Avisa o web que um jogo abriu (nome) ou fechou (None) — a presença entra em modo jogo."""
+    _broadcast({"jogo": nome or ""})
+
 def atualizar_kaomoji(k: str):
     """Manda o kaomoji pro web — ele aparece GRANDE, no lugar onde ficava o GIF."""
     _broadcast({"kaomoji": k})

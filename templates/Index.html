@@ -107,6 +107,11 @@
         #presenca.afago #arcos { transform: scale(.97); opacity: .55; }
         #presenca.afago #rosto-txt { text-shadow: 0 0 18px rgba(255, 214, 165, .75); }
 
+        /* 🎮 MODO JOGO: as bolinhas viram PIXELS quadrados (estética 8-bit) */
+        #presenca.ferr-jogo #orbita circle { rx: 0; ry: 0; fill: #7bf98f; }
+        #presenca.ferr-jogo #arcos { opacity: .12; }
+        #presenca.ferr-jogo #rosto-txt { text-shadow: 0 0 14px rgba(123,249,143,.7); }
+
         /* tranco do clique: ela leva um susto de verdade. O rosto é uma camada HTML POR CIMA
            do SVG, então não herda o transform dele — precisa levar o tranco junto, senão só
            a cabeça balança e a cara fica parada no meio. */
@@ -1315,6 +1320,18 @@
                     <path id="arco-3" fill="none" stroke="#bb9af7" stroke-width="0.9" stroke-linecap="round" opacity="0.24"/>
                 </g>
                 <!-- ONDAS: só no modo RADAR (pesquisar_web). No idle atravessavam o rosto. -->
+                <!-- MODO JOGO: controle orbitando + barra de vida no lugar dos arcos -->
+                <g id="controle" opacity="0">
+                    <rect x="-7" y="-3.6" width="14" height="7.2" rx="3.4" fill="#7bf98f" opacity="0.9"/>
+                    <rect x="-4.6" y="-0.6" width="2.6" height="1.1" rx="0.5" fill="#0d0d12"/>
+                    <rect x="-4.05" y="-2" width="1.1" height="2.6" rx="0.5" fill="#0d0d12"/>
+                    <circle cx="3.2" cy="-0.9" r="0.85" fill="#0d0d12"/>
+                    <circle cx="4.9" cy="0.7" r="0.85" fill="#0d0d12"/>
+                </g>
+                <g id="vida" opacity="0">
+                    <rect x="60" y="150" width="80" height="4.5" rx="2.2" fill="#2a2a3a"/>
+                    <rect id="vida-barra" x="60" y="150" width="80" height="4.5" rx="2.2" fill="#7bf98f"/>
+                </g>
                 <g id="ondas">
                     <circle cx="100" cy="100" r="70"/><circle cx="100" cy="100" r="70"/>
                     <circle cx="100" cy="100" r="70"/>
@@ -1524,7 +1541,9 @@
         const IDLE_TROCA_MS = 34000;
         let _idxIdle = -1, _timerIdle = null, _afk = false;
 
+        const ROSTO_JOGO = '•̀ ω •́';         // concentrada, enquanto você joga
         function rostoIdle() {                 // sorteia sem repetir o anterior
+            if (_jogoAtivo) return ROSTO_JOGO;
             let i;
             do { i = Math.floor(Math.random() * ROSTOS_IDLE.length); }
             while (ROSTOS_IDLE.length > 1 && i === _idxIdle);
@@ -1625,6 +1644,8 @@
         //     um instância nova a cada pixel. São 10 linhas e fica mais liso. ═══
         // declarados aqui em cima porque o handler de mousemove (logo abaixo) já os usa —
         // `let`/`const` não são içados, e usar antes da declaração derruba o script inteiro
+        // declarado aqui em cima: o laço do olhar roda na CARGA e consulta isto via vaguear()
+        let _jogoAtivo = false;
         const AFAGO_RAIO = 46;        // só o ROSTO, não a cabeça toda
         const AFAGO_JANELA = 380;     // sem movimento por isso -> parou de fazer carinho
         let _mouseX = -9999, _mouseY = -9999, _afagoUltimo = 0, _afagando = false;
@@ -1673,8 +1694,8 @@
             if (agora < _vagueiaAte) return;
             const pres = document.getElementById('presenca');
             const agitada = pres && pres.classList.contains('ferr-spotify');   // na música, mais elétrica
-            const ritmo = agitada ? 0.42 : 1;               // encurta as pausas
-            const parada = Math.random() < (agitada ? 0.15 : 0.35);   // e descansa menos
+            const ritmo = _jogoAtivo ? 0.3 : (agitada ? 0.42 : 1);   // jogando: olhos correm atrás da ação
+            const parada = Math.random() < (_jogoAtivo ? 0.08 : agitada ? 0.15 : 0.35);
             if (parada) {
                 _vagX = _vagY = 0;
                 _vagueiaAte = agora + (1800 + Math.random() * 2600) * ritmo;
@@ -1801,6 +1822,56 @@
                 delay: anime.stagger(14),                       // quase juntos: é ESTOURO, não chuva
                 easing: 'easeOutCubic',
                 complete: () => { g.innerHTML = ''; },
+            });
+        }
+
+        // ═══ MODO JOGO — o backend avisa quando um jogo abre/fecha. Aqui a presença inteira
+        //     entra em clima de partida: controle orbitando, barra de vida, pixels e cara
+        //     concentrada com os olhos correndo atrás da ação. ═══
+        let _animControle = null, _animVida = null;
+
+        function modoJogo(nome) {
+            const pres = document.getElementById('presenca');
+            const ctrl = document.getElementById('controle');
+            const vida = document.getElementById('vida');
+            if (!pres || !ctrl || !vida) return;
+            const ligar = !!nome;
+            if (ligar === _jogoAtivo) return;
+            _jogoAtivo = ligar;
+            pres.classList.toggle('ferr-jogo', ligar);
+
+            [_animControle, _animVida].forEach(a => a && a.pause());
+            _animControle = _animVida = null;
+
+            if (!ligar) {
+                ctrl.setAttribute('opacity', '0');
+                vida.setAttribute('opacity', '0');
+                return;
+            }
+            ctrl.setAttribute('opacity', '0.95');
+            vida.setAttribute('opacity', '0.85');
+
+            // controle dando a volta nela
+            const orb = { a: 0 };
+            _animControle = anime({
+                targets: orb, a: 360, duration: 9000, easing: 'linear', loop: true,
+                update: () => {
+                    const rad = orb.a * Math.PI / 180, R = 78;
+                    ctrl.setAttribute('transform',
+                        `translate(${(100 + Math.cos(rad) * R).toFixed(1)} ${(100 + Math.sin(rad) * R * 0.55).toFixed(1)}) `
+                        + `rotate(${(Math.sin(rad) * 14).toFixed(1)})`);
+                },
+            });
+            // barra de vida sobe e desce (é decorativa: não temos HP real do jogo)
+            const barra = document.getElementById('vida-barra');
+            _animVida = anime({
+                targets: { v: 80 }, v: 26,
+                duration: 4200, easing: 'easeInOutQuad', direction: 'alternate', loop: true,
+                update: (a) => {
+                    const w = a.animatables[0].target.v;
+                    barra.setAttribute('width', w.toFixed(1));
+                    barra.setAttribute('fill', w > 52 ? '#7bf98f' : w > 30 ? '#ffd580' : '#ff5a4d');
+                },
             });
         }
 
@@ -2011,13 +2082,30 @@
         }, 15000);
 
         // Você sumiu (proativo suspenso): ela cochila de verdade e tudo desacelera.
+        const FALTA_MIN_MS = 5400000;      // sumiu 1h30+ -> vale demonstrar que sentiu falta
+        let _afkDesde = 0;
+
         function aplicarAfk(estaAfk) {
             const el = document.getElementById('presenca');
             if (!el || estaAfk === _afk) return;
             _afk = estaAfk;
             el.classList.toggle('afk', estaAfk);
-            if (estaAfk) { pararTrocaIdle(); trocarRosto(ROSTO_AFK); }
-            else { trocarRosto(rostoIdle()); iniciarTrocaIdle(); }
+            if (estaAfk) {
+                _afkDesde = Date.now();
+                pararTrocaIdle();
+                trocarRosto(ROSTO_AFK);
+            } else {
+                // sumiu por horas e voltou: ela demonstra que sentiu falta antes de se acalmar
+                const sumiuMuito = _afkDesde && (Date.now() - _afkDesde) > FALTA_MIN_MS;
+                if (sumiuMuito) {
+                    trocarRosto('◉‿◉');
+                    setTimeout(() => { if (!_afk) trocarRosto(rostoIdle()); }, 3200);
+                } else {
+                    trocarRosto(rostoIdle());
+                }
+                _afkDesde = 0;
+                iniciarTrocaIdle();
+            }
         }
 
         // ═══ FERRAMENTA EM USO: muda SÓ a periferia (arcos + bolinhas).
@@ -2482,6 +2570,7 @@
             }
             if (dados.usuario !== undefined)
                 typewriter('usuario-texto', dados.usuario || 'Aguardando...', 18, 'voce');
+            if (dados.jogo !== undefined) modoJogo(dados.jogo);
             if (typeof dados.estado === 'string')      // ouvindo/pensando/falando/dormindo
                 aplicarPresenca(dados.estado);
             if (dados.kaomoji !== undefined)

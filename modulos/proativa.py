@@ -1877,6 +1877,15 @@ def _watcher_mortes_lol():
         cor.magenta("[💀 Watcher de mortes do LoL encerrado]")
 
 
+def _avisar_jogo_web(nome):
+    """Conta pro web que abriu/fechou jogo (a presença dela entra em modo jogo)."""
+    try:
+        import servidor as _srv
+        _srv.atualizar_jogo(nome)
+    except Exception:
+        pass
+
+
 def _tarefa_monitorar_jogos():
     """Verifica se o usuário iniciou ou encerrou uma partida."""
     global ESTADO_JOGOS
@@ -1894,6 +1903,7 @@ def _tarefa_monitorar_jogos():
             registrar_interacao()  # usuário está ativo — reseta suspensão
             atualizar_estado_luna("jogo_ativo", nome_jogo)
             print(f"[🎮 Jogo Detectado: {nome_jogo}]")
+            _avisar_jogo_web(nome_jogo)
             
             if nome_jogo == "Overwatch":
                 print("[📊 Buscando dados para briefing de sessão...]")
@@ -1930,6 +1940,7 @@ def _tarefa_monitorar_jogos():
             ESTADO_JOGOS[nome_jogo] = False
             atualizar_estado_luna("jogo_ativo", None)
             print(f"[🚫 Jogo Encerrado: {nome_jogo}]")
+            _avisar_jogo_web(None)
             
             # Dados padrão se o jogo não tiver API
             dados_extras = "Sem dados de API no momento."
@@ -2106,6 +2117,7 @@ def _tarefa_monitorar_steam():
         registrar_interacao()  # usuário ativo — reseta suspensão
         atualizar_estado_luna("jogo_ativo", nome)
         print(f"[🎮 Steam: {nome} aberto]")
+        _avisar_jogo_web(nome)
 
         total, recente, ultima = _steam_dados_jogo(appid)
         _STEAM_SESSAO["horas_inicio"] = total   # p/ o marco de horas totais no fechamento
@@ -2167,6 +2179,7 @@ def _tarefa_monitorar_steam():
         _STEAM_SESSAO.update({"appid": None, "nome": None, "inicio": 0.0,
                               "conq_inicio": None, "horas_inicio": None})
         _STEAM_JOGANDO_AGORA = False
+        _avisar_jogo_web(None)
         atualizar_estado_luna("jogo_ativo", None)
 
         if dur_min >= 2:  # ignora aberturas acidentais de poucos segundos
