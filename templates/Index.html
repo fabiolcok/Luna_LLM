@@ -2220,7 +2220,7 @@
             } else {
                 atualizarIrritacao(false);
                 setTimeout(() => trocarRosto('◉‿◉'), 700);        // aliviada
-                setTimeout(() => { if (!_afk && !_reagindo) trocarRosto(rostoIdle()); }, 3000);
+                setTimeout(() => { if (!_afk && !_reagindo && !historiasAtivas()) trocarRosto(rostoIdle()); }, 3000);
             }
         }
 
@@ -2392,7 +2392,7 @@
                         } else {
                             atualizarIrritacao(false);
                             trocarRosto('◉‿◉');
-                            setTimeout(function () { if (!_afk && !_reagindo) trocarRosto(rostoIdle()); }, 2600);
+                            setTimeout(function () { if (!_afk && !_reagindo && !historiasAtivas()) trocarRosto(rostoIdle()); }, 2600);
                         }
                     }
                 },
@@ -2504,8 +2504,7 @@
         const MEDO_FRIO = 1100;       // intervalo entre interferências contadas
         const ROSTO_MEDO = '°ᯅ°';
         const ROSTO_SUSTO = '╥‸╥';
-        let _medoAte = 0, _medoTimer = null, _medoChuva = null;
-        let _medoAtrapalhou = 0, _medoUltimoSusto = 0;
+        let _medoAte = 0, _medoTimer = null, _medoChuva = null, _medoUltimoSusto = 0;
 
         function chuvaAsteroides() {
             if (_medo || _afk) return;
@@ -2514,7 +2513,6 @@
             if (!pres || !g) return;
 
             _medo = true;
-            _medoAtrapalhou = 0;
             _medoAte = Date.now() + MEDO_BASE;
             pres.classList.add('medo');
             trocarRosto(ROSTO_MEDO);
@@ -2555,7 +2553,6 @@
             const agora = Date.now();
             if (agora - _medoUltimoSusto < MEDO_FRIO) return;   // um arrastão só não conta 20x
             _medoUltimoSusto = agora;
-            _medoAtrapalhou++;
             _medoAte = Math.min(_medoAte + MEDO_CASTIGO, agora + MEDO_TETO);
 
             const pres = document.getElementById('presenca');
@@ -2575,6 +2572,8 @@
             clearInterval(_medoTimer); _medoTimer = null;
             _medo = false;
             if (pres) pres.classList.remove('medo');
+            // pedra passando raspando levanta poeira — a chuva também suja ela
+            if (Math.random() < 0.6) setTimeout(() => sujar(Math.random() < 0.4 ? 2 : 1), 1300);
 
             if (historiasAtivas()) {                  // ainda tem coisa nela: volta pra irritação
                 atualizarIrritacao(true);
@@ -2582,8 +2581,7 @@
             }
             atualizarIrritacao(false);
             trocarRosto('◉‿◉');
-            if (!_medoAtrapalhou) confete();          // segurou a mão: ganhou a festinha
-            setTimeout(() => { if (!_afk && !_reagindo) trocarRosto(rostoIdle()); }, 2800);
+            setTimeout(() => { if (!_afk && !_reagindo && !historiasAtivas()) trocarRosto(rostoIdle()); }, 2800);
         }
 
         (function agendarChuva() {   // raro, como as outras histórias
@@ -2675,7 +2673,7 @@
             } else {
                 atualizarIrritacao(false);
                 trocarRosto('◉‿◉');
-                setTimeout(() => { if (!_afk && !_reagindo) trocarRosto(rostoIdle()); }, 2600);
+                setTimeout(() => { if (!_afk && !_reagindo && !historiasAtivas()) trocarRosto(rostoIdle()); }, 2600);
             }
         }
 
@@ -2795,7 +2793,7 @@
             } else {
                 atualizarIrritacao(false);
                 trocarRosto('◉‿◉');
-                setTimeout(function () { if (!_afk && !_reagindo) trocarRosto(rostoIdle()); }, 2600);
+                setTimeout(function () { if (!_afk && !_reagindo && !historiasAtivas()) trocarRosto(rostoIdle()); }, 2600);
             }
         }
 
@@ -3012,7 +3010,7 @@
                 const sumiuMuito = _afkDesde && (Date.now() - _afkDesde) > FALTA_MIN_MS;
                 if (sumiuMuito) {
                     trocarRosto('◉‿◉');
-                    setTimeout(() => { if (!_afk && !_reagindo) trocarRosto(rostoIdle()); }, 3200);
+                    setTimeout(() => { if (!_afk && !_reagindo && !historiasAtivas()) trocarRosto(rostoIdle()); }, 3200);
                 } else {
                     trocarRosto(rostoIdle());
                 }
