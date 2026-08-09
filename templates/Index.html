@@ -175,7 +175,11 @@
         .ferr-radar #orbita circle {
             animation: radar-ping 1.5s linear infinite;
             animation-delay: calc(var(--d-seq) * -1.5s);       /* varredura girando ao redor */
+            fill: #38bdf8;                                     /* azul claro vivo */
+            filter: drop-shadow(0 0 4px #7dd3fc);
         }
+        /* as 4 grandes quase brancas: o feixe passando por elas fica evidente */
+        .ferr-radar #orbita circle:nth-child(4n+1) { fill: #d8f2ff; }
         @keyframes radar-ping {
             0%   { r: 1.2px; opacity: .25; }
             12%  { r: 4.6px; opacity: 1;   }
@@ -206,7 +210,7 @@
         /* ═══ 👁️ TELA (ver_tela) — os arcos APAGAM e a linha do scanner (anime.js) varre. ═══ */
         .ferr-tela #arcos  { opacity: .18; }
         .ferr-tela #orbita { animation-duration: 90s; }
-        .ferr-tela #orbita circle { opacity: .25; }
+        .ferr-tela #orbita circle { opacity: .25; fill: #f2f7ff; }   /* brancas e discretas: quem brilha é o scanner */
 
         /* 🗣️ falando — o núcleo PULSA, arcos giram soltos */
         .est-falando #halo   { animation-duration: .9s; }
