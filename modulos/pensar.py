@@ -313,20 +313,20 @@ PROMPT_LUNA_PERSONA = (
     # │ a extração de [gif:] aqui embaixo, _REACOES_GIF/atualizar_gif no servidor.py e o      │
     # │ trocarGif() no Index.html. É só o prompt voltar a emitir a tag.                       │
     # └──────────────────────────────────────────────────────────────────────────────────────┘
-    "- OBRIGATÓRIO: termine com UM kaomoji sozinho na ÚLTIMA LINHA. Ele é o SEU ROSTO na interface (aparece dentro do teu 'rosto' na tela), então é sempre uma CARA — olhos e boca, nada de braços/objetos. Escolha do cardápio abaixo pelo clima da SUA fala. UM só — NUNCA cole a linha inteira do cardápio nem dois juntos. Nada de emoji.\n"
+    "- OBRIGATÓRIO: termine com UM rosto sozinho na ÚLTIMA LINHA. Ele é a SUA CARA na interface: aparece DENTRO de um círculo que já é a tua cabeça, então são SÓ OS OLHOS E A BOCA — sem parênteses em volta (o círculo já faz isso) e sem braços/objetos. Escolha do cardápio abaixo pelo clima da SUA fala. UM só — NUNCA cole a linha inteira do cardápio nem dois juntos. Nada de emoji.\n"
     "CARDÁPIO DE ROSTOS (cada linha é um clima; os itens separados por ' · ' são ALTERNATIVAS — pegue uma):\n"
-    "  zoeira/safadeza: (¬‿¬) · ಠ‿ಠ · (＾ω＾) · ( ˘ ‿ ˘ )\n"
-    "  revolta/irritação: ( ｀皿´ ) · (｀Д´) · (>_<#)\n"
-    "  facepalm/vergonha alheia: (－_－;) · (¬_¬;) · ( ˘_˘ )\n"
-    "  choque/surpresa: (⊙_⊙) · (°o°) · Σ(°ロ°)\n"
-    "  carinho/acolhimento: (˶ᵔ ᵕ ᵔ˶) · ( ´ ▽ ` ) · (｡◕‿◕｡)\n"
-    "  cansaço: (=_=) · (´-ω-`) · (ー_ー)\n"
-    "  comemoração/hype: (＞∇＜) · (✦‿✦) · (٩◕‿◕۶)\n"
-    "  orgulho/determinação: ( •̀ ω •́ ) · ( ￣^￣ ) · (｀・ω・´)\n"
-    "  suspeita/julgamento: ಠ_ಠ · (¬_¬ ) · ( ・_・) · (－ω－)\n"
-    "  dúvida/pensando: ( ˘⌣˘ ) · (・・?) · ( ˙_˙ )\n"
-    "  tédio: (￣～￣) · (´､ω､`)\n"
-    "  tristeza/dó: (｡•́﹀•̀｡) · ( ˘︿˘ )\n"
+    "  zoeira/safadeza: ¬‿¬ · ಠ‿ಠ · ＾ω＾ · ˘ ‿ ˘\n"
+    "  revolta/irritação: ｀皿´ · ｀Д´ · >_<\n"
+    "  facepalm/vergonha alheia: －_－; · ¬_¬; · ˘_˘\n"
+    "  choque/surpresa: ⊙_⊙ · °o° · °ロ°\n"
+    "  carinho/acolhimento: ˶ᵔ ᵕ ᵔ˶ · ´ ▽ ` · ｡◕‿◕｡\n"
+    "  cansaço: =_= · ´-ω-` · ー_ー\n"
+    "  comemoração/hype: ＞∇＜ · ✦‿✦ · ◕‿◕\n"
+    "  orgulho/determinação: •̀ ω •́ · ￣^￣ · ｀・ω・´\n"
+    "  suspeita/julgamento: ಠ_ಠ · ¬_¬ · ・_・ · －ω－\n"
+    "  dúvida/pensando: ˘⌣˘ · ・・? · ˙_˙\n"
+    "  tédio: ￣～￣ · ´､ω､`\n"
+    "  tristeza/dó: ｡•́﹀•̀｡ · ˘︿˘\n"
     "  IMPORTANTE: case o rosto com o que VOCÊ acabou de dizer, não pegue sempre a cara neutra. "
     "Acolheu/foi carinhosa -> rosto de carinho. Comemorou/elogiou -> comemoração. Se espantou -> choque. "
     "Cutucou/zoou -> zoeira. Ficou sem paciência -> facepalm. A cara de julgamento/tédio é só quando você "
@@ -346,21 +346,30 @@ _kaomoji_pendente = None
 # Só ROSTOS (o kaomoji virou a cara dela na interface). Glifos conferidos no PC do Fábio —
 # se um dia aparecer quadradinho (tofu) numa máquina nova, é falta da fonte, troque a carinha.
 _KAOMOJI_POR_CLIMA = [
-    ["(¬‿¬)", "(＾ω＾)", "ಠ‿ಠ", "( ˘ ‿ ˘ )"],
-    ["( ｀皿´ )", "(｀Д´)", "(>_<#)"],
-    ["(－_－;)", "(¬_¬;)", "( ˘_˘ )"],
-    ["(⊙_⊙)", "(°o°)", "Σ(°ロ°)"],
-    ["(˶ᵔ ᵕ ᵔ˶)", "( ´ ▽ ` )", "(｡◕‿◕｡)"],
-    ["(=_=)", "(´-ω-`)", "(ー_ー)"],
-    ["(＞∇＜)", "(✦‿✦)", "(٩◕‿◕۶)"],
-    ["( •̀ ω •́ )", "( ￣^￣ )", "(｀・ω・´)"],
-    ["ಠ_ಠ", "(¬_¬ )", "( ・_・)", "(－ω－)"],
-    ["( ˘⌣˘ )", "(・・?", "( ˙_˙ )"],
-    ["(￣～￣)", "(´､ω､`)"],
-    ["(｡•́﹀•̀｡)", "( ˘︿˘ )"],
+    ["¬‿¬", "＾ω＾", "ಠ‿ಠ", "˘ ‿ ˘"],
+    ["｀皿´", "｀Д´", ">_<"],
+    ["－_－;", "¬_¬;", "˘_˘"],
+    ["⊙_⊙", "°o°", "°ロ°"],
+    ["˶ᵔ ᵕ ᵔ˶", "´ ▽ `", "｡◕‿◕｡"],
+    ["=_=", "´-ω-`", "ー_ー"],
+    ["＞∇＜", "✦‿✦", "◕‿◕"],
+    ["•̀ ω •́", "￣^￣", "｀・ω・´"],
+    ["ಠ_ಠ", "¬_¬", "・_・", "－ω－"],
+    ["˘⌣˘", "・・?", "˙_˙"],
+    ["￣～￣", "´､ω､`"],
+    ["｡•́﹀•̀｡", "˘︿˘"],
 ]
 
 import random as _rnd
+
+# Sem os parênteses de âncora o 12B às vezes INVENTA carinha quebrada (saiu '= कर_ω_',
+# com devanágari). Só aceitamos rostos feitos dos caracteres que existem no cardápio —
+# permite recombinar, mas barra alfabeto aleatório virando cara.
+_KAOMOJI_CHARS = set("".join(k for g in _KAOMOJI_POR_CLIMA for k in g)) | set(" ˘ω･ᴗ⌣")
+_KAOMOJI_NEUTRO = "・_・"
+
+def _kaomoji_valido(k: str) -> bool:
+    return bool(k) and all(c in _KAOMOJI_CHARS for c in k)
 
 # Regex dos kaomoji CONHECIDOS (mais longos primeiro, pra casar '(╯°□°）╯︵ ┻━┻' inteiro
 # antes de um pedaço). Pega mesmo quando ela cola no fim da frase, sem linha própria.
@@ -788,6 +797,15 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         _ult, texto_luna = _extrair_kaomoji(texto_luna)
         texto_luna = texto_luna.strip()
         if _ult:
+            # O círculo da interface JÁ é a cabeça dela — parênteses em volta ficariam
+            # duplicados. O 12B foi treinado com kaomoji entre parênteses e recoloca do
+            # mesmo jeito, então tiramos aqui em vez de só pedir no prompt.
+            _m_par = re.fullmatch(r'\(\s*(.+?)\s*\)', _ult)
+            if _m_par:
+                _ult = _m_par.group(1).strip()
+            if not _kaomoji_valido(_ult):
+                cor.vermelho(f"[⚠️ Rosto inválido ({_ult!r}) — usando neutro]")
+                _ult = _KAOMOJI_NEUTRO
             _ult = _kaomoji_antirrepeticao(_ult)     # garante variedade sem perder o clima
             _kaomoji_pendente = _ult
             _kaomoji_recentes.append(_ult)
