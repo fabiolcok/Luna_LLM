@@ -1151,6 +1151,7 @@
             <button class="lab-btn" data-lab="foguete">🚀 foguete</button>
             <button class="lab-btn" data-lab="satelite">🛰️ satélite</button>
             <button class="lab-btn" data-lab="cometao">☄️ cometão</button>
+            <button class="lab-btn" data-lab="sujeira">🌫️ fuligem</button>
         </div>
         <div class="lab-titulo">Passageiros</div>
         <div class="lab-grade">
@@ -1441,6 +1442,8 @@
                 <g id="satelites"></g>
                 <!-- COMETAO: cai nela, GRUDA, e so sai a marteladas -->
                 <g id="cometao" opacity="0" style="cursor:pointer"></g>
+                <!-- FULIGEM: manchas grudadas nela; saem esfregando o mouse (sem clicar) -->
+                <g id="sujeira"></g>
                 <g id="ondas">
                     <circle cx="100" cy="100" r="70"/><circle cx="100" cy="100" r="70"/>
                     <circle cx="100" cy="100" r="70"/>
@@ -1786,6 +1789,7 @@
         const ARRASTO_MAX = 52, ARRASTO_RESIST = 0.62;
         let _pegou = false, _pegouX = 0, _pegouY = 0, _arrX = 0, _arrY = 0, _animVolta = null;
         let _satelitesNaOrbita = 0, _cometaoNaCabeca = 0, _cometaoTimer = null;
+        let _sujeiraNaCara = 0;
         const AFAGO_RAIO = 58;        // rosto + o alto da cabeça
         const AFAGO_SOBE = 14;        // desloca a área pra CIMA: carinho é na cabeça,
                                       // não embaixo do queixo
@@ -1832,11 +1836,18 @@
                 aplicarArrasto();
                 if (Math.hypot(_arrX, _arrY) > 4) _arrastou = true;   // puxão, não cutucão
                 registrarMovimento(percorreu);                       // tontura vale sempre
-            } else if (mexeu && svgA && !_foguetesNaCabeca) {
+            } else if (mexeu && svgA) {
                 const rA = svgA.getBoundingClientRect();
-                const dA = Math.hypot(e.clientX - (rA.left + rA.width / 2),
-                                      e.clientY - (rA.top + rA.height / 2 - AFAGO_SOBE));
-                if (dA <= AFAGO_RAIO) _afagoUltimo = Date.now();   // mão de leve = carinho
+                // ESFREGAR passa na frente do carinho: enquanto ela está suja, a mão passando
+                // por cima está limpando, não fazendo cafuné. Cafuné em cima da fuligem seria
+                // esquisito — e tiraria o único jeito de resolver a história.
+                if (_sujeiraNaCara && esfregar(e.clientX, e.clientY, rA, percorreu)) {
+                    _afagoUltimo = 0;
+                } else if (!_foguetesNaCabeca && !_sujeiraNaCara) {
+                    const dA = Math.hypot(e.clientX - (rA.left + rA.width / 2),
+                                          e.clientY - (rA.top + rA.height / 2 - AFAGO_SOBE));
+                    if (dA <= AFAGO_RAIO) _afagoUltimo = Date.now();   // mão de leve = carinho
+                }
             }
         });
 
@@ -2059,7 +2070,7 @@
             const el = document.getElementById('rosto-txt');
             if (!pres || !el) return;
             const acariciando = _afagoUltimo && (Date.now() - _afagoUltimo) < AFAGO_JANELA;
-            const deve = acariciando && !_afk && !_reagindo && !_bocejando;
+            const deve = acariciando && !_afk && !_reagindo && !_bocejando && !_sujeiraNaCara;
 
             if (deve && !_afagando) {
                 _afagando = true;
@@ -2188,6 +2199,8 @@
             });
             _foguetes = [];
             _foguetesNaCabeca = 0;
+            // o motor cospe fuligem na decolagem: resolver uma história pode abrir outra
+            if (Math.random() < 0.5) setTimeout(() => sujar(1), 1500);
             if (historiasAtivas()) {                 // ainda sobrou problema: continua irritada
                 atualizarIrritacao(true);
             } else {
@@ -2385,7 +2398,7 @@
 
         function historiasAtivas() {
             return (_foguetesNaCabeca ? 1 : 0) + (_satelitesNaOrbita ? 1 : 0)
-                 + (_cometaoNaCabeca ? 1 : 0);
+                 + (_cometaoNaCabeca ? 1 : 0) + (_sujeiraNaCara ? 1 : 0);
         }
 
         function atualizarIrritacao(mostrarRosto) {
@@ -2427,6 +2440,7 @@
                 foguete:  function () { novoFoguete(); },
                 satelite: function () { novoSatelite(); },
                 cometao:  function () { if (typeof cometao === 'function') cometao(); },
+                sujeira:  function () { sujar(2); },
                 cometa:   function () { cometa(); },
                 ovni:     function () { ovni(); },
                 confete:  function () { confete(); },
@@ -2448,6 +2462,7 @@
                     modoJogo(null);
                     if (_afk) aplicarAfk(false);
                     espantarFoguetes();
+                    limparSujeira();
                     _satelites.slice().forEach(tirarSatelite);
                     aplicarPresenca('dormindo');
                 },
@@ -2459,6 +2474,113 @@
                 });
             });
         })();
+
+        // ═══ 🌫️ FULIGEM — a 4ª história, e o 4º VERBO: ESFREGAR. Não sai sacudindo (verbo
+        //     do foguete), nem clicando (satélite), nem martelando (cometão) — sai passando o
+        //     mouse por cima SEM segurar o botão, como quem esfrega um pano. É de propósito o
+        //     gesto mais gentil dos quatro: é o mesmo do carinho, e enquanto ela está suja ele
+        //     vira limpeza. Cafuné só volta quando ela estiver limpa.
+        //     De onde vem: foguete decolando deixa fuligem, cometão estilhaçado deixa poeira —
+        //     as histórias se encadeiam em vez de viverem soltas. ═══
+        const SUJ_MAX = 4;
+        const SUJ_VIDA = 130;        // px de esfregada pra dissolver uma mancha
+        const SUJ_RAIO = 21;         // alcance do pano, em unidades do viewBox
+        const SUJ_INTERVALO = 20000; // ignorou -> junta mais sujeira
+        const SUJ_PARADO = 420;      // sem esfregar por isso -> ela volta a fazer cara de suja
+        const ROSTO_SUJA = 'ಠ_ಠ';    // "sério isso?"
+        const ROSTO_ESFREGA = 'ᵔ ᵕ ᵔ';
+        let _sujeira = [], _sujTimer = null, _esfregando = false, _esfregouUltimo = 0;
+
+        function sujar(quantas) {
+            const g = document.getElementById('sujeira');
+            if (!g || _afk) return;
+            const NS = 'http://www.w3.org/2000/svg';
+            for (let i = 0; i < (quantas || 1) && _sujeira.length < SUJ_MAX; i++) {
+                // espalhada pela cabeça toda, longe do miolo pra não tampar o rosto
+                const ang = Math.random() * Math.PI * 2;
+                const raio = 27 + Math.random() * 24;
+                const x = 100 + Math.cos(ang) * raio;
+                const y = 100 + Math.sin(ang) * raio;
+                const el = document.createElementNS(NS, 'g');
+                el.setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) +
+                                             ') rotate(' + (Math.random() * 360).toFixed(0) + ')');
+                // borrão irregular: círculos sobrepostos leem melhor que uma forma só
+                el.innerHTML =
+                    '<circle cx="0" cy="0" r="7.5" fill="#332b3d"/>'
+                  + '<circle cx="5.5" cy="-3" r="4.6" fill="#332b3d"/>'
+                  + '<circle cx="-5" cy="3.4" r="4" fill="#332b3d"/>'
+                  + '<circle cx="2" cy="5.5" r="3.2" fill="#3d3348"/>'
+                  + '<circle cx="-6.5" cy="-4.5" r="2.2" fill="#3d3348"/>';
+                el.style.opacity = '0';
+                g.appendChild(el);
+                if (TEM_ANIME) anime({ targets: el, opacity: 0.8, duration: 420, easing: 'linear' });
+                else el.style.opacity = '0.8';
+                _sujeira.push({ el, x, y, vida: SUJ_VIDA });
+            }
+            _sujeiraNaCara = _sujeira.length;
+            atualizarIrritacao(true);
+            clearTimeout(_sujTimer);
+            _sujTimer = setTimeout(() => sujar(1), SUJ_INTERVALO);
+        }
+
+        // devolve true se a mão encostou em alguma mancha (aí não conta como carinho)
+        function esfregar(cx, cy, rect, dist) {
+            if (!_sujeira.length || !rect.width) return false;
+            const vx = (cx - rect.left) / rect.width * 200;    // tela -> viewBox
+            const vy = (cy - rect.top) / rect.height * 200;
+            let tocou = false;
+            for (let i = _sujeira.length - 1; i >= 0; i--) {
+                const m = _sujeira[i];
+                if (Math.hypot(vx - m.x, vy - m.y) > SUJ_RAIO) continue;
+                tocou = true;
+                m.vida -= dist;
+                if (m.vida <= 0) { m.el.remove(); _sujeira.splice(i, 1); }
+                else m.el.style.opacity = (0.16 + 0.64 * (m.vida / SUJ_VIDA)).toFixed(2);
+            }
+            if (!tocou) return false;
+
+            _sujeiraNaCara = _sujeira.length;
+            _esfregouUltimo = Date.now();
+            _ultimaInteracao = _esfregouUltimo;
+            if (!_esfregando) { _esfregando = true; trocarRosto(ROSTO_ESFREGA); }
+            if (!_sujeira.length) ficouLimpa();
+            return true;
+        }
+
+        function ficouLimpa() {
+            _esfregando = false;
+            clearTimeout(_sujTimer); _sujTimer = null;
+            if (historiasAtivas()) {                 // ainda sobrou problema: segue irritada
+                atualizarIrritacao(true);
+            } else {
+                atualizarIrritacao(false);
+                trocarRosto('◉‿◉');
+                setTimeout(() => { if (!_afk && !_reagindo) trocarRosto(rostoIdle()); }, 2600);
+            }
+        }
+
+        setInterval(() => {                          // parou de esfregar e ainda tem mancha
+            if (!_esfregando) return;
+            if (Date.now() - _esfregouUltimo > SUJ_PARADO) {
+                _esfregando = false;
+                if (_sujeira.length) trocarRosto(ROSTO_SUJA);
+            }
+        }, 200);
+
+        function limparSujeira() {                   // usado pelo "limpar tudo" do laboratório
+            _sujeira.forEach(m => m.el.remove());
+            _sujeira = []; _sujeiraNaCara = 0; _esfregando = false;
+            clearTimeout(_sujTimer); _sujTimer = null;
+        }
+
+        (function agendarSujeira() {   // poeira estelar que assenta sozinha: raro
+            setTimeout(() => {
+                if (!_afk && !_sujeira.length) sujar(1);
+                agendarSujeira();
+            }, 420000 + Math.random() * 660000);
+        })();
+
+        // ═══ 🌫️ FULIGEM (fim)
 
         // ═══ ☄️ COMETÃO — a 3ª história, com VERBO próprio: ele não sai chacoalhando nem
         //     com um clique. Cai nela, GRUDA, e você tem que MARRETAR (clicar várias vezes).
@@ -2527,6 +2649,7 @@
             g.innerHTML = '';
             _cometaoEl = null;
             _cometaoNaCabeca = 0;
+            if (Math.random() < 0.55) setTimeout(() => sujar(2), 1200);   // poeira do estilhaço
 
             // estilhaços voando
             if (conf && TEM_ANIME) {
