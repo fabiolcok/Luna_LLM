@@ -130,6 +130,14 @@
         #presenca.afk #arcos, #presenca.afk #orbita-escala { opacity: .2; transform: scale(.9); }
         #presenca.afk #rosto  { opacity: .55; }
 
+        /* 🥱 bocejo: respiração funda (cabeça infla) e tudo desacelera junto */
+        #presenca.bocejando #halo   { animation-duration: 2.6s; }
+        #presenca.bocejando #arcos  { transform: scale(1.045); }
+        #presenca.bocejando #orbita-escala { transform: scale(1.03); opacity: .5; }
+        #presenca.bocejando #arco-1 { animation-duration: 110s; }
+        #presenca.bocejando #arco-2 { animation-duration: 90s;  }
+        #presenca.bocejando #arco-3 { animation-duration: 70s;  }
+
         /* 👂 ouvindo — tudo CONTRAI, fica atenta */
         .est-ouvindo #orbita { animation-duration: 16s; }
         .est-ouvindo #arco-1 { animation-duration: 20s; }
@@ -1524,6 +1532,7 @@
 
             clearTimeout(_timerSono);
             if (estado === 'ouvindo' || estado === 'pensando') {
+                _ultimaInteracao = Date.now();     // relógio do bocejo/expiração da ferramenta
                 _rostoReacao = null;                 // conversa nova: esquece a reação anterior
                 limparFerramenta();                  // ...e o modo da última ferramenta
                 _afk = false; el.classList.remove('afk');
@@ -1613,6 +1622,57 @@
                 `translate(${_olhoX.toFixed(2)}px, ${(_olhoY + ginga).toFixed(2)}px)`;
             requestAnimationFrame(olhar);
         })();
+
+        // ═══ BOCEJO — só no repouso DE VERDADE: parada, sem ferramenta rodando e sem você
+        //     interagindo há um tempo. (Bocejar gingando na música ficaria absurdo.)
+        //     É uma SEQUÊNCIA, não uma troca de cara: abre rápido, SEGURA quase 1s, fecha
+        //     devagar. Tempo igual em todos os passos viraria robô. ═══
+        const BOCEJO_MIN_MS = 130000;    // pelo menos ~2min de sossego
+        let _ultimaInteracao = Date.now(), _bocejando = false;
+
+        function podeBocejar() {
+            const pres = document.getElementById('presenca');
+            if (!pres || _bocejando || _afk) return false;
+            if (!pres.classList.contains('est-dormindo')) return false;               // tem que estar parada
+            if (Object.values(FERRAMENTAS_VISUAL).some(v => pres.classList.contains('ferr-' + v)))
+                return false;                                                          // ferramenta rodando: não
+            return (Date.now() - _ultimaInteracao) > BOCEJO_MIN_MS;
+        }
+
+        function bocejar() {
+            const el = document.getElementById('rosto-txt');
+            const pres = document.getElementById('presenca');
+            if (!el || !pres) return;
+            _bocejando = true;
+            const volta = _rostoAtual;
+            pres.classList.add('bocejando');                    // cabeça infla e tudo dá uma preguiçada
+            const passos = [['˘ o ˘', 300], ['- ○ -', 900], ['˘ o ˘', 250]];
+            let t = 0;
+            passos.forEach(([cara, dur]) => {
+                setTimeout(() => { el.textContent = cara; }, t);
+                t += dur;
+            });
+            setTimeout(() => {
+                el.textContent = volta;
+                pres.classList.remove('bocejando');
+                _bocejando = false;
+            }, t);
+        }
+
+        setInterval(() => {
+            // raro de propósito: bocejo frequente vira tique e mata a graça (o oposto do piscar)
+            if (podeBocejar() && Math.random() < 0.18) bocejar();
+        }, 20000);
+
+        // O modo da ferramenta EXPIRA sozinho: senão, mandar tocar música e sumir deixava ela
+        // gingando pra sempre — e nunca voltaria pro repouso (nem pra bocejar).
+        const FERR_EXPIRA_MS = 180000;   // 3 min sem você interagir
+        setInterval(() => {
+            const pres = document.getElementById('presenca');
+            if (!pres) return;
+            const temFerr = Object.values(FERRAMENTAS_VISUAL).some(v => pres.classList.contains('ferr-' + v));
+            if (temFerr && (Date.now() - _ultimaInteracao) > FERR_EXPIRA_MS) limparFerramenta();
+        }, 15000);
 
         // Você sumiu (proativo suspenso): ela cochila de verdade e tudo desacelera.
         function aplicarAfk(estaAfk) {
