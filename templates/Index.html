@@ -150,12 +150,17 @@
         .ferr-spotify #orbita circle {
             animation: eq-bolinha .58s ease-in-out infinite alternate;
             animation-delay: calc(var(--d-rand) * -.58s);      /* ritmo quebrado = parece música */
+            fill: #1ed760;                                     /* verde vivo (o do Spotify, puxado) */
+            filter: drop-shadow(0 0 4px #1db954);
         }
+        /* as 4 grandes puxam pro verde-limão: dá relevo no anel */
+        .ferr-spotify #orbita circle:nth-child(4n+1) { fill: #7bf98f; }
         .ferr-spotify #orbita { animation-duration: 26s; }
         .ferr-spotify #arcos  { animation: eq-arcos .58s ease-in-out infinite alternate; }
         .ferr-spotify #halo   { animation-duration: .58s; }
 
-        @keyframes eq-bolinha { from { r: 1.1px; opacity: .35; } to { r: 4.4px; opacity: 1; } }
+        /* piso alto: no batidão elas não somem, pulsam */
+        @keyframes eq-bolinha { from { r: 1.5px; opacity: .5; } to { r: 4.6px; opacity: 1; } }
         @keyframes eq-arcos   { from { transform: scale(.97); } to { transform: scale(1.05); } }
 
         /* ondas do radar: herdam a cor da ferramenta; paradas até o radar ligar */
