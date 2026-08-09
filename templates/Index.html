@@ -1325,18 +1325,33 @@
         // --- Typewriter ---
         const _tw = { luna: null, voce: null };
 
+        // ═══ SCRAMBLE em BRAILE — o texto nasce como ruído e vai se RESOLVENDO da esquerda
+        //     pra direita. (O scrambleText é do anime.js v4; a v3 que temos não tem, e migrar
+        //     quebraria o scanner e as ondas — a API mudou. São ~20 linhas na mão.) ═══
+        const BRAILE = Array.from({ length: 0x40 }, (_, i) => String.fromCharCode(0x2801 + i));
+        const ruido = () => BRAILE[(Math.random() * BRAILE.length) | 0];
+
         function typewriter(elementId, text, msPerChar, key) {
             if (_tw[key]) clearInterval(_tw[key]);
             const el = document.getElementById(elementId);
-            el.textContent = '';
-            let i = 0;
+            if (!el) return;
+            if (!text) { el.textContent = ''; return; }
+
+            const BAGUNCA = 6;          // quantos caracteres de ruído correm à frente do texto
+            let i = 0;                  // quantos já foram resolvidos
             _tw[key] = setInterval(() => {
-                if (i < text.length) {
-                    el.textContent += text[i++];
-                } else {
-                    clearInterval(_tw[key]);
-                    _tw[key] = null;
+                if (i >= text.length) {
+                    el.textContent = text;               // fecha exato, sem sobra de ruído
+                    clearInterval(_tw[key]); _tw[key] = null;
+                    return;
                 }
+                let saida = text.slice(0, i);
+                for (let k = i; k < Math.min(i + BAGUNCA, text.length); k++) {
+                    // espaço e quebra ficam intactos: preserva o desenho das palavras
+                    saida += /\s/.test(text[k]) ? text[k] : ruido();
+                }
+                el.textContent = saida;
+                i++;
             }, msPerChar);
         }
 
