@@ -1885,7 +1885,11 @@
                     ctrl.setAttribute('transform',
                         `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${(sin * 12).toFixed(1)}) `
                         + `scale(${escala.toFixed(2)})`);
-                    ctrl.setAttribute('opacity', fundo ? '0.55' : '0.95');
+                    // OCLUSÃO de verdade: se a cabeça fosse sólida ele SUMIRIA atrás dela.
+                    // Escurecer só denunciava o truque (a cabeça é translúcida e ele aparecia
+                    // através). Some progressivamente ao entrar por trás e volta ao sair.
+                    const op = sin >= 0 ? 0.95 : Math.max(0, 0.95 * (1 + sin * 2.4));
+                    ctrl.setAttribute('opacity', op.toFixed(2));
                 },
             });
             // barra de vida sobe e desce (é decorativa: não temos HP real do jogo)
