@@ -1460,7 +1460,9 @@
             </svg>
             <!-- O ROSTO dela: o kaomoji vive DENTRO dos anéis (os arcos viram cabeça/aura).
                  Segue o estado quando ela não está respondendo, e vira a reação quando responde. -->
-            <div id="rosto"><span id="rosto-txt">◜ᴗ◝</span></div>
+            <!-- cara de partida: uma das de repouso, pra não existir um rosto órfão fora do
+                 rodízio. O JS sorteia outra logo que carrega; esta é só o primeiro quadro. -->
+            <div id="rosto"><span id="rosto-txt">• ₃ •</span></div>
         </div>
 
         <!-- GIF (na gaveta — só volta se a regra do prompt voltar a emitir [gif:]) -->
@@ -1691,7 +1693,7 @@
         //     ela fica ~25s com a cara da reação depois de falar. ═══
         const _RE_COMB = /[̀-ͯ᪰͜͡-᫿⃐-⃿]/;
         const _RE_NAO_OLHO = /[\s"';,.]/;
-        let _rostoAtual = '◜ᴗ◝', _timerTroca = null;
+        let _rostoAtual = ROSTOS_IDLE[ROSTOS_IDLE.length - 1], _timerTroca = null;   // = o do HTML
 
         function versaoPiscada(face) {
             const ch = Array.from(face || '');
@@ -1721,6 +1723,11 @@
             setTimeout(piscar, dobrar ? 300 : 3800 + Math.random() * 4200);
         }
         setTimeout(piscar, 2500);
+
+        // Sorteia a cara de partida em vez de abrir sempre igual. Vai num setTimeout(0) de
+        // propósito: rostoIdle() lê _jogoAtivo, que é declarado bem mais abaixo — chamar aqui
+        // direto cairia na zona morta do let e derrubaria o script inteiro.
+        setTimeout(() => rostoDireto(rostoIdle()), 0);
 
         function trocarRosto(txt) {
             const el = document.getElementById('rosto-txt');
