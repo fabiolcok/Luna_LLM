@@ -1682,8 +1682,17 @@
         })();
         function checarNoite() {
             const h = new Date().getHours();
+            const noite = h >= 20 || h < 6;
             const pres = document.getElementById('presenca');
-            if (pres) pres.classList.toggle('noite', h >= 20 || h < 6);
+            if (pres) pres.classList.toggle('noite', noite);
+            // 🌙 LUAR: à noite o foco do gradiente desloca, então o brilho fica mais forte de
+            // um lado — lê como iluminada de ângulo. Sem cortar crescente: crescente de
+            // verdade traria de volta a FORMA do emoji, que foi o que incomodou lá no começo.
+            const grad = document.getElementById('g-halo');
+            if (grad) {
+                if (noite) { grad.setAttribute('fx', '0.36'); grad.setAttribute('fy', '0.30'); }
+                else { grad.removeAttribute('fx'); grad.removeAttribute('fy'); }
+            }
         }
         checarNoite();
         setInterval(checarNoite, 300000);      // reavalia a cada 5min (vira a noite sem recarregar)
