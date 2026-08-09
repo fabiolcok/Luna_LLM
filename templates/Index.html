@@ -1444,7 +1444,7 @@
         // Rosto padrão de cada estado (quando ela não está reagindo a nada)
         const ROSTO_ESTADO = {
             ouvindo:  '･ ᴗ ･',
-            pensando: '˘⌣˘',
+            pensando: '-,-',
         };
         // Parada, ela ALTERNA entre estas — cara única o tempo todo dava impressão de
         // congelada. Troca ao entrar em repouso e de tempos em tempos enquanto fica parada.
@@ -1468,8 +1468,45 @@
         let _rostoReacao = null;      // último kaomoji que ELA escolheu
         let _timerSono = null;
 
+        // ═══ PISCAR — personagem que não pisca lê como morto, por mais que tudo em volta se
+        //     mexa. Fecha só os OLHOS (primeiro e último caractere) e volta pro mesmo rosto:
+        //     • ₃ •  ->  - ₃ -  ->  • ₃ •. Vale pra QUALQUER cara, não só as de repouso —
+        //     ela fica ~25s com a cara da reação depois de falar. ═══
+        const _RE_COMB = /[̀-ͯ᪰͜͡-᫿⃐-⃿]/;
+        const _RE_NAO_OLHO = /[\s"';,.]/;
+        let _rostoAtual = '◜ᴗ◝';
+
+        function versaoPiscada(face) {
+            const ch = Array.from(face || '');
+            if (!ch.length || ch.some(c => _RE_COMB.test(c))) return null;   // marca combinante: pula
+            let i = 0, j = ch.length - 1;
+            while (i < j && _RE_NAO_OLHO.test(ch[i])) i++;
+            while (j > i && _RE_NAO_OLHO.test(ch[j])) j--;
+            if (i >= j) return null;
+            ch[i] = '-'; ch[j] = '-';
+            const piscado = ch.join('');
+            return piscado === face ? null : piscado;    // já era traço: não há o que fechar
+        }
+
+        function piscar() {
+            const el = document.getElementById('rosto-txt');
+            const fechado = _afk ? null : versaoPiscada(_rostoAtual);   // dormindo já está de olho fechado
+            if (el && fechado) {
+                const eraEsse = _rostoAtual;
+                el.textContent = fechado;                                // instantâneo, sem transição
+                setTimeout(() => {
+                    if (el.textContent === fechado && _rostoAtual === eraEsse) el.textContent = eraEsse;
+                }, 120);
+            }
+            // 22% das vezes agenda o próximo pra JÁ: é isso que vira piscada dupla
+            const dobrar = Math.random() < 0.22;
+            setTimeout(piscar, dobrar ? 300 : 3800 + Math.random() * 4200);
+        }
+        setTimeout(piscar, 2500);
+
         function trocarRosto(txt) {
             const el = document.getElementById('rosto-txt');
+            _rostoAtual = txt;
             if (!el || !txt || el.textContent === txt) return;
             el.classList.add('trocando');
             setTimeout(() => {
