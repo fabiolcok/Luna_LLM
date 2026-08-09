@@ -230,9 +230,11 @@
             transition: opacity .28s ease, transform .28s cubic-bezier(.2,.9,.3,1.5);
         }
         #rosto-txt.trocando { opacity: 0; transform: scale(.86); }
-        /* medidas da boca num lugar só: é o que você vai querer afinar olhando na tela.
-           --boca-sobe é o vertical-align: mais negativo desce, mais positivo sobe. */
-        #rosto-txt { --boca-larg: .58em; --boca-alt: .40em; --boca-sobe: -.04em; }
+        /* medidas da boca num lugar só. --boca-sobe é o vertical-align (mais negativo DESCE)
+           e o JS reescreve ele por cara: cada glifo de olho se assenta numa altura diferente
+           na linha, então um valor único deixava a boca colada nuns e solta noutros.
+           Ver OLHO_DESCE no script — é lá que se afina glifo a glifo. */
+        #rosto-txt { --boca-larg: .58em; --boca-alt: .40em; --boca-sobe: -.13em; }
         /* os três pedaços da cara. inline (não inline-block) de propósito: qualquer coisa que
            gere caixa própria mudaria o espaçamento e a cara sairia diferente da de hoje. */
         #rosto-txt .olho-e, #rosto-txt .olho-d { display: inline; }
@@ -1921,6 +1923,7 @@
             el.querySelector('.olho-e').textContent = partes[0];
             el.querySelector('.olho-d').textContent = partes[2];
             _bocaForma = formaBoca(partes[1]);   // o miolo escolhe a FORMA, não é desenhado
+            el.style.setProperty('--boca-sobe', alturaBoca(partes[0]));   // ...e o olho, a ALTURA
             desenharBoca();
         }
 
@@ -2691,6 +2694,24 @@
             '○':  [ 0.00, 0.80, 0.80],
         };
         const BOCA_PADRAO = [0, 0, 0.90];
+
+        // ALTURA DA BOCA POR OLHO. Foi isso que fez a boca parecer certa numas caras e colada
+        // em outras: 'T' e 'ಠ' se assentam na base da linha, enquanto 'ᵔ' e '¬' moram no alto
+        // dela. Com um vertical-align único, a distância até a boca mudava sozinha conforme o
+        // glifo. Aqui cada olho diz quanto a boca desce (em em; mais negativo = mais baixo).
+        const BOCA_DESCE = -0.15;        // padrão, pros olhos de altura média
+        const OLHO_DESCE = {
+            // olhos ALTOS (acentos e sobrescritos): a boca não precisa descer tanto
+            // (a chave é sempre o olho ESQUERDO — em ｀皿´ quem manda é o ｀)
+            'ᵔ': -0.05, '˘': -0.05, '°': -0.06, '｀': -0.05, '¬': -0.07, '￢': -0.07,
+            // olhos que ocupam a linha INTEIRA: a boca tem que descer mais pra não colar
+            'T': -0.22, 'O': -0.22, 'ಠ': -0.21, '಄': -0.21, 'Ò': -0.21,
+            '◺': -0.20, '╥': -0.20, 'ᗒ': -0.19, 'ᗜ': -0.19,
+        };
+        function alturaBoca(olho) {
+            const c = (olho || '').trim().slice(-1);   // o olho é o último caractere do pedaço
+            return (c in OLHO_DESCE ? OLHO_DESCE[c] : BOCA_DESCE) + 'em';
+        }
         const K_CURVA = 26, K_ABRE = 30, K_MEIA = 30;
 
         function formaBoca(miolo) {
