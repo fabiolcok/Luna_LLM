@@ -1358,6 +1358,47 @@
         });
 
         // ═══ PRESENÇA: monta a órbita e reage ao estado ═══
+        // Arcos ABERTOS (não fecham o círculo) — é o que tira a cara de "astro/emoji".
+        // O 'd' é redesenhado a cada quadro pela respiração radial (ver respirarArcos).
+        const ARCOS_DEF = [
+            { id: 'arco-1', r: 64, a1: -55, a2: 130, amp: 7 },
+            { id: 'arco-2', r: 54, a1: 150, a2: 340, amp: 5.5 },
+            { id: 'arco-3', r: 44, a1: 20,  a2: 165, amp: 4 },
+        ];
+        function arcoPath(r, a1, a2) {
+            const rad = d => d * Math.PI / 180;
+            const p = d => [(100 + Math.cos(rad(d)) * r).toFixed(1),
+                            (100 + Math.sin(rad(d)) * r).toFixed(1)];
+            const [x1, y1] = p(a1), [x2, y2] = p(a2);
+            return `M ${x1} ${y1} A ${r.toFixed(1)} ${r.toFixed(1)} 0 ${(a2 - a1) > 180 ? 1 : 0} 1 ${x2} ${y2}`;
+        }
+
+        // ═══ RESPIRAÇÃO RADIAL (anime.js) — os arcos INFLAM e desinflam, não só giram.
+        //     O CSS não faz: o raio muda, então o path tem que ser reescrito a cada quadro.
+        //     Cada arco tem duração e defasagem próprias — se respirassem juntos, pareceria
+        //     um acordeão só. Só CRESCEM a partir do raio base, pro miolo do rosto não apertar. ═══
+        let _animRespira = [];
+        function respirarArcos(fator = 1) {
+            _animRespira.forEach(a => a.pause());
+            _animRespira = [];
+            if (!TEM_ANIME) return;
+            ARCOS_DEF.forEach((d, i) => {
+                const el = document.getElementById(d.id);
+                if (!el) return;
+                const est = { r: d.r };
+                _animRespira.push(anime({
+                    targets: est,
+                    r: d.r + d.amp,
+                    duration: (3300 + i * 420) * fator,
+                    delay: i * 360,
+                    easing: 'easeInOutSine', direction: 'alternate', loop: true,
+                    update: () => el.setAttribute('d', arcoPath(est.r, d.a1, d.a2)),
+                }));
+            });
+        }
+        // ritmo da respiração por estado (fator: <1 acelera, >1 desacelera)
+        const RITMO_RESPIRA = { dormindo: 1.7, ouvindo: 0.9, pensando: 0.5, falando: 0.7 };
+
         (function montarPresenca() {
             const g = document.getElementById('orbita');
             if (!g) return;
@@ -1380,19 +1421,11 @@
             }
             g.innerHTML = svg;
 
-            // arcos ABERTOS (não fecham o círculo) — é o que tira a cara de "astro/emoji"
-            const arco = (r, a1, a2) => {
-                const rad = d => d * Math.PI / 180;
-                const p = (d) => [(100 + Math.cos(rad(d)) * r).toFixed(1),
-                                  (100 + Math.sin(rad(d)) * r).toFixed(1)];
-                const [x1, y1] = p(a1), [x2, y2] = p(a2);
-                return `M ${x1} ${y1} A ${r} ${r} 0 ${(a2 - a1) > 180 ? 1 : 0} 1 ${x2} ${y2}`;
-            };
-            const defs = [['arco-1', 64, -55, 130], ['arco-2', 54, 150, 340], ['arco-3', 44, 20, 165]];
-            defs.forEach(([id, r, a1, a2]) => {
-                const el = document.getElementById(id);
-                if (el) el.setAttribute('d', arco(r, a1, a2));
+            ARCOS_DEF.forEach(d => {
+                const el = document.getElementById(d.id);
+                if (el) el.setAttribute('d', arcoPath(d.r, d.a1, d.a2));
             });
+            respirarArcos();
         })();
 
         const PRES_ESTADOS = ['dormindo', 'ouvindo', 'pensando', 'falando'];
@@ -1439,6 +1472,7 @@
             if (!PRES_ESTADOS.includes(estado)) estado = 'dormindo';
             PRES_ESTADOS.forEach(e => el.classList.remove('est-' + e));
             el.classList.add('est-' + estado);
+            if (!_afk) respirarArcos(RITMO_RESPIRA[estado] || 1);   // respira no ritmo do momento
 
             clearTimeout(_timerSono);
             if (estado === 'ouvindo' || estado === 'pensando') {
@@ -1469,6 +1503,7 @@
             if (!el || estaAfk === _afk) return;
             _afk = estaAfk;
             el.classList.toggle('afk', estaAfk);
+            respirarArcos(estaAfk ? 2.6 : RITMO_RESPIRA.dormindo);   // AFK: respiração bem lenta
             if (estaAfk) { pararTrocaIdle(); trocarRosto(ROSTO_AFK); }
             else { trocarRosto(rostoIdle()); iniciarTrocaIdle(); }
         }
