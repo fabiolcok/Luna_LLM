@@ -114,16 +114,8 @@
         #presenca.ferr-jogo #arcos { opacity: .12; }
         #presenca.ferr-jogo #rosto-txt { text-shadow: 0 0 14px rgba(123,249,143,.7); }
 
-        /* 🚀 chacoalhando: a cabeça inteira treme (é você sacudindo ela) */
-        #presenca.chacoalhando svg,
-        #presenca.chacoalhando #rosto-txt { animation: tremor .12s linear infinite; }
-        @keyframes tremor {
-            0%   { transform: translate(-2px, 1px)  rotate(-1.2deg); }
-            25%  { transform: translate(2px, -2px)  rotate(1.4deg);  }
-            50%  { transform: translate(-1px, -1px) rotate(-1deg);   }
-            75%  { transform: translate(2px, 1px)   rotate(1deg);    }
-            100% { transform: translate(-2px, 1px)  rotate(-1.2deg); }
-        }
+        /* 🚀 sacudir NÃO é tremer: quem move ela é o seu mouse (transform inline no JS).
+           O tremor de CSS foi embora — dava a sensação de "vibrou" e não de "puxei". */
 
         /* 😤 IRRITAÇÃO por nº de HISTÓRIAS ativas ao mesmo tempo (não por nº de objetos:
            um enxame de foguete é UM problema; foguete + satélite são DOIS). A cabeça
@@ -1770,6 +1762,10 @@
         let _jogoAtivo = false;
         let _foguetesNaCabeca = 0;
         let _botaoPreso = false, _arrastou = false;   // sacudir = AGARRAR e chacoalhar
+        // AGARRAR E PUXAR: segurando o botão sobre a cabeça, ela vem junto com o cursor —
+        // com resistência (tem peso) e teto de deslocamento. Ao soltar, volta no elástico.
+        const ARRASTO_MAX = 52, ARRASTO_RESIST = 0.62;
+        let _pegou = false, _pegouX = 0, _pegouY = 0, _arrX = 0, _arrY = 0, _animVolta = null;
         let _satelitesNaOrbita = 0, _cometaoNaCabeca = 0, _cometaoTimer = null;
         const AFAGO_RAIO = 58;        // rosto + o alto da cabeça
         const AFAGO_SOBE = 14;        // desloca a área pra CIMA: carinho é na cabeça,
@@ -1809,19 +1805,19 @@
             const mexeu = percorreu > 1.5;
             _mouseX = e.clientX; _mouseY = e.clientY;
             const svgA = document.querySelector('#presenca svg');
-            if (mexeu && svgA) {
+            if (_pegou) {
+                // Já agarrou: daqui pra frente NÃO se testa mais o raio. Se testasse, ela
+                // escaparia da mão no meio do puxão (o alvo se move junto com ela).
+                _arrX = limitar((e.clientX - _pegouX) * ARRASTO_RESIST);
+                _arrY = limitar((e.clientY - _pegouY) * ARRASTO_RESIST);
+                aplicarArrasto();
+                if (Math.hypot(_arrX, _arrY) > 4) _arrastou = true;   // puxão, não cutucão
+                if (_foguetesNaCabeca) registrarMovimento(percorreu);
+            } else if (mexeu && svgA && !_foguetesNaCabeca) {
                 const rA = svgA.getBoundingClientRect();
                 const dA = Math.hypot(e.clientX - (rA.left + rA.width / 2),
                                       e.clientY - (rA.top + rA.height / 2 - AFAGO_SOBE));
-                if (dA <= AFAGO_RAIO) {
-                    if (_botaoPreso) {
-                        // AGARROU e está chacoalhando: é assim que se tira foguete
-                        _arrastou = true;
-                        if (_foguetesNaCabeca) registrarMovimento(percorreu);
-                    } else if (!_foguetesNaCabeca) {
-                        _afagoUltimo = Date.now();   // mão passando de leve = carinho
-                    }
-                }
+                if (dA <= AFAGO_RAIO) _afagoUltimo = Date.now();   // mão de leve = carinho
             }
         });
 
@@ -2121,7 +2117,9 @@
             const alvoY = 100 + Math.sin(ang) * 52;
             const el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             el.innerHTML =
-                '<path d="M 0 -8 Q 3.4 -2.5 3.4 3 L -3.4 3 Q -3.4 -2.5 0 -8 Z" fill="#e6f3ff"/>'
+                // chama na base: acesa na chegada e na decolagem, apagada enquanto pousado
+                '<path class="chama" d="M 0 4 Q 3.2 13 0 26 Q -3.2 13 0 4 Z" fill="url(#g-fogo)"/>'
+              + '<path d="M 0 -8 Q 3.4 -2.5 3.4 3 L -3.4 3 Q -3.4 -2.5 0 -8 Z" fill="#e6f3ff"/>'
               + '<path d="M 3.4 0.6 L 6 4.2 L 3.4 4.2 Z" fill="#ff5a4d"/>'
               + '<path d="M -3.4 0.6 L -6 4.2 L -3.4 4.2 Z" fill="#ff5a4d"/>'
               + '<circle cx="0" cy="-2.6" r="1.5" fill="#7aa2f7"/>';
@@ -2136,7 +2134,11 @@
                 duration: 1300, easing: 'easeOutQuad',
                 update: () => el.setAttribute('transform',
                     `translate(${de.x.toFixed(1)} ${de.y.toFixed(1)}) rotate(${de.r.toFixed(1)})`),
-                complete: () => { if (_foguetes.length) atualizarIrritacao(true); },
+                complete: () => {
+                    const ch = el.querySelector('.chama');        // pousou: desliga o motor
+                    anime({ targets: ch, opacity: 0, duration: 300, easing: 'linear' });
+                    if (_foguetes.length) atualizarIrritacao(true);
+                },
             });
             clearTimeout(_fogTimer);
             _fogTimer = setTimeout(novoFoguete, FOG_INTERVALO);   // ignorou -> vem mais
@@ -2147,6 +2149,8 @@
             if (!g || !_foguetes.length) return;
             clearTimeout(_fogTimer); _fogTimer = null;
             _foguetes.forEach((f, i) => {
+                const ch = f.el.querySelector('.chama');          // decolou: religa o motor
+                anime({ targets: ch, opacity: 1, duration: 180, easing: 'linear' });
                 const ang = Math.random() * Math.PI * 2;
                 const de = { x: f.x, y: f.y, r: 0, o: 1 };
                 anime({
@@ -2182,15 +2186,12 @@
             _fogMov.push([agora, dist]);
             _fogMov = _fogMov.filter(([t]) => agora - t < FOG_JANELA);
             const total = _fogMov.reduce((a, [, d]) => a + d, 0);
-            const pres = document.getElementById('presenca');
             if (total > FOG_CHACOALHO * 0.35 && !_chacoalhando) {   // começou a sacudir
                 _chacoalhando = true;
-                pres && pres.classList.add('chacoalhando');
                 trocarRosto(ROSTO_CHACOALHO);
             }
             if (total > FOG_CHACOALHO) {                            // sacudiu o bastante
                 _chacoalhando = false;
-                pres && pres.classList.remove('chacoalhando');
                 _fogMov = [];
                 espantarFoguetes();
             }
@@ -2200,8 +2201,6 @@
             const agora = Date.now();
             if (!_fogMov.length || agora - _fogMov[_fogMov.length - 1][0] > FOG_JANELA) {
                 _chacoalhando = false;
-                const pres = document.getElementById('presenca');
-                pres && pres.classList.remove('chacoalhando');
                 if (_foguetes.length) trocarRosto(ROSTO_INCOMODADA);
             }
         }, 200);
@@ -2411,9 +2410,7 @@
             _cometaoVida = COMETAO_VIDA;
             _cometaoNaCabeca = 1;
             g.innerHTML =
-                // rastro de fogo: so aparece na queda, e some quando ele encaixa nela
-                '<path class="fogo" d="M 0 -14 Q 9 -46 0 -80 Q -9 -46 0 -14 Z" fill="url(#g-fogo)" opacity="0.95"/>'
-              + '<circle cx="0" cy="0" r="15" fill="#4a4a5a"/>'
+                '<circle cx="0" cy="0" r="15" fill="#4a4a5a"/>'
               + '<circle cx="-4" cy="-4" r="3.4" fill="#3a3a48"/>'
               + '<circle cx="5" cy="3" r="2.6" fill="#3a3a48"/>'
               + '<circle cx="-2" cy="6" r="2" fill="#3a3a48"/>'
@@ -2432,8 +2429,6 @@
                 },
                 complete: function () {
                     _cometaoEl = { x: alvoX, y: alvoY };
-                    const fogo = g.querySelector('.fogo');
-                    if (fogo && TEM_ANIME) anime({ targets: fogo, opacity: 0, duration: 450, easing: 'linear' });
                     atualizarIrritacao(true);
                 },
             });
@@ -2586,15 +2581,43 @@
             }, fim));
         }
 
+        function limitar(v) { return Math.max(-ARRASTO_MAX, Math.min(ARRASTO_MAX, v)); }
+        function aplicarArrasto() {
+            const pres = document.getElementById('presenca');
+            if (pres) pres.style.transform = 'translate(' + _arrX.toFixed(1) + 'px,' + _arrY.toFixed(1) + 'px)';
+        }
+
         (function ligarBotao() {
-            document.addEventListener('mousedown', () => { _botaoPreso = true; _arrastou = false; });
+            document.addEventListener('mousedown', (e) => {
+                _botaoPreso = true; _arrastou = false;
+                const svg = document.querySelector('#presenca svg');
+                if (!svg) return;
+                const r = svg.getBoundingClientRect();
+                const d = Math.hypot(e.clientX - (r.left + r.width / 2),
+                                     e.clientY - (r.top + r.height / 2 - AFAGO_SOBE));
+                if (d > AFAGO_RAIO) return;                    // clicou no vazio ao lado dela
+                _pegou = true;                                 // PEGOU a cabeça dela
+                // o puxão começa de onde ela está agora, não do zero — senão pular pra
+                // mão dá um solavanco quando você reagarra no meio da volta elástica
+                _pegouX = e.clientX - _arrX / ARRASTO_RESIST;
+                _pegouY = e.clientY - _arrY / ARRASTO_RESIST;
+                if (_animVolta) { _animVolta.pause(); _animVolta = null; }
+            });
             document.addEventListener('mouseup', () => {
                 _botaoPreso = false;
-                // solta o tremor se você largou no meio da sacudida
-                if (_chacoalhando) {
+                if (_pegou) {
+                    _pegou = false;
+                    if (TEM_ANIME) {                           // soltou: volta no elástico
+                        const alvo = { x: _arrX, y: _arrY };
+                        _animVolta = anime({
+                            targets: alvo, x: 0, y: 0,
+                            duration: 950, easing: 'easeOutElastic(1, .42)',
+                            update: () => { _arrX = alvo.x; _arrY = alvo.y; aplicarArrasto(); },
+                        });
+                    } else { _arrX = _arrY = 0; aplicarArrasto(); }
+                }
+                if (_chacoalhando) {                           // largou no meio da sacudida
                     _chacoalhando = false;
-                    const pr = document.getElementById('presenca');
-                    pr && pr.classList.remove('chacoalhando');
                     if (_foguetesNaCabeca) trocarRosto(ROSTO_INCOMODADA);
                 }
                 setTimeout(() => { _arrastou = false; }, 60);   // deixa o click checar antes
