@@ -130,6 +130,21 @@
         #presenca.irrit-2 svg, #presenca.irrit-2 #rosto-txt { animation: raiva .3s ease-in-out infinite; }
         #presenca.irrit-3 svg, #presenca.irrit-3 #rosto-txt { animation: raiva .17s ease-in-out infinite; }
         #presenca.medo { --cor-halo: #7c6ba8; }    /* roxo frio; vence a cor da irritação */
+
+        /* 😶 DESISTIU: ela vira de costas. O halo sai do vermelho pra um CINZA MORTO — raiva
+           é ela ainda ligando; cinza é ela ter parado. Como a cabeça é uma esfera de luz sem
+           detalhe, a nuca é só a cabeça sem rosto: o que você vê é a ausência.
+           Vem por último de propósito: vence a cor da irritação e do medo. */
+        #presenca.desistiu { --cor-halo: #45454f; }
+        #presenca.desistiu #rosto-txt {
+            transform: scaleX(0) translateX(30px);
+            opacity: 0;
+            transition: transform .45s cubic-bezier(.45, 0, .55, 1), opacity .4s ease;
+        }
+        #presenca.desistiu #orbita-escala { opacity: .16; }
+        #presenca.desistiu #arcos { opacity: .05; }
+        #presenca.desistiu #orbita { animation-duration: 200s; }   /* quase parada */
+        #presenca.desistiu #halo { opacity: .8; }
         @keyframes raiva {
             0%,100% { transform: translate(-0.8px, 0); }
             50%     { transform: translate(0.8px, 0);  }
@@ -1160,6 +1175,7 @@
             <button class="lab-btn" data-lab="sujeira">🌫️ fuligem</button>
             <button class="lab-btn" data-lab="chuva">🌠 chuva</button>
             <button class="lab-btn" data-lab="invasao">🛸 invasão</button>
+            <button class="lab-btn" data-lab="desistir">😶 desistir</button>
         </div>
         <div class="lab-titulo">Passageiros</div>
         <div class="lab-grade">
@@ -1718,7 +1734,8 @@
         function piscar() {
             const el = document.getElementById('rosto-txt');
             // reagindo a um clique tem sequência própria de piscada — não atropela
-            const fechado = (_afk || _reagindo || _chacoalhando || _medo) ? null : versaoPiscada(_rostoAtual);
+            const fechado = (_afk || _reagindo || _chacoalhando || _medo || _desistiu)
+                          ? null : versaoPiscada(_rostoAtual);
             if (el && fechado) {
                 const eraEsse = _rostoAtual;
                 el.textContent = fechado;                                // instantâneo, sem transição
@@ -1815,6 +1832,7 @@
         let _pegou = false, _pegouX = 0, _pegouY = 0, _arrX = 0, _arrY = 0, _animVolta = null;
         let _satelitesNaOrbita = 0, _cometaoNaCabeca = 0, _cometaoTimer = null;
         let _sujeiraNaCara = 0, _medo = false, _invasao = false;
+        let _desistiu = false, _desdeTres = 0;
         const AFAGO_RAIO = 58;        // rosto + o alto da cabeça
         const AFAGO_SOBE = 14;        // desloca a área pra CIMA: carinho é na cabeça,
                                       // não embaixo do queixo
@@ -1909,7 +1927,7 @@
             const seguindoMouse = (agora - _mouseTs) < OLHAR_OCIOSO_MS;
             if (!seguindoMouse && !_olharObjeto) vaguear(agora);
             let alvoX, alvoY;
-            if (_afk) {                       // dormindo não olha nada
+            if (_afk || _desistiu) {          // dormindo, ou de costas: não olha nada
                 alvoX = alvoY = 0;
             } else if (_olharObjeto) {        // tem coisa passando no céu: acompanha
                 const dx = _olharObjeto.x - 100, dy = _olharObjeto.y - 100;
@@ -2170,6 +2188,7 @@
         let _foguetes = [], _fogTimer = null, _fogMov = [], _chacoalhando = false;
 
         function novoFoguete() {
+            if (_desistiu) return;
             const g = document.getElementById('foguetes');
             if (!g || !TEM_ANIME || _foguetes.length >= FOG_MAX) return;
 
@@ -2438,6 +2457,7 @@
         function atualizarIrritacao(mostrarRosto) {
             const pres = document.getElementById('presenca');
             if (!pres) return;
+            if (_desistiu) { pres.classList.remove('irrit-2', 'irrit-3'); return; }   // já passou da raiva
             const n = historiasAtivas();
             pres.classList.remove('irrit-2', 'irrit-3');
             if (n >= 3) pres.classList.add('irrit-3');
@@ -2477,6 +2497,7 @@
                 sujeira:  function () { sujar(2); },
                 chuva:    function () { chuvaAsteroides(); },
                 invasao:  function () { invasaoOvnis(); },
+                desistir: function () { if (_desistiu) voltarAtencao(); else virarDeCostas(); },
                 cometa:   function () { cometa(); },
                 ovni:     function () { ovni(); },
                 confete:  function () { confete(); },
@@ -2494,6 +2515,7 @@
                     pres && pres.classList.toggle('noite');
                 },
                 limpar:   function () {
+                    if (_desistiu) voltarAtencao();
                     limparFerramenta();
                     modoJogo(null);
                     if (_afk) aplicarAfk(false);
@@ -2512,6 +2534,68 @@
             });
         })();
 
+        // ═══ 😶 DESISTIR — a CONSEQUÊNCIA que faltava. Até aqui, ignorar tudo só deixava ela
+        //     com cara feia: a escada de irritação subia e parava. Agora tem fundo. Três
+        //     histórias abertas ao mesmo tempo por tempo demais e ela VIRA DE COSTAS.
+        //     O que muda não é a intensidade, é a direção: raiva é ela ainda ligando pra
+        //     você; virar de costas é ela ter parado. Por isso o halo sai do vermelho e vai
+        //     pro cinza — visualmente é uma QUEDA, não uma escalada.
+        //     Regra de saída: só volta quando NÃO SOBRAR NENHUMA história. E é de propósito
+        //     que os objetos continuem funcionando de costas — foguete ainda sai sacudindo,
+        //     satélite clicando, fuligem esfregando. Você resolve tudo no silêncio dela, que
+        //     é bem mais desconfortável do que ela ficar brava. ═══
+        const DESISTIR_HISTORIAS = 3;    // quantas abertas ao mesmo tempo
+        const DESISTIR_MS = 45000;       // ...por quanto tempo seguido
+        const DESISTIR_OLHADA = 4000;    // a encarada de volta, antes de perdoar
+        const DESISTIR_ALIVIO = 2000;
+
+        function virarDeCostas() {
+            const pres = document.getElementById('presenca');
+            if (!pres || _desistiu) return;
+            _desistiu = true;
+            _desdeTres = 0;
+            limparReacaoClique();
+            _reagindo = false;
+            pararTrocaIdle();
+            olharObjeto(null);
+            pres.classList.remove('irrit-2', 'irrit-3');   // a raiva cede lugar ao desânimo
+            pres.classList.add('desistiu');                // o CSS faz o giro (scaleX -> 0)
+        }
+
+        function voltarAtencao() {
+            const pres = document.getElementById('presenca');
+            if (!pres || !_desistiu) return;
+            _desistiu = false;
+            _desdeTres = 0;
+            limparReacaoClique();
+            _reagindo = true;                     // segura piscada/idle/bocejo durante a volta
+
+            rostoDireto('≖_≖');                   // já vira encarando: não entrega alegria na hora
+            pres.classList.remove('desistiu');
+
+            _timersClique.push(setTimeout(() => rostoDireto('◉‿◉'), DESISTIR_OLHADA));
+            _timersClique.push(setTimeout(() => {
+                _reagindo = false;
+                if (!_afk && !historiasAtivas()) { trocarRosto(rostoIdle()); iniciarTrocaIdle(); }
+            }, DESISTIR_OLHADA + DESISTIR_ALIVIO));
+        }
+
+        setInterval(() => {
+            if (_desistiu) {
+                if (!historiasAtivas()) voltarAtencao();   // limpou tudo: ela te olha de novo
+                return;
+            }
+            if (_afk) { _desdeTres = 0; return; }
+            if (historiasAtivas() >= DESISTIR_HISTORIAS) {
+                if (!_desdeTres) _desdeTres = Date.now();  // começou a contar
+                else if (Date.now() - _desdeTres >= DESISTIR_MS) virarDeCostas();
+            } else {
+                _desdeTres = 0;                            // resolveu uma: o relógio zera
+            }
+        }, 400);
+
+        // ═══ 😶 DESISTIR (fim)
+
         // ═══ 🛸 INVASÃO — a 6ª história, e a SEGUNDA de "não fazer nada". Mas a contenção é
         //     de outro tipo: a chuva de asteroides só liga pra quem ENCOSTA nela; aqui os
         //     discos são atraídos por MOVIMENTO POR PERTO. Não basta não clicar — tem que
@@ -2524,7 +2608,7 @@
         let _frota = [], _invAlerta = 0, _invDriver = null;
 
         function invasaoOvnis() {
-            if (_medo || _afk) return;
+            if (_medo || _afk || _desistiu) return;
             const pres = document.getElementById('presenca');
             const gF = document.getElementById('frota');
             const modelo = document.getElementById('ovni');
@@ -2658,7 +2742,7 @@
         let _medoAte = 0, _medoTimer = null, _medoChuva = null, _medoUltimoSusto = 0;
 
         function chuvaAsteroides() {
-            if (_medo || _afk) return;
+            if (_medo || _afk || _desistiu) return;
             const pres = document.getElementById('presenca');
             const g = document.getElementById('asteroides');
             if (!pres || !g) return;
@@ -2762,6 +2846,7 @@
         let _sujeira = [], _sujTimer = null, _esfregando = false, _esfregouUltimo = 0;
 
         function sujar(quantas) {
+            if (_desistiu) return;
             const g = document.getElementById('sujeira');
             if (!g || _afk) return;
             const NS = 'http://www.w3.org/2000/svg';
@@ -2860,7 +2945,7 @@
 
         function cometao() {
             const g = document.getElementById('cometao');
-            if (!g || !TEM_ANIME || _cometaoVida > 0) return;
+            if (!g || !TEM_ANIME || _cometaoVida > 0 || _desistiu) return;
             _cometaoVida = COMETAO_VIDA;
             _cometaoNaCabeca = 1;
             g.innerHTML =
@@ -3007,6 +3092,7 @@
             const pres = document.getElementById('presenca');
             const el = document.getElementById('rosto-txt');
             if (!pres || !el || _afk) return;                       // dormindo, deixa ela em paz
+            if (_desistiu) return;                                  // de costas: cutucão não alcança
             if (_medo) { atrapalhar(); return; }                    // cutucar durante a chuva: idem
             if (!pres.classList.contains('est-dormindo')) return;   // ocupada (ouvindo/pensando/falando)
 
@@ -3151,6 +3237,7 @@
         function aplicarAfk(estaAfk) {
             const el = document.getElementById('presenca');
             if (!el || estaAfk === _afk) return;
+            if (_desistiu) { _afk = estaAfk; el.classList.toggle('afk', estaAfk); return; }
             _afk = estaAfk;
             el.classList.toggle('afk', estaAfk);
             if (estaAfk) {
