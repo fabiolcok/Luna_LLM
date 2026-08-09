@@ -88,9 +88,14 @@
             padding-bottom: 20px;   /* sobe o rosto 10px (o padding desloca metade) */
             font-size: 2.75rem; color: #b4f9f8; white-space: nowrap; letter-spacing: .5px;
             pointer-events: none; text-shadow: 0 0 12px rgba(122,162,247,.5);
+            /* sem transition aqui: o JS escreve o translate (olhar) a cada quadro */
+            will-change: transform;
+        }
+        #rosto-txt {
+            display: inline-block;
             transition: opacity .28s ease, transform .28s cubic-bezier(.2,.9,.3,1.5);
         }
-        #rosto.trocando { opacity: 0; transform: scale(.86); }
+        #rosto-txt.trocando { opacity: 0; transform: scale(.86); }
         /* view-box + origem no centro do viewBox: arco tem bbox DESCENTRADO, então
            'fill-box/center' faria ele bambear em vez de girar no eixo. */
         #halo, #orbita, #orbita-escala, #arcos, #arco-1, #arco-2, #arco-3, #ondas circle {
@@ -1229,7 +1234,7 @@
             </svg>
             <!-- O ROSTO dela: o kaomoji vive DENTRO dos anéis (os arcos viram cabeça/aura).
                  Segue o estado quando ela não está respondendo, e vira a reação quando responde. -->
-            <div id="rosto">◜ᴗ◝</div>
+            <div id="rosto"><span id="rosto-txt">◜ᴗ◝</span></div>
         </div>
 
         <!-- GIF (na gaveta — só volta se a regra do prompt voltar a emitir [gif:]) -->
@@ -1432,7 +1437,7 @@
         let _timerSono = null;
 
         function trocarRosto(txt) {
-            const el = document.getElementById('rosto');
+            const el = document.getElementById('rosto-txt');
             if (!el || !txt || el.textContent === txt) return;
             el.classList.add('trocando');
             setTimeout(() => {
@@ -1470,6 +1475,37 @@
             _rostoReacao = k;
             trocarRosto(k);                           // a reação VIRA a cara dela
         }
+
+        // ═══ OLHAR: o rosto se desloca UM POUCO na direção do mouse — parece que ela repara
+        //     em você. Feito com lerp (interpolação suave) num rAF, não com a lib: no v3 do
+        //     anime.js não existe o createAnimatable, e criar uma animação por mousemove seria
+        //     um instância nova a cada pixel. São 10 linhas e fica mais liso. ═══
+        const OLHAR_MAX = 9;        // deslocamento máximo, em px
+        const OLHAR_ALCANCE = 300;  // distância do mouse pra chegar no máximo
+        const OLHAR_SUAV = 0.1;     // 0-1: quanto menor, mais preguiçoso o olhar
+        let _olhoAlvoX = 0, _olhoAlvoY = 0, _olhoX = 0, _olhoY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            const svg = document.querySelector('#presenca svg');
+            if (!svg) return;
+            const r = svg.getBoundingClientRect();
+            const dx = e.clientX - (r.left + r.width / 2);
+            const dy = e.clientY - (r.top + r.height / 2);
+            const d = Math.hypot(dx, dy) || 1;
+            const forca = Math.min(1, d / OLHAR_ALCANCE);   // perto = olha pouco; longe = o máximo
+            _olhoAlvoX = (dx / d) * OLHAR_MAX * forca;
+            _olhoAlvoY = (dy / d) * OLHAR_MAX * forca;
+        });
+
+        (function olhar() {
+            const alvoX = _afk ? 0 : _olhoAlvoX;            // dormindo, ela não segue nada
+            const alvoY = _afk ? 0 : _olhoAlvoY;
+            _olhoX += (alvoX - _olhoX) * OLHAR_SUAV;
+            _olhoY += (alvoY - _olhoY) * OLHAR_SUAV;
+            const el = document.getElementById('rosto');
+            if (el) el.style.transform = `translate(${_olhoX.toFixed(2)}px, ${_olhoY.toFixed(2)}px)`;
+            requestAnimationFrame(olhar);
+        })();
 
         // Você sumiu (proativo suspenso): ela cochila de verdade e tudo desacelera.
         function aplicarAfk(estaAfk) {
