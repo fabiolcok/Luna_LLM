@@ -2204,10 +2204,46 @@
             if (!_fogMov.length || agora - _fogMov[_fogMov.length - 1][0] > FOG_JANELA) {
                 _chacoalhando = false;
                 _fogMov = [];
-                if (historiasAtivas()) atualizarIrritacao(true);           // ainda tem problema nela
-                else if (!_afk && !_reagindo) trocarRosto(rostoIdle());    // a tonteira passou
+                if (historiasAtivas()) atualizarIrritacao(true);   // ainda tem problema nela
+                else voltarDaSacudida();                          // se recompõe aos poucos
             }
         }, 200);
+
+        // Voltar da tontura não pode ser um corte seco pro idle — ela precisa se RECOMPOR:
+        // tonta -> olhada perdida -> pisca -> olhada perdida -> normal. E se você sacudir de
+        // novo logo em seguida ela troca a olhada perdida por uma ENCARADA de julgamento,
+        // pela mesma lógica de insistência do cutucão (e usando o mesmo canal de timers, pra
+        // que um clique no meio disso assuma o controle em vez de brigar).
+        const SACUDIDA_JANELA = 9000;      // sacudidas dentro disso contam como insistência
+        const SACUDIDA_PACIENCIA = 1;      // da 2ª seguida em diante ela te julga
+        let _sacudidas = [];
+
+        function voltarDaSacudida() {
+            const el = document.getElementById('rosto-txt');
+            if (!el || _afk) return;                    // dormindo: deixa quieta
+
+            const agora = Date.now();
+            _sacudidas = _sacudidas.filter(t => agora - t < SACUDIDA_JANELA);
+            _sacudidas.push(agora);
+            const julgando = _sacudidas.length > SACUDIDA_PACIENCIA;
+
+            limparReacaoClique();
+            _reagindo = true;                           // segura o rodízio de idle e a piscada
+            _ultimaInteracao = agora;                   // sacudir é interação: adia bocejo/AFK
+
+            // [cara, quando aparece] — a tonta já está na tela; daqui é a recomposição
+            const passos = julgando
+                ? [['≖_≖', 0], ['- _ -', 4400], ['• _ •', 4520]]
+                : [['• _ •', 0], ['- _ -', 900],  ['• _ •', 1020]];
+            const fim = julgando ? 6300 : 2400;
+
+            passos.forEach(([cara, quando]) =>
+                _timersClique.push(setTimeout(() => { el.textContent = cara; }, quando)));
+            _timersClique.push(setTimeout(() => {
+                _reagindo = false;
+                trocarRosto(rostoIdle());               // enfim, de volta ao normal
+            }, fim));
+        }
 
         (function agendarFoguete() {   // raro: é um evento, não um enfeite
             setTimeout(() => {
