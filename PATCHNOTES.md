@@ -8,6 +8,46 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 10/08/2026
+
+- 👄 ✨ **A Luna ganhou boca.** Até agora o rosto era uma string só, e falar SUBSTITUÍA a cara
+  inteira — ela não conseguia estar brava e falando ao mesmo tempo. Agora os **olhos** são o
+  kaomoji e a **boca é desenhada**: três números (curvatura, abertura, largura) viram um traço
+  vetorial. Falar anima só a abertura, então a curva da emoção fica de pé.
+  - Resultado: ela fala **brava**, fala **triste**, fala **sorrindo**. É a mesma boca abrindo e
+    fechando, com a emoção por baixo — em vez de trocar entre caras prontas.
+  - Não é *lip-sync*: o áudio toca na máquina, não no navegador, então não há o que sincronizar.
+    É um ciclo com ritmo irregular, porque ritmo certinho lê como robô.
+  - Algumas caras ficaram de fora de propósito e guardam o desenho original (as de repouso, a de
+    pensar, a de medo) — o kaomoji delas já dizia o que precisava.
+
+- 🪐 ✨ **Ela agora tem problemas.** De vez em quando **acontece alguma coisa com ela** na
+  interface — e some quando você resolve. Cada uma pede um jeito diferente de mexer com ela, e
+  descobrir qual é metade da graça. Não vou contar. 👀
+  - Se você **ignorar** por tempo demais, tem consequência. Essa também não vou contar.
+
+- 🔧 **Ritmo.** As coisas acontecem **bem mais espaçadas** e não se amontoam mais: existe um
+  intervalo mínimo entre elas e um teto de quantas podem estar rolando junto. Antes, dois minutos
+  fora e você voltava pra uma bagunça.
+
+- 🐛 **O modo suspenso pedia GIF ao Giphy.** Sobrou de quando a reação era GIF: toda vez que ela
+  suspendia, aparecia uma imagem aleatória embaixo dela. Era o último chamador vivo — saiu.
+
+- 🐛 **Instalar em outra máquina não funcionava.** Meu irmão foi rodar a Luna na casa dele e
+  descobriu três coisas de uma vez:
+  - Os **atalhos** tinham o caminho da minha máquina cravado. Em qualquer outro lugar o `cd`
+    falhava, o ambiente virtual não era ativado e o erro que aparecia (`No module named
+    'webview'`) não tinha nada a ver com a causa. Agora eles se localizam sozinhos e avisam
+    direito quando falta o `venv`.
+  - O **`.env.example`** derrubava a Luna: um `int()` no `TELEGRAM_CHAT_ID` estourava com o
+    texto de exemplo, na importação. Uma feature *opcional* matando o app inteiro. Agora
+    placeholder e vazio são a mesma coisa — não configurado.
+  - O **nome do modelo** era exigido exato. Nem toda versão do TurboLLM deixa batizar o modelo,
+    e aí ele precisava carregar na mão toda vez. Agora a Luna **descobre** qual id o servidor
+    expõe; se não achar, ela **lista o que tem** em vez de só reclamar.
+
+---
+
 ## 09/08/2026
 
 - 🌙 ✨ **A Luna ganhou um rosto.** O GIF do Giphy saiu e no lugar dela existe uma **presença**
