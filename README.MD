@@ -206,6 +206,8 @@ modelos/
   chromadb/            — banco de conversas
 templates/
   Index.html           — interface web (presença/rosto, histórico, config, drag & drop)
+AGENTS.md              — instrucoes pra agentes de IA (armadilhas do projeto, testes)
+testes/                — suite da presenca: `node testes/rodar.js`
 Atalhos/
   Luna.vbs             — launcher silencioso   |   Luna.bat — launcher com terminal (debug)
 ```
