@@ -85,6 +85,16 @@ No painel do TurboLLM, adicione um modelo apontando pro `.gguf` do Gemma, com **
 > modelo (economiza ~700MB, quase sem perda). O "thinking" do Gemma **não** precisa de config
 > aqui — a Luna já manda `enable_thinking:false` em toda chamada.
 
+> ⚠️ **GPU de 12GB ou menos** (ex.: RTX 3060 12GB): aí a conta fica apertada — o Gemma Q4_0
+> pesa ~7GB, o KV cache ~2GB, o drafter ~1GB, e o Windows come ~1GB. Duas recomendações que
+> deixam de ser opcionais:
+> - **KV cache em `q8_0`** (o item acima) — faça já, não depois.
+> - **Suba primeiro SEM o drafter MTP** (passo 3.4). Confirme que ela conversa e só então
+>   ligue o drafter. Assim, se faltar memória, você sabe exatamente o que causou.
+>
+> O resto do projeto **não disputa a GPU**: o Whisper e os embeddings de memória rodam em CPU
+> de propósito (`device="cpu"` em `ouvir.py` e `memoria.py`), então a placa fica só pro LLM.
+
 ### 3.4 (Opcional) Ligar o drafter MTP — mais velocidade
 
 O MTP (*speculative decoding*) acelera bastante a geração. No painel do TurboLLM, **no modelo
@@ -129,7 +139,9 @@ python main.py
 - Interface web em `http://localhost:5000` (abre sozinha como janela).
 - A 1ª resposta depois de ociosa demora **~6s** (o TurboLLM carrega o modelo sob demanda).
 
-> Também dá pra abrir pelos atalhos em `Atalhos/` (`Luna.bat` = com terminal, bom pra debug).
+> Também dá pra abrir pelos atalhos em `Atalhos/` (`Luna.bat` = com terminal, bom pra debug;
+> `Luna.vbs` = sem janela). Eles descobrem a pasta do projeto sozinhos e avisam se o `venv`
+> não existir — não precisa editar caminho nenhum.
 
 ---
 
