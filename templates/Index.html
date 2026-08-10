@@ -1920,7 +1920,7 @@
             const el = document.getElementById('rosto-txt');
             if (!el || !txt) return;
             const partes = ROSTO_INTEIRO.has(base || txt) ? null : partirRosto(txt);
-            if (!partes) { el.textContent = txt; return; }   // sem boca separável: inteira
+            if (!partes) { _bocaMod = null; el.textContent = txt; return; }   // sem boca: inteira
             let e = el.querySelector('.olho-e');
             if (!e) {                                        // primeira vez: monta a estrutura
                 el.textContent = '';
@@ -1939,6 +1939,7 @@
             el.querySelector('.olho-d').textContent = partes[2];
             _bocaForma = formaBoca(partes[1]);   // o miolo escolhe a FORMA, não é desenhado
             el.style.setProperty('--boca-sobe', alturaBoca(partes[0]));   // ...e o olho, a ALTURA
+            ligarModulador(base || txt);         // ...e a cara BASE diz se tem animação própria
             desenharBoca();
         }
 
@@ -2745,13 +2746,51 @@
                  + ' Q 0 ' + base.toFixed(1) + ' ' + (-meia).toFixed(1) + ' 0 Z';
         }
 
-        let _bocaForma = BOCA_PADRAO, _bocaAbre = 0;
+        // ═══ 3º GRUPO: bocas com ANIMAÇÃO PRÓPRIA ═══
+        //     São um DELTA somado por quadro, não um modo que substitui a fala. Essa é a
+        //     decisão que faz a coisa toda fechar: se fossem um modo, ela perderia justamente
+        //     o que a boca vetorial deu — poder estar com medo E falando. Como delta, medo +
+        //     fala vira fala TRÊMULA, e raiva + fala vira fala rosnada. O 2º grupo (as que só
+        //     falam) passa a ser "o 3º com modulador zero": um caminho de código, não dois.
+        //     Cada modulador devolve deltas de curvatura (c), abertura (a) e largura (w).
+        //     Senos de períodos PRIMOS entre si de propósito: se batessem, o tremor viraria
+        //     um pulso regular, que lê como robô em vez de nervosismo.
+        const BOCA_MOD = {
+            '°ᯅ°':  (t) => ({ a: 0.055 * Math.sin(t / 53),  w: 0.030 * Math.sin(t / 41) }),   // medo: raso e rápido
+            '╥‸╥':  (t) => ({ c: 0.050 * Math.sin(t / 211), a: 0.020 * Math.sin(t / 89) }),   // travada, tremor mínimo
+            'Ò﹏Ó':  (t) => ({ c: 0.170 * Math.sin(t / 307) }),                                // revolta: ondula
+            '｀皿´': (t) => ({ w: 0.100 * Math.sin(t / 131), a: 0.070 * Math.sin(t / 97) }),   // rosnado
+            '｀Д´': (t) => ({ w: 0.130 * Math.sin(t / 101), a: 0.090 * Math.sin(t / 73) }),   // rosnado forte
+            '಄ᆺ಄':  (t) => ({ c: 0.140 * Math.sin(t / 263), a: 0.060 * Math.sin(t / 179) }),  // tonta: desencontrada
+            'T_T':  (t) => ({ c: 0.070 * Math.sin(t / 419), a: 0.030 * Math.sin(t / 331) }),  // tristeza: lento
+        };
+        let _bocaForma = BOCA_PADRAO, _bocaAbre = 0, _bocaMod = null, _bocaLoop = null;
 
         function desenharBoca() {
             const path = document.querySelector('#rosto-txt .boca path');
             if (!path) return;
-            const abre = _falandoBoca ? _bocaAbre : _bocaForma[1];   // falando? a abertura é animada
-            path.setAttribute('d', caminhoBoca(_bocaForma[0], abre, _bocaForma[2]));
+            let c = _bocaForma[0];
+            let a = _falandoBoca ? _bocaAbre : _bocaForma[1];   // falando? a abertura é animada
+            let w = _bocaForma[2];
+            if (_bocaMod) {                                     // o delta entra POR CIMA da fala
+                const m = _bocaMod(Date.now());
+                c += m.c || 0;
+                a += m.a || 0;
+                w *= 1 + (m.w || 0);
+            }
+            path.setAttribute('d', caminhoBoca(c, Math.max(0, Math.min(1, a)), w));
+        }
+
+        // O laço só existe enquanto há modulador: cara sem animação própria não gasta quadro.
+        function ligarModulador(cara) {
+            _bocaMod = BOCA_MOD[cara] || null;
+            if (!_bocaMod || _bocaLoop) return;
+            const passo = () => {
+                if (!_bocaMod) { _bocaLoop = null; return; }   // a cara mudou: o laço morre
+                desenharBoca();
+                _bocaLoop = requestAnimationFrame(passo);
+            };
+            _bocaLoop = requestAnimationFrame(passo);
         }
 
         // FUNÇÕES, não arrays: um `const X = [...ROSTO_SUJA...]` avalia a lista NA HORA da
@@ -2788,9 +2827,14 @@
                     b.textContent = cara;
                     // marca as que não partem em olho/boca: essas não ganham boca animada
                     if (ROSTO_INTEIRO.has(cara) || !partirRosto(cara)) {
-                        b.title = ROSTO_INTEIRO.has(cara) ? 'repouso: guarda o kaomoji original'
+                        b.title = ROSTO_INTEIRO.has(cara) ? 'grupo 1 — estática, guarda o kaomoji'
                                                           : 'sem boca separável (acento/emoji)';
                         b.style.opacity = '.55';
+                    } else if (BOCA_MOD[cara]) {
+                        b.title = 'grupo 3 — boca com animação própria';
+                        b.style.borderColor = '#ff8a4d';
+                    } else {
+                        b.title = 'grupo 2 — boca que fala';
                     }
                     b.addEventListener('click', () => {
                         document.querySelectorAll('.lab-cara.posta').forEach(o => o.classList.remove('posta'));
