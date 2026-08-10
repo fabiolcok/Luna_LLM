@@ -73,13 +73,20 @@
         /* A CABEÇA muda de cor conforme a ferramenta (cores de marca). Uma variável só,
            herdada pelo gradiente do SVG — os anéis e o rosto seguem no tom do tema. */
         #presenca { --cor-halo: #7aa2f7; }              /* padrão: azul da Luna */
+        /* 🗣️ falando: a cabeça esquenta junto com as bolinhas. Vem ANTES das ferramentas de
+           propósito — mesma especificidade, então quem vier depois vence, e a cor da
+           ferramenta (verde do Spotify, vermelho do YouTube...) tem que continuar mandando.
+           Irritação, medo e desistir estão lá embaixo e vencem os dois, que é o certo. */
+        #presenca.est-falando  { --cor-halo: #edc24a; } /* âmbar: ela está falando */
         #presenca.ferr-spotify { --cor-halo: #1db954; } /* verde Spotify   */
         #presenca.ferr-video   { --cor-halo: #ff3b30; } /* vermelho YouTube */
         #presenca.ferr-radar   { --cor-halo: #7dd3fc; } /* azul claro (web) */
         #presenca.ferr-tela    { --cor-halo: #f2f7ff; } /* branco (tela)    */
         #g-halo stop { stop-color: var(--cor-halo, #7aa2f7); transition: stop-color .7s ease; }
 
-        #presenca { position: relative; display: flex; justify-content: center; padding: 4px 0 10px; }
+        #presenca { position: relative; display: flex; justify-content: center; padding: 4px 0 10px;
+                    /* arrastar sobre ela nao pode virar selecao de texto (atrapalha a sacudida) */
+                    user-select: none; -webkit-user-select: none; }
         /* ✨ estrelas: só à noite. De dia ficam com opacidade 0 — o céu não "some", ele
            simplesmente não está lá. Cintilam devagar, cada uma no seu tempo. */
         #estrelas rect { fill: #cfe0ff; opacity: 0; }
@@ -112,6 +119,104 @@
         #presenca.ferr-jogo #arcos { opacity: .12; }
         #presenca.ferr-jogo #rosto-txt { text-shadow: 0 0 14px rgba(123,249,143,.7); }
 
+        /* 🚀 sacudir NÃO é tremer: quem move ela é o seu mouse (transform inline no JS).
+           O tremor de CSS foi embora — dava a sensação de "vibrou" e não de "puxei". */
+
+        /* 😨 MEDO: ela se ENCOLHE (as bolinhas recolhem) e o halo esfria. Vem depois das
+           regras de irritação de propósito: medo ganha da irritação na cor do halo. */
+        #presenca.medo #orbita-escala { transform: scale(.92); opacity: .5; }
+        #presenca.medo #arcos { opacity: .25; }
+
+        /* 😤 IRRITAÇÃO por nº de HISTÓRIAS ativas ao mesmo tempo (não por nº de objetos:
+           um enxame de foguete é UM problema; foguete + satélite são DOIS). A cabeça
+           esquenta e ela treme sozinha — tremor diferente do de quando VOCÊ sacode. */
+        #presenca.irrit-2 { --cor-halo: #ff8a4d; }
+        #presenca.irrit-3 { --cor-halo: #ff3b30; }
+        #presenca.irrit-2 svg, #presenca.irrit-2 #rosto-txt { animation: raiva .3s ease-in-out infinite; }
+        #presenca.irrit-3 svg, #presenca.irrit-3 #rosto-txt { animation: raiva .17s ease-in-out infinite; }
+        #presenca.medo { --cor-halo: #7c6ba8; }    /* roxo frio; vence a cor da irritação */
+
+        /* 😶 DESISTIU: ela vira de costas. O halo sai do vermelho pra um CINZA MORTO — raiva
+           é ela ainda ligando; cinza é ela ter parado. Como a cabeça é uma esfera de luz sem
+           detalhe, a nuca é só a cabeça sem rosto: o que você vê é a ausência.
+           Vem por último de propósito: vence a cor da irritação e do medo. */
+        #presenca.desistiu { --cor-halo: #45454f; }
+        #presenca.desistiu #rosto-txt {
+            transform: scaleX(0) translateX(30px);
+            opacity: 0;
+            transition: transform .45s cubic-bezier(.45, 0, .55, 1), opacity .4s ease;
+        }
+        #presenca.desistiu #orbita-escala { opacity: .16; }
+        #presenca.desistiu #arcos { opacity: .05; }
+        #presenca.desistiu #orbita { animation-duration: 200s; }   /* quase parada */
+        #presenca.desistiu #halo { opacity: .8; }
+        @keyframes raiva {
+            0%,100% { transform: translate(-0.8px, 0); }
+            50%     { transform: translate(0.8px, 0);  }
+        }
+
+        /* 🎮 LABORATÓRIO (konami) — botão que só existe depois do código, e o painel de
+           gatilhos. Serve pra testar as histórias sem esperar elas acontecerem sozinhas. */
+        #btn-lab {
+            position: fixed; top: 64px; right: 16px;
+            background: #11111a; border: 1px solid #2a4a2a; color: #7bf98f;
+            width: 40px; height: 40px; border-radius: 8px; cursor: pointer;
+            font-size: 1rem; display: none; align-items: center; justify-content: center;
+            z-index: 100; transition: background .2s, border-color .2s;
+            animation: lab-nasce .5s cubic-bezier(.2,.9,.3,1.5);
+        }
+        #btn-lab.ativo { display: flex; }
+        #btn-lab:hover { background: #0d2612; border-color: #7bf98f; }
+        @keyframes lab-nasce { from { transform: scale(0) rotate(-90deg); } to { transform: none; } }
+
+        #lab-panel {
+            position: fixed; top: 112px; right: 16px; z-index: 100;
+            background: #0f1520; border: 1px solid #2a4a2a; border-radius: 10px;
+            padding: 12px; width: 232px; display: none;
+            box-shadow: 0 8px 30px rgba(0,0,0,.5);
+        }
+        #lab-panel.aberto { display: block; }
+        .lab-titulo {
+            font-size: .68rem; text-transform: uppercase; letter-spacing: 1.4px;
+            color: #4a6a4a; margin: 10px 0 6px;
+        }
+        .lab-titulo:first-child { margin-top: 0; }
+        .lab-grade { display: flex; flex-wrap: wrap; gap: 5px; }
+        .lab-btn {
+            background: #16213e; border: 1px solid #2a3a5a; color: #9ecbff;
+            border-radius: 6px; padding: 5px 9px; cursor: pointer;
+            font-size: .76rem; font-family: inherit; transition: background .15s, color .15s;
+        }
+        .lab-btn:hover { background: #1a2a4e; color: #b4f9f8; }
+        /* botão de CARA: mostra a própria cara como rótulo, então precisa de fonte maior e
+           largura livre. O painel cresceu — daí o limite de altura com rolagem. */
+        .lab-cara {
+            background: #14182a; border: 1px solid #2a3a5a; color: #b4f9f8;
+            border-radius: 6px; padding: 4px 7px; cursor: pointer;
+            font-size: .92rem; font-family: inherit; line-height: 1.4;
+            white-space: nowrap; transition: background .15s, border-color .15s;
+        }
+        .lab-cara:hover { background: #1e2a4a; border-color: #7aa2f7; }
+        .lab-cara.posta { border-color: #7bf98f; color: #7bf98f; }
+        /* controles da boca: pra afinar olhando na tela em vez de chutar número no arquivo */
+        .lab-sld { display: flex; align-items: center; gap: 6px; margin: 3px 0; font-size: .68rem; }
+        .lab-sld label { color: #7a8aa8; width: 62px; flex: none; }
+        .lab-sld input { flex: 1; height: 3px; accent-color: #7aa2f7; }
+        .lab-sld span { color: #b4f9f8; width: 34px; text-align: right; flex: none; }
+        #lab-valores {
+            margin-top: 6px; padding: 6px; border-radius: 6px; background: #0b0f18;
+            border: 1px solid #23304a; color: #7bf98f; font-size: .62rem;
+            white-space: pre-wrap; word-break: break-all; cursor: pointer;
+        }
+        #lab-panel { max-height: 78vh; overflow-y: auto; }
+        .lab-btn.limpar { border-color: #5a2a2a; color: #ff9e9e; }
+        .lab-btn.limpar:hover { background: #2a1216; }
+
+        /* ☄️ COMETÃO: o tranco da martelada NÃO mora aqui — ver marretar() no JS.
+           Uma animação de transform no CSS SUBSTITUI o atributo transform do SVG, e o
+           cometão é posicionado por atributo: ele perdia o translate e ia parar na origem
+           do viewBox durante a batida. */
+
         /* tranco do clique: ela leva um susto de verdade. O rosto é uma camada HTML POR CIMA
            do SVG, então não herda o transform dele — precisa levar o tranco junto, senão só
            a cabeça balança e a cara fica parada no meio. */
@@ -135,6 +240,30 @@
             transition: opacity .28s ease, transform .28s cubic-bezier(.2,.9,.3,1.5);
         }
         #rosto-txt.trocando { opacity: 0; transform: scale(.86); }
+        /* medidas da boca num lugar só. --boca-sobe é o vertical-align (mais negativo DESCE)
+           e o JS reescreve ele por cara: cada glifo de olho se assenta numa altura diferente
+           na linha, então um valor único deixava a boca colada nuns e solta noutros.
+           Ver OLHO_DESCE no script — é lá que se afina glifo a glifo. */
+        #rosto-txt { --boca-larg: .58em; --boca-alt: .40em; --boca-sobe: -.13em; --boca-traco: 7; }
+        /* os três pedaços da cara. inline (não inline-block) de propósito: qualquer coisa que
+           gere caixa própria mudaria o espaçamento e a cara sairia diferente da de hoje. */
+        #rosto-txt .olho-e, #rosto-txt .olho-d { display: inline; }
+        /* A BOCA é VETORIAL. Trocar glifo não funcionava: cada caractere tem largura própria,
+           então a cara inteira tremia — e mesmo travando a vaga, glifo de boca não abre "um
+           pouco", ele pula entre formas prontas. Aqui ela é um <path> de 3 números, então
+           abre contínuo e a curva da emoção NÃO se perde enquanto ela fala. */
+        #rosto-txt .boca {
+            display: inline-block; width: var(--boca-larg); height: var(--boca-alt);
+            vertical-align: var(--boca-sobe);
+        }
+        /* dimensionar SÓ o span não bastava: um <svg> inline sem width/height cai no tamanho
+           padrão de elemento substituído (300x150px). Ele estourava a vaga e empurrava os
+           olhos pra baixo — a boca aparecia enorme, acima e à direita da cara. */
+        #rosto-txt .boca svg { display: block; width: 100%; height: 100%; overflow: visible; }
+        #rosto-txt .boca path {
+            fill: currentColor; stroke: currentColor;   /* segue a cor do rosto sozinha */
+            stroke-width: var(--boca-traco, 7); stroke-linejoin: round; stroke-linecap: round;
+        }
         /* view-box + origem no centro do viewBox: arco tem bbox DESCENTRADO, então
            'fill-box/center' faria ele bambear em vez de girar no eixo. */
         #halo, #orbita, #orbita-escala, #arcos, #arco-1, #arco-2, #arco-3, #ondas circle {
@@ -168,14 +297,6 @@
         #presenca.afk #arcos, #presenca.afk #orbita-escala { opacity: .2; transform: scale(.9); }
         #presenca.afk #rosto  { opacity: .55; }
 
-        /* 🥱 bocejo: respiração funda (cabeça infla) e tudo desacelera junto */
-        #presenca.bocejando #halo   { animation-duration: 2.6s; }
-        #presenca.bocejando #arcos  { transform: scale(1.045); }
-        #presenca.bocejando #orbita-escala { transform: scale(1.03); opacity: .5; }
-        #presenca.bocejando #arco-1 { animation-duration: 110s; }
-        #presenca.bocejando #arco-2 { animation-duration: 90s;  }
-        #presenca.bocejando #arco-3 { animation-duration: 70s;  }
-
         /* 👂 ouvindo — tudo CONTRAI, fica atenta */
         .est-ouvindo #orbita { animation-duration: 16s; }
         .est-ouvindo #arco-1 { animation-duration: 20s; }
@@ -191,6 +312,23 @@
         .est-pensando #arco-3 { animation-duration: 1.9s;}
         .est-pensando #arcos  { opacity: 1; transform: scale(1.12); }
         .est-pensando #orbita-escala { opacity: 1; transform: scale(1.05); }
+        /* as 4 GRANDES piscam BRANCO, em sequência pela posição (--d-seq): dá a leitura de
+           algo sendo percorrido. Só as grandes — piscar as 16 vira ruído, não pensamento.
+           O :not(.com-ferramenta) é o que deixa os modos de ferramenta continuarem mandando
+           no anel: sem ele esta regra é mais específica e apagaria o equalizador e o radar.
+           Antes eram cinco :not(), um por ferramenta — combinatório: ferramenta nova obrigava
+           a editar TODA regra de estado. O marcador único resolve com uma classe só. */
+        #presenca.est-pensando:not(.com-ferramenta)
+            #orbita rect:nth-child(4n+1) {
+            animation: pens-pisca 1.3s ease-in-out infinite;
+            animation-delay: calc(var(--d-seq) * -1.3s);
+        }
+        @keyframes pens-pisca {
+            /* o drop-shadow transparente (em vez de 'none') é o que faz o brilho ENTRAR
+               suave: de 'none' pra filtro o navegador não tem o que interpolar */
+            0%, 100% { fill: #b4f9f8; opacity: .45; filter: drop-shadow(0 0 0 rgba(255,255,255,0)); }
+            50%      { fill: #ffffff; opacity: 1;   filter: drop-shadow(0 0 6px rgba(255,255,255,.85)); }
+        }
 
         /* ═══ FERRAMENTA: 🎵 SPOTIFY — bolinhas viram EQUALIZADOR e os arcos batem no ritmo.
                A cabeça e o rosto ficam intactos (identidade não muda). ═══ */
@@ -267,6 +405,32 @@
         .est-falando #arco-2 { animation-duration: 10s; }
         .est-falando #arco-3 { animation-duration: 7s;  }
         .est-falando #arcos, .est-falando #orbita-escala { opacity: .95; transform: scale(1); }
+        /* INVERSÃO das bolinhas + amarelo radiante. Não dá pra mexer em width/height: os
+           rects têm x/y já calculados pra centralizar naquele tamanho, então mudar a
+           geometria faria elas crescerem pro canto. Como cada rect tem transform-box:
+           fill-box com origem no centro, o scale() inverte de dentro pra fora e no lugar.
+           Os fatores são a razão exata dos lados (2.4 e 1.4): pequena vira grande e
+           vice-versa, sem chutar número.
+           O :not(.com-ferramenta) pelo mesmo motivo do pensando — sem ele esta regra passa
+           por cima do equalizador, do radar e dos outros. */
+        #presenca.est-falando:not(.com-ferramenta)
+            #orbita rect {
+            fill: #ffd23f;
+            transform: scale(1.714);        /* 2.4/1.4 — as PEQUENAS assumem o tamanho grande */
+            opacity: .9;
+            animation: fala-radiante 1.15s ease-in-out infinite alternate;
+            animation-delay: calc(var(--d-seq) * -1.15s);
+        }
+        #presenca.est-falando:not(.com-ferramenta)
+            #orbita rect:nth-child(4n+1) {
+            transform: scale(.583);         /* 1.4/2.4 — e as GRANDES encolhem */
+            opacity: .5;
+        }
+        /* o radiante: o brilho respira, o tamanho fica quieto (senão briga com a inversão) */
+        @keyframes fala-radiante {
+            from { filter: drop-shadow(0 0 2px rgba(255,210,63,.35)); }
+            to   { filter: drop-shadow(0 0 7px rgba(255,210,63,.95)); }
+        }
 
         /* Termo do GIF — aparece só ao passar o mouse sobre o GIF */
         #gif-termo {
@@ -1083,6 +1247,55 @@
         </div>
     </div>
 
+    <button id="btn-lab" title="Laboratório (você achou!)">🧪</button>
+    <div id="lab-panel">
+        <div class="lab-titulo">Histórias</div>
+        <div class="lab-grade">
+            <button class="lab-btn" data-lab="foguete">🚀 foguete</button>
+            <button class="lab-btn" data-lab="satelite">🛰️ satélite</button>
+            <button class="lab-btn" data-lab="cometao">☄️ cometão</button>
+            <button class="lab-btn" data-lab="sujeira">🌫️ fuligem</button>
+            <button class="lab-btn" data-lab="chuva">🌠 chuva</button>
+            <button class="lab-btn" data-lab="invasao">🛸 invasão</button>
+            <button class="lab-btn" data-lab="desistir">😶 desistir</button>
+        </div>
+        <div class="lab-titulo">Passageiros</div>
+        <div class="lab-grade">
+            <button class="lab-btn" data-lab="cometa">☄️ cometa</button>
+            <button class="lab-btn" data-lab="ovni">🛸 OVNI</button>
+            <button class="lab-btn" data-lab="confete">🎉 confete</button>
+        </div>
+        <div class="lab-titulo">Ferramentas</div>
+        <div class="lab-grade">
+            <button class="lab-btn" data-lab="spotify">🎵 música</button>
+            <button class="lab-btn" data-lab="radar">🔍 web</button>
+            <button class="lab-btn" data-lab="video">🎬 vídeo</button>
+            <button class="lab-btn" data-lab="tela">👁️ tela</button>
+            <button class="lab-btn" data-lab="jogo">🎮 jogo</button>
+        </div>
+        <div class="lab-titulo">Estados</div>
+        <div class="lab-grade">
+            <button class="lab-btn" data-lab="ouvindo">👂 ouvindo</button>
+            <button class="lab-btn" data-lab="pensando">💭 pensando</button>
+            <button class="lab-btn" data-lab="falando">🗣️ falando</button>
+            <button class="lab-btn" data-lab="afk">💤 AFK</button>
+            <button class="lab-btn" data-lab="noite">🌙 noite</button>
+        </div>
+        <div class="lab-titulo">Boca — afinar</div>
+        <div id="lab-boca"></div>
+        <div id="lab-valores" title="clique pra copiar">—</div>
+        <div class="lab-titulo">Caras — repouso e estados</div>
+        <div class="lab-grade" id="lab-caras-base"></div>
+        <div class="lab-titulo">Caras — histórias e reações</div>
+        <div class="lab-grade" id="lab-caras-hist"></div>
+        <div class="lab-titulo">Climas (os que a Luna escolhe)</div>
+        <div class="lab-grade" id="lab-caras-clima"></div>
+        <div class="lab-titulo">&nbsp;</div>
+        <div class="lab-grade">
+            <button class="lab-btn limpar" data-lab="limpar">✕ limpar tudo</button>
+        </div>
+    </div>
+
     <button id="btn-config" title="Configurações">⚙<span id="config-badge"></span></button>
     <div id="config-overlay"></div>
 
@@ -1291,6 +1504,15 @@
                     <mask id="m-luar">
                         <circle cx="100" cy="100" r="90" fill="url(#g-luar)"/>
                     </mask>
+                    <linearGradient id="g-feixe" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%"   stop-color="#b4f9f8" stop-opacity="0.85"/>
+                        <stop offset="100%" stop-color="#7aa2f7" stop-opacity="0.05"/>
+                    </linearGradient>
+                    <linearGradient id="g-fogo" x1="0" y1="1" x2="0" y2="0">
+                        <stop offset="0%"   stop-color="#ffd580" stop-opacity="0.95"/>
+                        <stop offset="45%"  stop-color="#ff8a4d" stop-opacity="0.7"/>
+                        <stop offset="100%" stop-color="#ff3b30" stop-opacity="0"/>
+                    </linearGradient>
                     <linearGradient id="g-cauda" x1="0" y1="0" x2="1" y2="0">
                         <stop offset="0%"   stop-color="#dff0ff" stop-opacity="0"/>
                         <stop offset="100%" stop-color="#ffffff" stop-opacity="0.9"/>
@@ -1312,6 +1534,11 @@
                     <line x1="-30" y1="0" x2="0" y2="0" stroke="url(#g-cauda)" stroke-width="1.5" stroke-linecap="round"/>
                     <circle cx="0" cy="0" r="1.7" fill="#ffffff"/>
                 </g>
+                <!-- CHUVA DE ASTEROIDES: passam atras dela; a historia se resolve NAO mexendo -->
+                <g id="asteroides"></g>
+                <!-- INVASAO: uma frota rondando; se voce se APROXIMAR eles fecham o cerco -->
+                <g id="frota"></g>
+                <g id="feixes"></g>
                 <circle id="halo" cx="100" cy="100" r="66" fill="url(#g-halo)"/>
                 <g id="orbita-escala"><g id="orbita"></g></g>
                 <path id="scanner" fill="none" stroke="#b4f9f8" stroke-width="1.8" stroke-linecap="round" opacity="0"/>
@@ -1333,6 +1560,14 @@
                     <rect x="60" y="150" width="80" height="4.5" rx="2.2" fill="#2a2a3a"/>
                     <rect id="vida-barra" x="60" y="150" width="80" height="4.5" rx="2.2" fill="#7bf98f"/>
                 </g>
+                <!-- FOGUETES: pousam nela e incomodam até você chacoalhar -->
+                <g id="foguetes"></g>
+                <!-- SATELITES: ficam em ORBITA (nao pousam) e saem clicando um a um -->
+                <g id="satelites"></g>
+                <!-- COMETAO: cai nela, GRUDA, e so sai a marteladas -->
+                <g id="cometao" opacity="0" style="cursor:pointer"></g>
+                <!-- FULIGEM: manchas grudadas nela; saem esfregando o mouse (sem clicar) -->
+                <g id="sujeira"></g>
                 <g id="ondas">
                     <circle cx="100" cy="100" r="70"/><circle cx="100" cy="100" r="70"/>
                     <circle cx="100" cy="100" r="70"/>
@@ -1340,7 +1575,9 @@
             </svg>
             <!-- O ROSTO dela: o kaomoji vive DENTRO dos anéis (os arcos viram cabeça/aura).
                  Segue o estado quando ela não está respondendo, e vira a reação quando responde. -->
-            <div id="rosto"><span id="rosto-txt">◜ᴗ◝</span></div>
+            <!-- cara de partida: uma das de repouso, pra não existir um rosto órfão fora do
+                 rodízio. O JS sorteia outra logo que carrega; esta é só o primeiro quadro. -->
+            <div id="rosto"><span id="rosto-txt">• ₃ •</span></div>
         </div>
 
         <!-- GIF (na gaveta — só volta se a regra do prompt voltar a emitir [gif:]) -->
@@ -1537,7 +1774,7 @@
         // Rosto padrão de cada estado (quando ela não está reagindo a nada)
         const ROSTO_ESTADO = {
             ouvindo:  '･ ᴗ ･',
-            pensando: '-,-',
+            pensando: '-⩊-',
         };
         // Parada, ela ALTERNA entre estas — cara única o tempo todo dava impressão de
         // congelada. Troca ao entrar em repouso e de tempos em tempos enquanto fica parada.
@@ -1558,7 +1795,9 @@
         function pararTrocaIdle() { clearInterval(_timerIdle); _timerIdle = null; }
         function iniciarTrocaIdle() {
             pararTrocaIdle();
-            _timerIdle = setInterval(() => { if (!_afk && !_reagindo) trocarRosto(rostoIdle()); }, IDLE_TROCA_MS);
+            _timerIdle = setInterval(() => {
+                if (!_afk && !_reagindo && !_chacoalhando && !historiasAtivas()) trocarRosto(rostoIdle());
+            }, IDLE_TROCA_MS);
         }
         let _rostoReacao = null;      // último kaomoji que ELA escolheu
         let _timerSono = null;
@@ -1569,7 +1808,58 @@
         //     ela fica ~25s com a cara da reação depois de falar. ═══
         const _RE_COMB = /[̀-ͯ᪰͜͡-᫿⃐-⃿]/;
         const _RE_NAO_OLHO = /[\s"';,.]/;
-        let _rostoAtual = '◜ᴗ◝';
+        let _rostoAtual = ROSTOS_IDLE[ROSTOS_IDLE.length - 1], _timerTroca = null;   // = o do HTML
+        // Ciclo de fala. NÃO é lip-sync: o áudio do TTS toca na máquina, não no navegador,
+        // então o front não tem sinal pra sincronizar. É abertura sorteada com ritmo
+        // irregular — regular demais lê como robô. Só a ABERTURA se mexe: a curvatura é da
+        // emoção e fica quieta, que é o motivo de a boca ser vetorial.
+        const FALA_ABRE_MIN = 0.06, FALA_ABRE_MAX = 0.85;
+        let _bocaTimer = null, _animBoca = null, _falandoBoca = false;
+
+        function comecarBoca() {
+            if (_falandoBoca) return;
+            _falandoBoca = true;
+            const passo = () => {
+                const alvo = FALA_ABRE_MIN + Math.random() * (FALA_ABRE_MAX - FALA_ABRE_MIN);
+                const dur = 70 + Math.random() * 90;
+                if (TEM_ANIME) {
+                    if (_animBoca) _animBoca.pause();
+                    const t = { a: _bocaAbre };
+                    _animBoca = anime({
+                        targets: t, a: alvo, duration: dur, easing: 'easeOutQuad',
+                        update: () => { _bocaAbre = t.a; desenharBoca(); },
+                    });
+                } else { _bocaAbre = alvo; desenharBoca(); }
+                _bocaTimer = setTimeout(passo, dur + 30 + Math.random() * 70);
+            };
+            passo();
+        }
+
+        function pararBoca() {
+            if (!_falandoBoca) return;
+            _falandoBoca = false;
+            clearTimeout(_bocaTimer); _bocaTimer = null;
+            if (_animBoca) { _animBoca.pause(); _animBoca = null; }
+            _bocaAbre = 0;
+            desenharBoca();                  // volta pra abertura de repouso da cara atual
+        }
+
+        // ═══ QUEM PISCA — escolhido cara a cara. Tem uma regra por trás: olho que JÁ está
+        //     fechado ou franzido (ᵔ ꈍ ≖ ￢ ╥ ◞ T ᗒ) não tem o que fechar, e trocá-lo por um
+        //     traço vira um tremeliqueLe sem leitura nenhuma. Quem pisca é quem tem olho
+        //     ABERTO. Fora isso: a de pensar fica parada de propósito, e as de raiva/medo não
+        //     piscam porque olho fixo é parte do que faz elas assustarem.
+        //     Vale pro piscar E pro cafuné (fechar olho já fechado não faria nada mesmo). ═══
+        const NAO_PISCA = new Set([
+            'ᵔ ᵕ ᵔ', '╥‸╥', '◞_◟', 'ꈍ◡ꈍ', '≖_≖', '￢_￢', 'T_T',   // olho já franzido/fechado
+            '-⩊-',                                                  // pensando: estática
+            '｀皿´', '｀Д´', '಄ᆺ಄', '°ᯅ°',                          // raiva, sacudida, medo
+            'ᗒ_ᗕ', '>_<', '- _ -',                                  // reações de olho apertado
+            '_　_ 💤',                                              // AFK: já está de olho fechado
+        ]);
+        function podePiscar(cara) {
+            return !NAO_PISCA.has(cara) && !!versaoPiscada(cara);
+        }
 
         function versaoPiscada(face) {
             const ch = Array.from(face || '');
@@ -1586,12 +1876,13 @@
         function piscar() {
             const el = document.getElementById('rosto-txt');
             // reagindo a um clique tem sequência própria de piscada — não atropela
-            const fechado = (_afk || _reagindo) ? null : versaoPiscada(_rostoAtual);
+            const fechado = (_afk || _reagindo || _chacoalhando || _medo || _desistiu
+                             || !podePiscar(_rostoAtual)) ? null : versaoPiscada(_rostoAtual);
             if (el && fechado) {
                 const eraEsse = _rostoAtual;
-                el.textContent = fechado;                                // instantâneo, sem transição
+                pintarRosto(fechado, eraEsse);                           // instantâneo, sem transição
                 setTimeout(() => {
-                    if (el.textContent === fechado && _rostoAtual === eraEsse) el.textContent = eraEsse;
+                    if (el.textContent === fechado && _rostoAtual === eraEsse) pintarRosto(eraEsse, eraEsse);
                 }, 120);
             }
             // 22% das vezes agenda o próximo pra JÁ: é isso que vira piscada dupla
@@ -1600,27 +1891,125 @@
         }
         setTimeout(piscar, 2500);
 
+        // Sorteia a cara de partida em vez de abrir sempre igual. Vai num setTimeout(0) de
+        // propósito: rostoIdle() lê _jogoAtivo, que é declarado bem mais abaixo — chamar aqui
+        // direto cairia na zona morta do let e derrubaria o script inteiro.
+        setTimeout(() => rostoDireto(rostoIdle()), 0);
+
+        // ═══ 👄 A BOCA — até aqui a cara era UMA string, e falar SUBSTITUÍA a cara inteira:
+        //     ela não conseguia estar brava e falando ao mesmo tempo. Agora olho e boca são
+        //     partes separadas: a emoção mora nos olhos, e falar mexe só na boca.
+        //     A premissa já estava no código sem estar declarada — versaoPiscada() sempre
+        //     tratou o primeiro e o último caractere como olhos, logo o miolo já era a boca.
+        //     Aqui isso deixa de ser suposição escondida e vira estrutura.
+        //     O corte é nos MESMOS limites de antes e os espaços ficam DENTRO da boca, então
+        //     o texto renderizado sai caractere por caractere igual ao de hoje — spans inline
+        //     não acrescentam espaçamento. Era o risco de kerning, e ele não existe.
+        //     Cara que não dá pra partir (acento combinante, emoji) continua sendo desenhada
+        //     inteira, como sempre foi: perde a boca animada, não quebra.
+        // As caras de REPOUSO ficam de fora da boca vetorial e mantêm o glifo original
+        // (⩊, 𐃷, ₃) desenhado como texto. Elas nunca falam — ela sempre troca de cara antes —
+        // então trocar o kaomoji delas por um <path> só perderia o desenho que você escolheu,
+        // sem ganhar nada em troca. O caminho de "desenha inteira" já existia pro AFK.
+        // Também a de PENSAR (ela não fala enquanto pensa, e mexer a boca ali dava a impressão
+        // de que estava respondendo antes da hora) e a de MEDO: o ᯅ já É uma boca de pavor
+        // desenhada, e trocá-la pela vetorial deixava a cara em ° _ °, que não assusta ninguém.
+        // Montado na PRIMEIRA chamada, não na declaração: ROSTO_MEDO nasce bem mais abaixo no
+        // arquivo, e um `new Set([... ROSTO_MEDO])` aqui em cima cai na zona morta do const e
+        // derruba o script inteiro. O harness pegou isso antes de virar tela preta.
+        let _inteiro = null;
+        function ehRostoInteiro(cara) {
+            if (!_inteiro) _inteiro = new Set([...ROSTOS_IDLE, ROSTO_ESTADO.pensando, ROSTO_MEDO]);
+            return _inteiro.has(cara);
+        }
+
+        function partirRosto(txt) {
+            const ch = Array.from(txt || '');
+            if (!ch.length) return null;
+            if (ch.some(c => _RE_COMB.test(c))) return null;             // acento combinante
+            if (ch.some(c => c.codePointAt(0) > 0x1F000)) return null;   // emoji (o AFK)
+            let i = 0, j = ch.length - 1;
+            while (i < j && _RE_NAO_OLHO.test(ch[i])) i++;
+            while (j > i && _RE_NAO_OLHO.test(ch[j])) j--;
+            if (i >= j) return null;
+            const boca = ch.slice(i + 1, j).join('');
+            if (!boca.trim()) return null;
+            // o que sobra nas pontas viaja junto com o olho (o " do ¬_¬" e o ; do ಄ᆺ಄;),
+            // então esq + boca + dir reconstrói a string ORIGINAL, sem perder caractere
+            return [ch.slice(0, i + 1).join(''), boca, ch.slice(j).join('')];
+        }
+
+        // ÚNICO lugar que escreve o rosto no DOM. Todo o resto passa por aqui — senão um
+        // textContent solto apaga os spans e a boca some.
+        //
+        // `base` é a cara de ORIGEM, quando `txt` é uma variação dela (piscada, cafuné). O modo
+        // de desenho tem que sair da BASE, não do que está na tela: piscar troca os olhos e
+        // gera outra string — • ₃ • vira - ₃ - — que cairia no modo errado no meio da piscada,
+        // e a boca de repouso pulava pra vetorial só enquanto os olhos estavam fechados.
+        // Comparar a base também evita uma colisão real: a piscada de ᗜ⩊ᗜ é -⩊-, que por acaso
+        // é a cara de "pensando". Ir pela string faria a de pensar herdar o modo do repouso.
+        function pintarRosto(txt, base) {
+            const el = document.getElementById('rosto-txt');
+            if (!el || !txt) return;
+            const partes = ehRostoInteiro(base || txt) ? null : partirRosto(txt);
+            if (!partes) { _bocaMod = null; el.textContent = txt; return; }   // sem boca: inteira
+            let e = el.querySelector('.olho-e');
+            if (!e) {                                        // primeira vez: monta a estrutura
+                el.textContent = '';
+                const cria = (cls) => { const sp = document.createElement('span'); sp.className = cls; el.appendChild(sp); return sp; };
+                e = cria('olho-e');
+                const vaga = cria('boca');
+                // o SVG da boca vive no lugar exato onde o glifo do miolo ficava.
+                // width/height explícitos além do CSS: sem eles um <svg> inline nasce 300x150
+                // e, num quadro antes do CSS pegar, a cara pula
+                vaga.innerHTML = '<svg viewBox="-50 -30 100 60" width="100%" height="100%" '
+                               + 'preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">'
+                               + '<path d=""/></svg>';
+                cria('olho-d');
+            }
+            el.querySelector('.olho-e').textContent = partes[0];
+            el.querySelector('.olho-d').textContent = partes[2];
+            _bocaForma = formaBoca(partes[1]);   // o miolo escolhe a FORMA, não é desenhado
+            el.style.setProperty('--boca-sobe', alturaBoca(partes[0]));   // ...e o olho, a ALTURA
+            ligarModulador(base || txt);         // ...e a cara BASE diz se tem animação própria
+            desenharBoca();
+        }
+
         function trocarRosto(txt) {
             const el = document.getElementById('rosto-txt');
             _rostoAtual = txt;
             if (!el || !txt || el.textContent === txt) return;
+            clearTimeout(_timerTroca);   // troca pendente NÃO pode aterrissar depois desta
             el.classList.add('trocando');
-            setTimeout(() => {
-                el.textContent = txt;
+            _timerTroca = setTimeout(() => {
+                pintarRosto(txt);
                 requestAnimationFrame(() => el.classList.remove('trocando'));
             }, 260);
+        }
+
+        // Troca SECA, sem transição — é o que as sequências de reação usam (cutucão, volta da
+        // tontura). Escrever direto no textContent deixava _rostoAtual mentindo e permitia que
+        // uma troca suave pendente sobrescrevesse o passo da sequência.
+        function rostoDireto(cara) {
+            const el = document.getElementById('rosto-txt');
+            if (!el) return;
+            clearTimeout(_timerTroca);
+            _rostoAtual = cara;
+            el.classList.remove('trocando');
+            pintarRosto(cara);
         }
 
         function aplicarPresenca(estado) {
             const el = document.getElementById('presenca');
             if (!el) return;
             if (!PRES_ESTADOS.includes(estado)) estado = 'dormindo';
+            if (estado !== 'falando') pararBoca();     // parou de falar: a boca descansa
             PRES_ESTADOS.forEach(e => el.classList.remove('est-' + e));
             el.classList.add('est-' + estado);
 
             clearTimeout(_timerSono);
             if (estado === 'ouvindo' || estado === 'pensando') {
-                _ultimaInteracao = Date.now();     // relógio do bocejo/expiração da ferramenta
+                _ultimaInteracao = Date.now();     // relógio da expiração da ferramenta
                 _rostoReacao = null;                 // conversa nova: esquece a reação anterior
                 limparFerramenta();                  // ...e o modo da última ferramenta
                 _afk = false; el.classList.remove('afk');
@@ -1629,9 +2018,15 @@
             } else if (estado === 'falando') {
                 pararTrocaIdle();
                 trocarRosto(_rostoReacao || ROSTO_ESTADO.pensando);
+                comecarBoca();
             } else {                                  // parada: segura a reação um pouco e repousa
                 _timerSono = setTimeout(() => {
-                    if (!_afk) { trocarRosto(rostoIdle()); iniciarTrocaIdle(); }
+                    if (_afk) return;
+                    // se ela está no meio de uma reação (tontura, cutucão), o rodízio de idle
+                    // começa mas NÃO troca a cara — quem devolve é a própria sequência
+                    if (historiasAtivas()) atualizarIrritacao(true);          // tem coisa nela: não relaxa
+                    else if (!_reagindo && !_chacoalhando) trocarRosto(rostoIdle());
+                    iniciarTrocaIdle();
                 }, 25000);
             }
         }
@@ -1649,8 +2044,18 @@
         //     um instância nova a cada pixel. São 10 linhas e fica mais liso. ═══
         // declarados aqui em cima porque o handler de mousemove (logo abaixo) já os usa —
         // `let`/`const` não são içados, e usar antes da declaração derruba o script inteiro
-        // declarado aqui em cima: o laço do olhar roda na CARGA e consulta isto via vaguear()
+        // declarados aqui em cima: o handler de mousemove (mais abaixo) já os usa, e
+        // let/const não são içados — usar antes da declaração derruba o script inteiro
         let _jogoAtivo = false;
+        let _foguetesNaCabeca = 0;
+        let _botaoPreso = false, _arrastou = false;   // sacudir = AGARRAR e chacoalhar
+        // AGARRAR E PUXAR: segurando o botão sobre a cabeça, ela vem junto com o cursor —
+        // com resistência (tem peso) e teto de deslocamento. Ao soltar, volta no elástico.
+        const ARRASTO_MAX = 52, ARRASTO_RESIST = 0.62;
+        let _pegou = false, _pegouX = 0, _pegouY = 0, _arrX = 0, _arrY = 0, _animVolta = null;
+        let _satelitesNaOrbita = 0, _cometaoNaCabeca = 0, _cometaoTimer = null;
+        let _sujeiraNaCara = 0, _medo = false, _invasao = false;
+        let _desistiu = false, _desdeTres = 0;
         const AFAGO_RAIO = 58;        // rosto + o alto da cabeça
         const AFAGO_SOBE = 14;        // desloca a área pra CIMA: carinho é na cabeça,
                                       // não embaixo do queixo
@@ -1683,14 +2088,39 @@
             _olhoAlvoY = (dy / d) * OLHAR_MAX * forca;
             _mouseTs = Date.now();                          // você mexeu: ela te olha
             // CARINHO: é o mouse ARRASTANDO sobre o rosto dela (mouse parado não é afago).
-            const mexeu = Math.hypot(e.clientX - _mouseX, e.clientY - _mouseY) > 1.5;
+            // guarda o percurso ANTES de atualizar a posicao — medir depois dava sempre ZERO
+            // e a sacudida nunca acumulava (bug: o foguete não saía de jeito nenhum)
+            const percorreu = Math.hypot(e.clientX - _mouseX, e.clientY - _mouseY);
+            const mexeu = percorreu > 1.5;
             _mouseX = e.clientX; _mouseY = e.clientY;
             const svgA = document.querySelector('#presenca svg');
-            if (mexeu && svgA) {
+            if (_pegou) {
+                // Já agarrou: daqui pra frente NÃO se testa mais o raio. Se testasse, ela
+                // escaparia da mão no meio do puxão (o alvo se move junto com ela).
+                _arrX = limitar((e.clientX - _pegouX) * ARRASTO_RESIST);
+                _arrY = limitar((e.clientY - _pegouY) * ARRASTO_RESIST);
+                aplicarArrasto();
+                if (Math.hypot(_arrX, _arrY) > 4) _arrastou = true;   // puxão, não cutucão
+                registrarMovimento(percorreu);                       // tontura vale sempre
+            } else if (mexeu && svgA) {
                 const rA = svgA.getBoundingClientRect();
-                const dA = Math.hypot(e.clientX - (rA.left + rA.width / 2),
-                                      e.clientY - (rA.top + rA.height / 2 - AFAGO_SOBE));
-                if (dA <= AFAGO_RAIO) _afagoUltimo = Date.now();
+                // ESFREGAR passa na frente do carinho: enquanto ela está suja, a mão passando
+                // por cima está limpando, não fazendo cafuné. Cafuné em cima da fuligem seria
+                // esquisito — e tiraria o único jeito de resolver a história.
+                if (_medo) {
+                    // a chuva só liga pra quem ENCOSTA nela; a invasão liga pra quem CHEGA
+                    // PERTO — os discos são atraídos pelo movimento do cursor por perto
+                    const raio = _invasao ? INV_ATENCAO : AFAGO_RAIO;
+                    const dM = Math.hypot(e.clientX - (rA.left + rA.width / 2),
+                                          e.clientY - (rA.top + rA.height / 2 - AFAGO_SOBE));
+                    if (dM <= raio) atrapalhar();
+                } else if (_sujeiraNaCara && esfregar(e.clientX, e.clientY, rA, percorreu)) {
+                    _afagoUltimo = 0;
+                } else if (!_foguetesNaCabeca && !_sujeiraNaCara) {
+                    const dA = Math.hypot(e.clientX - (rA.left + rA.width / 2),
+                                          e.clientY - (rA.top + rA.height / 2 - AFAGO_SOBE));
+                    if (dA <= AFAGO_RAIO) _afagoUltimo = Date.now();   // mão de leve = carinho
+                }
             }
         });
 
@@ -1720,7 +2150,7 @@
             const seguindoMouse = (agora - _mouseTs) < OLHAR_OCIOSO_MS;
             if (!seguindoMouse && !_olharObjeto) vaguear(agora);
             let alvoX, alvoY;
-            if (_afk) {                       // dormindo não olha nada
+            if (_afk || _desistiu) {          // dormindo, ou de costas: não olha nada
                 alvoX = alvoY = 0;
             } else if (_olharObjeto) {        // tem coisa passando no céu: acompanha
                 const dx = _olharObjeto.x - 100, dy = _olharObjeto.y - 100;
@@ -1848,6 +2278,7 @@
             if (ligar === _jogoAtivo) return;
             _jogoAtivo = ligar;
             pres.classList.toggle('ferr-jogo', ligar);
+            sincronizarFerramenta();
 
             [_animControle, _animVida].forEach(a => a && a.pause());
             _animControle = _animVida = null;
@@ -1913,17 +2344,17 @@
             const el = document.getElementById('rosto-txt');
             if (!pres || !el) return;
             const acariciando = _afagoUltimo && (Date.now() - _afagoUltimo) < AFAGO_JANELA;
-            const deve = acariciando && !_afk && !_reagindo && !_bocejando;
+            const deve = acariciando && !_afk && !_reagindo && !_sujeiraNaCara && !_medo;
 
             if (deve && !_afagando) {
                 _afagando = true;
                 pres.classList.add('afago');
-                const fechado = versaoPiscada(_rostoAtual);
-                if (fechado) el.textContent = fechado;      // olhos fechados, relaxada
+                const fechado = podePiscar(_rostoAtual) ? versaoPiscada(_rostoAtual) : null;
+                if (fechado) pintarRosto(fechado, _rostoAtual);   // olhos fechados, relaxada
             } else if (!deve && _afagando) {
                 _afagando = false;
                 pres.classList.remove('afago');
-                el.textContent = _rostoAtual;               // reabre os olhos
+                pintarRosto(_rostoAtual);                   // reabre os olhos
             }
         }
         setInterval(checarAfago, 200);
@@ -1958,7 +2389,7 @@
             setTimeout(() => anime({ targets: g, opacity: 0, duration: 800, easing: 'linear' }), 9200);
         }
         (function agendarOvni() {
-            setTimeout(() => { ovni(); agendarOvni(); }, 240000 + Math.random() * 480000);
+            setTimeout(() => { ovni(); agendarOvni(); }, 840000 + Math.random() * 1200000);   // 14 a 34 min
         })();
 
         // ═══ ANIVERSÁRIO DA LUNA — 14/05, dia do primeiro commit do projeto. ═══
@@ -1967,6 +2398,1139 @@
             if (d.getMonth() !== 4 || d.getDate() !== 14) return;   // maio = mês 4
             setTimeout(() => { confete(); trocarRosto('◉‿◉'); }, 4000);
             setInterval(confete, 900000);                            // uma lembrancinha a cada 15min
+        })();
+
+        // ═══ 🚀 FOGUETES — o primeiro evento com OBJETIVO: chega, pousa nela, incomoda.
+        //     Se você ignorar, chegam mais. Pra tirar: CHACOALHAR (arrastar rápido, vai-e-vem).
+        //     Eles saem espantados, que nem mosquito. ═══
+        const FOG_MAX = 5;                 // teto: mais que isso vira bagunça
+        const FOG_INTERVALO = 32000;       // ignorou? chega mais um
+        const FOG_CHACOALHO = 220;         // px percorridos sobre ela pra contar como sacudida
+        const FOG_JANELA = 500;            // ...dentro desta janela (senão é carinho, não sacudida)
+        const ROSTO_INCOMODADA = 'Ò﹏Ó';
+        const ROSTO_CHACOALHO = '಄ᆺ಄';
+        let _foguetes = [], _fogTimer = null, _fogMov = [], _chacoalhando = false;
+
+        function novoFoguete() {
+            if (_desistiu) return;
+            const g = document.getElementById('foguetes');
+            if (!g || !TEM_ANIME || _foguetes.length >= FOG_MAX) return;
+
+            // pousa no ALTO da cabeça, espalhado (evita empilhar no mesmo ponto)
+            const ang = (-160 + Math.random() * 140) * Math.PI / 180;
+            const alvoX = 100 + Math.cos(ang) * 58;
+            const alvoY = 100 + Math.sin(ang) * 52;
+            const el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            el.innerHTML =
+                // chama na base: acesa na chegada e na decolagem, apagada enquanto pousado
+                '<path class="chama" d="M 0 4 Q 3.2 13 0 26 Q -3.2 13 0 4 Z" fill="url(#g-fogo)"/>'
+              + '<path d="M 0 -8 Q 3.4 -2.5 3.4 3 L -3.4 3 Q -3.4 -2.5 0 -8 Z" fill="#e6f3ff"/>'
+              + '<path d="M 3.4 0.6 L 6 4.2 L 3.4 4.2 Z" fill="#ff5a4d"/>'
+              + '<path d="M -3.4 0.6 L -6 4.2 L -3.4 4.2 Z" fill="#ff5a4d"/>'
+              + '<circle cx="0" cy="-2.6" r="1.5" fill="#7aa2f7"/>';
+            g.appendChild(el);
+
+            const de = { x: alvoX + (Math.random() < 0.5 ? -180 : 180), y: -40, r: 90 };
+            _foguetes.push({ el, x: alvoX, y: alvoY });
+            _foguetesNaCabeca = _foguetes.length;
+            atualizarIrritacao(false);
+            anime({
+                targets: de, x: alvoX, y: alvoY, r: Math.random() * 40 - 20,
+                duration: 1300, easing: 'easeOutQuad',
+                update: () => el.setAttribute('transform',
+                    `translate(${de.x.toFixed(1)} ${de.y.toFixed(1)}) rotate(${de.r.toFixed(1)})`),
+                complete: () => {
+                    const ch = el.querySelector('.chama');        // pousou: desliga o motor
+                    anime({ targets: ch, opacity: 0, duration: 300, easing: 'linear' });
+                    if (_foguetes.length) atualizarIrritacao(true);
+                },
+            });
+            clearTimeout(_fogTimer);
+            _fogTimer = setTimeout(novoFoguete, FOG_INTERVALO);   // ignorou -> vem mais
+        }
+
+        function espantarFoguetes() {
+            const g = document.getElementById('foguetes');
+            if (!g || !_foguetes.length) return;
+            clearTimeout(_fogTimer); _fogTimer = null;
+            _foguetes.forEach((f, i) => {
+                const ch = f.el.querySelector('.chama');          // decolou: religa o motor
+                anime({ targets: ch, opacity: 1, duration: 180, easing: 'linear' });
+                const ang = Math.random() * Math.PI * 2;
+                const de = { x: f.x, y: f.y, r: 0, o: 1 };
+                anime({
+                    targets: de,
+                    x: f.x + Math.cos(ang) * 260, y: f.y + Math.sin(ang) * 260,
+                    r: (Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 360),
+                    o: 0,
+                    duration: 800 + Math.random() * 500, delay: i * 60, easing: 'easeInQuad',
+                    update: () => {
+                        f.el.setAttribute('transform',
+                            `translate(${de.x.toFixed(1)} ${de.y.toFixed(1)}) rotate(${de.r.toFixed(1)})`);
+                        f.el.setAttribute('opacity', de.o.toFixed(2));
+                    },
+                    complete: () => f.el.remove(),
+                });
+            });
+            _foguetes = [];
+            _foguetesNaCabeca = 0;
+            // o motor cospe fuligem na decolagem: resolver uma história pode abrir outra
+            if (historiasAtivas() < HISTORIA_TETO && Math.random() < 0.5) setTimeout(() => sujar(1), 1500);
+            if (historiasAtivas()) {                 // ainda sobrou problema: continua irritada
+                atualizarIrritacao(true);
+            } else {
+                atualizarIrritacao(false);
+                setTimeout(() => trocarRosto('◉‿◉'), 700);        // aliviada
+                setTimeout(() => { if (!_afk && !_reagindo && !historiasAtivas()) trocarRosto(rostoIdle()); }, 3000);
+            }
+        }
+
+        // Chacoalhar = percorrer MUITA distância sobre ela em pouco tempo. É o que separa
+        // do carinho (que é lento). Vale SEMPRE: sacudiu, ela fica tonta — ter foguete só
+        // acrescenta uma consequência (eles caem), não é pré-requisito pra ela reagir.
+        function registrarMovimento(dist) {
+            if (_medo) { atrapalhar(); return; }    // sacudir no meio da chuva é atrapalhar
+            const agora = Date.now();
+            _fogMov.push([agora, dist]);
+            _fogMov = _fogMov.filter(([t]) => agora - t < FOG_JANELA);
+            const total = _fogMov.reduce((a, [, d]) => a + d, 0);
+            if (total > FOG_CHACOALHO * 0.35 && !_chacoalhando) {   // ficou tonta
+                _chacoalhando = true;
+                trocarRosto(ROSTO_CHACOALHO);
+            }
+            if (total > FOG_CHACOALHO && _foguetes.length) {        // sacudiu o bastante
+                _chacoalhando = false;
+                _fogMov = [];
+                espantarFoguetes();
+            }
+        }
+        setInterval(() => {                                         // parou de sacudir: relaxa
+            if (!_chacoalhando) return;
+            const agora = Date.now();
+            if (!_fogMov.length || agora - _fogMov[_fogMov.length - 1][0] > FOG_JANELA) {
+                _chacoalhando = false;
+                _fogMov = [];
+                if (historiasAtivas()) atualizarIrritacao(true);   // ainda tem problema nela
+                else voltarDaSacudida();                          // se recompõe aos poucos
+            }
+        }, 200);
+
+        // Voltar da tontura não pode ser um corte seco pro idle — ela precisa se RECOMPOR:
+        // tonta -> olhada perdida -> pisca -> olhada perdida -> normal. E se você sacudir de
+        // novo logo em seguida ela troca a olhada perdida por uma ENCARADA de julgamento,
+        // pela mesma lógica de insistência do cutucão (e usando o mesmo canal de timers, pra
+        // que um clique no meio disso assuma o controle em vez de brigar).
+        const SACUDIDA_JANELA = 9000;      // sacudidas dentro disso contam como insistência
+        const SACUDIDA_PACIENCIA = 1;      // da 2ª seguida em diante ela te julga
+        let _sacudidas = [];
+
+        function voltarDaSacudida() {
+            const el = document.getElementById('rosto-txt');
+            if (!el || _afk) return;                    // dormindo: deixa quieta
+
+            const agora = Date.now();
+            _sacudidas = _sacudidas.filter(t => agora - t < SACUDIDA_JANELA);
+            _sacudidas.push(agora);
+            const julgando = _sacudidas.length > SACUDIDA_PACIENCIA;
+
+            limparReacaoClique();
+            _reagindo = true;                           // segura o rodízio de idle e a piscada
+            _ultimaInteracao = agora;                   // sacudir é interação: adia o AFK
+
+            // A tonta já está na tela: ela SEGURA um tempo antes da recomposição começar —
+            // tontura que passa no instante em que você solta não parece tontura. Quem
+            // insistiu fica zonza mais tempo.
+            const tontura = julgando ? 2100 : 1500;
+
+            // [cara, quando aparece], contando a partir do fim da tontura
+            const passos = julgando
+                ? [['≖_≖', 0], ['- _ -', 4400], ['• _ •', 4520]]
+                : [['• _ •', 0], ['- _ -', 900],  ['• _ •', 1020]];
+            const fim = tontura + (julgando ? 6300 : 2400);
+
+            passos.forEach(([cara, quando]) =>
+                _timersClique.push(setTimeout(() => rostoDireto(cara), tontura + quando)));
+            _timersClique.push(setTimeout(() => {
+                _reagindo = false;
+                trocarRosto(rostoIdle());               // enfim, de volta ao normal
+            }, fim));
+        }
+
+        (function agendarFoguete() {   // raro: é um evento, não um enfeite
+            setTimeout(() => {
+                if (!_foguetes.length && podeComecarHistoria()) { marcarHistoria(); novoFoguete(); }
+                agendarFoguete();
+            }, 900000 + Math.random() * 1500000);      // 15 a 40 min
+        })();
+
+        // ═══ 🛰️ SATÉLITES — a segunda história. Diferente do foguete: eles não POUSAM,
+        //     ficam em ÓRBITA (com a mesma profundidade do controle do modo jogo) e cada um
+        //     sai com um CLIQUE nele. Verbo diferente pra problema diferente. ═══
+        const SAT_MAX = 4, SAT_INTERVALO = 34000;
+        let _satelites = [], _satTimer = null, _animSat = null, _orbSat = { a: 0 };
+
+        function novoSatelite() {
+            const g = document.getElementById('satelites');
+            if (!g || !TEM_ANIME || _satelites.length >= SAT_MAX) return;
+            const el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            el.setAttribute('style', 'cursor:pointer');
+            el.innerHTML =
+                // alvo INVISIVEL bem maior que o desenho: eram dificeis demais de acertar
+                '<circle cx="0" cy="0" r="14" fill="transparent"/>'
+              + '<rect x="-3.4" y="-2.4" width="6.8" height="4.8" rx="1" fill="#cfe0ff"/>'
+              + '<rect x="-9" y="-1.5" width="4.6" height="3" rx="0.6" fill="#7aa2f7"/>'
+              + '<rect x="4.4" y="-1.5" width="4.6" height="3" rx="0.6" fill="#7aa2f7"/>'
+              + '<circle cx="0" cy="0" r="1" fill="#ff5a4d"/>';
+            g.appendChild(el);
+            const sat = { el: el, fase: Math.random() * 360, tirando: false };
+            _satelites.push(sat);
+            _satelitesNaOrbita = _satelites.length;
+            el.addEventListener('click', function (ev) { ev.stopPropagation(); tirarSatelite(sat); });
+            atualizarIrritacao(true);
+            clearTimeout(_satTimer);
+            _satTimer = setTimeout(novoSatelite, SAT_INTERVALO);
+            if (!_animSat) girarSatelites();
+        }
+
+        function girarSatelites() {
+            const pres = document.getElementById('presenca');
+            const svgEl = pres && pres.querySelector('svg');
+            const halo = document.getElementById('halo');
+            const gSat = document.getElementById('satelites');
+            _orbSat.a = 0;
+            _animSat = anime({
+                targets: _orbSat, a: 360, duration: 13000, easing: 'linear', loop: true,
+                update: function () {
+                    let algumNaFrente = false;
+                    _satelites.forEach(function (sat) {
+                        if (sat.tirando) return;
+                        const rad = (_orbSat.a + sat.fase) * Math.PI / 180, R = 84;
+                        const sin = Math.sin(rad);
+                        if (sin >= 0) algumNaFrente = true;
+                        const x = 100 + Math.cos(rad) * R, y = 100 + sin * R * 0.4;
+                        const esc = 0.75 + (sin + 1) / 2 * 0.45;
+                        sat.el.setAttribute('transform',
+                            'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') scale(' + esc.toFixed(2) + ')');
+                        // mesma oclusão do controle: some ao passar por trás dela
+                        sat.el.setAttribute('opacity',
+                            (sin >= 0 ? 1 : Math.max(0, 1 + sin * 2.4)).toFixed(2));
+                        // e some pro CLIQUE também: não dá pra clicar no que está escondido
+                        sat.el.style.pointerEvents = sin < -0.15 ? 'none' : 'auto';
+                    });
+                    // a camada inteira vai pro fundo quando ninguém está na frente
+                    if (svgEl && gSat) {
+                        if (algumNaFrente) { if (gSat.nextSibling) svgEl.appendChild(gSat); }
+                        else if (gSat.nextSibling !== halo) svgEl.insertBefore(gSat, halo);
+                    }
+                },
+            });
+        }
+
+        function tirarSatelite(sat) {
+            if (sat.tirando) return;
+            sat.tirando = true;
+            const m = /translate\(([-\d.]+) ([-\d.]+)\)/.exec(sat.el.getAttribute('transform') || '');
+            const x0 = m ? +m[1] : 100, y0 = m ? +m[2] : 100;
+            const ang = Math.atan2(y0 - 100, x0 - 100);
+            const de = { x: x0, y: y0, r: 0, o: 1 };
+            anime({
+                targets: de, x: x0 + Math.cos(ang) * 220, y: y0 + Math.sin(ang) * 220,
+                r: 540, o: 0, duration: 800, easing: 'easeInQuad',
+                update: function () {
+                    sat.el.setAttribute('transform',
+                        'translate(' + de.x.toFixed(1) + ' ' + de.y.toFixed(1) + ') rotate(' + de.r.toFixed(0) + ')');
+                    sat.el.setAttribute('opacity', de.o.toFixed(2));
+                },
+                complete: function () {
+                    sat.el.remove();
+                    _satelites = _satelites.filter(function (x) { return x !== sat; });
+                    _satelitesNaOrbita = _satelites.length;
+                    if (!_satelites.length) {
+                        clearTimeout(_satTimer); _satTimer = null;
+                        if (_animSat) { _animSat.pause(); _animSat = null; }
+                        if (historiasAtivas()) {
+                            atualizarIrritacao(true);
+                        } else {
+                            atualizarIrritacao(false);
+                            trocarRosto('◉‿◉');
+                            setTimeout(function () { if (!_afk && !_reagindo && !historiasAtivas()) trocarRosto(rostoIdle()); }, 2600);
+                        }
+                    }
+                },
+            });
+        }
+
+        (function agendarSatelites() {
+            setTimeout(function () {
+                if (!_satelites.length && podeComecarHistoria()) { marcarHistoria(); novoSatelite(); }
+                agendarSatelites();
+            }, 1080000 + Math.random() * 1620000);     // 18 a 45 min
+        })();
+
+        // ═══ IRRITAÇÃO — sobe por quantas HISTÓRIAS estão ativas ao mesmo tempo, não por
+        //     quantos objetos. Uma função só manda no rosto e na intensidade, pra as duas
+        //     histórias não brigarem pelo controle da cara. ═══
+        const ROSTOS_IRRITADA = ['Ò﹏Ó', '｀皿´', '｀Д´'];   // 1, 2, 3+ histórias
+
+        function historiasAtivas() {
+            return (_foguetesNaCabeca ? 1 : 0) + (_satelitesNaOrbita ? 1 : 0)
+                 + (_cometaoNaCabeca ? 1 : 0) + (_sujeiraNaCara ? 1 : 0)
+                 + (_medo ? 1 : 0);
+        }
+
+        function atualizarIrritacao(mostrarRosto) {
+            const pres = document.getElementById('presenca');
+            if (!pres) return;
+            if (_desistiu) { pres.classList.remove('irrit-2', 'irrit-3'); return; }   // já passou da raiva
+            const n = historiasAtivas();
+            pres.classList.remove('irrit-2', 'irrit-3');
+            if (n >= 3) pres.classList.add('irrit-3');
+            else if (n === 2) pres.classList.add('irrit-2');
+            if (mostrarRosto && n > 0 && !_chacoalhando && !_medo) {
+                trocarRosto(ROSTOS_IRRITADA[Math.min(n, ROSTOS_IRRITADA.length) - 1]);
+            }
+        }
+
+        // ═══ ⏳ RITMO — o que fazia parecer que "tudo acontece ao mesmo tempo" não era o
+        //     intervalo de cada história, era não haver NADA coordenando as seis. Seis
+        //     agendamentos independentes eventualmente caem juntos, e cada um ainda escala
+        //     sozinho. Este portão é o que faltava: um espaçamento MÍNIMO entre o início de
+        //     duas histórias e um teto de quantas podem estar abertas.
+        //     Ele mora só nos AGENDAMENTOS — o laboratório do konami chama as funções direto
+        //     e continua disparando na hora, que é pra isso que ele existe. ═══
+        const HISTORIA_ESPACO = 300000;   // 5 min entre o INÍCIO de duas histórias
+        const HISTORIA_TETO = 3;          // no máximo 3 abertas (o bastante pro "desistir")
+        let _ultimaHistoria = 0;
+
+        function podeComecarHistoria() {
+            if (_afk || _desistiu) return false;
+            if (historiasAtivas() >= HISTORIA_TETO) return false;
+            return (Date.now() - _ultimaHistoria) >= HISTORIA_ESPACO;
+        }
+        function marcarHistoria() { _ultimaHistoria = Date.now(); }
+
+        // ═══ 🎛️ AFINAR A BOCA — a pergunta "que número eu mexo?" tem resposta melhor que um
+        //     número: mexer nos seis ao vivo e ver. O painel escreve direto na geometria e nas
+        //     variáveis de CSS, e o quadro de baixo mostra as linhas prontas pra colar no
+        //     arquivo quando você achar o ponto. Traço grosso + curvatura alta = mais cartoon.
+        const BOCA_CTRL = [
+            ['traço',     'traco',  2,  20, 0.5, () => cssNum('--boca-traco'),  v => cssPoe('--boca-traco', v)],
+            ['curvatura', 'curva',  8,  60, 1,   () => K_CURVA,  v => { K_CURVA = v; }],
+            ['abertura',  'abre',  10,  70, 1,   () => K_ABRE,   v => { K_ABRE = v;  }],
+            ['largura',   'meia',  12,  60, 1,   () => K_MEIA,   v => { K_MEIA = v;  }],
+            ['tamanho',   'larg', 0.30, 1.2, .01, () => cssNum('--boca-larg'), v => cssPoe('--boca-larg', v, 'em')],
+            ['altura',    'alt',  0.20, 0.9, .01, () => cssNum('--boca-alt'),  v => cssPoe('--boca-alt', v, 'em')],
+        ];
+        function cssNum(nome) {
+            const el = document.getElementById('rosto-txt');
+            return parseFloat(el ? getComputedStyle(el).getPropertyValue(nome) : 0) || 0;
+        }
+        function cssPoe(nome, v, un) {
+            const el = document.getElementById('rosto-txt');
+            if (el) el.style.setProperty(nome, v + (un || ''));
+        }
+
+        function montarControlesBoca() {
+            const caixa = document.getElementById('lab-boca');
+            if (!caixa || caixa.children.length) return;
+            const saida = document.getElementById('lab-valores');
+            const refresca = () => {
+                if (!saida) return;
+                saida.textContent =
+                    'let K_CURVA = ' + K_CURVA + ', K_ABRE = ' + K_ABRE + ', K_MEIA = ' + K_MEIA + ';\n' +
+                    '--boca-larg: ' + cssNum('--boca-larg') + 'em; --boca-alt: ' + cssNum('--boca-alt') +
+                    'em; --boca-traco: ' + cssNum('--boca-traco') + ';';
+            };
+            BOCA_CTRL.forEach(([rotulo, id, min, max, passo, ler, poe]) => {
+                const linha = document.createElement('div');
+                linha.className = 'lab-sld';
+                const lab = document.createElement('label'); lab.textContent = rotulo;
+                const inp = document.createElement('input');
+                inp.type = 'range'; inp.min = min; inp.max = max; inp.step = passo; inp.value = ler();
+                const val = document.createElement('span'); val.textContent = ler();
+                inp.addEventListener('input', () => {
+                    const v = parseFloat(inp.value);
+                    poe(v); val.textContent = v;
+                    desenharBoca();            // redesenha na hora, mesmo parada
+                    refresca();
+                });
+                linha.append(lab, inp, val);
+                caixa.appendChild(linha);
+            });
+            refresca();
+            if (saida) saida.addEventListener('click', () => {
+                navigator.clipboard && navigator.clipboard.writeText(saida.textContent);
+            });
+        }
+
+        // ═══ 🙂 CARAS NO LABORATÓRIO — depois de separar olho/boca, dava pra ver cada cara
+        //     só esperando ela acontecer. Aqui elas ficam todas a um clique, e o rótulo do
+        //     botão é a PRÓPRIA cara: você compara o desenho antes de clicar.
+        //     Combine com o botão 🗣️ falando pra ver a boca mexendo com aquela emoção.
+        //     Os climas abaixo espelham o _ROSTOS do pensar.py — há um teste que compara os
+        //     dois e acusa quando um sai do outro. ═══
+        // ═══ 👄 A BOCA VETORIAL — três números, não um glifo:
+        //       curvatura  -1 (triste) .. 0 (reta) .. +1 (sorriso)
+        //       abertura    0 (fechada) .. 1 (escancarada)
+        //       largura   0.6 .. 1.4
+        //     O miolo do kaomoji não é mais DESENHADO: ele só ESCOLHE o trio. É isso que
+        //     permite falar animando SÓ a abertura — a curva da emoção fica de pé, e ela
+        //     abre e fecha a boca brava, triste ou sorrindo, em vez de trocar entre glifos.
+        const BOCAS = {
+            '_':  [ 0.00, 0.00, 0.90],   // reta, neutra
+            '₋':  [ 0.00, 0.00, 0.80],   // o miolo do ⚈₋⚈
+            '‸':  [-0.45, 0.00, 0.60],   // caret pequeno: tensa
+            '‿':  [ 0.90, 0.05, 1.00],   // sorriso
+            '◡':  [ 0.85, 0.05, 0.95],
+            'ᵕ':  [ 0.80, 0.05, 0.80],
+            'ᴗ':  [ 0.80, 0.05, 0.85],
+            'ᗜ':  [ 0.90, 0.45, 1.00],   // sorriso ABERTO
+            '⩊':  [ 0.70, 0.40, 0.95],
+            '﹏':  [-0.50, 0.00, 1.15],   // desgosto, larga
+            'ᯅ':  [-0.15, 0.75, 0.80],   // aberta de susto
+            '𐃷':  [ 0.20, 0.15, 0.70],
+            '皿':  [-0.25, 0.85, 1.30],   // grito
+            'Д':  [-0.30, 0.90, 1.15],
+            'ᆺ':  [-0.60, 0.25, 0.70],   // boca de gato, tensa
+            '₃':  [ 0.50, 0.20, 0.60],   // bico
+            'o':  [ 0.00, 0.60, 0.70],
+        };
+        const BOCA_PADRAO = [0, 0, 0.90];
+
+        // ALTURA DA BOCA POR OLHO. Foi isso que fez a boca parecer certa numas caras e colada
+        // em outras: 'T' e 'ಠ' se assentam na base da linha, enquanto 'ᵔ' e '¬' moram no alto
+        // dela. Com um vertical-align único, a distância até a boca mudava sozinha conforme o
+        // glifo. Aqui cada olho diz quanto a boca desce (em em; mais negativo = mais baixo).
+        const BOCA_DESCE = -0.15;        // padrão, pros olhos de altura média
+        const OLHO_DESCE = {
+            // olhos ALTOS (acentos e sobrescritos): a boca não precisa descer tanto
+            // (a chave é sempre o olho ESQUERDO — em ｀皿´ quem manda é o ｀)
+            'ᵔ': -0.05, '｀': -0.05, '￢': -0.07,
+            // olhos que ocupam a linha INTEIRA: a boca tem que descer mais pra não colar
+            'T': -0.22, 'O': -0.22, 'ಠ': -0.21, '಄': -0.21, 'Ò': -0.21,
+            '◺': -0.20, '╥': -0.20, 'ᗒ': -0.19,
+            // As três de REPOUSO não entram aqui porque nem chegam a usar boca vetorial —
+            // ver ehRostoInteiro() lá em cima: elas guardam o glifo original.
+        };
+        function alturaBoca(olho) {
+            const c = (olho || '').trim().slice(-1);   // o olho é o último caractere do pedaço
+            return (c in OLHO_DESCE ? OLHO_DESCE[c] : BOCA_DESCE) + 'em';
+        }
+        // `let` e não `const`: os controles do laboratório escrevem aqui pra você achar o
+        // ponto olhando na tela. Quando fechar o número, é só voltar pra const.
+        let K_CURVA = 26, K_ABRE = 30, K_MEIA = 30;
+
+        function formaBoca(miolo) {
+            return BOCAS[(miolo || '').trim()] || BOCA_PADRAO;
+        }
+        // dois arcos espelhados: o de cima leva a CURVATURA, o de baixo leva curvatura +
+        // abertura. Com abertura 0 os dois coincidem e sobra só o traço do stroke — que é
+        // exatamente uma boca fechada. Não precisa de caso especial.
+        function caminhoBoca(c, a, w) {
+            const meia = K_MEIA * w, topo = c * K_CURVA, base = topo + a * K_ABRE;
+            return 'M ' + (-meia).toFixed(1) + ' 0'
+                 + ' Q 0 ' + topo.toFixed(1) + ' ' + meia.toFixed(1) + ' 0'
+                 + ' Q 0 ' + base.toFixed(1) + ' ' + (-meia).toFixed(1) + ' 0 Z';
+        }
+
+        // ═══ 3º GRUPO: bocas com ANIMAÇÃO PRÓPRIA ═══
+        //     São um DELTA somado por quadro, não um modo que substitui a fala. Essa é a
+        //     decisão que faz a coisa toda fechar: se fossem um modo, ela perderia justamente
+        //     o que a boca vetorial deu — poder estar com medo E falando. Como delta, medo +
+        //     fala vira fala TRÊMULA, e raiva + fala vira fala rosnada. O 2º grupo (as que só
+        //     falam) passa a ser "o 3º com modulador zero": um caminho de código, não dois.
+        //     Cada modulador devolve deltas de curvatura (c), abertura (a) e largura (w).
+        //     Senos de períodos PRIMOS entre si de propósito: se batessem, o tremor viraria
+        //     um pulso regular, que lê como robô em vez de nervosismo.
+        const BOCA_MOD = {
+            '╥‸╥':  (t) => ({ c: 0.050 * Math.sin(t / 211), a: 0.020 * Math.sin(t / 89) }),   // travada, tremor mínimo
+            'Ò﹏Ó':  (t) => ({ c: 0.170 * Math.sin(t / 307) }),                                // revolta: ondula
+            '｀皿´': (t) => ({ w: 0.100 * Math.sin(t / 131), a: 0.070 * Math.sin(t / 97) }),   // rosnado
+            '｀Д´': (t) => ({ w: 0.130 * Math.sin(t / 101), a: 0.090 * Math.sin(t / 73) }),   // rosnado forte
+            '಄ᆺ಄':  (t) => ({ c: 0.140 * Math.sin(t / 263), a: 0.060 * Math.sin(t / 179) }),  // tonta: desencontrada
+            'T_T':  (t) => ({ c: 0.070 * Math.sin(t / 419), a: 0.030 * Math.sin(t / 331) }),  // tristeza: lento
+        };
+        let _bocaForma = BOCA_PADRAO, _bocaAbre = 0, _bocaMod = null, _bocaLoop = null;
+
+        function desenharBoca() {
+            const path = document.querySelector('#rosto-txt .boca path');
+            if (!path) return;
+            let c = _bocaForma[0];
+            let a = _falandoBoca ? _bocaAbre : _bocaForma[1];   // falando? a abertura é animada
+            let w = _bocaForma[2];
+            if (_bocaMod) {                                     // o delta entra POR CIMA da fala
+                const m = _bocaMod(Date.now());
+                c += m.c || 0;
+                a += m.a || 0;
+                w *= 1 + (m.w || 0);
+            }
+            path.setAttribute('d', caminhoBoca(c, Math.max(0, Math.min(1, a)), w));
+        }
+
+        // O laço só existe enquanto há modulador: cara sem animação própria não gasta quadro.
+        function ligarModulador(cara) {
+            _bocaMod = BOCA_MOD[cara] || null;
+            if (!_bocaMod || _bocaLoop) return;
+            const passo = () => {
+                if (!_bocaMod) { _bocaLoop = null; return; }   // a cara mudou: o laço morre
+                desenharBoca();
+                _bocaLoop = requestAnimationFrame(passo);
+            };
+            _bocaLoop = requestAnimationFrame(passo);
+        }
+
+        // FUNÇÕES, não arrays: um `const X = [...ROSTO_SUJA...]` avalia a lista NA HORA da
+        // declaração, e metade dessas constantes nasce mais abaixo no arquivo. Adiar o IIFE
+        // não bastava — o estouro era na própria declaração. Assim a lista só é montada
+        // quando alguém chama, e aí tudo já existe.
+        const CARAS_BASE = () => [
+            ...ROSTOS_IDLE, ROSTO_ESTADO.ouvindo, ROSTO_ESTADO.pensando,
+            ROSTO_AFK, ROSTO_JOGO, '- _ -',
+        ];
+        const CARAS_HIST = () => [
+            ...ROSTOS_IRRITADA, ROSTO_CHACOALHO, ROSTO_SUJA, ROSTO_ESFREGA,
+            ROSTO_MEDO, ROSTO_SUSTO, '◉‿◉', '≖_≖', '• _ •', 'ᗒ_ᗕ', '>_<',
+        ];
+        const CARAS_CLIMA = () => [      // espelho do _ROSTOS (pensar.py) — os 12 climas
+            'ᗒᗜᗕ', 'Ò﹏Ó', 'ಠ_ಠ', 'O_O', 'ᵔ ᵕ ᵔ', '╥‸╥', '◞_◟',
+            '◉‿◉', 'ꈍ◡ꈍ', 'ㆆ_ㆆ', '≖_≖', '⚈₋⚈', '￢_￢', 'T_T',
+        ];
+
+
+        // setTimeout(0) obrigatório: CARAS_HIST lê ROSTO_SUJA, ROSTO_MEDO e companhia, que são
+        // declaradas mais ABAIXO no arquivo. Montar na hora cai na zona morta do const e
+        // derruba o script inteiro — o harness pegou isso antes de virar tela preta.
+        setTimeout(function montarCaras() {
+            montarControlesBoca();
+            const grupos = [['lab-caras-base', CARAS_BASE()], ['lab-caras-hist', CARAS_HIST()],
+                            ['lab-caras-clima', CARAS_CLIMA()]];
+            grupos.forEach(([id, lista]) => {
+                const alvo = document.getElementById(id);
+                if (!alvo) return;
+                [...new Set(lista)].forEach(cara => {
+                    const b = document.createElement('button');
+                    b.className = 'lab-cara';
+                    b.textContent = cara;
+                    // marca as que não partem em olho/boca: essas não ganham boca animada
+                    if (ehRostoInteiro(cara) || !partirRosto(cara)) {
+                        b.title = ehRostoInteiro(cara) ? 'grupo 1 — estática, guarda o kaomoji'
+                                                          : 'sem boca separável (acento/emoji)';
+                        b.style.opacity = '.55';
+                    } else if (BOCA_MOD[cara]) {
+                        b.title = 'grupo 3 — boca com animação própria';
+                        b.style.borderColor = '#ff8a4d';
+                    } else {
+                        b.title = 'grupo 2 — boca que fala';
+                    }
+                    b.addEventListener('click', () => {
+                        document.querySelectorAll('.lab-cara.posta').forEach(o => o.classList.remove('posta'));
+                        b.classList.add('posta');
+                        rostoDireto(cara);      // direto: sem transição, pra comparar rápido
+                    });
+                    alvo.appendChild(b);
+                });
+            });
+        }, 0);
+
+        // ═══ 🧪 LABORATÓRIO — o konami revela um botão que abre um painel de gatilhos.
+        //     Sem isso, testar qualquer história vira espera de 10 minutos. ═══
+        const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown',
+                        'ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+        let _konami = [];
+        document.addEventListener('keydown', function (e) {
+            const alvo = e.target && e.target.tagName;
+            if (alvo === 'INPUT' || alvo === 'TEXTAREA') return;   // não atrapalha a digitação
+            _konami.push(e.key.length === 1 ? e.key.toLowerCase() : e.key);
+            if (_konami.length > KONAMI.length) _konami.shift();
+            if (_konami.join(',') === KONAMI.join(',')) {
+                const b = document.getElementById('btn-lab');
+                if (b && !b.classList.contains('ativo')) { b.classList.add('ativo'); confete(); }
+                _konami = [];
+            }
+        });
+
+        (function ligarLab() {
+            const btn = document.getElementById('btn-lab');
+            const painel = document.getElementById('lab-panel');
+            if (!btn || !painel) return;
+            btn.addEventListener('click', function () { painel.classList.toggle('aberto'); });
+
+            const acoes = {
+                foguete:  function () { novoFoguete(); },
+                satelite: function () { novoSatelite(); },
+                cometao:  function () { if (typeof cometao === 'function') cometao(); },
+                sujeira:  function () { sujar(2); },
+                chuva:    function () { chuvaAsteroides(); },
+                invasao:  function () { invasaoOvnis(); },
+                desistir: function () { if (_desistiu) voltarAtencao(); else virarDeCostas(); },
+                cometa:   function () { cometa(); },
+                ovni:     function () { ovni(); },
+                confete:  function () { confete(); },
+                spotify:  function () { aplicarFerramenta('▸ Usando: controlar_spotify'); },
+                radar:    function () { aplicarFerramenta('▸ Usando: pesquisar_web'); },
+                video:    function () { aplicarFerramenta('▸ Usando: resumir_youtube'); },
+                tela:     function () { aplicarFerramenta('▸ Usando: ver_tela'); },
+                jogo:     function () { modoJogo(_jogoAtivo ? null : 'Teste'); },
+                ouvindo:  function () { aplicarPresenca('ouvindo'); },
+                pensando: function () { aplicarPresenca('pensando'); },
+                falando:  function () { aplicarPresenca('falando'); },
+                afk:      function () { aplicarAfk(!_afk); },
+                noite:    function () {
+                    const pres = document.getElementById('presenca');
+                    pres && pres.classList.toggle('noite');
+                },
+                limpar:   function () {
+                    if (_desistiu) voltarAtencao();
+                    limparFerramenta();
+                    modoJogo(null);
+                    if (_afk) aplicarAfk(false);
+                    espantarFoguetes();
+                    limparSujeira();
+                    if (_medo) { _medoAte = 0; if (_invasao) passouAInvasao(); else passouAChuva(); }
+                    _satelites.slice().forEach(tirarSatelite);
+                    aplicarPresenca('dormindo');
+                },
+            };
+            painel.querySelectorAll('.lab-btn').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    const fn = acoes[b.dataset.lab];
+                    if (fn) fn();
+                });
+            });
+        })();
+
+        // ═══ 😶 DESISTIR — a CONSEQUÊNCIA que faltava. Até aqui, ignorar tudo só deixava ela
+        //     com cara feia: a escada de irritação subia e parava. Agora tem fundo. Três
+        //     histórias abertas ao mesmo tempo por tempo demais e ela VIRA DE COSTAS.
+        //     O que muda não é a intensidade, é a direção: raiva é ela ainda ligando pra
+        //     você; virar de costas é ela ter parado. Por isso o halo sai do vermelho e vai
+        //     pro cinza — visualmente é uma QUEDA, não uma escalada.
+        //     Regra de saída: só volta quando NÃO SOBRAR NENHUMA história. E é de propósito
+        //     que os objetos continuem funcionando de costas — foguete ainda sai sacudindo,
+        //     satélite clicando, fuligem esfregando. Você resolve tudo no silêncio dela, que
+        //     é bem mais desconfortável do que ela ficar brava. ═══
+        const DESISTIR_HISTORIAS = 3;    // quantas abertas ao mesmo tempo
+        const DESISTIR_MS = 45000;       // ...por quanto tempo seguido
+        const DESISTIR_OLHADA = 4000;    // a encarada de volta, antes de perdoar
+        const DESISTIR_ALIVIO = 2000;
+
+        function virarDeCostas() {
+            const pres = document.getElementById('presenca');
+            if (!pres || _desistiu) return;
+            _desistiu = true;
+            _desdeTres = 0;
+            limparReacaoClique();
+            _reagindo = false;
+            pararTrocaIdle();
+            olharObjeto(null);
+            pres.classList.remove('irrit-2', 'irrit-3');   // a raiva cede lugar ao desânimo
+            pres.classList.add('desistiu');                // o CSS faz o giro (scaleX -> 0)
+        }
+
+        function voltarAtencao() {
+            const pres = document.getElementById('presenca');
+            if (!pres || !_desistiu) return;
+            _desistiu = false;
+            _desdeTres = 0;
+            limparReacaoClique();
+            _reagindo = true;                     // segura piscada e rodízio de idle na volta
+
+            rostoDireto('≖_≖');                   // já vira encarando: não entrega alegria na hora
+            pres.classList.remove('desistiu');
+
+            _timersClique.push(setTimeout(() => rostoDireto('◉‿◉'), DESISTIR_OLHADA));
+            _timersClique.push(setTimeout(() => {
+                _reagindo = false;
+                if (!_afk && !historiasAtivas()) { trocarRosto(rostoIdle()); iniciarTrocaIdle(); }
+            }, DESISTIR_OLHADA + DESISTIR_ALIVIO));
+        }
+
+        setInterval(() => {
+            if (_desistiu) {
+                if (!historiasAtivas()) voltarAtencao();   // limpou tudo: ela te olha de novo
+                return;
+            }
+            if (_afk) { _desdeTres = 0; return; }
+            if (historiasAtivas() >= DESISTIR_HISTORIAS) {
+                if (!_desdeTres) _desdeTres = Date.now();  // começou a contar
+                else if (Date.now() - _desdeTres >= DESISTIR_MS) virarDeCostas();
+            } else {
+                _desdeTres = 0;                            // resolveu uma: o relógio zera
+            }
+        }, 400);
+
+        // ═══ 😶 DESISTIR (fim)
+
+        // ═══ 🛸 INVASÃO — a 6ª história, e a SEGUNDA de "não fazer nada". Mas a contenção é
+        //     de outro tipo: a chuva de asteroides só liga pra quem ENCOSTA nela; aqui os
+        //     discos são atraídos por MOVIMENTO POR PERTO. Não basta não clicar — tem que
+        //     tirar o cursor de perto dela e esperar. Chegou perto? Eles fecham o cerco e
+        //     acendem os feixes. Ficou longe? Perdem o interesse e vão embora.
+        const INV_BASE = 12000;
+        const INV_ATENCAO = 132;     // px de raio: dentro disso o cursor chama a atenção deles
+        const INV_QUANTOS = 4;
+        const INV_LONGE = 96, INV_PERTO = 60;   // raio da ronda: relaxados x em cima dela
+        let _frota = [], _invAlerta = 0, _invDriver = null;
+
+        function invasaoOvnis() {
+            if (_medo || _afk || _desistiu) return;
+            const pres = document.getElementById('presenca');
+            const gF = document.getElementById('frota');
+            const modelo = document.getElementById('ovni');
+            if (!pres || !gF || !modelo) return;
+
+            _medo = true; _invasao = true;
+            _medoAte = Date.now() + INV_BASE;
+            _invAlerta = 0;
+            pres.classList.add('medo');
+            trocarRosto(ROSTO_MEDO);
+            atualizarIrritacao(false);
+
+            const NS = 'http://www.w3.org/2000/svg';
+            const gFx = document.getElementById('feixes');
+            for (let i = 0; i < INV_QUANTOS; i++) {
+                const el = document.createElementNS(NS, 'g');
+                el.innerHTML = modelo.innerHTML;         // reaproveita o disco do easter egg
+                el.style.opacity = '0';
+                gF.appendChild(el);
+                const fx = document.createElementNS(NS, 'path');
+                fx.setAttribute('fill', 'url(#g-feixe)');
+                fx.setAttribute('opacity', '0');
+                gFx && gFx.appendChild(fx);
+                _frota.push({
+                    el, fx,
+                    ang: (i / INV_QUANTOS) * Math.PI * 2 + Math.random(),
+                    vel: (0.24 + Math.random() * 0.16) * (Math.random() < 0.5 ? -1 : 1),
+                    raio: 150,                            // entram de fora
+                    x: 100, y: 100,
+                });
+                if (TEM_ANIME) anime({ targets: el, opacity: 0.95, duration: 700, delay: i * 130, easing: 'linear' });
+                else el.style.opacity = '0.95';
+            }
+
+            _invDriver = setInterval(voarFrota, 33);
+            _medoTimer = setInterval(() => {
+                if (Date.now() >= _medoAte) passouAInvasao();
+            }, 120);
+        }
+
+        function voarFrota() {
+            const agora = Date.now();
+            const emAlerta = agora < _invAlerta;
+            const alvo = emAlerta ? INV_PERTO : INV_LONGE;
+            let maisPerto = null, dMin = 1e9;
+
+            _frota.forEach(o => {
+                o.ang += o.vel * (emAlerta ? 0.055 : 0.028);
+                o.raio += (alvo - o.raio) * 0.07;         // aproxima/afasta suave
+                o.x = 100 + Math.cos(o.ang) * o.raio;
+                o.y = 100 + Math.sin(o.ang) * o.raio * 0.72;   // órbita achatada: parece perspectiva
+                const inclina = Math.max(-16, Math.min(16, -Math.sin(o.ang) * 14));
+                o.el.setAttribute('transform',
+                    'translate(' + o.x.toFixed(1) + ' ' + o.y.toFixed(1) + ') rotate(' + inclina.toFixed(1) + ')');
+
+                if (o.fx) {                                // feixe: só acende no cerco
+                    o.fx.setAttribute('opacity', emAlerta ? '0.3' : '0');
+                    if (emAlerta) o.fx.setAttribute('d', desenharFeixe(o.x, o.y));
+                }
+                const d = Math.hypot(o.x - 100, o.y - 100);
+                if (d < dMin) { dMin = d; maisPerto = o; }
+            });
+            if (maisPerto) olharObjeto(maisPerto.x, maisPerto.y);   // ela não tira o olho do mais próximo
+        }
+
+        // cone do disco até a cabeça dela, em coordenadas do viewBox
+        function desenharFeixe(ux, uy) {
+            const dx = 100 - ux, dy = 100 - uy;
+            const d = Math.hypot(dx, dy) || 1;
+            const ux1 = dx / d, uy1 = dy / d;              // direção
+            const nx = -uy1, ny = ux1;                     // perpendicular
+            const L = d * 0.88, W = 15, B = 3;
+            const px = ux + ux1 * L, py = uy + uy1 * L;
+            return 'M ' + (ux - nx * B).toFixed(1) + ' ' + (uy - ny * B).toFixed(1) +
+                   ' L ' + (px - nx * W).toFixed(1) + ' ' + (py - ny * W).toFixed(1) +
+                   ' L ' + (px + nx * W).toFixed(1) + ' ' + (py + ny * W).toFixed(1) +
+                   ' L ' + (ux + nx * B).toFixed(1) + ' ' + (uy + ny * B).toFixed(1) + ' Z';
+        }
+
+        function passouAInvasao() {
+            const pres = document.getElementById('presenca');
+            clearInterval(_invDriver); _invDriver = null;
+            clearInterval(_medoTimer); _medoTimer = null;
+            _medo = false; _invasao = false;
+            if (pres) pres.classList.remove('medo');
+            olharObjeto(null);
+
+            _frota.forEach((o, i) => {                     // debandam pra fora
+                if (!TEM_ANIME) { o.el.remove(); o.fx && o.fx.remove(); return; }
+                const fuga = { r: o.raio, a: o.ang, op: 0.95 };
+                anime({
+                    targets: fuga, r: 260, a: o.ang + o.vel * 6, op: 0,
+                    duration: 900, delay: i * 90, easing: 'easeInQuad',
+                    update: () => {
+                        o.el.setAttribute('transform', 'translate(' +
+                            (100 + Math.cos(fuga.a) * fuga.r).toFixed(1) + ' ' +
+                            (100 + Math.sin(fuga.a) * fuga.r * 0.72).toFixed(1) + ')');
+                        o.el.style.opacity = fuga.op.toFixed(2);
+                    },
+                    complete: () => { o.el.remove(); o.fx && o.fx.remove(); },
+                });
+            });
+            _frota = [];
+
+            if (historiasAtivas()) { atualizarIrritacao(true); return; }
+            atualizarIrritacao(false);
+            trocarRosto('◉‿◉');
+            setTimeout(() => { if (!_afk && !_reagindo && !historiasAtivas()) trocarRosto(rostoIdle()); }, 2800);
+        }
+
+        (function agendarInvasao() {
+            setTimeout(() => {
+                if (!_medo && podeComecarHistoria()) { marcarHistoria(); invasaoOvnis(); }
+                agendarInvasao();
+            }, 1560000 + Math.random() * 1920000);     // 26 a 58 min
+        })();
+
+        // ═══ 🛸 INVASÃO (fim)
+
+        // ═══ 🌠 CHUVA DE ASTEROIDES — a 5ª história, e a única cujo VERBO é NÃO FAZER NADA.
+        //     Todas as outras pedem uma ação (sacudir, clicar, martelar, esfregar); esta pede
+        //     o contrário: ela está encolhida e imóvel esperando passar, e mexer com ela no
+        //     meio disso ESTRAGA — cada interferência estica a chuva. A recompensa por segurar
+        //     a mão é o confete no fim; quem atrapalhou só ganha o alívio. ═══
+        const MEDO_BASE = 10000;      // quanto dura se você não encostar nela
+        const MEDO_CASTIGO = 3000;    // cada interferência estica isso
+        const MEDO_TETO = 24000;      // ...até aqui, senão vira castigo eterno
+        const MEDO_FRIO = 1100;       // intervalo entre interferências contadas
+        const ROSTO_MEDO = '°ᯅ°';
+        const ROSTO_SUSTO = '╥‸╥';
+        let _medoAte = 0, _medoTimer = null, _medoChuva = null, _medoUltimoSusto = 0;
+
+        function chuvaAsteroides() {
+            if (_medo || _afk || _desistiu) return;
+            const pres = document.getElementById('presenca');
+            const g = document.getElementById('asteroides');
+            if (!pres || !g) return;
+
+            _medo = true;
+            _medoAte = Date.now() + MEDO_BASE;
+            pres.classList.add('medo');
+            trocarRosto(ROSTO_MEDO);
+            atualizarIrritacao(false);
+
+            _medoChuva = setInterval(soltarAsteroide, 170);
+            _medoTimer = setInterval(() => {
+                if (Date.now() >= _medoAte) passouAChuva();
+            }, 120);
+        }
+
+        function soltarAsteroide() {
+            const g = document.getElementById('asteroides');
+            if (!g || !TEM_ANIME) return;
+            const NS = 'http://www.w3.org/2000/svg';
+            const el = document.createElementNS(NS, 'g');
+            const r = 1.6 + Math.random() * 3.4;
+            el.innerHTML =
+                '<circle cx="0" cy="0" r="' + r.toFixed(1) + '" fill="#4a4256"/>'
+              + '<circle cx="' + (r * .4).toFixed(1) + '" cy="' + (-r * .3).toFixed(1) +
+                '" r="' + (r * .35).toFixed(1) + '" fill="#5a5168"/>';
+            g.appendChild(el);
+
+            // entram pela esquerda-alto e saem pela direita-baixo, em diagonal
+            const de = { x: -30 + Math.random() * 90, y: -25, giro: 0 };
+            const alvo = { x: de.x + 150 + Math.random() * 90, y: 240, giro: (Math.random() < .5 ? -1 : 1) * 540 };
+            anime({
+                targets: de, x: alvo.x, y: alvo.y, giro: alvo.giro,
+                duration: 1100 + Math.random() * 700, easing: 'linear',
+                update: () => el.setAttribute('transform',
+                    'translate(' + de.x.toFixed(1) + ' ' + de.y.toFixed(1) + ') rotate(' + de.giro.toFixed(0) + ')'),
+                complete: () => el.remove(),
+            });
+        }
+
+        // mexer com ela no meio da chuva: leva um susto e a chuva dura MAIS
+        function atrapalhar() {
+            const agora = Date.now();
+            if (agora - _medoUltimoSusto < MEDO_FRIO) return;   // um arrastão só não conta 20x
+            _medoUltimoSusto = agora;
+            _medoAte = Math.min(_medoAte + MEDO_CASTIGO, agora + MEDO_TETO);
+
+            const pres = document.getElementById('presenca');
+            if (pres) {
+                pres.classList.remove('cutucada');
+                void pres.offsetWidth;
+                pres.classList.add('cutucada');
+                setTimeout(() => pres.classList.remove('cutucada'), 500);
+            }
+            if (_invasao) _invAlerta = agora + 2600;   // eles perceberam: fecham o cerco
+            rostoDireto(ROSTO_SUSTO);
+            setTimeout(() => { if (_medo) rostoDireto(ROSTO_MEDO); }, 700);
+        }
+
+        function passouAChuva() {
+            const pres = document.getElementById('presenca');
+            clearInterval(_medoChuva); _medoChuva = null;
+            clearInterval(_medoTimer); _medoTimer = null;
+            _medo = false;
+            if (pres) pres.classList.remove('medo');
+            // pedra passando raspando levanta poeira — a chuva também suja ela
+            if (historiasAtivas() < HISTORIA_TETO && Math.random() < 0.6) setTimeout(() => sujar(Math.random() < 0.4 ? 2 : 1), 1300);
+
+            if (historiasAtivas()) {                  // ainda tem coisa nela: volta pra irritação
+                atualizarIrritacao(true);
+                return;
+            }
+            atualizarIrritacao(false);
+            trocarRosto('◉‿◉');
+            setTimeout(() => { if (!_afk && !_reagindo && !historiasAtivas()) trocarRosto(rostoIdle()); }, 2800);
+        }
+
+        (function agendarChuva() {   // raro, como as outras histórias
+            setTimeout(() => {
+                if (!_medo && podeComecarHistoria()) { marcarHistoria(); chuvaAsteroides(); }
+                agendarChuva();
+            }, 1320000 + Math.random() * 1680000);     // 22 a 50 min
+        })();
+
+        // ═══ 🌠 CHUVA DE ASTEROIDES (fim)
+
+        // ═══ 🌫️ FULIGEM — a 4ª história, e o 4º VERBO: ESFREGAR. Não sai sacudindo (verbo
+        //     do foguete), nem clicando (satélite), nem martelando (cometão) — sai passando o
+        //     mouse por cima SEM segurar o botão, como quem esfrega um pano. É de propósito o
+        //     gesto mais gentil dos quatro: é o mesmo do carinho, e enquanto ela está suja ele
+        //     vira limpeza. Cafuné só volta quando ela estiver limpa.
+        //     De onde vem: foguete decolando deixa fuligem, cometão estilhaçado deixa poeira —
+        //     as histórias se encadeiam em vez de viverem soltas. ═══
+        const SUJ_MAX = 4;
+        const SUJ_VIDA = 130;        // px de esfregada pra dissolver uma mancha
+        const SUJ_RAIO = 21;         // alcance do pano, em unidades do viewBox
+        const SUJ_INTERVALO = 42000; // ignorou -> junta mais sujeira
+        const SUJ_PARADO = 420;      // sem esfregar por isso -> ela volta a fazer cara de suja
+        const ROSTO_SUJA = 'ಠ_ಠ';    // "sério isso?"
+        const ROSTO_ESFREGA = 'ᵔ ᵕ ᵔ';
+        let _sujeira = [], _sujTimer = null, _esfregando = false, _esfregouUltimo = 0;
+
+        function sujar(quantas) {
+            if (_desistiu) return;
+            const g = document.getElementById('sujeira');
+            if (!g || _afk) return;
+            const NS = 'http://www.w3.org/2000/svg';
+            for (let i = 0; i < (quantas || 1) && _sujeira.length < SUJ_MAX; i++) {
+                // espalhada pela cabeça toda, longe do miolo pra não tampar o rosto
+                const ang = Math.random() * Math.PI * 2;
+                const raio = 27 + Math.random() * 24;
+                const x = 100 + Math.cos(ang) * raio;
+                const y = 100 + Math.sin(ang) * raio;
+                const el = document.createElementNS(NS, 'g');
+                el.setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) +
+                                             ') rotate(' + (Math.random() * 360).toFixed(0) + ')');
+                // borrão irregular: círculos sobrepostos leem melhor que uma forma só
+                el.innerHTML =
+                    '<circle cx="0" cy="0" r="7.5" fill="#332b3d"/>'
+                  + '<circle cx="5.5" cy="-3" r="4.6" fill="#332b3d"/>'
+                  + '<circle cx="-5" cy="3.4" r="4" fill="#332b3d"/>'
+                  + '<circle cx="2" cy="5.5" r="3.2" fill="#3d3348"/>'
+                  + '<circle cx="-6.5" cy="-4.5" r="2.2" fill="#3d3348"/>';
+                el.style.opacity = '0';
+                g.appendChild(el);
+                if (TEM_ANIME) anime({ targets: el, opacity: 0.8, duration: 420, easing: 'linear' });
+                else el.style.opacity = '0.8';
+                _sujeira.push({ el, x, y, vida: SUJ_VIDA });
+            }
+            _sujeiraNaCara = _sujeira.length;
+            atualizarIrritacao(true);
+            clearTimeout(_sujTimer);
+            _sujTimer = setTimeout(() => sujar(1), SUJ_INTERVALO);
+        }
+
+        // devolve true se a mão encostou em alguma mancha (aí não conta como carinho)
+        function esfregar(cx, cy, rect, dist) {
+            if (!_sujeira.length || !rect.width) return false;
+            const vx = (cx - rect.left) / rect.width * 200;    // tela -> viewBox
+            const vy = (cy - rect.top) / rect.height * 200;
+            let tocou = false;
+            for (let i = _sujeira.length - 1; i >= 0; i--) {
+                const m = _sujeira[i];
+                if (Math.hypot(vx - m.x, vy - m.y) > SUJ_RAIO) continue;
+                tocou = true;
+                m.vida -= dist;
+                if (m.vida <= 0) { m.el.remove(); _sujeira.splice(i, 1); }
+                else m.el.style.opacity = (0.16 + 0.64 * (m.vida / SUJ_VIDA)).toFixed(2);
+            }
+            if (!tocou) return false;
+
+            _sujeiraNaCara = _sujeira.length;
+            _esfregouUltimo = Date.now();
+            _ultimaInteracao = _esfregouUltimo;
+            if (!_esfregando) { _esfregando = true; trocarRosto(ROSTO_ESFREGA); }
+            if (!_sujeira.length) ficouLimpa();
+            return true;
+        }
+
+        function ficouLimpa() {
+            _esfregando = false;
+            clearTimeout(_sujTimer); _sujTimer = null;
+            if (historiasAtivas()) {                 // ainda sobrou problema: segue irritada
+                atualizarIrritacao(true);
+            } else {
+                atualizarIrritacao(false);
+                trocarRosto('◉‿◉');
+                setTimeout(() => { if (!_afk && !_reagindo && !historiasAtivas()) trocarRosto(rostoIdle()); }, 2600);
+            }
+        }
+
+        setInterval(() => {                          // parou de esfregar e ainda tem mancha
+            if (!_esfregando) return;
+            if (Date.now() - _esfregouUltimo > SUJ_PARADO) {
+                _esfregando = false;
+                if (_sujeira.length) trocarRosto(ROSTO_SUJA);
+            }
+        }, 200);
+
+        function limparSujeira() {                   // usado pelo "limpar tudo" do laboratório
+            _sujeira.forEach(m => m.el.remove());
+            _sujeira = []; _sujeiraNaCara = 0; _esfregando = false;
+            clearTimeout(_sujTimer); _sujTimer = null;
+        }
+
+        (function agendarSujeira() {   // poeira estelar que assenta sozinha: raro
+            setTimeout(() => {
+                if (!_sujeira.length && podeComecarHistoria()) { marcarHistoria(); sujar(1); }
+                agendarSujeira();
+            }, 1200000 + Math.random() * 1800000);     // 20 a 50 min
+        })();
+
+        // ═══ 🌫️ FULIGEM (fim)
+
+        // ═══ ☄️ COMETÃO — a 3ª história, com VERBO próprio: ele não sai chacoalhando nem
+        //     com um clique. Cai nela, GRUDA, e você tem que MARRETAR (clicar várias vezes).
+        //     Cada batida racha um pouco mais; na última ele estilhaça. ═══
+        const COMETAO_VIDA = 6;
+        let _cometaoVida = 0, _cometaoEl = null, _animTranco = null;
+
+        function cometao() {
+            const g = document.getElementById('cometao');
+            if (!g || !TEM_ANIME || _cometaoVida > 0 || _desistiu) return;
+            _cometaoVida = COMETAO_VIDA;
+            _cometaoNaCabeca = 1;
+            g.innerHTML =
+                '<circle cx="0" cy="0" r="15" fill="#4a4a5a"/>'
+              + '<circle cx="-4" cy="-4" r="3.4" fill="#3a3a48"/>'
+              + '<circle cx="5" cy="3" r="2.6" fill="#3a3a48"/>'
+              + '<circle cx="-2" cy="6" r="2" fill="#3a3a48"/>'
+              + '<path class="raxa" d="" stroke="#ff8a4d" stroke-width="1.2" fill="none" opacity="0"/>';
+            g.setAttribute('opacity', '1');
+
+            // cai de cima e ENCAIXA nela
+            const alvoX = 82 + Math.random() * 36, alvoY = 72;
+            const de = { x: alvoX, y: -60, r: 0 };
+            anime({
+                targets: de, x: alvoX, y: alvoY, r: 180,
+                duration: 900, easing: 'easeInQuad',
+                update: function () {
+                    g.setAttribute('transform',
+                        'translate(' + de.x.toFixed(1) + ' ' + de.y.toFixed(1) + ') rotate(' + de.r.toFixed(0) + ')');
+                },
+                complete: function () {
+                    _cometaoEl = { x: alvoX, y: alvoY };
+                    atualizarIrritacao(true);
+                },
+            });
+            clearTimeout(_cometaoTimer);
+        }
+
+        function marretar() {
+            const g = document.getElementById('cometao');
+            if (!g || _cometaoVida <= 0 || !_cometaoEl) return;
+            _cometaoVida--;
+            trancoNoCometao(g);
+
+            // vai rachando: a trinca cresce a cada martelada
+            const frac = 1 - _cometaoVida / COMETAO_VIDA;
+            const raxa = g.querySelector('.raxa');
+            if (raxa) {
+                const L = 6 + frac * 16;
+                raxa.setAttribute('d', 'M ' + (-L / 2) + ' -3 L 0 1 L ' + (L / 3) + ' -2 L ' + (L / 2) + ' 4');
+                raxa.setAttribute('opacity', (0.25 + frac * 0.75).toFixed(2));
+            }
+            trocarRosto(_cometaoVida > 2 ? '಄ᆺ಄' : '>_<');
+
+            if (_cometaoVida <= 0) estilhacar();
+        }
+
+        // O tranco tem que ser escrito JUNTO com a posição, num transform só. Quando ele vinha
+        // de uma classe CSS, a animação de transform substituía o atributo transform do SVG e
+        // o cometão perdia o translate: piscava na origem do viewBox e voltava. Só aparecia às
+        // vezes porque `void g.offsetWidth` é undefined em SVG — o truque de reiniciar a
+        // animação não funcionava, então em cliques seguidos ela nem chegava a rodar de novo.
+        function trancoNoCometao(g) {
+            const base = _cometaoEl;
+            if (!base) return;
+            const poe = (r, s) => g.setAttribute('transform',
+                'translate(' + base.x.toFixed(1) + ' ' + base.y.toFixed(1) +
+                ') rotate(' + r.toFixed(1) + ') scale(' + s.toFixed(3) + ')');
+            if (!TEM_ANIME) { poe(0, 1); return; }
+            if (_animTranco) _animTranco.pause();
+            const t = { r: 0, s: 1 };
+            _animTranco = anime({
+                targets: t,
+                keyframes: [{ r: -8, s: 0.84, duration: 70 },
+                            { r: 0,  s: 1,    duration: 150 }],
+                easing: 'easeOutBack',
+                update: () => poe(t.r, t.s),
+            });
+        }
+
+        function estilhacar() {
+            const g = document.getElementById('cometao');
+            const conf = document.getElementById('confete');
+            if (!g) return;
+            const base = _cometaoEl || { x: 100, y: 72 };
+            if (_animTranco) { _animTranco.pause(); _animTranco = null; }   // tranco pendente não reescreve o transform
+            g.setAttribute('opacity', '0');
+            g.innerHTML = '';
+            _cometaoEl = null;
+            _cometaoNaCabeca = 0;
+            if (historiasAtivas() < HISTORIA_TETO && Math.random() < 0.55) setTimeout(() => sujar(2), 1200);   // poeira do estilhaço
+
+            // estilhaços voando
+            if (conf && TEM_ANIME) {
+                const pedacos = [];
+                for (let i = 0; i < 14; i++) {
+                    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    c.setAttribute('cx', base.x); c.setAttribute('cy', base.y);
+                    c.setAttribute('r', (1.2 + Math.random() * 2.6).toFixed(1));
+                    c.setAttribute('fill', Math.random() < 0.5 ? '#4a4a5a' : '#6a6a7a');
+                    conf.appendChild(c); pedacos.push(c);
+                }
+                anime({
+                    targets: pedacos,
+                    cx: function () { return base.x + (-90 + Math.random() * 180); },
+                    cy: function () { return base.y + (-40 + Math.random() * 150); },
+                    opacity: [{ value: 1, duration: 100 }, { value: 0, duration: 800 }],
+                    duration: 1000, delay: anime.stagger(18), easing: 'easeOutQuad',
+                    complete: function () { pedacos.forEach(function (c) { c.remove(); }); },
+                });
+            }
+            if (historiasAtivas()) {
+                atualizarIrritacao(true);
+            } else {
+                atualizarIrritacao(false);
+                trocarRosto('◉‿◉');
+                setTimeout(function () { if (!_afk && !_reagindo && !historiasAtivas()) trocarRosto(rostoIdle()); }, 2600);
+            }
+        }
+
+        (function ligarCometao() {
+            const g = document.getElementById('cometao');
+            if (g) g.addEventListener('click', function (ev) { ev.stopPropagation(); marretar(); });
+        })();
+
+        (function agendarCometao() {
+            setTimeout(function () {
+                if (_cometaoVida <= 0 && podeComecarHistoria()) { marcarHistoria(); cometao(); }
+                agendarCometao();
+            }, 1500000 + Math.random() * 1800000);     // 25 a 55 min
         })();
 
         // ═══ COMETA (easter egg) — cruza o fundo de vez em quando. Ângulo, sentido, altura
@@ -1997,7 +3561,7 @@
         }
         (function agendarCometa() {
             // raro: é easter egg. Se passasse toda hora deixaria de ser achado.
-            setTimeout(() => { cometa(); agendarCometa(); }, 240000 + Math.random() * 480000);
+            setTimeout(() => { cometa(); agendarCometa(); }, 720000 + Math.random() * 1080000);   // 12 a 30 min
         })();
 
         // ═══ CUTUCAR — clicar nela: leva um susto, te encara, pisca e volta ao normal.
@@ -2015,6 +3579,8 @@
             const pres = document.getElementById('presenca');
             const el = document.getElementById('rosto-txt');
             if (!pres || !el || _afk) return;                       // dormindo, deixa ela em paz
+            if (_desistiu) return;                                  // de costas: cutucão não alcança
+            if (_medo) { atrapalhar(); return; }                    // cutucar durante a chuva: idem
             if (!pres.classList.contains('est-dormindo')) return;   // ocupada (ouvindo/pensando/falando)
 
             const agora = Date.now();
@@ -2024,7 +3590,7 @@
 
             limparReacaoClique();
             _reagindo = true;
-            _ultimaInteracao = agora;        // cutucar conta como interação: adia bocejo/AFK visual
+            _ultimaInteracao = agora;        // cutucar conta como interação: adia o AFK visual
             pres.classList.remove('cutucada');
             void pres.offsetWidth;           // reinicia a animação de tranco se clicar em sequência
             pres.classList.add('cutucada');
@@ -2036,13 +3602,52 @@
             const fim = irritada ? 7100 : 2700;   // a última encarada segura ~1.5s antes do idle
 
             passos.forEach(([cara, quando]) =>
-                _timersClique.push(setTimeout(() => { el.textContent = cara; }, quando)));
+                _timersClique.push(setTimeout(() => rostoDireto(cara), quando)));
             _timersClique.push(setTimeout(() => {
                 pres.classList.remove('cutucada');
                 _reagindo = false;
                 trocarRosto(rostoIdle());     // volta pro repouso
             }, fim));
         }
+
+        function limitar(v) { return Math.max(-ARRASTO_MAX, Math.min(ARRASTO_MAX, v)); }
+        function aplicarArrasto() {
+            const pres = document.getElementById('presenca');
+            if (pres) pres.style.transform = 'translate(' + _arrX.toFixed(1) + 'px,' + _arrY.toFixed(1) + 'px)';
+        }
+
+        (function ligarBotao() {
+            document.addEventListener('mousedown', (e) => {
+                _botaoPreso = true; _arrastou = false;
+                const svg = document.querySelector('#presenca svg');
+                if (!svg) return;
+                const r = svg.getBoundingClientRect();
+                const d = Math.hypot(e.clientX - (r.left + r.width / 2),
+                                     e.clientY - (r.top + r.height / 2 - AFAGO_SOBE));
+                if (d > AFAGO_RAIO) return;                    // clicou no vazio ao lado dela
+                _pegou = true;                                 // PEGOU a cabeça dela
+                // o puxão começa de onde ela está agora, não do zero — senão pular pra
+                // mão dá um solavanco quando você reagarra no meio da volta elástica
+                _pegouX = e.clientX - _arrX / ARRASTO_RESIST;
+                _pegouY = e.clientY - _arrY / ARRASTO_RESIST;
+                if (_animVolta) { _animVolta.pause(); _animVolta = null; }
+            });
+            document.addEventListener('mouseup', () => {
+                _botaoPreso = false;
+                if (_pegou) {
+                    _pegou = false;
+                    if (TEM_ANIME) {                           // soltou: volta no elástico
+                        const alvo = { x: _arrX, y: _arrY };
+                        _animVolta = anime({
+                            targets: alvo, x: 0, y: 0,
+                            duration: 950, easing: 'easeOutElastic(1, .42)',
+                            update: () => { _arrX = alvo.x; _arrY = alvo.y; aplicarArrasto(); },
+                        });
+                    } else { _arrX = _arrY = 0; aplicarArrasto(); }
+                }
+                setTimeout(() => { _arrastou = false; }, 60);   // deixa o click checar antes
+            });
+        })();
 
         (function ligarCutucar() {
             const pres = document.getElementById('presenca');
@@ -2056,53 +3661,18 @@
                 const r = svg.getBoundingClientRect();
                 const dx = e.clientX - (r.left + r.width / 2);
                 const dy = e.clientY - (r.top + r.height / 2);
+                if (_arrastou) return;                    // foi sacudida, não cutucão
                 if (Math.hypot(dx, dy) <= RAIO_CLIQUE) cutucar();
             });
         })();
 
-        // ═══ BOCEJO — só no repouso DE VERDADE: parada, sem ferramenta rodando e sem você
-        //     interagindo há um tempo. (Bocejar gingando na música ficaria absurdo.)
-        //     É uma SEQUÊNCIA, não uma troca de cara: abre rápido, SEGURA quase 1s, fecha
-        //     devagar. Tempo igual em todos os passos viraria robô. ═══
-        const BOCEJO_MIN_MS = 130000;    // pelo menos ~2min de sossego
-        let _ultimaInteracao = Date.now(), _bocejando = false;
-
-        function podeBocejar() {
-            const pres = document.getElementById('presenca');
-            if (!pres || _bocejando || _afk || _reagindo) return false;
-            if (!pres.classList.contains('est-dormindo')) return false;               // tem que estar parada
-            if (Object.values(FERRAMENTAS_VISUAL).some(v => pres.classList.contains('ferr-' + v)))
-                return false;                                                          // ferramenta rodando: não
-            return (Date.now() - _ultimaInteracao) > BOCEJO_MIN_MS;
-        }
-
-        function bocejar() {
-            const el = document.getElementById('rosto-txt');
-            const pres = document.getElementById('presenca');
-            if (!el || !pres) return;
-            _bocejando = true;
-            const volta = _rostoAtual;
-            pres.classList.add('bocejando');                    // cabeça infla e tudo dá uma preguiçada
-            const passos = [['˘ o ˘', 300], ['- ○ -', 900], ['˘ o ˘', 250]];
-            let t = 0;
-            passos.forEach(([cara, dur]) => {
-                setTimeout(() => { el.textContent = cara; }, t);
-                t += dur;
-            });
-            setTimeout(() => {
-                el.textContent = volta;
-                pres.classList.remove('bocejando');
-                _bocejando = false;
-            }, t);
-        }
-
-        setInterval(() => {
-            // raro de propósito: bocejo frequente vira tique e mata a graça (o oposto do piscar)
-            if (podeBocejar() && Math.random() < 0.18) bocejar();
-        }, 20000);
+        // (O BOCEJO foi removido: exigia ~2min de sossego absoluto e nunca chegou a ser visto
+        //  rodando. As caras dele — ˘ o ˘ e - ○ - — saíram junto. A PISCADA continua: é outra
+        //  coisa, roda o tempo todo e o - _ - dela é usado também na reação ao cutucão.)
+        let _ultimaInteracao = Date.now();
 
         // O modo da ferramenta EXPIRA sozinho: senão, mandar tocar música e sumir deixava ela
-        // gingando pra sempre — e nunca voltaria pro repouso (nem pra bocejar).
+        // gingando pra sempre — e nunca voltaria pro repouso.
         const FERR_EXPIRA_MS = 180000;   // 3 min sem você interagir
         setInterval(() => {
             const pres = document.getElementById('presenca');
@@ -2118,6 +3688,7 @@
         function aplicarAfk(estaAfk) {
             const el = document.getElementById('presenca');
             if (!el || estaAfk === _afk) return;
+            if (_desistiu) { _afk = estaAfk; el.classList.toggle('afk', estaAfk); return; }
             _afk = estaAfk;
             el.classList.toggle('afk', estaAfk);
             if (estaAfk) {
@@ -2129,7 +3700,7 @@
                 const sumiuMuito = _afkDesde && (Date.now() - _afkDesde) > FALTA_MIN_MS;
                 if (sumiuMuito) {
                     trocarRosto('◉‿◉');
-                    setTimeout(() => { if (!_afk) trocarRosto(rostoIdle()); }, 3200);
+                    setTimeout(() => { if (!_afk && !_reagindo && !historiasAtivas()) trocarRosto(rostoIdle()); }, 3200);
                 } else {
                     trocarRosto(rostoIdle());
                 }
@@ -2148,9 +3719,23 @@
             ver_tela:          'tela',
             analisar_aba_atual:'tela',
         };
+        // ═══ EIXOS — `ferr-*` é o eixo ATIVIDADE, e as regras de ESTADO precisam saber se ele
+        //     está ligado, sem enumerar as ferramentas uma a uma. `com-ferramenta` é esse
+        //     marcador: um :not() no lugar de cinco, e ferramenta nova passa a custar zero no
+        //     CSS. Derivado das classes reais em vez de mantido à mão — assim não tem como
+        //     alguém ligar uma ferramenta e esquecer de ligar o marcador. ═══
+        function sincronizarFerramenta() {
+            const el = document.getElementById('presenca');
+            if (!el) return;
+            const ligada = Object.values(FERRAMENTAS_VISUAL).concat('jogo')
+                                 .some(v => el.classList.contains('ferr-' + v));
+            el.classList.toggle('com-ferramenta', ligada);
+        }
+
         function limparFerramenta() {          // nova conversa: volta ao normal
             const el = document.getElementById('presenca');
             if (el) Object.values(FERRAMENTAS_VISUAL).forEach(v => el.classList.remove('ferr-' + v));
+            sincronizarFerramenta();
             pararScanner(); pararOndas();
         }
 
@@ -2209,6 +3794,7 @@
             pararScanner(); pararOndas();
             const modo = FERRAMENTAS_VISUAL[m[1]];
             if (modo) el.classList.add('ferr-' + modo);   // ferramenta sem visual próprio = volta ao normal
+            sincronizarFerramenta();
             if (modo === 'tela')  iniciarScanner();
             if (modo === 'radar') iniciarOndas();
         }

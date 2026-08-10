@@ -2417,7 +2417,9 @@ def _loop_proativo():
                 try:
                     import servidor as _srv
                     _srv.atualizar_status("○ Suspensa — aguardando interação")
-                    _srv.atualizar_gif("sleeping")
+                    # (o GIF de "sleeping" saiu daqui: era o último chamador vivo do Giphy,
+                    #  esquecido quando o GIF foi pra gaveta. Quem mostra que ela dormiu
+                    #  agora é a cara de AFK da presença — ver pensar.py, "GIF NA GAVETA")
                 except Exception:
                     pass
             # Ocioso é o melhor momento pra extrair memória (você fora, sem competir com nada).
