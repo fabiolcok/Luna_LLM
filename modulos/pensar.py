@@ -329,16 +329,16 @@ PROMPT_LUNA_PERSONA = (
 # ficou sem cara. Ver a tabela BOCAS no Index.html: é lá que cada miolo vira forma.
 _ROSTOS = {
     "zoeira":   ["ᗒᗜᗕ"],
-    "revolta":  ["Ò﹏Ó", "¬_¬"],
+    "revolta":  ["Ò﹏Ó"],
     "facepalm": ["ಠ_ಠ"],
     "choque":   ["O_O"],
     "carinho":  ["ᵔ ᵕ ᵔ"],
     "cansaco":  ["╥‸╥", "◞_◟"],
-    "festa":    ["◉‿◉", "ᵔᗜᵔ"],
+    "festa":    ["◉‿◉"],
     "orgulho":  ["ꈍ◡ꈍ"],
     "suspeita": ["ㆆ_ㆆ", "≖_≖"],
-    "duvida":   ["⚈₋₍⚈"],
-    "tedio":    ["￢_￢", "- ‸ -"],
+    "duvida":   ["⚈₋⚈"],
+    "tedio":    ["￢_￢"],
     "tristeza": ["T_T"],
 }
 

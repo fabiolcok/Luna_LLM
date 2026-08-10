@@ -198,6 +198,16 @@
         }
         .lab-cara:hover { background: #1e2a4a; border-color: #7aa2f7; }
         .lab-cara.posta { border-color: #7bf98f; color: #7bf98f; }
+        /* controles da boca: pra afinar olhando na tela em vez de chutar número no arquivo */
+        .lab-sld { display: flex; align-items: center; gap: 6px; margin: 3px 0; font-size: .68rem; }
+        .lab-sld label { color: #7a8aa8; width: 62px; flex: none; }
+        .lab-sld input { flex: 1; height: 3px; accent-color: #7aa2f7; }
+        .lab-sld span { color: #b4f9f8; width: 34px; text-align: right; flex: none; }
+        #lab-valores {
+            margin-top: 6px; padding: 6px; border-radius: 6px; background: #0b0f18;
+            border: 1px solid #23304a; color: #7bf98f; font-size: .62rem;
+            white-space: pre-wrap; word-break: break-all; cursor: pointer;
+        }
         #lab-panel { max-height: 78vh; overflow-y: auto; }
         .lab-btn.limpar { border-color: #5a2a2a; color: #ff9e9e; }
         .lab-btn.limpar:hover { background: #2a1216; }
@@ -234,7 +244,7 @@
            e o JS reescreve ele por cara: cada glifo de olho se assenta numa altura diferente
            na linha, então um valor único deixava a boca colada nuns e solta noutros.
            Ver OLHO_DESCE no script — é lá que se afina glifo a glifo. */
-        #rosto-txt { --boca-larg: .58em; --boca-alt: .40em; --boca-sobe: -.13em; }
+        #rosto-txt { --boca-larg: .58em; --boca-alt: .40em; --boca-sobe: -.13em; --boca-traco: 7; }
         /* os três pedaços da cara. inline (não inline-block) de propósito: qualquer coisa que
            gere caixa própria mudaria o espaçamento e a cara sairia diferente da de hoje. */
         #rosto-txt .olho-e, #rosto-txt .olho-d { display: inline; }
@@ -252,7 +262,7 @@
         #rosto-txt .boca svg { display: block; width: 100%; height: 100%; overflow: visible; }
         #rosto-txt .boca path {
             fill: currentColor; stroke: currentColor;   /* segue a cor do rosto sozinha */
-            stroke-width: 7; stroke-linejoin: round; stroke-linecap: round;
+            stroke-width: var(--boca-traco, 7); stroke-linejoin: round; stroke-linecap: round;
         }
         /* view-box + origem no centro do viewBox: arco tem bbox DESCENTRADO, então
            'fill-box/center' faria ele bambear em vez de girar no eixo. */
@@ -286,14 +296,6 @@
         #presenca.afk #arco-3 { animation-duration: 60s;  }
         #presenca.afk #arcos, #presenca.afk #orbita-escala { opacity: .2; transform: scale(.9); }
         #presenca.afk #rosto  { opacity: .55; }
-
-        /* 🥱 bocejo: respiração funda (cabeça infla) e tudo desacelera junto */
-        #presenca.bocejando #halo   { animation-duration: 2.6s; }
-        #presenca.bocejando #arcos  { transform: scale(1.045); }
-        #presenca.bocejando #orbita-escala { transform: scale(1.03); opacity: .5; }
-        #presenca.bocejando #arco-1 { animation-duration: 110s; }
-        #presenca.bocejando #arco-2 { animation-duration: 90s;  }
-        #presenca.bocejando #arco-3 { animation-duration: 70s;  }
 
         /* 👂 ouvindo — tudo CONTRAI, fica atenta */
         .est-ouvindo #orbita { animation-duration: 16s; }
@@ -1279,6 +1281,9 @@
             <button class="lab-btn" data-lab="afk">💤 AFK</button>
             <button class="lab-btn" data-lab="noite">🌙 noite</button>
         </div>
+        <div class="lab-titulo">Boca — afinar</div>
+        <div id="lab-boca"></div>
+        <div id="lab-valores" title="clique pra copiar">—</div>
         <div class="lab-titulo">Caras — repouso e estados</div>
         <div class="lab-grade" id="lab-caras-base"></div>
         <div class="lab-titulo">Caras — histórias e reações</div>
@@ -1839,6 +1844,23 @@
             desenharBoca();                  // volta pra abertura de repouso da cara atual
         }
 
+        // ═══ QUEM PISCA — escolhido cara a cara. Tem uma regra por trás: olho que JÁ está
+        //     fechado ou franzido (ᵔ ꈍ ≖ ￢ ╥ ◞ T ᗒ) não tem o que fechar, e trocá-lo por um
+        //     traço vira um tremeliqueLe sem leitura nenhuma. Quem pisca é quem tem olho
+        //     ABERTO. Fora isso: a de pensar fica parada de propósito, e as de raiva/medo não
+        //     piscam porque olho fixo é parte do que faz elas assustarem.
+        //     Vale pro piscar E pro cafuné (fechar olho já fechado não faria nada mesmo). ═══
+        const NAO_PISCA = new Set([
+            'ᵔ ᵕ ᵔ', '╥‸╥', '◞_◟', 'ꈍ◡ꈍ', '≖_≖', '￢_￢', 'T_T',   // olho já franzido/fechado
+            '-⩊-',                                                  // pensando: estática
+            '｀皿´', '｀Д´', '಄ᆺ಄', '⊙ᯅ⊙',                          // raiva, sacudida, medo
+            'ᗒ_ᗕ', '>_<', '- _ -',                                  // reações de olho apertado
+            '_　_ 💤',                                              // AFK: já está de olho fechado
+        ]);
+        function podePiscar(cara) {
+            return !NAO_PISCA.has(cara) && !!versaoPiscada(cara);
+        }
+
         function versaoPiscada(face) {
             const ch = Array.from(face || '');
             if (!ch.length || ch.some(c => _RE_COMB.test(c))) return null;   // marca combinante: pula
@@ -1854,8 +1876,8 @@
         function piscar() {
             const el = document.getElementById('rosto-txt');
             // reagindo a um clique tem sequência própria de piscada — não atropela
-            const fechado = (_afk || _reagindo || _chacoalhando || _medo || _desistiu)
-                          ? null : versaoPiscada(_rostoAtual);
+            const fechado = (_afk || _reagindo || _chacoalhando || _medo || _desistiu
+                             || !podePiscar(_rostoAtual)) ? null : versaoPiscada(_rostoAtual);
             if (el && fechado) {
                 const eraEsse = _rostoAtual;
                 pintarRosto(fechado, eraEsse);                           // instantâneo, sem transição
@@ -1889,7 +1911,9 @@
         // (⩊, 𐃷, ₃) desenhado como texto. Elas nunca falam — ela sempre troca de cara antes —
         // então trocar o kaomoji delas por um <path> só perderia o desenho que você escolheu,
         // sem ganhar nada em troca. O caminho de "desenha inteira" já existia pro AFK.
-        const ROSTO_INTEIRO = new Set(ROSTOS_IDLE);
+        // Também a de PENSAR: ela não fala enquanto pensa, e mexer a boca ali dava a
+        // impressão de que estava respondendo antes da hora.
+        const ROSTO_INTEIRO = new Set([...ROSTOS_IDLE, ROSTO_ESTADO.pensando]);
 
         function partirRosto(txt) {
             const ch = Array.from(txt || '');
@@ -1977,7 +2001,7 @@
 
             clearTimeout(_timerSono);
             if (estado === 'ouvindo' || estado === 'pensando') {
-                _ultimaInteracao = Date.now();     // relógio do bocejo/expiração da ferramenta
+                _ultimaInteracao = Date.now();     // relógio da expiração da ferramenta
                 _rostoReacao = null;                 // conversa nova: esquece a reação anterior
                 limparFerramenta();                  // ...e o modo da última ferramenta
                 _afk = false; el.classList.remove('afk');
@@ -2312,12 +2336,12 @@
             const el = document.getElementById('rosto-txt');
             if (!pres || !el) return;
             const acariciando = _afagoUltimo && (Date.now() - _afagoUltimo) < AFAGO_JANELA;
-            const deve = acariciando && !_afk && !_reagindo && !_bocejando && !_sujeiraNaCara && !_medo;
+            const deve = acariciando && !_afk && !_reagindo && !_sujeiraNaCara && !_medo;
 
             if (deve && !_afagando) {
                 _afagando = true;
                 pres.classList.add('afago');
-                const fechado = versaoPiscada(_rostoAtual);
+                const fechado = podePiscar(_rostoAtual) ? versaoPiscada(_rostoAtual) : null;
                 if (fechado) pintarRosto(fechado, _rostoAtual);   // olhos fechados, relaxada
             } else if (!deve && _afagando) {
                 _afagando = false;
@@ -2503,7 +2527,7 @@
 
             limparReacaoClique();
             _reagindo = true;                           // segura o rodízio de idle e a piscada
-            _ultimaInteracao = agora;                   // sacudir é interação: adia bocejo/AFK
+            _ultimaInteracao = agora;                   // sacudir é interação: adia o AFK
 
             // A tonta já está na tela: ela SEGURA um tempo antes da recomposição começar —
             // tontura que passa no instante em que você solta não parece tontura. Quem
@@ -2677,6 +2701,60 @@
         }
         function marcarHistoria() { _ultimaHistoria = Date.now(); }
 
+        // ═══ 🎛️ AFINAR A BOCA — a pergunta "que número eu mexo?" tem resposta melhor que um
+        //     número: mexer nos seis ao vivo e ver. O painel escreve direto na geometria e nas
+        //     variáveis de CSS, e o quadro de baixo mostra as linhas prontas pra colar no
+        //     arquivo quando você achar o ponto. Traço grosso + curvatura alta = mais cartoon.
+        const BOCA_CTRL = [
+            ['traço',     'traco',  2,  20, 0.5, () => cssNum('--boca-traco'),  v => cssPoe('--boca-traco', v)],
+            ['curvatura', 'curva',  8,  60, 1,   () => K_CURVA,  v => { K_CURVA = v; }],
+            ['abertura',  'abre',  10,  70, 1,   () => K_ABRE,   v => { K_ABRE = v;  }],
+            ['largura',   'meia',  12,  60, 1,   () => K_MEIA,   v => { K_MEIA = v;  }],
+            ['tamanho',   'larg', 0.30, 1.2, .01, () => cssNum('--boca-larg'), v => cssPoe('--boca-larg', v, 'em')],
+            ['altura',    'alt',  0.20, 0.9, .01, () => cssNum('--boca-alt'),  v => cssPoe('--boca-alt', v, 'em')],
+        ];
+        function cssNum(nome) {
+            const el = document.getElementById('rosto-txt');
+            return parseFloat(el ? getComputedStyle(el).getPropertyValue(nome) : 0) || 0;
+        }
+        function cssPoe(nome, v, un) {
+            const el = document.getElementById('rosto-txt');
+            if (el) el.style.setProperty(nome, v + (un || ''));
+        }
+
+        function montarControlesBoca() {
+            const caixa = document.getElementById('lab-boca');
+            if (!caixa || caixa.children.length) return;
+            const saida = document.getElementById('lab-valores');
+            const refresca = () => {
+                if (!saida) return;
+                saida.textContent =
+                    'let K_CURVA = ' + K_CURVA + ', K_ABRE = ' + K_ABRE + ', K_MEIA = ' + K_MEIA + ';\n' +
+                    '--boca-larg: ' + cssNum('--boca-larg') + 'em; --boca-alt: ' + cssNum('--boca-alt') +
+                    'em; --boca-traco: ' + cssNum('--boca-traco') + ';';
+            };
+            BOCA_CTRL.forEach(([rotulo, id, min, max, passo, ler, poe]) => {
+                const linha = document.createElement('div');
+                linha.className = 'lab-sld';
+                const lab = document.createElement('label'); lab.textContent = rotulo;
+                const inp = document.createElement('input');
+                inp.type = 'range'; inp.min = min; inp.max = max; inp.step = passo; inp.value = ler();
+                const val = document.createElement('span'); val.textContent = ler();
+                inp.addEventListener('input', () => {
+                    const v = parseFloat(inp.value);
+                    poe(v); val.textContent = v;
+                    desenharBoca();            // redesenha na hora, mesmo parada
+                    refresca();
+                });
+                linha.append(lab, inp, val);
+                caixa.appendChild(linha);
+            });
+            refresca();
+            if (saida) saida.addEventListener('click', () => {
+                navigator.clipboard && navigator.clipboard.writeText(saida.textContent);
+            });
+        }
+
         // ═══ 🙂 CARAS NO LABORATÓRIO — depois de separar olho/boca, dava pra ver cada cara
         //     só esperando ela acontecer. Aqui elas ficam todas a um clique, e o rótulo do
         //     botão é a PRÓPRIA cara: você compara o desenho antes de clicar.
@@ -2692,7 +2770,7 @@
         //     abre e fecha a boca brava, triste ou sorrindo, em vez de trocar entre glifos.
         const BOCAS = {
             '_':  [ 0.00, 0.00, 0.90],   // reta, neutra
-            '₋₍': [ 0.00, 0.00, 0.80],
+            '₋':  [ 0.00, 0.00, 0.80],   // o miolo do ⚈₋⚈
             '‸':  [-0.45, 0.00, 0.60],   // caret pequeno: tensa
             '‿':  [ 0.90, 0.05, 1.00],   // sorriso
             '◡':  [ 0.85, 0.05, 0.95],
@@ -2708,7 +2786,6 @@
             'ᆺ':  [-0.60, 0.25, 0.70],   // boca de gato, tensa
             '₃':  [ 0.50, 0.20, 0.60],   // bico
             'o':  [ 0.00, 0.60, 0.70],
-            '○':  [ 0.00, 0.80, 0.80],
         };
         const BOCA_PADRAO = [0, 0, 0.90];
 
@@ -2720,7 +2797,8 @@
         const OLHO_DESCE = {
             // olhos ALTOS (acentos e sobrescritos): a boca não precisa descer tanto
             // (a chave é sempre o olho ESQUERDO — em ｀皿´ quem manda é o ｀)
-            'ᵔ': -0.05, '˘': -0.05, '°': -0.06, '｀': -0.05, '¬': -0.07, '￢': -0.07,
+            'ᵔ': -0.05, '｀': -0.05, '￢': -0.07,
+            '⊙': -0.16,   // olho grande e redondo: a boca desce como nos de linha inteira
             // olhos que ocupam a linha INTEIRA: a boca tem que descer mais pra não colar
             'T': -0.22, 'O': -0.22, 'ಠ': -0.21, '಄': -0.21, 'Ò': -0.21,
             '◺': -0.20, '╥': -0.20, 'ᗒ': -0.19,
@@ -2731,7 +2809,9 @@
             const c = (olho || '').trim().slice(-1);   // o olho é o último caractere do pedaço
             return (c in OLHO_DESCE ? OLHO_DESCE[c] : BOCA_DESCE) + 'em';
         }
-        const K_CURVA = 26, K_ABRE = 30, K_MEIA = 30;
+        // `let` e não `const`: os controles do laboratório escrevem aqui pra você achar o
+        // ponto olhando na tela. Quando fechar o número, é só voltar pra const.
+        let K_CURVA = 26, K_ABRE = 30, K_MEIA = 30;
 
         function formaBoca(miolo) {
             return BOCAS[(miolo || '').trim()] || BOCA_PADRAO;
@@ -2756,7 +2836,7 @@
         //     Senos de períodos PRIMOS entre si de propósito: se batessem, o tremor viraria
         //     um pulso regular, que lê como robô em vez de nervosismo.
         const BOCA_MOD = {
-            '°ᯅ°':  (t) => ({ a: 0.055 * Math.sin(t / 53),  w: 0.030 * Math.sin(t / 41) }),   // medo: raso e rápido
+            '⊙ᯅ⊙':  (t) => ({ a: 0.055 * Math.sin(t / 53),  w: 0.030 * Math.sin(t / 41) }),   // medo: raso e rápido
             '╥‸╥':  (t) => ({ c: 0.050 * Math.sin(t / 211), a: 0.020 * Math.sin(t / 89) }),   // travada, tremor mínimo
             'Ò﹏Ó':  (t) => ({ c: 0.170 * Math.sin(t / 307) }),                                // revolta: ondula
             '｀皿´': (t) => ({ w: 0.100 * Math.sin(t / 131), a: 0.070 * Math.sin(t / 97) }),   // rosnado
@@ -2799,16 +2879,15 @@
         // quando alguém chama, e aí tudo já existe.
         const CARAS_BASE = () => [
             ...ROSTOS_IDLE, ROSTO_ESTADO.ouvindo, ROSTO_ESTADO.pensando,
-            ROSTO_AFK, ROSTO_JOGO, '- _ -', '- ○ -', '˘ o ˘',
+            ROSTO_AFK, ROSTO_JOGO, '- _ -',
         ];
         const CARAS_HIST = () => [
             ...ROSTOS_IRRITADA, ROSTO_CHACOALHO, ROSTO_SUJA, ROSTO_ESFREGA,
             ROSTO_MEDO, ROSTO_SUSTO, '◉‿◉', '≖_≖', '• _ •', 'ᗒ_ᗕ', '>_<',
         ];
         const CARAS_CLIMA = () => [      // espelho do _ROSTOS (pensar.py) — os 12 climas
-            'ᗒᗜᗕ', 'Ò﹏Ó', '¬_¬', 'ಠ_ಠ', 'O_O', 'ᵔ ᵕ ᵔ',
-            '╥‸╥', '◞_◟', '◉‿◉', 'ᵔᗜᵔ', 'ꈍ◡ꈍ', 'ㆆ_ㆆ', '≖_≖',
-            '⚈₋₍⚈', '￢_￢', '- ‸ -', 'T_T',
+            'ᗒᗜᗕ', 'Ò﹏Ó', 'ಠ_ಠ', 'O_O', 'ᵔ ᵕ ᵔ', '╥‸╥', '◞_◟',
+            '◉‿◉', 'ꈍ◡ꈍ', 'ㆆ_ㆆ', '≖_≖', '⚈₋⚈', '￢_￢', 'T_T',
         ];
 
 
@@ -2816,6 +2895,7 @@
         // declaradas mais ABAIXO no arquivo. Montar na hora cai na zona morta do const e
         // derruba o script inteiro — o harness pegou isso antes de virar tela preta.
         setTimeout(function montarCaras() {
+            montarControlesBoca();
             const grupos = [['lab-caras-base', CARAS_BASE()], ['lab-caras-hist', CARAS_HIST()],
                             ['lab-caras-clima', CARAS_CLIMA()]];
             grupos.forEach(([id, lista]) => {
@@ -2947,7 +3027,7 @@
             _desistiu = false;
             _desdeTres = 0;
             limparReacaoClique();
-            _reagindo = true;                     // segura piscada/idle/bocejo durante a volta
+            _reagindo = true;                     // segura piscada e rodízio de idle na volta
 
             rostoDireto('≖_≖');                   // já vira encarando: não entrega alegria na hora
             pres.classList.remove('desistiu');
@@ -3116,7 +3196,7 @@
         const MEDO_CASTIGO = 3000;    // cada interferência estica isso
         const MEDO_TETO = 24000;      // ...até aqui, senão vira castigo eterno
         const MEDO_FRIO = 1100;       // intervalo entre interferências contadas
-        const ROSTO_MEDO = '°ᯅ°';
+        const ROSTO_MEDO = '⊙ᯅ⊙';
         const ROSTO_SUSTO = '╥‸╥';
         let _medoAte = 0, _medoTimer = null, _medoChuva = null, _medoUltimoSusto = 0;
 
@@ -3504,7 +3584,7 @@
 
             limparReacaoClique();
             _reagindo = true;
-            _ultimaInteracao = agora;        // cutucar conta como interação: adia bocejo/AFK visual
+            _ultimaInteracao = agora;        // cutucar conta como interação: adia o AFK visual
             pres.classList.remove('cutucada');
             void pres.offsetWidth;           // reinicia a animação de tranco se clicar em sequência
             pres.classList.add('cutucada');
@@ -3580,49 +3660,13 @@
             });
         })();
 
-        // ═══ BOCEJO — só no repouso DE VERDADE: parada, sem ferramenta rodando e sem você
-        //     interagindo há um tempo. (Bocejar gingando na música ficaria absurdo.)
-        //     É uma SEQUÊNCIA, não uma troca de cara: abre rápido, SEGURA quase 1s, fecha
-        //     devagar. Tempo igual em todos os passos viraria robô. ═══
-        const BOCEJO_MIN_MS = 130000;    // pelo menos ~2min de sossego
-        let _ultimaInteracao = Date.now(), _bocejando = false;
-
-        function podeBocejar() {
-            const pres = document.getElementById('presenca');
-            if (!pres || _bocejando || _afk || _reagindo || historiasAtivas()) return false;
-            if (!pres.classList.contains('est-dormindo')) return false;               // tem que estar parada
-            if (Object.values(FERRAMENTAS_VISUAL).some(v => pres.classList.contains('ferr-' + v)))
-                return false;                                                          // ferramenta rodando: não
-            return (Date.now() - _ultimaInteracao) > BOCEJO_MIN_MS;
-        }
-
-        function bocejar() {
-            const el = document.getElementById('rosto-txt');
-            const pres = document.getElementById('presenca');
-            if (!el || !pres) return;
-            _bocejando = true;
-            const volta = _rostoAtual;
-            pres.classList.add('bocejando');                    // cabeça infla e tudo dá uma preguiçada
-            const passos = [['˘ o ˘', 300], ['- ○ -', 900], ['˘ o ˘', 250]];
-            let t = 0;
-            passos.forEach(([cara, dur]) => {
-                setTimeout(() => pintarRosto(cara), t);
-                t += dur;
-            });
-            setTimeout(() => {
-                pintarRosto(volta);
-                pres.classList.remove('bocejando');
-                _bocejando = false;
-            }, t);
-        }
-
-        setInterval(() => {
-            // raro de propósito: bocejo frequente vira tique e mata a graça (o oposto do piscar)
-            if (podeBocejar() && Math.random() < 0.18) bocejar();
-        }, 20000);
+        // (O BOCEJO foi removido: exigia ~2min de sossego absoluto e nunca chegou a ser visto
+        //  rodando. As caras dele — ˘ o ˘ e - ○ - — saíram junto. A PISCADA continua: é outra
+        //  coisa, roda o tempo todo e o - _ - dela é usado também na reação ao cutucão.)
+        let _ultimaInteracao = Date.now();
 
         // O modo da ferramenta EXPIRA sozinho: senão, mandar tocar música e sumir deixava ela
-        // gingando pra sempre — e nunca voltaria pro repouso (nem pra bocejar).
+        // gingando pra sempre — e nunca voltaria pro repouso.
         const FERR_EXPIRA_MS = 180000;   // 3 min sem você interagir
         setInterval(() => {
             const pres = document.getElementById('presenca');
