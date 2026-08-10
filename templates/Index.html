@@ -203,6 +203,16 @@
         .lab-sld label { color: #7a8aa8; width: 62px; flex: none; }
         .lab-sld input { flex: 1; height: 3px; accent-color: #7aa2f7; }
         .lab-sld span { color: #b4f9f8; width: 34px; text-align: right; flex: none; }
+        /* BANCADA: a boca volta a ser GLIFO de texto, pra testar frames sem migrar nada.
+           width/height auto porque a vaga do SVG e fixa e um caractere precisa da largura dele. */
+        #rosto-txt .boca.glifo { width: auto; height: auto; }
+        .lab-bn { display: flex; align-items: center; gap: 5px; margin: 3px 0; font-size: .68rem; }
+        .lab-bn label { color: #7a8aa8; width: 58px; flex: none; }
+        .lab-bn input {
+            flex: 1; min-width: 0; background: #0b0f18; border: 1px solid #2a3a5a;
+            color: #b4f9f8; border-radius: 5px; padding: 3px 6px;
+            font-family: inherit; font-size: .95rem; text-align: center;
+        }
         #lab-valores {
             margin-top: 6px; padding: 6px; border-radius: 6px; background: #0b0f18;
             border: 1px solid #23304a; color: #7bf98f; font-size: .62rem;
@@ -1284,6 +1294,21 @@
         <div class="lab-titulo">Boca — afinar</div>
         <div id="lab-boca"></div>
         <div id="lab-valores" title="clique pra copiar">—</div>
+        <div class="lab-titulo">Boca — bancada de teste</div>
+        <div id="lab-bancada">
+            <div class="lab-bn"><label>fechada</label><input id="bn-0" maxlength="6" placeholder="_"></div>
+            <div class="lab-bn"><label>meio</label><input id="bn-1" maxlength="6" placeholder="ᵕ"></div>
+            <div class="lab-bn"><label>aberta</label><input id="bn-2" maxlength="6" placeholder="o"></div>
+            <div class="lab-sld">
+                <label>ritmo</label>
+                <input id="bn-ritmo" type="range" min="60" max="400" step="10" value="160">
+                <span id="bn-ritmo-v">160</span>
+            </div>
+            <div class="lab-grade">
+                <button class="lab-btn" id="bn-liga">▶ rodar na cara atual</button>
+                <button class="lab-btn limpar" id="bn-para">■ parar</button>
+            </div>
+        </div>
         <div class="lab-titulo">Caras — repouso e estados</div>
         <div class="lab-grade" id="lab-caras-base"></div>
         <div class="lab-titulo">Caras — histórias e reações</div>
@@ -1939,6 +1964,19 @@
             return [ch.slice(0, i + 1).join(''), boca, ch.slice(j).join('')];
         }
 
+        // BANCADA DE TESTE (laboratório): quando ligada, a boca deixa de ser o <path> e volta a
+        // ser um GLIFO de texto, ciclando entre os frames que você digitou. Serve pra responder
+        // "boca de 3 frames funciona?" ANTES de migrar 25 caras — que foi o erro da vez passada,
+        // construir tudo e olhar depois. Desligada, nada muda no comportamento normal.
+        let _bancada = null;   // { frames: [...], i } ou null
+
+        // Markup da boca vetorial. É constante porque precisa ser REMONTADO: a bancada escreve
+        // texto na mesma vaga, o que apaga o <svg> — sem reconstruir, desligar a bancada deixava
+        // a boca sumida (o desenhador não acha o <path> e sai calado).
+        const SVG_BOCA = '<svg viewBox="-50 -30 100 60" width="100%" height="100%" '
+                       + 'preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">'
+                       + '<path d=""/></svg>';
+
         // ÚNICO lugar que escreve o rosto no DOM. Todo o resto passa por aqui — senão um
         // textContent solto apaga os spans e a boca some.
         //
@@ -1951,7 +1989,10 @@
         function pintarRosto(txt, base) {
             const el = document.getElementById('rosto-txt');
             if (!el || !txt) return;
-            const partes = ehRostoInteiro(base || txt) ? null : partirRosto(txt);
+            // com a bancada ligada, ATÉ as caras inteiras se partem — senão não dava pra testar
+            // justamente as que motivaram a conversa (o medo, as de repouso)
+            const partes = (_bancada ? partirRosto(txt)
+                                     : (ehRostoInteiro(base || txt) ? null : partirRosto(txt)));
             if (!partes) { _bocaMod = null; el.textContent = txt; return; }   // sem boca: inteira
             let e = el.querySelector('.olho-e');
             if (!e) {                                        // primeira vez: monta a estrutura
@@ -1962,13 +2003,23 @@
                 // o SVG da boca vive no lugar exato onde o glifo do miolo ficava.
                 // width/height explícitos além do CSS: sem eles um <svg> inline nasce 300x150
                 // e, num quadro antes do CSS pegar, a cara pula
-                vaga.innerHTML = '<svg viewBox="-50 -30 100 60" width="100%" height="100%" '
-                               + 'preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">'
-                               + '<path d=""/></svg>';
+                vaga.innerHTML = SVG_BOCA;
                 cria('olho-d');
             }
             el.querySelector('.olho-e').textContent = partes[0];
             el.querySelector('.olho-d').textContent = partes[2];
+            const boca = el.querySelector('.boca');
+            if (_bancada) {
+                // glifo puro: sem SVG, sem tabela de altura. Um caractere se assenta na linha de
+                // base sozinho — é por isso que as caras originais nunca tiveram esse problema.
+                boca.classList.add('glifo');
+                el.style.setProperty('--boca-sobe', '0em');
+                boca.textContent = _bancada.frames[_bancada.i] || partes[1];
+                _bocaMod = null;
+                return;
+            }
+            boca.classList.remove('glifo');
+            if (!boca.querySelector('svg')) boca.innerHTML = SVG_BOCA;   // a bancada tinha trocado por texto
             _bocaForma = formaBoca(partes[1]);   // o miolo escolhe a FORMA, não é desenhado
             el.style.setProperty('--boca-sobe', alturaBoca(partes[0]));   // ...e o olho, a ALTURA
             ligarModulador(base || txt);         // ...e a cara BASE diz se tem animação própria
@@ -2762,6 +2813,60 @@
                 navigator.clipboard && navigator.clipboard.writeText(saida.textContent);
             });
         }
+
+        // ═══ 🔬 BANCADA — digite os frames, veja rodando na cara de verdade. ═══
+        let _bnTimer = null;
+
+        function bancadaLiga() {
+            const frames = ['bn-0', 'bn-1', 'bn-2']
+                .map(id => (document.getElementById(id) || {}).value || '')
+                .filter(v => v !== '');
+            if (!frames.length) { bancadaPara(); return; }
+            const ritmo = parseInt((document.getElementById('bn-ritmo') || {}).value || 160, 10);
+
+            _bancada = { frames, i: 0 };
+            clearInterval(_bnTimer);
+            pintarRosto(_rostoAtual);
+            // vai-e-volta (0,1,2,1,0...) em vez de reiniciar do zero: boca que ABRE e FECHA,
+            // não que pisca de aberta pra fechada
+            let passo = 1;
+            _bnTimer = setInterval(() => {
+                if (!_bancada) return;
+                if (_bancada.frames.length > 1) {
+                    _bancada.i += passo;
+                    if (_bancada.i >= _bancada.frames.length - 1) { _bancada.i = _bancada.frames.length - 1; passo = -1; }
+                    if (_bancada.i <= 0) { _bancada.i = 0; passo = 1; }
+                }
+                const b = document.querySelector('#rosto-txt .boca');
+                if (b) b.textContent = _bancada.frames[_bancada.i];
+            }, ritmo);
+        }
+
+        function bancadaPara() {
+            clearInterval(_bnTimer); _bnTimer = null;
+            _bancada = null;
+            const b = document.querySelector('#rosto-txt .boca');
+            if (b) b.classList.remove('glifo');
+            pintarRosto(_rostoAtual);        // volta ao desenho normal
+        }
+
+        (function ligarBancada() {
+            const liga = document.getElementById('bn-liga');
+            const para = document.getElementById('bn-para');
+            const rit  = document.getElementById('bn-ritmo');
+            const ritV = document.getElementById('bn-ritmo-v');
+            if (liga) liga.addEventListener('click', bancadaLiga);
+            if (para) para.addEventListener('click', bancadaPara);
+            if (rit) rit.addEventListener('input', () => {
+                if (ritV) ritV.textContent = rit.value;
+                if (_bancada) bancadaLiga();          // reinicia no ritmo novo
+            });
+            // Enter em qualquer campo já roda
+            ['bn-0', 'bn-1', 'bn-2'].forEach(id => {
+                const i = document.getElementById(id);
+                if (i) i.addEventListener('keydown', e => { if (e.key === 'Enter') bancadaLiga(); });
+            });
+        })();
 
         // ═══ 🙂 CARAS NO LABORATÓRIO — depois de separar olho/boca, dava pra ver cada cara
         //     só esperando ela acontecer. Aqui elas ficam todas a um clique, e o rótulo do
