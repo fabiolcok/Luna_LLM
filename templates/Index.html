@@ -312,9 +312,11 @@
         .est-pensando #orbita-escala { opacity: 1; transform: scale(1.05); }
         /* as 4 GRANDES piscam BRANCO, em sequência pela posição (--d-seq): dá a leitura de
            algo sendo percorrido. Só as grandes — piscar as 16 vira ruído, não pensamento.
-           O :not() é o que deixa os modos de ferramenta continuarem mandando no anel: sem
-           ele esta regra é mais específica e apagaria o equalizador, o radar e o resto. */
-        #presenca.est-pensando:not(.ferr-spotify):not(.ferr-radar):not(.ferr-video):not(.ferr-tela):not(.ferr-jogo)
+           O :not(.com-ferramenta) é o que deixa os modos de ferramenta continuarem mandando
+           no anel: sem ele esta regra é mais específica e apagaria o equalizador e o radar.
+           Antes eram cinco :not(), um por ferramenta — combinatório: ferramenta nova obrigava
+           a editar TODA regra de estado. O marcador único resolve com uma classe só. */
+        #presenca.est-pensando:not(.com-ferramenta)
             #orbita rect:nth-child(4n+1) {
             animation: pens-pisca 1.3s ease-in-out infinite;
             animation-delay: calc(var(--d-seq) * -1.3s);
@@ -407,9 +409,9 @@
            fill-box com origem no centro, o scale() inverte de dentro pra fora e no lugar.
            Os fatores são a razão exata dos lados (2.4 e 1.4): pequena vira grande e
            vice-versa, sem chutar número.
-           O :not() das ferramentas pelo mesmo motivo do pensando — sem ele esta regra
-           passa por cima do equalizador, do radar e dos outros. */
-        #presenca.est-falando:not(.ferr-spotify):not(.ferr-radar):not(.ferr-video):not(.ferr-tela):not(.ferr-jogo)
+           O :not(.com-ferramenta) pelo mesmo motivo do pensando — sem ele esta regra passa
+           por cima do equalizador, do radar e dos outros. */
+        #presenca.est-falando:not(.com-ferramenta)
             #orbita rect {
             fill: #ffd23f;
             transform: scale(1.714);        /* 2.4/1.4 — as PEQUENAS assumem o tamanho grande */
@@ -417,7 +419,7 @@
             animation: fala-radiante 1.15s ease-in-out infinite alternate;
             animation-delay: calc(var(--d-seq) * -1.15s);
         }
-        #presenca.est-falando:not(.ferr-spotify):not(.ferr-radar):not(.ferr-video):not(.ferr-tela):not(.ferr-jogo)
+        #presenca.est-falando:not(.com-ferramenta)
             #orbita rect:nth-child(4n+1) {
             transform: scale(.583);         /* 1.4/2.4 — e as GRANDES encolhem */
             opacity: .5;
@@ -2243,6 +2245,7 @@
             if (ligar === _jogoAtivo) return;
             _jogoAtivo = ligar;
             pres.classList.toggle('ferr-jogo', ligar);
+            sincronizarFerramenta();
 
             [_animControle, _animVida].forEach(a => a && a.pause());
             _animControle = _animVida = null;
@@ -3622,9 +3625,23 @@
             ver_tela:          'tela',
             analisar_aba_atual:'tela',
         };
+        // ═══ EIXOS — `ferr-*` é o eixo ATIVIDADE, e as regras de ESTADO precisam saber se ele
+        //     está ligado, sem enumerar as ferramentas uma a uma. `com-ferramenta` é esse
+        //     marcador: um :not() no lugar de cinco, e ferramenta nova passa a custar zero no
+        //     CSS. Derivado das classes reais em vez de mantido à mão — assim não tem como
+        //     alguém ligar uma ferramenta e esquecer de ligar o marcador. ═══
+        function sincronizarFerramenta() {
+            const el = document.getElementById('presenca');
+            if (!el) return;
+            const ligada = Object.values(FERRAMENTAS_VISUAL).concat('jogo')
+                                 .some(v => el.classList.contains('ferr-' + v));
+            el.classList.toggle('com-ferramenta', ligada);
+        }
+
         function limparFerramenta() {          // nova conversa: volta ao normal
             const el = document.getElementById('presenca');
             if (el) Object.values(FERRAMENTAS_VISUAL).forEach(v => el.classList.remove('ferr-' + v));
+            sincronizarFerramenta();
             pararScanner(); pararOndas();
         }
 
@@ -3683,6 +3700,7 @@
             pararScanner(); pararOndas();
             const modo = FERRAMENTAS_VISUAL[m[1]];
             if (modo) el.classList.add('ferr-' + modo);   // ferramenta sem visual próprio = volta ao normal
+            sincronizarFerramenta();
             if (modo === 'tela')  iniciarScanner();
             if (modo === 'radar') iniciarOndas();
         }
