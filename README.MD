@@ -295,15 +295,8 @@ No topo da interface ela **existe** — não é um enfeite, é o estado dela em 
 **SVG + CSS**, com [anime.js](https://animejs.com/) (v3, MIT, servido de `static/`, **sem CDN**)
 só onde o CSS não chega.
 
-**Anatomia:** uma **cabeça** (círculo que respira e muda de cor), o **rosto** (olhos + boca no
+**Anatomia:** uma **cabeça** (círculo que respira e muda de cor), o **rosto** (um kaomoji no
 miolo), **3 arcos** girando em sentidos diferentes e **16 bolinhas** em órbita.
-
-**Olhos e boca são coisas separadas.** Os olhos são o kaomoji; a **boca é vetorial** — três
-números (curvatura, abertura, largura) viram um `<path>`. Falar anima **só a abertura**, então a
-curva da emoção continua de pé: ela fala brava, fala triste, fala sorrindo, com a mesma boca
-abrindo e fechando. *(Não é lip-sync — o áudio toca na máquina, não no navegador.)* Algumas caras
-ficam fora disso de propósito e guardam o desenho original: as de repouso, a de pensar e a de
-medo já diziam tudo com o kaomoji.
 
 **O rosto é o kaomoji — e quem escolhe é o Python.** O modelo termina a fala com uma TAG de
 clima (`[clima:zoeira]`, `[clima:carinho]`, …, 12 opções) e o `pensar.py` traduz num rosto do
@@ -316,7 +309,7 @@ carinha inventada com devanágari. Escolher uma PALAVRA ele faz bem; desenhar, n
 | parada | 3 rostos de repouso alternando, arcos lentos |
 | ouvindo | órbita contrai, rosto atento |
 | pensando | tudo acelera e abre |
-| falando | os olhos viram a **reação** que ela escolheu e a **boca se mexe** |
+| falando | o rosto vira a **reação** que ela escolheu |
 | AFK | `_　_ 💤`, tudo desacelera (sem parar — parado parece travado) |
 
 **Vida:** ela **pisca**, **te olha** (o rosto acompanha o mouse) e **divaga sozinha** quando você

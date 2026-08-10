@@ -10,16 +10,14 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 10/08/2026
 
-- 👄 ✨ **A Luna ganhou boca.** Até agora o rosto era uma string só, e falar SUBSTITUÍA a cara
-  inteira — ela não conseguia estar brava e falando ao mesmo tempo. Agora os **olhos** são o
-  kaomoji e a **boca é desenhada**: três números (curvatura, abertura, largura) viram um traço
-  vetorial. Falar anima só a abertura, então a curva da emoção fica de pé.
-  - Resultado: ela fala **brava**, fala **triste**, fala **sorrindo**. É a mesma boca abrindo e
-    fechando, com a emoção por baixo — em vez de trocar entre caras prontas.
-  - Não é *lip-sync*: o áudio toca na máquina, não no navegador, então não há o que sincronizar.
-    É um ciclo com ritmo irregular, porque ritmo certinho lê como robô.
-  - Algumas caras ficaram de fora de propósito e guardam o desenho original (as de repouso, a de
-    pensar, a de medo) — o kaomoji delas já dizia o que precisava.
+- 🙂 🔧 **As caras dela foram limpas.** Passei uma peneira: caiu quem tinha "olho" que não lia
+  como olho (acento solto, três curvas sem rosto), e cada cara ganhou uma decisão explícita de
+  **piscar ou não**. A regra que apareceu sozinha: olho que já está fechado ou franzido não tem
+  o que fechar — piscar ali vira um tremeliqueLe sem leitura.
+  - 👄 *E a boca?* Tentei dar uma boca separada pra ela — primeiro desenhada em vetor, depois em
+    2-3 quadros de caractere. **Não ficou boa em nenhuma das duas** e voltei atrás: o rosto
+    continua sendo o kaomoji inteiro. Ficou a limpeza das caras, que veio junto, e o `°ᯅ°` do
+    medo funcionando direito de novo.
 
 - 🪐 ✨ **Ela agora tem problemas.** De vez em quando **acontece alguma coisa com ela** na
   interface — e some quando você resolve. Cada uma pede um jeito diferente de mexer com ela, e
