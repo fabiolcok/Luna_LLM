@@ -1853,7 +1853,7 @@
         const NAO_PISCA = new Set([
             'ᵔ ᵕ ᵔ', '╥‸╥', '◞_◟', 'ꈍ◡ꈍ', '≖_≖', '￢_￢', 'T_T',   // olho já franzido/fechado
             '-⩊-',                                                  // pensando: estática
-            '｀皿´', '｀Д´', '಄ᆺ಄', '⊙ᯅ⊙',                          // raiva, sacudida, medo
+            '｀皿´', '｀Д´', '಄ᆺ಄', '°ᯅ°',                          // raiva, sacudida, medo
             'ᗒ_ᗕ', '>_<', '- _ -',                                  // reações de olho apertado
             '_　_ 💤',                                              // AFK: já está de olho fechado
         ]);
@@ -1911,9 +1911,17 @@
         // (⩊, 𐃷, ₃) desenhado como texto. Elas nunca falam — ela sempre troca de cara antes —
         // então trocar o kaomoji delas por um <path> só perderia o desenho que você escolheu,
         // sem ganhar nada em troca. O caminho de "desenha inteira" já existia pro AFK.
-        // Também a de PENSAR: ela não fala enquanto pensa, e mexer a boca ali dava a
-        // impressão de que estava respondendo antes da hora.
-        const ROSTO_INTEIRO = new Set([...ROSTOS_IDLE, ROSTO_ESTADO.pensando]);
+        // Também a de PENSAR (ela não fala enquanto pensa, e mexer a boca ali dava a impressão
+        // de que estava respondendo antes da hora) e a de MEDO: o ᯅ já É uma boca de pavor
+        // desenhada, e trocá-la pela vetorial deixava a cara em ° _ °, que não assusta ninguém.
+        // Montado na PRIMEIRA chamada, não na declaração: ROSTO_MEDO nasce bem mais abaixo no
+        // arquivo, e um `new Set([... ROSTO_MEDO])` aqui em cima cai na zona morta do const e
+        // derruba o script inteiro. O harness pegou isso antes de virar tela preta.
+        let _inteiro = null;
+        function ehRostoInteiro(cara) {
+            if (!_inteiro) _inteiro = new Set([...ROSTOS_IDLE, ROSTO_ESTADO.pensando, ROSTO_MEDO]);
+            return _inteiro.has(cara);
+        }
 
         function partirRosto(txt) {
             const ch = Array.from(txt || '');
@@ -1943,7 +1951,7 @@
         function pintarRosto(txt, base) {
             const el = document.getElementById('rosto-txt');
             if (!el || !txt) return;
-            const partes = ROSTO_INTEIRO.has(base || txt) ? null : partirRosto(txt);
+            const partes = ehRostoInteiro(base || txt) ? null : partirRosto(txt);
             if (!partes) { _bocaMod = null; el.textContent = txt; return; }   // sem boca: inteira
             let e = el.querySelector('.olho-e');
             if (!e) {                                        // primeira vez: monta a estrutura
@@ -2798,12 +2806,11 @@
             // olhos ALTOS (acentos e sobrescritos): a boca não precisa descer tanto
             // (a chave é sempre o olho ESQUERDO — em ｀皿´ quem manda é o ｀)
             'ᵔ': -0.05, '｀': -0.05, '￢': -0.07,
-            '⊙': -0.16,   // olho grande e redondo: a boca desce como nos de linha inteira
             // olhos que ocupam a linha INTEIRA: a boca tem que descer mais pra não colar
             'T': -0.22, 'O': -0.22, 'ಠ': -0.21, '಄': -0.21, 'Ò': -0.21,
             '◺': -0.20, '╥': -0.20, 'ᗒ': -0.19,
             // As três de REPOUSO não entram aqui porque nem chegam a usar boca vetorial —
-            // ver ROSTO_INTEIRO lá em cima: elas guardam o glifo original.
+            // ver ehRostoInteiro() lá em cima: elas guardam o glifo original.
         };
         function alturaBoca(olho) {
             const c = (olho || '').trim().slice(-1);   // o olho é o último caractere do pedaço
@@ -2836,7 +2843,6 @@
         //     Senos de períodos PRIMOS entre si de propósito: se batessem, o tremor viraria
         //     um pulso regular, que lê como robô em vez de nervosismo.
         const BOCA_MOD = {
-            '⊙ᯅ⊙':  (t) => ({ a: 0.055 * Math.sin(t / 53),  w: 0.030 * Math.sin(t / 41) }),   // medo: raso e rápido
             '╥‸╥':  (t) => ({ c: 0.050 * Math.sin(t / 211), a: 0.020 * Math.sin(t / 89) }),   // travada, tremor mínimo
             'Ò﹏Ó':  (t) => ({ c: 0.170 * Math.sin(t / 307) }),                                // revolta: ondula
             '｀皿´': (t) => ({ w: 0.100 * Math.sin(t / 131), a: 0.070 * Math.sin(t / 97) }),   // rosnado
@@ -2906,8 +2912,8 @@
                     b.className = 'lab-cara';
                     b.textContent = cara;
                     // marca as que não partem em olho/boca: essas não ganham boca animada
-                    if (ROSTO_INTEIRO.has(cara) || !partirRosto(cara)) {
-                        b.title = ROSTO_INTEIRO.has(cara) ? 'grupo 1 — estática, guarda o kaomoji'
+                    if (ehRostoInteiro(cara) || !partirRosto(cara)) {
+                        b.title = ehRostoInteiro(cara) ? 'grupo 1 — estática, guarda o kaomoji'
                                                           : 'sem boca separável (acento/emoji)';
                         b.style.opacity = '.55';
                     } else if (BOCA_MOD[cara]) {
@@ -3196,7 +3202,7 @@
         const MEDO_CASTIGO = 3000;    // cada interferência estica isso
         const MEDO_TETO = 24000;      // ...até aqui, senão vira castigo eterno
         const MEDO_FRIO = 1100;       // intervalo entre interferências contadas
-        const ROSTO_MEDO = '⊙ᯅ⊙';
+        const ROSTO_MEDO = '°ᯅ°';
         const ROSTO_SUSTO = '╥‸╥';
         let _medoAte = 0, _medoTimer = null, _medoChuva = null, _medoUltimoSusto = 0;
 
