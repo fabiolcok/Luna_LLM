@@ -26,8 +26,10 @@ from modulos.memoria import (
     buscar_memoria_relevante
 )
 from modulos.falar import limpar_texto_para_voz, periodo_atual
-from modulos import obsidian
+from modulos import obsidian, config_env
 import httpx
+
+from modulos import config_env
 
 """
 MÓDULO DE PENSAR DA LUNA (MOTOR DE INFERÊNCIA)
@@ -72,6 +74,27 @@ BASE_LOCAL     = "http://127.0.0.1:6996/v1"
 MODELO_PERSONA = "gemma 4 12b it qat"   # faz roteamento (tools) + persona, sozinho
 _MARCA_MODELO  = "gemma-4-12b"          # substring p/ conferir qual GGUF o TurboLLM serviu
 
+def _norm(t: str) -> str:
+    """Só letras e números, minúsculo. O TurboLLM batiza os modelos com o que veio do arquivo
+    — 'gg hf qat_gemma 4 12b it qat q4_0 unquantized|Q4_0|6975878560' — então comparar com
+    'gemma-4-12b' na unha nunca casava: hífen contra espaço. Normalizado, casa."""
+    return "".join(c for c in (t or "").lower() if c.isalnum())
+
+# ── O ID QUE VAI NO CAMPO `model` ────────────────────────────────────────────────────────
+# MODELO_PERSONA acima é só o nome PREFERIDO (o que o JIT do TurboLLM casa). Nem toda versão
+# do TurboLLM deixa batizar o modelo: em algumas o id sai do nome do arquivo, e aí o nome com
+# espaços nunca casa — foi o que aconteceu na máquina do meu irmão, que teve que carregar o
+# modelo na mão antes de abrir a Luna.
+# Então, em vez de EXIGIR um nome, a Luna DESCOBRE: pergunta ao /v1/models qual id o TurboLLM
+# realmente expõe e passa a usar esse. Se nada estiver carregado, cai no nome preferido (que é
+# o que dispara o auto-load). E dá pra cravar um id no .env com MODELO_LLM, pra quem usa outro
+# modelo ou outra versão do servidor.
+_modelo_ativo = config_env.texto("MODELO_LLM")   # do .env; vazio = descobre sozinho
+
+def modelo() -> str:
+    """Id a mandar no campo `model`. Prefere o que o TurboLLM REALMENTE expõe."""
+    return _modelo_ativo or MODELO_PERSONA
+
 # O Gemma-4-12B é "thinking": se deixar ele raciocinar, gasta o orçamento pensando e
 # devolve resposta VAZIA. Desligamos o raciocínio em TODA chamada com isto.
 THINK_OFF = {"chat_template_kwargs": {"enable_thinking": False}}
@@ -88,31 +111,56 @@ def configurar_memoria(ativo: bool):
 cliente = OpenAI(base_url=BASE_LOCAL, api_key="turbollm")
 
 def garantir_modelo_turbollm():
-    # MONO: só precisa do Gemma-4-12B carregado. O auto-load por nome do TurboLLM é
-    # instável p/ GGUFs importados, então: confere o que está carregado; se não for o
-    # nosso, tenta acordá-lo pelo nome e, se ainda assim não vier, avisa pra carregar na mão.
+    # MONO: só precisa do Gemma-4-12B carregado. Ordem: (1) id fixado no .env manda; (2) se o
+    # Gemma já está na lista do servidor, adota o id EXATO que ele deu; (3) senão tenta acordar
+    # pelo nome preferido (auto-load); (4) falhou, mostra o que o servidor TEM — porque
+    # "não carreguei" sem a lista vira adivinhação, que foi o que travou meu irmão.
+    global _modelo_ativo
     try:
         r = httpx.get(f"{BASE_LOCAL}/models", timeout=4)
         ativos = [m["id"] for m in r.json().get("data", [])]
     except Exception:
         cor.vermelho(f"[⚠️ TurboLLM não respondeu em {BASE_LOCAL}. Está ligado? (npx turbollm)]")
         return
-    if any(_MARCA_MODELO in a.lower() for a in ativos):
-        print(f"[✅ {MODELO_PERSONA} já carregado no TurboLLM]")
+
+    if config_env.esta_configurado("MODELO_LLM"):
+        print(f"[✅ modelo fixado no .env: {_modelo_ativo}]")
         return
+
+    # Achou o Gemma na lista? Usa o id EXATO que o servidor deu, seja ele qual for.
+    # O TurboLLM expõe cada modelo DUAS vezes (o id e uma cópia com prefixo 'claude-'), então
+    # a escolha não pode depender da ordem da lista: prefere o sem prefixo, e o mais curto.
+    alvo = _norm(_MARCA_MODELO)
+    candidatos = sorted((a for a in ativos if alvo in _norm(a)),
+                        key=lambda a: (a.lower().startswith("claude-"), len(a)))
+    casou = candidatos[0] if candidatos else None
+    if casou:
+        _modelo_ativo = casou
+        print(f"[✅ Gemma-4-12B já carregado no TurboLLM como '{casou}']")
+        return
+
     print(f"[⏳ Pedindo ao TurboLLM pra carregar {MODELO_PERSONA}...]")
     try:
         w = cliente.chat.completions.create(
             model=MODELO_PERSONA, messages=[{"role": "user", "content": "oi"}],
             max_tokens=1, extra_body=THINK_OFF)
-        if _MARCA_MODELO not in (w.model or "").lower():
-            cor.vermelho(f"[⚠️ TurboLLM serviu '{w.model}' em vez do {MODELO_PERSONA}. "
-                         f"Carregue o Gemma 4 12B QAT na tela Models do TurboLLM.]")
+        servido = _norm(w.model)
+        if _norm(_MARCA_MODELO) in servido:
+            _modelo_ativo = w.model            # o auto-load funcionou: fica com o id real
+            print(f"[✅ Gemma-4-12B carregado como '{w.model}']")
         else:
-            print(f"[✅ {MODELO_PERSONA} carregado]")
+            cor.vermelho(f"[⚠️ TurboLLM serviu '{w.model}' em vez do Gemma-4-12B. "
+                         f"Carregue o Gemma 4 12B QAT na tela Models do TurboLLM.]")
     except Exception as e:
-        cor.vermelho(f"[⚠️ Não carreguei {MODELO_PERSONA} no TurboLLM ({e}). "
-                     f"Carregue-o na mão na tela Models.]")
+        # Mensagem que RESOLVE: mostra o que o servidor tem, pra não virar adivinhação.
+        cor.vermelho(f"[⚠️ Não consegui carregar o Gemma pelo nome '{MODELO_PERSONA}' ({e})]")
+        if ativos:
+            cor.amarelo(f"[   O TurboLLM está expondo: {', '.join(ativos)}]")
+            cor.amarelo(f"[   Se um desses é o Gemma, ponha no .env:  MODELO_LLM=<o id exato>]")
+        else:
+            cor.amarelo("[   Nenhum modelo carregado. Abra a tela Models do TurboLLM e "
+                        "carregue o Gemma 4 12B QAT — em algumas versões não dá pra "
+                        "renomear, e aí o auto-load por nome não funciona.]")
 
 def aquecer_modelo():
     """Cutucão mínimo (max_tokens=1) que RESETA o idle-unload do TurboLLM — mantém o
@@ -120,7 +168,7 @@ def aquecer_modelo():
     (senão cada fala paga cold-start de ~15s). Silencioso e barato."""
     try:
         cliente.chat.completions.create(
-            model=MODELO_PERSONA, messages=[{"role": "user", "content": "oi"}],
+            model=modelo(), messages=[{"role": "user", "content": "oi"}],
             max_tokens=1, extra_body=THINK_OFF, timeout=8)
     except Exception:
         pass
@@ -425,7 +473,7 @@ def frase_confirmacao(instrucao: str, max_tokens: int = 120) -> str:
     o chamador deve ter um fallback."""
     try:
         r = cliente.chat.completions.create(
-            model=MODELO_PERSONA,
+            model=modelo(),
             messages=[
                 {"role": "system", "content": PROMPT_LUNA_PERSONA},
                 {"role": "user", "content": instrucao},
@@ -684,7 +732,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         msgs.append({"role": "user", "content": user_msg})
         _t0 = time.time()
         resposta = cliente.chat.completions.create(
-            model=MODELO_PERSONA,
+            model=modelo(),
             messages=msgs,
             temperature=0.8,   # Fase 2 (experimento persona): +variância pra ela ser menos previsível
             presence_penalty=0.3,
@@ -935,7 +983,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
         # MONO: o mesmo modelo (Gemma-4-12B) roteia as ferramentas. Thinking desligado —
         # senão ele gastaria o orçamento pensando antes de decidir a ferramenta.
         resposta_ferramenta = cliente.chat.completions.create(
-            model=MODELO_PERSONA,
+            model=modelo(),
             messages=mensagens_ferramenta,
             temperature=0.0,
             tools=ferramentas_ativas,

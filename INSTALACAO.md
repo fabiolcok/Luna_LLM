@@ -75,8 +75,11 @@ Baixe os `.gguf` e salve numa pasta sua (ex.: `G:\Projetos\Modelos\...`).
 
 No painel do TurboLLM, adicione um modelo apontando pro `.gguf` do Gemma, com **atenção a 3 detalhes que quebram tudo se errar**:
 
-- 🏷️ **Nome do modelo:** exatamente **`gemma 4 12b it qat`** — **com espaços!** É o único
-  formato que o gateway JIT do TurboLLM casa pra auto-carregar. Com hífens dá **503**.
+- 🏷️ **Nome do modelo:** se a sua versão do TurboLLM deixar batizar, use **`gemma 4 12b it qat`**
+  — com espaços. É o formato que o gateway JIT casa pra auto-carregar (com hífens dá **503**).
+  **Não tem campo de nome?** Tudo bem: a Luna **descobre sozinha** qual id o servidor expõe.
+  Só carregue o modelo na tela *Models* antes de abrir ela na primeira vez. Se mesmo assim
+  reclamar, o log lista os ids disponíveis — copie o certo pra `MODELO_LLM=` no `.env`.
 - 🔌 **Porta do gateway:** **6996** (é onde a Luna procura o LLM — veja `BASE_LOCAL` em
   `pensar.py`). O endpoint fica em `http://127.0.0.1:6996/v1`.
 - ⚙️ **Engine:** llama.cpp **ROCm** (AMD) ou **CUDA** (NVIDIA). Vulkan é lento em AMD, evite.
