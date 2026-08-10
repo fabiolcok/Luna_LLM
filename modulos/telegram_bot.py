@@ -8,11 +8,15 @@ import logging
 import telebot
 from telebot import types
 
+from modulos import config_env
+
 _log = logging.getLogger("luna.telegram")
 logging.getLogger("TeleBot").setLevel(logging.CRITICAL)  # suprime tracebacks de rede
 
-TELEGRAM_TOKEN   = os.getenv("TELEGRAM_TOKEN", "")
-TELEGRAM_CHAT_ID = int(os.getenv("TELEGRAM_CHAT_ID", "0"))
+# Lidos via config_env: o int() cru estourava com o placeholder 'seu_chat_id' do
+# .env.example e derrubava o main.py na IMPORTAÇÃO — uma feature opcional matando o app.
+TELEGRAM_TOKEN   = config_env.texto("TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID = config_env.inteiro("TELEGRAM_CHAT_ID")
 
 _historico_telegram = []
 

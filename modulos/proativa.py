@@ -897,7 +897,8 @@ def _buscar_dados_lol():
 
 def _buscar_dados_deadlock():
     """Busca última partida e stats agregados via deadlock-api.com (sem chave)."""
-    steam_id = int(os.getenv("STEAM_ID", "0"))
+    from modulos import config_env
+    steam_id = config_env.inteiro("STEAM_ID")   # placeholder do .env.example não estoura
     if steam_id <= 0:
         return "STEAM_ID não configurado."
     account_id = steam_id - 76561197960265728
