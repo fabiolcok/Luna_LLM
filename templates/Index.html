@@ -1304,6 +1304,11 @@
                 <input id="bn-ritmo" type="range" min="60" max="400" step="10" value="160">
                 <span id="bn-ritmo-v">160</span>
             </div>
+            <div class="lab-sld">
+                <label>altura</label>
+                <input id="bn-sobe" type="range" min="-0.45" max="0.15" step="0.01" value="0">
+                <span id="bn-sobe-v">0</span>
+            </div>
             <div class="lab-grade">
                 <button class="lab-btn" id="bn-liga">▶ rodar na cara atual</button>
                 <button class="lab-btn limpar" id="bn-para">■ parar</button>
@@ -2013,7 +2018,7 @@
                 // glifo puro: sem SVG, sem tabela de altura. Um caractere se assenta na linha de
                 // base sozinho — é por isso que as caras originais nunca tiveram esse problema.
                 boca.classList.add('glifo');
-                el.style.setProperty('--boca-sobe', '0em');
+                el.style.setProperty('--boca-sobe', _bancada.sobe + 'em');   // mais negativo = mais baixo
                 boca.textContent = _bancada.frames[_bancada.i] || partes[1];
                 _bocaMod = null;
                 return;
@@ -2824,7 +2829,7 @@
             if (!frames.length) { bancadaPara(); return; }
             const ritmo = parseInt((document.getElementById('bn-ritmo') || {}).value || 160, 10);
 
-            _bancada = { frames, i: 0 };
+            _bancada = { frames, i: 0, sobe: bancadaSobe() };
             clearInterval(_bnTimer);
             pintarRosto(_rostoAtual);
             // vai-e-volta (0,1,2,1,0...) em vez de reiniciar do zero: boca que ABRE e FECHA,
@@ -2840,6 +2845,19 @@
                 const b = document.querySelector('#rosto-txt .boca');
                 if (b) b.textContent = _bancada.frames[_bancada.i];
             }, ritmo);
+        }
+
+        function bancadaSobe() {
+            const el = document.getElementById('bn-sobe');
+            return el ? parseFloat(el.value) || 0 : 0;
+        }
+
+        function bancadaAltura() {
+            // aplica DIRETO, sem repintar: mexer o slider não pode reiniciar o ciclo da boca
+            if (!_bancada) return;
+            _bancada.sobe = bancadaSobe();
+            const el = document.getElementById('rosto-txt');
+            if (el) el.style.setProperty('--boca-sobe', _bancada.sobe + 'em');
         }
 
         function bancadaPara() {
@@ -2860,6 +2878,12 @@
             if (rit) rit.addEventListener('input', () => {
                 if (ritV) ritV.textContent = rit.value;
                 if (_bancada) bancadaLiga();          // reinicia no ritmo novo
+            });
+            const sob  = document.getElementById('bn-sobe');
+            const sobV = document.getElementById('bn-sobe-v');
+            if (sob) sob.addEventListener('input', () => {
+                if (sobV) sobV.textContent = sob.value;
+                bancadaAltura();
             });
             // Enter em qualquer campo já roda
             ['bn-0', 'bn-1', 'bn-2'].forEach(id => {
