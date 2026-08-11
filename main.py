@@ -438,6 +438,8 @@ def main():
             cor.verde(f"[📓 Obsidian: notas de config criadas com template: {', '.join(_criadas)}]")
     except Exception:
         pass
+    from modulos.diagnostico import mostrar_diagnostico
+    mostrar_diagnostico()
     iniciar_servidor()
     iniciar_bot_telegram()
     threading.Thread(target=loop_voz, daemon=True).start()

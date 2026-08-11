@@ -91,6 +91,8 @@ def _norm(t: str) -> str:
 # o que dispara o auto-load). E dá pra cravar um id no .env com MODELO_LLM, pra quem usa outro
 # modelo ou outra versão do servidor.
 _modelo_ativo = config_env.texto("MODELO_LLM")   # do .env; vazio = descobre sozinho
+_turbollm_pronto = False
+_modelo_pronto = False
 
 def modelo() -> str:
     """Id a mandar no campo `model`. Prefere o que o TurboLLM REALMENTE expõe."""
@@ -152,7 +154,9 @@ def garantir_modelo_turbollm():
     # Gemma já está na lista do servidor, adota o id EXATO que ele deu; (3) senão tenta acordar
     # pelo nome preferido (auto-load); (4) falhou, mostra o que o servidor TEM — porque
     # "não carreguei" sem a lista vira adivinhação, que foi o que travou meu irmão.
-    global _modelo_ativo
+    global _modelo_ativo, _turbollm_pronto, _modelo_pronto
+    _turbollm_pronto = False
+    _modelo_pronto = False
     ativos = _listar_modelos_turbollm()
     if ativos is None:
         cor.amarelo("[⏳ TurboLLM não respondeu; tentando iniciar o servidor...]")
@@ -160,6 +164,7 @@ def garantir_modelo_turbollm():
     if ativos is None:
         cor.vermelho(f"[⚠️ TurboLLM não respondeu em {BASE_LOCAL}. Rode 'turbollm' no CMD e veja o erro.]")
         return
+    _turbollm_pronto = True
 
     if config_env.esta_configurado("MODELO_LLM"):
         print(f"[⏳ Pedindo ao TurboLLM pra carregar o modelo fixado no .env: {_modelo_ativo}...]")
@@ -168,6 +173,7 @@ def garantir_modelo_turbollm():
                 model=_modelo_ativo, messages=[{"role": "user", "content": "oi"}],
                 max_tokens=1, extra_body=THINK_OFF, timeout=60)
             _modelo_ativo = w.model or _modelo_ativo
+            _modelo_pronto = True
             print(f"[✅ Modelo carregado no TurboLLM como '{_modelo_ativo}']")
         except Exception as e:
             cor.vermelho(f"[⚠️ Não consegui carregar o modelo fixado '{_modelo_ativo}' ({e})]")
@@ -183,6 +189,7 @@ def garantir_modelo_turbollm():
     casou = candidatos[0] if candidatos else None
     if casou:
         _modelo_ativo = casou
+        _modelo_pronto = True
         print(f"[✅ Gemma-4-12B já carregado no TurboLLM como '{casou}']")
         return
 
@@ -194,6 +201,7 @@ def garantir_modelo_turbollm():
         servido = _norm(w.model)
         if _norm(_MARCA_MODELO) in servido:
             _modelo_ativo = w.model            # o auto-load funcionou: fica com o id real
+            _modelo_pronto = True
             print(f"[✅ Gemma-4-12B carregado como '{w.model}']")
         else:
             cor.vermelho(f"[⚠️ TurboLLM serviu '{w.model}' em vez do Gemma-4-12B. "
@@ -208,6 +216,12 @@ def garantir_modelo_turbollm():
             cor.amarelo("[   Nenhum modelo carregado. Abra a tela Models do TurboLLM e "
                         "carregue o Gemma 4 12B QAT — em algumas versões não dá pra "
                         "renomear, e aí o auto-load por nome não funciona.]")
+
+
+def estado_turbollm() -> dict:
+    """Estado já apurado no warm-up; não faz nova chamada nem tenta carregar nada."""
+    return {"servidor": _turbollm_pronto, "modelo": _modelo_pronto,
+            "modelo_id": modelo() if _modelo_pronto else ""}
 
 def aquecer_modelo():
     """Cutucão mínimo (max_tokens=1) que RESETA o idle-unload do TurboLLM — mantém o

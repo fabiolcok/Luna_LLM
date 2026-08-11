@@ -9,10 +9,11 @@ import re
 import datetime
 import unicodedata
 from dotenv import load_dotenv
+from modulos import config_env
 
 load_dotenv()
 # Caminho do vault vem do .env (OBSIDIAN_VAULT). Sem ele, a integração fica inativa.
-_VAULT = os.getenv("OBSIDIAN_VAULT", "").strip()
+_VAULT = config_env.texto("OBSIDIAN_VAULT")
 
 # A Luna lê TUDO, menos: pastas internas do Obsidian e a pasta de ignorados (você controla).
 # Jogue em "0 Pasta ignorada" qualquer coisa que ela NÃO deva ler.
@@ -748,6 +749,25 @@ def semear_vault() -> list:
         except Exception:
             pass
     return criadas
+
+
+def estado_vault() -> dict:
+    """Resumo local da semeadura para o diagnóstico; não cria nem altera arquivos."""
+    configurado = bool(_VAULT)
+    existe = os.path.isdir(_VAULT) if configurado else False
+    presentes = 0
+    if existe:
+        presentes = sum(
+            os.path.isfile(os.path.join(_VAULT, *partes))
+            for partes in _TEMPLATES_VAULT
+        )
+    return {
+        "caminho": _VAULT,
+        "configurado": configurado,
+        "existe": existe,
+        "presentes": presentes,
+        "total": len(_TEMPLATES_VAULT),
+    }
 
 
 def _data_cabecalho_novidade(bloco: str):
