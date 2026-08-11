@@ -244,6 +244,7 @@ def _status_chaves() -> list:
         load_dotenv()   # garante o .env carregado independente da ordem de import
     except Exception:
         pass
+    from modulos.config_env import esta_configurado
     chaves = []
     try:
         with open('.env.example', encoding='utf-8') as f:
@@ -251,7 +252,7 @@ def _status_chaves() -> list:
                 m = re.match(r'^([A-Z][A-Z0-9_]*)=', linha.strip())
                 if m:
                     nome = m.group(1)
-                    chaves.append({"chave": nome, "ok": bool(os.getenv(nome, "").strip())})
+                    chaves.append({"chave": nome, "ok": esta_configurado(nome)})
     except Exception:
         pass
     return chaves
