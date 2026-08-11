@@ -209,7 +209,7 @@ TAREFAS_ATIVAS = {
     "pausa": True, "clima": True, "bom_dia": True, "steam": True, "navegador": True,
     "radar_rss": True, "autoconhecimento": True, "steam_jogo": True, "animes": True,
     "memoria": True, "retomar": True, "habitos": True, "lol_mortes": True,
-    "radar_promocoes": True,
+    "radar_promocoes": True, "acompanhamentos": True,
 }
 
 # Estado interno da tarefa de contexto de navegação
@@ -1497,6 +1497,26 @@ _RETOMAR_ATRASO_ABERTURA = 4 * 60      # s após ligar a Luna: a 1ª não sai "n
 _RETOMAR_ESPACO_2A = 6 * 3600          # 6h entre a 1ª e a 2ª retomada
 _RETOMAR_REASK_DIAS = 21               # NÃO repõe o MESMO assunto por N dias (era o bug do "todo dia a mesma pergunta")
 
+
+def _tarefa_acompanhamentos():
+    """Pergunta só por itens que o usuário confirmou; agenda nunca entra nesta fila."""
+    # O loop já roda a cada ~30 s. Um segundo relógio de 5 min podia checar segundos
+    # antes do vencimento e empurrar a pergunta por mais 5 min; jogo/cooldown ampliavam
+    # ainda mais o atraso. Ler o JSON é barato e, sem item vencido, não chama o 12B.
+    from modulos import acompanhamentos
+    item = acompanhamentos.proximo_vencido()
+    if not item:
+        return
+    prompt = (
+        f"O usuário pediu explicitamente para você acompanhar este assunto: '{item['assunto']}'. "
+        "Pergunte em UMA frase curta como ficou / no que deu. Não diga que é lembrete, não mencione "
+        "arquivo, sistema ou agendamento e não invente nenhum detalhe."
+    )
+    texto = _gerar_fala_proativa(prompt, "acompanhamento", max_tokens=100, variar=False)
+    if texto and _falar_proativamente(texto):
+        acompanhamentos.registrar_pergunta(item["id"])
+        registrar_tentativa()
+
 def _tarefa_retomar_assunto():
     """Retoma um assunto em ABERTO de antes ('e aí, conseguiu consertar o PC?'). Régua:
     no máx 2x/dia — a 1ª uns minutos depois de LIGAR a Luna, a 2ª ~6h depois; reabrir no
@@ -1525,7 +1545,9 @@ def _tarefa_retomar_assunto():
         asked = {f: hoje for f in asked}
     limite = (datetime.date.today() - datetime.timedelta(days=_RETOMAR_REASK_DIAS)).isoformat()
     bloqueados = {f for f, d in asked.items() if d >= limite}
-    fatos = [f for _, f in obsidian.listar_memoria_episodica() if f not in bloqueados]
+    from modulos import acompanhamentos
+    fatos = [f for _, f in obsidian.listar_memoria_episodica()
+             if f not in bloqueados and not acompanhamentos.relacionado_a_ativo(f)]
     if not fatos:
         return
     # NÃO bater no 12B a TODA volta do loop (~30s/1min) só pra perguntar "tem pendência?":
@@ -2022,7 +2044,8 @@ def _fmt_duracao(minutos: int) -> str:
 _RAM_HOG_MIN_MB = 3000          # só avisa acima disso (~3GB). Alto de propósito: 32GB de RAM
                                 # é folgado — só vale o toque quando algo REALMENTE está comendo
 _PROC_INTOCAVEIS = {           # nunca cita nem sugere mexer (sistema, a própria Luna, o TRABALHO)
-    "python.exe", "pythonw.exe", "node.exe",          # a Luna + o TurboLLM
+    "python.exe", "pythonw.exe", "node.exe",          # a Luna + inicializadores do TurboLLM
+    "llama-server.exe", "llama-server",                # o 12B sempre ocupa muita RAM por definição
     "sqlservr.exe", "sqlwriter.exe",                  # SQL Server (trabalho — NUNCA cutucar)
     # >>> adicione aqui o .exe do seu programa de suporte pra ela nunca mexer nele <<<
     "explorer.exe", "dwm.exe", "system", "registry", "memcompression",
@@ -2398,6 +2421,7 @@ def _loop_proativo():
                     if TAREFAS_ATIVAS.get("clima", True): _tarefa_monitorar_clima()
                     if TAREFAS_ATIVAS.get("steam", True): _tarefa_steam_wishlist()
                     if TAREFAS_ATIVAS.get("bom_dia", True): _tarefa_bom_dia()
+                    if TAREFAS_ATIVAS.get("acompanhamentos", True): _tarefa_acompanhamentos()
                     if TAREFAS_ATIVAS.get("retomar", True): _tarefa_retomar_assunto()
                     if TAREFAS_ATIVAS.get("habitos", True): _tarefa_detectar_habito()
                     if TAREFAS_ATIVAS.get("navegador", True): _tarefa_contexto_navegador()

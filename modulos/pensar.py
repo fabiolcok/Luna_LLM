@@ -288,6 +288,12 @@ def _executar_salvar_obsidian(conteudo="", titulo="", origem=""):
     # não passa pela persona, então é rápida e à prova do modelo inventar bobagem.
     return obsidian.salvar_nota(conteudo, titulo or None, origem)
 
+
+def _executar_propor_acompanhamento(assunto="", perguntar_em=""):
+    from modulos import acompanhamentos
+    origem = "pc" if _presenca_pc.get() else "telegram"
+    return acompanhamentos.propor(assunto, perguntar_em, origem)
+
 # Detecta "anota/salva/..." no começo da mensagem e extrai o conteúdo (texto ORIGINAL,
 # fiel — não a reprodução do roteador 4B, que mangla textos longos).
 _RE_INICIO_SALVAR = re.compile(r'^\s*(anota|salva|registra|guarda|arquiva|toma\s+nota|lembra(r)?(\s+que)?)\b', re.IGNORECASE)
@@ -352,7 +358,8 @@ _CAPACIDADES_REATIVAS = (
     "ver e analisar sua tela, resumir vídeos do YouTube, resumir sites e links, "
     "pesquisar na web, checar emails não lidos, adicionar e ler eventos da agenda Google, "
     "controlar o Spotify, ler e anotar nas suas notas do Obsidian (inclusive guardar fotos "
-    "que você manda no Telegram), verificar o clima, mutar/desmutar o som, "
+    "que você manda no Telegram), acompanhar o desfecho de assuntos que você confirmar, "
+    "verificar o clima, mutar/desmutar o som, "
     "consultar suas stats do Overwatch, consultar jogos na Steam (preço, promoção e descrição), "
     "gerar imagens e controlar o Firefox"
 )
@@ -388,6 +395,7 @@ FUNCOES_DISPONIVEIS = {
     "duvida_do_jogo": duvida_do_jogo,
     "ler_obsidian": _executar_ler_obsidian,
     "salvar_obsidian": _executar_salvar_obsidian,
+    "propor_acompanhamento": _executar_propor_acompanhamento,
 }
 
 
@@ -864,6 +872,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
 
     resultado_longo = len(resposta_tecnica) > 200 and not is_proativo and not forcar_incluir
     resultado_imagem = bool(re.match(r'^\s*imagem gerada\b', resposta_tecnica, re.IGNORECASE))
+    resultado_acompanhamento = resposta_tecnica.startswith("ACOMPANHAMENTO_PROPOSTO:")
     _falhou = bool(re.match(r'^\s*(erro|falha|nenhum|não foi possível)\b|^\s*sistema:',
                             resposta_tecnica, re.IGNORECASE))
 
@@ -917,7 +926,15 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             f"frases. Use apenas o feito visto: não invente quantas vezes ele morreu, sofreu ou tentou.{anti_rep}"
         )
     elif resposta_tecnica:
-        if _falhou:
+        if resultado_acompanhamento:
+            user_msg = (
+                f"O usuário disse: '{prompt_usuario}'\n"
+                f"O sistema identificou este possível acompanhamento: '{resposta_tecnica}'\n"
+                "Em UMA frase curta e natural, pergunte se ele quer que você acompanhe o RESULTADO. "
+                "Não diga que já salvou, não prometa lembrar ainda e não chame de agenda ou lembrete. "
+                "O botão e a próxima resposta dele farão a confirmação."
+            )
+        elif _falhou:
             user_msg = (
                 f"O usuário disse: '{prompt_usuario}'\n\n"
                 f"A ferramenta FALHOU e retornou: '{resposta_tecnica}'\n"
@@ -1272,6 +1289,11 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 "NÃO converse. NÃO assuma persona. NÃO justifique. "
                 "REGRA CRÍTICA: Estados emocionais ('estou cansado', 'estou entediado'), saudações e comentários genéricos NÃO ativam ferramentas. "
                 "Acione ferramenta SOMENTE se o usuário pediu uma ação ou informação específica. "
+                "EXCEÇÃO CONTROLADA: você pode acionar 'propor_acompanhamento' quando o usuário "
+                "contar uma situação CONCRETA em aberto com desfecho futuro claro (assistência, "
+                "entrevista, exame, tentativa de resolver algo), mesmo sem pedir. Isso apenas oferece; "
+                "não salva. NUNCA use essa exceção para agenda, compromisso, lembrete para FAZER algo "
+                "ou ação cotidiana como comer, dormir, comprar e jogar. "
                 "Se nenhuma ferramenta for necessária (saudação, papo, desabafo): apenas NÃO chame ferramenta nenhuma. "
                 "Não produzir saída é o comportamento CORRETO e esperado — não pondere sobre o formato da resposta vazia, "
                 "não tente conversar. Outro modelo cuida da conversa."
@@ -1346,6 +1368,11 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 and not _RE_INTENCAO_SALVAR.search(prompt_usuario or "")):
             cor.vermelho("[⚠️ salvar_obsidian sem intenção de anotar — ignorado, respondendo normal]")
             _tool_calls = None
+        if _tool_calls and _tool_calls[0].function.name == "propor_acompanhamento":
+            from modulos import acompanhamentos as _acomp
+            if not _acomp.pode_propor(prompt_usuario or ""):
+                cor.vermelho("[⚠️ acompanhamento confundido com agenda/cotidiano — ignorado]")
+                _tool_calls = None
 
         if _tool_calls:
             ferramenta_chamada = True
@@ -1406,6 +1433,11 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                         _u = _extrair_url(prompt_usuario)
                         if _u:
                             argumentos_dit["url"] = _u
+                    if nome_funcao == "propor_acompanhamento":
+                        # O 12B inventou 10h para uma frase que dizia apenas "amanhã". A data do
+                        # acompanhamento é resolvida deterministicamente a partir da fala ORIGINAL;
+                        # o modelo só escolhe qual é o assunto cujo desfecho vale acompanhar.
+                        argumentos_dit["perguntar_em"] = prompt_usuario
                     if nome_funcao == "salvar_obsidian":
                         argumentos_dit["origem"] = "telegram" if responder_completo else "voz"
                         # Usa o texto ORIGINAL do usuário como conteúdo (fiel), não a
@@ -1553,6 +1585,13 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 # assunto — rico, mas sem poder mentir (o save é fato, não invenção).
                 _cont_salvo = _conteudo_para_anotar(prompt_usuario)
                 texto_resposta = _confirmar_salvamento(resultado_str, _cont_salvo, prompt_usuario, historico, max_tokens, responder_completo)
+                lembranca_oculta = ""
+            elif ferramenta_chamada and nome_funcao == "propor_acompanhamento":
+                # A proposta é estado temporário, não um fato ocorrido nem memória de ferramenta.
+                texto_resposta = _reescrever_como_luna(
+                    resultado_str, prompt_usuario, historico, max_tokens,
+                    responder_completo=responder_completo,
+                )
                 lembranca_oculta = ""
             else:
                 cor.amarelo("[🎭 Passando para LLM persona...]")

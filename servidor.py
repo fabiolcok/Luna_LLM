@@ -61,7 +61,7 @@ _estado_config = {
                 "clima": True, "bom_dia": True, "retomar": True, "steam": True, "navegador": True,
                 "steam_jogo": True, "radar_rss": True, "animes": True,
                 "autoconhecimento": True, "memoria": True, "habitos": True, "lol_mortes": True,
-                "radar_promocoes": True},
+                "radar_promocoes": True, "acompanhamentos": True},
     "voz": "jf_alpha",
     "velocidade": 0.9,
     "teclas": {"ptt": "ctrl+alt+f8", "interromper": "ctrl+f9", "suspenso": "ctrl+f7"},
@@ -287,6 +287,19 @@ def notificar_memoria(n=None):
             n = 0
     _broadcast({"tipo": "memoria_badge", "n": n})
 
+
+def _acompanhamentos_estado() -> dict:
+    try:
+        from modulos import acompanhamentos
+        return acompanhamentos.estado_interface()
+    except Exception:
+        return {"confirmacao": None, "ativos": []}
+
+
+def notificar_acompanhamentos():
+    """Atualiza card e lista sem atrelar o estado à fala atual da Luna."""
+    _broadcast({"tipo": "acompanhamentos", "estado": _acompanhamentos_estado()})
+
 @sock.route('/ws')
 def websocket(ws):
     # O servidor escuta em 0.0.0.0 (dá pra abrir do celular). Ações que mexem NO PC
@@ -310,6 +323,8 @@ def websocket(ws):
         ws.send(json.dumps({"tipo": "historico_completo", "turnos": list(_historico_web)}))
         ws.send(json.dumps({"tipo": "status", "texto": _ultimo_status}))
         ws.send(json.dumps({"tipo": "memoria_badge", "n": len(_memoria_estado()["pendentes"])}))
+        ws.send(json.dumps({"tipo": "acompanhamentos", "estado": _acompanhamentos_estado()},
+                           ensure_ascii=False))
     except:
         pass
 
@@ -414,6 +429,23 @@ def websocket(ws):
                         _broadcast({"tipo": "memoria", "estado": _memoria_estado()})
                         notificar_memoria()
                     threading.Thread(target=_processar_mem, daemon=True).start()
+                # ---- Acompanhamentos: botões e fala resolvem o mesmo estado ----
+                elif dados.get('comando') == 'acompanhamento_acao':
+                    from modulos import acompanhamentos
+                    resposta = acompanhamentos.resolver(
+                        dados.get('acao', ''), dados.get('id', ''), dados.get('quando', ''))
+                    ws.send(json.dumps({"tipo": "acompanhamento_feedback",
+                                        "texto": resposta or "Essa decisão já expirou."},
+                                       ensure_ascii=False))
+                    notificar_acompanhamentos()
+                elif dados.get('comando') == 'acompanhamento_cancelar':
+                    from modulos import acompanhamentos
+                    ok = acompanhamentos.cancelar(dados.get('id', ''))
+                    ws.send(json.dumps({"tipo": "acompanhamento_feedback",
+                                        "texto": ("Acompanhamento removido." if ok
+                                                  else "Esse acompanhamento não existe mais.")},
+                                       ensure_ascii=False))
+                    notificar_acompanhamentos()
                 elif dados.get('config'):
                     _aplicar_config(dados)
     except Exception:

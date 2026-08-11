@@ -67,6 +67,19 @@ def iniciar_bot_telegram():
         import servidor as _srv
         import modelos.cores as cor
         try:
+            from modulos import acompanhamentos
+            resposta_direta = acompanhamentos.interceptar_resposta(texto)
+            if resposta_direta:
+                _historico_telegram.extend([
+                    {"role": "user", "content": texto},
+                    {"role": "assistant", "content": resposta_direta},
+                ])
+                if len(_historico_telegram) > 12:
+                    del _historico_telegram[:-12]
+                bot.send_message(TELEGRAM_CHAT_ID, resposta_direta)
+                cor.ciano(f"[📱 Telegram Luna acompanhamento] {resposta_direta}")
+                _log.info(f"[Telegram] Luna [acompanhamento]: {resposta_direta}")
+                return
             from modulos.pensar import (gerar_resposta, obter_e_limpar_imagem_pendente,
                                         obter_e_limpar_kaomoji)
             # Bloqueia broadcast de GIF/kaomoji: o que rola no Telegram não é pra pipocar no web

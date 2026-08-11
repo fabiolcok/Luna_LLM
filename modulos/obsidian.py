@@ -646,6 +646,13 @@ _TEMPLATES_VAULT = {
 """,
     ("Luna", "Memoria.md"): _TEMPLATE_MEMORIA,
     ("Luna", "Memoria_arquivo.md"): _TEMPLATE_MEMORIA_ARQ,
+    ("Luna", "Acompanhamentos.md"): """# Acompanhamentos da Luna
+
+> Gerenciado automaticamente. Use os botões da Luna ou responda por voz/texto.
+> Isto não é agenda nem memória: são assuntos ainda esperando um desfecho.
+
+_Nenhum acompanhamento pendente._
+""",
     ("Luna", "radar_rss.md"): """# Radar RSS — fontes que a Luna acompanha
 
 Cole aqui links de feeds RSS, um por linha em bullet. A Luna lê os links,

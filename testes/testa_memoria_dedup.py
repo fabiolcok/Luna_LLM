@@ -39,6 +39,18 @@ class TestaDeduplicacaoMemoria(unittest.TestCase):
             resultado = memoria.mem_filtrar_candidatos(["Possível atualização"], llm)
         self.assertEqual(["Possível atualização"], resultado)
 
+    def test_acompanhamento_ativo_nao_vira_segundo_cartao_de_memoria(self):
+        estado = {"marcador_ts": 0.0, "pendentes": [], "lixo": [], "recusados": []}
+        salvar = unittest.mock.Mock()
+        with (patch.object(memoria, "carregar_mem_pendente", return_value=estado),
+              patch.object(memoria, "salvar_mem_pendente", salvar),
+              patch("modulos.acompanhamentos.relacionado_a_ativo", return_value=True)):
+            adicionados = memoria.mem_adicionar_candidatos([
+                "Amanhã vai levar o PC para a assistência"
+            ])
+        self.assertEqual(0, adicionados)
+        salvar.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

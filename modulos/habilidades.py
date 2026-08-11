@@ -1274,4 +1274,19 @@ ferramentas_disponiveis = [
             }
         }
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "propor_acompanhamento",
+            "description": "OFERECE acompanhar o DESFECHO de uma situação concreta em aberto (ex: PC foi para assistência, entrevista, exame, conversa difícil, tentativa de resolver um problema). Esta ferramenta NÃO salva sozinha: o usuário ainda confirma por botão, voz ou texto. NÃO use para compromisso, evento, tarefa ou lembrete para FAZER algo; nesses casos use agenda/lembrete. NÃO use para ações cotidianas sem desfecho relevante, como comer, dormir, comprar ou jogar.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "assunto": {"type": "string", "description": "Situação curta cujo RESULTADO será perguntado depois, sem inventar detalhes."},
+                    "perguntar_em": {"type": "string", "description": "Data/hora ISO futura sugerida. Se o usuário não indicou quando, deixe vazio."}
+                },
+                "required": ["assunto"]
+            }
+        }
+    },
 ]

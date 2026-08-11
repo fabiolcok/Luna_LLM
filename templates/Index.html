@@ -701,6 +701,57 @@
         }
         #aval-motivo-enviar:hover { background: #2a1414; }
 
+        /* Acompanhamento: decisão curta, separada da curadoria de memória. */
+        #acompanhamento-card {
+            display: none;
+            max-width: 520px;
+            margin: 4px auto 0;
+            padding: 12px 14px;
+            background: #101622;
+            border: 1px solid #2d4b68;
+            border-radius: 9px;
+            color: #9aa5ce;
+            font-size: 0.84rem;
+        }
+        #acompanhamento-card.ativo { display: block; }
+        #acompanhamento-titulo { color: #b4f9f8; font-weight: 600; margin-bottom: 5px; }
+        #acompanhamento-assunto { color: #cfc9c2; line-height: 1.35; }
+        #acompanhamento-quando { color: #565f89; font-size: 0.76rem; margin-top: 4px; }
+        #acompanhamento-acoes { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+        .acomp-btn {
+            background: #111827;
+            border: 1px solid #3d5875;
+            color: #9ecee6;
+            border-radius: 6px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.78rem;
+        }
+        .acomp-btn:hover { background: #17243a; border-color: #7aa2f7; }
+        .acomp-btn.secundario { color: #787c99; border-color: #303044; }
+        #acompanhamento-feedback {
+            min-height: 18px;
+            margin-top: 6px;
+            color: #7bf98f;
+            font-size: 0.77rem;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        #acompanhamento-feedback.ativo { opacity: 1; }
+        .acomp-lista-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 8px 0;
+            border-bottom: 1px solid #1a1a2e;
+            color: #9aa5ce;
+            font-size: 0.8rem;
+        }
+        .acomp-lista-item span { flex: 1; line-height: 1.3; }
+        .acomp-lista-item button { flex: none; padding: 3px 7px; }
+
         /* History button */
         #btn-historico {
             position: fixed;
@@ -1322,6 +1373,10 @@
                 <label class="toggle"><input type="checkbox" id="cfg-tarefa-retomar" checked><span class="slider"></span></label>
             </div>
             <div class="config-linha config-sublinha">
+                <span>Acompanhamentos confirmados</span>
+                <label class="toggle"><input type="checkbox" id="cfg-tarefa-acompanhamentos" checked><span class="slider"></span></label>
+            </div>
+            <div class="config-linha config-sublinha">
                 <span>Contexto navegador</span>
                 <label class="toggle"><input type="checkbox" id="cfg-tarefa-navegador" checked><span class="slider"></span></label>
             </div>
@@ -1341,6 +1396,15 @@
                 <span>Autoconhecimento</span>
                 <label class="toggle"><input type="checkbox" id="cfg-tarefa-autoconhecimento" checked><span class="slider"></span></label>
             </div>
+        </div>
+
+        <div class="config-secao">
+            <div class="config-secao-titulo">↪ Acompanhamentos</div>
+            <div id="acompanhamentos-lista">
+                <div class="oficina-dica">nenhum acompanhamento pendente</div>
+            </div>
+            <div class="oficina-dica">Aqui só entram assuntos que você confirmou. Cancelar não
+                apaga memória nem evento da agenda porque este estado é separado dos dois.</div>
         </div>
 
         <!-- Voz + Velocidade -->
@@ -1581,6 +1645,14 @@
             <input type="text" id="aval-motivo-input" placeholder="O que não funcionou? (opcional, Enter envia)" maxlength="200">
             <button id="aval-motivo-enviar">Enviar</button>
         </div>
+
+        <div id="acompanhamento-card">
+            <div id="acompanhamento-titulo">Acompanhar resultado?</div>
+            <div id="acompanhamento-assunto"></div>
+            <div id="acompanhamento-quando"></div>
+            <div id="acompanhamento-acoes"></div>
+        </div>
+        <div id="acompanhamento-feedback"></div>
 
         <!-- ══════════ ZONA DE ENTRADA (o que você manda) ══════════ -->
         <div class="zona-divisor"></div>
@@ -3582,6 +3654,92 @@
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarTexto(); }
         });
 
+        // --- Acompanhamentos: o mesmo id é resolvido por botão, voz ou texto ---
+        let acompanhamentoEstado = { confirmacao: null, ativos: [] };
+
+        function botaoAcompanhamento(rotulo, acao, id, secundario) {
+            const btn = document.createElement('button');
+            btn.className = 'acomp-btn' + (secundario ? ' secundario' : '');
+            btn.textContent = rotulo;
+            btn.onclick = () => socket.send(JSON.stringify({
+                comando: 'acompanhamento_acao', acao: acao, id: id
+            }));
+            return btn;
+        }
+
+        function quandoAcompanhamento(valor) {
+            const data = new Date(valor || '');
+            if (Number.isNaN(data.getTime())) return '';
+            return data.toLocaleString('pt-BR', {
+                day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        function renderAcompanhamentos(estado) {
+            acompanhamentoEstado = estado || { confirmacao: null, ativos: [] };
+            const card = document.getElementById('acompanhamento-card');
+            const titulo = document.getElementById('acompanhamento-titulo');
+            const assunto = document.getElementById('acompanhamento-assunto');
+            const quando = document.getElementById('acompanhamento-quando');
+            const acoes = document.getElementById('acompanhamento-acoes');
+            const conf = acompanhamentoEstado.confirmacao;
+            acoes.innerHTML = '';
+            if (!conf) {
+                card.classList.remove('ativo');
+            } else {
+                card.classList.add('ativo');
+                assunto.textContent = conf.assunto || '';
+                const sugestao = quandoAcompanhamento(conf.perguntar_em);
+                quando.textContent = conf.tipo === 'proposta'
+                    ? ('Nada será salvo até você confirmar.' + (sugestao ? ' Sugestão: ' + sugestao + '.' : ''))
+                    : 'O que aconteceu com esse assunto?';
+                if (conf.tipo === 'proposta') {
+                    titulo.textContent = 'Acompanhar resultado?';
+                    acoes.appendChild(botaoAcompanhamento('Acompanhar resultado', 'confirmar', conf.id, false));
+                    acoes.appendChild(botaoAcompanhamento('Só comentei', 'descartar', conf.id, true));
+                } else {
+                    titulo.textContent = 'Como ficou?';
+                    acoes.appendChild(botaoAcompanhamento('Resolvido', 'resolvido', conf.id, false));
+                    acoes.appendChild(botaoAcompanhamento('Amanhã', 'amanha', conf.id, true));
+                    acoes.appendChild(botaoAcompanhamento('Semana que vem', 'semana_que_vem', conf.id, true));
+                    acoes.appendChild(botaoAcompanhamento('Esquecer', 'esquecer', conf.id, true));
+                }
+            }
+
+            const lista = document.getElementById('acompanhamentos-lista');
+            lista.innerHTML = '';
+            const ativos = acompanhamentoEstado.ativos || [];
+            if (!ativos.length) {
+                const vazio = document.createElement('div');
+                vazio.className = 'oficina-dica';
+                vazio.textContent = 'nenhum acompanhamento pendente';
+                lista.appendChild(vazio);
+            } else {
+                ativos.forEach(item => {
+                    const linha = document.createElement('div');
+                    linha.className = 'acomp-lista-item';
+                    const texto = document.createElement('span');
+                    texto.textContent = item.assunto || '';
+                    const cancelar = document.createElement('button');
+                    cancelar.className = 'acomp-btn secundario';
+                    cancelar.textContent = 'Cancelar';
+                    cancelar.onclick = () => socket.send(JSON.stringify({
+                        comando: 'acompanhamento_cancelar', id: item.id
+                    }));
+                    linha.appendChild(texto);
+                    linha.appendChild(cancelar);
+                    lista.appendChild(linha);
+                });
+            }
+        }
+
+        function mostrarFeedbackAcompanhamento(texto) {
+            const el = document.getElementById('acompanhamento-feedback');
+            el.textContent = texto || '';
+            el.classList.add('ativo');
+            setTimeout(() => el.classList.remove('ativo'), 3500);
+        }
+
         // --- Drag & drop ---
         const dragOverlay = document.getElementById('drag-overlay');
         const anexoBar    = document.getElementById('anexo-bar');
@@ -3737,7 +3895,7 @@
         };
 
         // Task toggles
-        ['jogos', 'emails', 'agenda', 'pausa', 'clima', 'bom_dia', 'retomar', 'steam', 'steam_jogo', 'habitos', 'lol_mortes', 'navegador', 'radar_rss', 'radar_promocoes', 'animes', 'autoconhecimento', 'memoria'].forEach(nome => {
+        ['jogos', 'emails', 'agenda', 'pausa', 'clima', 'bom_dia', 'retomar', 'acompanhamentos', 'steam', 'steam_jogo', 'habitos', 'lol_mortes', 'navegador', 'radar_rss', 'radar_promocoes', 'animes', 'autoconhecimento', 'memoria'].forEach(nome => {
             const el = document.getElementById('cfg-tarefa-' + nome);
             if (el) el.addEventListener('change', function() {
                 enviarConfig({ config: 'tarefa', nome: nome, valor: this.checked });
@@ -3855,6 +4013,14 @@
             }
             if (dados.tipo === 'memoria') { renderMemoria(dados.estado || {}); return; }
             if (dados.tipo === 'memoria_badge') { atualizarBadgeMemoria(dados.n || 0); return; }
+            if (dados.tipo === 'acompanhamentos') {
+                renderAcompanhamentos(dados.estado || {});
+                return;
+            }
+            if (dados.tipo === 'acompanhamento_feedback') {
+                mostrarFeedbackAcompanhamento(dados.texto || '');
+                return;
+            }
             if (dados.tipo === 'memoria_processando') {
                 const b = document.getElementById('mem-processar');
                 if (b) { b.textContent = '⏳ Processando...'; b.disabled = true; }

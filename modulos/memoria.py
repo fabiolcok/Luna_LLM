@@ -457,6 +457,14 @@ def mem_adicionar_candidatos(fatos: list) -> int:
     novos = 0
     for fato in fatos:
         fato = (fato or "").strip()
+        # Enquanto existe acompanhamento explícito, não oferece a mesma situação também
+        # como memória: eram dois cartões/fluxos competindo pelo mesmo assunto em aberto.
+        try:
+            from modulos import acompanhamentos
+            if acompanhamentos.relacionado_a_ativo(fato):
+                continue
+        except Exception:
+            pass
         n = _mem_norm(fato)
         if not n or n in ja:
             continue

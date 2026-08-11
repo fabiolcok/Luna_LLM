@@ -59,3 +59,13 @@ a mesma função de persona da aplicação com perfil, memória, ChromaDB e esta
 por cenários controlados. As memórias irrelevantes são intencionais: medem se a Luna força conexão
 pessoal. Checks objetivos rodam automaticamente; as respostas completas ficam em
 `logs/bancada_persona.jsonl` (ignorado pelo Git) para comparar versões.
+
+## Bancada dos acompanhamentos (modelo real)
+
+```bash
+.\venv\Scripts\python.exe -X utf8 testes\bancada_acompanhamentos.py
+```
+
+Confere se o roteador oferece acompanhamento para um desfecho concreto sem confundir agenda,
+lembrete e conversa cotidiana. As ferramentas são substituídas por versões locais: não cria evento,
+nota ou acompanhamento real e não sobe voz, web ou Telegram.

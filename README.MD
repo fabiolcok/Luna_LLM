@@ -133,6 +133,7 @@ Aponte `OBSIDIAN_VAULT` (no `.env`) pro seu vault e a Luna **cria o que falta na
 |---------|---------------|
 | `Luna/perfil.md` | quem você é — o núcleo que ela carrega em toda conversa |
 | `Luna/Memoria.md` | memória episódica (ela propõe, você confirma no painel web) |
+| `Luna/Acompanhamentos.md` | assuntos com desfecho que você confirmou que ela deve perguntar depois |
 | `Luna/animes.md` | lista de animes pro aviso de episódio novo (formato `- Nome \| apelido`) |
 | `Luna/radar_rss.md` | feeds RSS que ela acompanha |
 | `Luna/RastrearPromocoes.md` | canais do Telegram (`@`) + palavras-chave dos produtos que você caça |
@@ -199,6 +200,7 @@ static/
   radar_promo.py       — lê canais de promoção do Telegram (Telethon, como o próprio usuário)
   tom.py               — lê o TOM da voz (SER acústico) e colore a persona — só no canal de voz
   memoria.py           — ChromaDB + fila da memória episódica + JSON (estado, vistos)
+  acompanhamentos.py   — confirmações e desfechos, separados da agenda e da memória
   obsidian.py          — vault: perfil.md, Memoria.md (episódica), notas, radares, animes
 modelos/
   estado_luna.json     — estado situacional em tempo real (jogo ativo, programa, sessão)
@@ -237,6 +239,7 @@ Atalhos/
 | `listar_processos_pesados` | os processos que mais consomem RAM/CPU no momento |
 | `ler_obsidian`         | acha e lê uma nota do vault |
 | `salvar_obsidian`      | guarda uma anotação em Luna/Inbox (inclui fotos do Telegram) |
+| `propor_acompanhamento`| oferece perguntar depois como uma situação terminou; só salva após confirmação |
 | `listar_capacidades`   | lista o que a Luna consegue fazer (auto-gerada do código) |
 
 *Fora do catálogo do roteador:* `ler_selecionado` (interceptador "traduz isso").
@@ -370,6 +373,7 @@ Thread separada, loop a cada 30s.
 | **`radar_promocoes`**| 30min (canais do Telegram via Telethon → card em `Promocoes.md`) | 0h–7h |
 | **`avisar_animes`**  | 2h (avisa episódio que saiu nas últimas 72h — fonte AniList) | 0h–9h |
 | `retomar_assunto`    | ≤2x/dia (puxa pendência em aberto; não repete o mesmo assunto por 21 dias) | — |
+| `acompanhamentos`    | pergunta no horário combinado apenas assuntos confirmados (máx. 3 tentativas) | — |
 | `contexto_navegador` | Firefox em foco na mesma URL há 10+ min (YouTube → oferece resumo; artigo → comenta o tema) | — |
 
 **Carência de boot (120s):** nos primeiros minutos o modelo ainda esquenta e várias tarefas

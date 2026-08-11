@@ -182,6 +182,16 @@ def ao_interromper():
 # texto do web (é UMA conversa só). gerar_resposta cuida de append/trim in-place.
 _historico_conversa = []
 
+
+def _registrar_turno_direto(historico: list, usuario: str, luna: str):
+    """Interceptadores também pertencem à conversa, mesmo sem passar pela LLM."""
+    historico.extend([
+        {"role": "user", "content": usuario},
+        {"role": "assistant", "content": luna},
+    ])
+    if len(historico) > 12:
+        del historico[:-12]
+
 def responder_texto_web(texto: str):
     """Mensagem DIGITADA na caixa do web: mesmas regras do Telegram (desenvolve, SEM TTS),
     mas presença = no PC. Compartilha o histórico com a voz."""
@@ -199,6 +209,13 @@ def responder_texto_web(texto: str):
         _log.info(f"[Web texto] Usuário: {texto}")
         atualizar_usuario(texto)                       # mostra "Você: ..." no web
         atualizar_estado_rosto("pensando")             # anima a presença (a lua) também no texto
+        from modulos import acompanhamentos
+        resposta_direta = acompanhamentos.interceptar_resposta(texto)
+        if resposta_direta:
+            _registrar_turno_direto(_historico_conversa, texto, resposta_direta)
+            atualizar_legenda(resposta_direta)
+            _log.info(f"[Web texto] Luna [acompanhamento]: {resposta_direta}")
+            return
         texto_modelo = injetar_arquivo_pendente(texto)
         resposta = gerar_resposta(texto_modelo, _historico_conversa,
                                   responder_completo=True, presenca_pc=True)
@@ -242,6 +259,21 @@ def loop_voz():
             try:
                 cor.azul(f"Você: {texto_usuario}\n")
                 _log.info(f"[PC] Usuário: {texto_usuario}")
+
+                # Confirmação de acompanhamento é igual por botão, texto e STT. Resolve antes
+                # do roteador para um simples "sim" não virar conversa ou evento de agenda.
+                from modulos import acompanhamentos
+                resposta_acomp = acompanhamentos.interceptar_resposta(texto_usuario)
+                if resposta_acomp:
+                    _registrar_turno_direto(historico, texto_usuario, resposta_acomp)
+                    atualizar_legenda(resposta_acomp)
+                    _log.info(f"[PC] Luna [acompanhamento]: {resposta_acomp}")
+                    falar_texto(
+                        resposta_acomp,
+                        ao_iniciar=lambda: atualizar_estado_rosto("falando"),
+                        ao_terminar=lambda: atualizar_estado_rosto("dormindo"),
+                    )
+                    continue
 
                 # 2. INTERCEPTADOR DE HABILIDADES POR PALAVRAS DE ATIVAÇÃO
                 texto_lower = texto_usuario.lower()
