@@ -7,6 +7,7 @@ import json
 import time
 import re
 import datetime
+import subprocess
 from openai import OpenAI
 
 _log = logging.getLogger("luna.pensar")
@@ -110,21 +111,67 @@ def configurar_memoria(ativo: bool):
 
 cliente = OpenAI(base_url=BASE_LOCAL, api_key="turbollm")
 
+def _listar_modelos_turbollm() -> list | None:
+    """Ids expostos pelo daemon, ou None quando ele ainda não está respondendo."""
+    try:
+        r = httpx.get(f"{BASE_LOCAL}/models", timeout=2)
+        r.raise_for_status()
+        return [m["id"] for m in r.json().get("data", [])]
+    except Exception:
+        return None
+
+
+def _iniciar_e_esperar_turbollm(segundos: int = 25) -> list | None:
+    """Sobe o daemon oculto pelo launcher do projeto e espera a porta ficar pronta.
+
+    O login do Windows e a Luna podem arrancar quase juntos. Esperar a API evita que
+    uma máquina mais lenta receba um falso "TurboLLM desligado" durante o boot.
+    """
+    launcher = os.path.join(os.path.dirname(os.path.dirname(__file__)), "iniciar_turbollm.vbs")
+    if not os.path.isfile(launcher):
+        return None
+    try:
+        subprocess.Popen(
+            ["wscript.exe", launcher],
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
+    except Exception as e:
+        _log.warning("Não consegui iniciar o TurboLLM: %s", e)
+        return None
+    limite = time.time() + segundos
+    while time.time() < limite:
+        time.sleep(0.5)
+        ativos = _listar_modelos_turbollm()
+        if ativos is not None:
+            return ativos
+    return None
+
+
 def garantir_modelo_turbollm():
     # MONO: só precisa do Gemma-4-12B carregado. Ordem: (1) id fixado no .env manda; (2) se o
     # Gemma já está na lista do servidor, adota o id EXATO que ele deu; (3) senão tenta acordar
     # pelo nome preferido (auto-load); (4) falhou, mostra o que o servidor TEM — porque
     # "não carreguei" sem a lista vira adivinhação, que foi o que travou meu irmão.
     global _modelo_ativo
-    try:
-        r = httpx.get(f"{BASE_LOCAL}/models", timeout=4)
-        ativos = [m["id"] for m in r.json().get("data", [])]
-    except Exception:
-        cor.vermelho(f"[⚠️ TurboLLM não respondeu em {BASE_LOCAL}. Está ligado? (npx turbollm)]")
+    ativos = _listar_modelos_turbollm()
+    if ativos is None:
+        cor.amarelo("[⏳ TurboLLM não respondeu; tentando iniciar o servidor...]")
+        ativos = _iniciar_e_esperar_turbollm()
+    if ativos is None:
+        cor.vermelho(f"[⚠️ TurboLLM não respondeu em {BASE_LOCAL}. Rode 'turbollm' no CMD e veja o erro.]")
         return
 
     if config_env.esta_configurado("MODELO_LLM"):
-        print(f"[✅ modelo fixado no .env: {_modelo_ativo}]")
+        print(f"[⏳ Pedindo ao TurboLLM pra carregar o modelo fixado no .env: {_modelo_ativo}...]")
+        try:
+            w = cliente.chat.completions.create(
+                model=_modelo_ativo, messages=[{"role": "user", "content": "oi"}],
+                max_tokens=1, extra_body=THINK_OFF, timeout=60)
+            _modelo_ativo = w.model or _modelo_ativo
+            print(f"[✅ Modelo carregado no TurboLLM como '{_modelo_ativo}']")
+        except Exception as e:
+            cor.vermelho(f"[⚠️ Não consegui carregar o modelo fixado '{_modelo_ativo}' ({e})]")
+            cor.amarelo("[   Confira MODELO_LLM no .env: ele precisa casar com o nome/id do modelo no TurboLLM.]")
         return
 
     # Achou o Gemma na lista? Usa o id EXATO que o servidor deu, seja ele qual for.

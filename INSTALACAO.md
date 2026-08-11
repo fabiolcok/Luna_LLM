@@ -57,6 +57,11 @@ turbollm
 
 O `turbollm` abre um **painel local** no navegador, onde você cadastra os modelos.
 
+> A Luna também tenta iniciar o TurboLLM automaticamente quando abre. O arquivo
+> `iniciar_turbollm.vbs` faz isso com a janela escondida e espera o servidor ficar pronto.
+> Se preferir que ele já suba no login do Windows: aperte `Win+R`, digite `shell:startup`
+> e coloque **um atalho** para `iniciar_turbollm.vbs` nessa pasta (não mova o arquivo original).
+
 ### 3.2 Baixe os modelos (Hugging Face)
 
 | Modelo | Pra quê | Onde |
@@ -218,7 +223,8 @@ avisa quando cai uma oferta do que você quer. Precisa de um **login único**:
 
 | Sintoma | Causa provável |
 |---------|----------------|
-| Luna diz que o LLM está fora do ar | o **TurboLLM não está rodando** — rode `turbollm` |
+| Luna diz que o LLM está fora do ar | rode `turbollm` no CMD: o erro exibido costuma apontar Node antigo, instalação ausente ou bloqueio do Windows |
+| Modelo só carrega clicando no painel | copie o nome/id dele para `MODELO_LLM=` no `.env`; a Luna usa esse id para aquecer automaticamente |
 | TurboLLM dá **503** ao carregar o modelo | nome do modelo com **hífen** — use `gemma 4 12b it qat` (espaços) |
 | Flags do drafter dão *"invalid argument"* | flags **coladas numa linha** — uma por linha (Enter) |
 | 1ª resposta demora ~6s | normal: o TurboLLM carrega o modelo sob demanda (JIT) e descarrega quando ocioso |
