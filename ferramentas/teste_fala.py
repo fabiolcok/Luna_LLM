@@ -1,11 +1,11 @@
-# teste_fala.py — banco de testes da VOZ da Luna (Kokoro).
+# ferramentas/teste_fala.py — bancada manual da VOZ da Luna (Kokoro).
 # --------------------------------------------------------------------------
 # Pra que serve: digitar um texto e OUVIR na hora. Ideal pra achar a grafia
 # certa de uma palavra ANTES de cadastrar no dicionário de pronúncia
 # (_PRONUNCIA em modulos/falar.py).
 #
 # Como rodar (na pasta do projeto):
-#     venv\Scripts\python teste_fala.py
+#     venv\Scripts\python ferramentas\teste_fala.py
 #
 # Uso: digite qualquer frase e ENTER pra ela falar.
 # Comandos:
@@ -22,8 +22,17 @@
 # vencedora no _PRONUNCIA de falar.py:  "hype": "raypi",
 # --------------------------------------------------------------------------
 
+import os
 import sys
 import time
+from pathlib import Path
+
+# O motor usa modelos/ e outros caminhos relativos à raiz do projeto.
+RAIZ = Path(__file__).resolve().parents[1]
+if str(RAIZ) not in sys.path:
+    sys.path.insert(0, str(RAIZ))
+os.chdir(RAIZ)
+
 from modulos import falar
 
 # nomes curtos -> nomes reais das vozes do Kokoro

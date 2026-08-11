@@ -206,7 +206,7 @@ avisa quando cai uma oferta do que você quer. Precisa de um **login único**:
    ```
 2. **Login único** (gera a sessão salva):
    ```bash
-   venv\Scripts\python setup_telegram_promo.py
+   venv\Scripts\python ferramentas\setup_telegram_promo.py
    ```
    Ele pede seu telefone (`+55…`) e o código que chega no Telegram. Cria
    `modelos/luna_promo.session` (é credencial da sua conta — **já está no `.gitignore`**).

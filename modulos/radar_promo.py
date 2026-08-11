@@ -8,7 +8,7 @@
 # Telethon é async; aqui roda um loop asyncio próprio numa thread daemon, e a proativa
 # (síncrona) fala com ele via run_coroutine_threadsafe. Degrada em silêncio se o telethon
 # não estiver instalado, o .env não tiver as chaves, ou a sessão não estiver autorizada
-# (nesse caso o usuário roda setup_telegram_promo.py UMA vez pra logar).
+# (nesse caso o usuário roda ferramentas/setup_telegram_promo.py UMA vez pra logar).
 
 import os
 import asyncio
@@ -77,7 +77,8 @@ def _garantir_cliente() -> bool:
             autorizado = asyncio.run_coroutine_threadsafe(_conectar(), _loop).result(timeout=30)
             if not autorizado:
                 if not _avisou:
-                    cor.vermelho("[🏷️ Promoções: sessão não autorizada — rode 'python setup_telegram_promo.py' uma vez]")
+                    cor.vermelho("[🏷️ Promoções: sessão não autorizada — rode "
+                                 "'venv\\Scripts\\python ferramentas\\setup_telegram_promo.py' uma vez]")
                     _avisou = True
                 _estado = False
                 return False

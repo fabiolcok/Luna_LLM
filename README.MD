@@ -186,7 +186,7 @@ que carrega o 12B (JIT); se o TurboLLM estiver desligado, a Luna avisa. Rodar ma
 main.py                — entry point, loop de voz, texto do web, interceptadores
 servidor.py            — WebSocket/Flask: estado da interface, histórico, config, arquivos
 iniciar_turbollm.vbs   — lançador do TurboLLM no login
-setup_telegram_promo.py— login único do Telethon (gera a sessão do radar de promoções)
+ferramentas/           — setups e diagnósticos manuais (voz, memória, TurboLLM, Telegram)
 modulos/
   pensar.py            — motor de inferência: tool calling + persona (mono 12B) + ChromaDB
   falar.py             — TTS Kokoro + limpeza de texto (limpar_texto_para_voz)
@@ -406,7 +406,8 @@ Copie `.env.example` para `.env` e preencha. **Nunca** commite o `.env` real nem
 | `CLIMA_LAT` / `CLIMA_LON` | localização pra previsão do tempo |
 
 Google Calendar usa OAuth2 (`token.json` + `credentials.json` em `modelos/`, locais).
-O radar de promoções faz um **login único** (`python setup_telegram_promo.py`) que gera
+O radar de promoções faz um **login único**
+(`venv\Scripts\python ferramentas\setup_telegram_promo.py`) que gera
 `modelos/luna_promo.session` — é credencial da sua conta, fica no `.gitignore`.
 
 > 📖 Passo a passo de instalação (TurboLLM, modelos, cada chave e onde pegar):

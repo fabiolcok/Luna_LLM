@@ -1,7 +1,7 @@
-"""
-setup_telegram_promo.py — LOGIN ÚNICO do radar de promoções.
+r"""
+ferramentas/setup_telegram_promo.py — LOGIN ÚNICO do radar de promoções.
 
-Roda UMA vez, no terminal:  python setup_telegram_promo.py
+Roda UMA vez, da raiz:  venv\Scripts\python ferramentas\setup_telegram_promo.py
 
 Ele loga na SUA conta do Telegram (pede o telefone e o código que chega no app) e gera
 o arquivo modelos/luna_promo.session — a credencial que a Luna reusa depois, sem pedir
@@ -15,6 +15,15 @@ Antes de rodar, preencha no .env:
 """
 
 import os
+import sys
+from pathlib import Path
+
+# O setup grava em modelos/ e lê o .env da raiz mesmo quando chamado por caminho absoluto.
+RAIZ = Path(__file__).resolve().parents[1]
+if str(RAIZ) not in sys.path:
+    sys.path.insert(0, str(RAIZ))
+os.chdir(RAIZ)
+
 from dotenv import load_dotenv
 
 load_dotenv()
