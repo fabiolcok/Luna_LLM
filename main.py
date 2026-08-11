@@ -41,7 +41,7 @@ from servidor import (
     atualizar_estado_rosto, atualizar_legenda,
     atualizar_usuario, registrar_callback_interrupcao,
     iniciar_servidor, registrar_config_handler, sincronizar_config,
-    obter_e_limpar_arquivo, obter_e_limpar_imagem_anexada, carregar_e_aplicar_config,
+    injetar_arquivo_pendente, obter_e_limpar_imagem_anexada, carregar_e_aplicar_config,
     registrar_handler_texto_web
 )
 
@@ -199,7 +199,9 @@ def responder_texto_web(texto: str):
         _log.info(f"[Web texto] Usuário: {texto}")
         atualizar_usuario(texto)                       # mostra "Você: ..." no web
         atualizar_estado_rosto("pensando")             # anima a presença (a lua) também no texto
-        resposta = gerar_resposta(texto, _historico_conversa, responder_completo=True, presenca_pc=True)
+        texto_modelo = injetar_arquivo_pendente(texto)
+        resposta = gerar_resposta(texto_modelo, _historico_conversa,
+                                  responder_completo=True, presenca_pc=True)
         resposta = (resposta or "").strip()
         atualizar_legenda(resposta)                    # mostra a resposta + registra o turno (SEM falar)
         if resposta:
@@ -336,10 +338,7 @@ def loop_voz():
                     )
                     continue
 
-                arquivo = obter_e_limpar_arquivo()
-                if arquivo:
-                    cor.ciano(f"[📎 Arquivo injetado: {arquivo['nome']} ({len(arquivo['conteudo'])} chars)]")
-                    texto_usuario = f"[Arquivo: {arquivo['nome']}]\n{arquivo['conteudo']}\n\n{texto_usuario}"
+                texto_usuario = injetar_arquivo_pendente(texto_usuario)
 
                 cor.magenta("[🌚💭 Luna pensando...]")
                 atualizar_estado_rosto("pensando")

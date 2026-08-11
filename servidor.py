@@ -459,6 +459,15 @@ def obter_e_limpar_arquivo():
     _arquivo_pendente = None
     return arq
 
+
+def injetar_arquivo_pendente(texto: str) -> str:
+    """Anexa texto/PDF pendente à mensagem, independente de ela vir por voz ou teclado."""
+    arquivo = obter_e_limpar_arquivo()
+    if not arquivo:
+        return texto
+    print(f"[Arquivo injetado: {arquivo['nome']} ({len(arquivo['conteudo'])} chars)]")
+    return f"[Arquivo: {arquivo['nome']}]\n{arquivo['conteudo']}\n\n{texto}"
+
 def obter_e_limpar_imagem_anexada():
     global _imagem_anexada_pendente
     img = _imagem_anexada_pendente
