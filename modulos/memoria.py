@@ -11,6 +11,7 @@ import chromadb
 import numpy as np
 from dotenv import load_dotenv
 import re
+import unicodedata
 import warnings
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 import modelos.cores as cor
@@ -320,8 +321,111 @@ CAMINHO_MEM_PENDENTE = "modelos/memoria_pendente.json"
 _MEM_LIXO_DIAS = 7   # quantos dias uma lembrança descartada fica recuperável
 
 def _mem_norm(txt: str) -> str:
-    # normaliza pra dedup: minúsculas + colapsa espaços (basta pra comparar fatos repetidos)
-    return " ".join(txt.lower().split()) if txt else ""
+    # A pontuação e os acentos variam entre extrações do 12B; removê-los evita mandar
+    # uma repetição óbvia de volta pra curadoria sem confundir frases realmente diferentes.
+    txt = unicodedata.normalize("NFKD", txt or "").encode("ascii", "ignore").decode().lower()
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", txt).split())
+
+
+def _memorias_episodicas_confirmadas() -> list:
+    """Fatos confirmados ativos + frios, sem alterar a temperatura de nenhum deles."""
+    from modulos import obsidian
+    return obsidian.listar_memoria_episodica() + obsidian.listar_memoria_arquivo()
+
+
+def _memorias_semelhantes_para_dedup(fato: str, limite: int = 3,
+                                      minimo: float = 0.52) -> list:
+    """Busca curta e sem efeitos colaterais para revisar um candidato de memória.
+
+    Não usa buscar_memoria_relevante porque aquela função esquenta memórias frias: uma
+    comparação interna da curadoria não significa que o assunto voltou na conversa.
+    """
+    from modulos import obsidian
+    combinado = ([(d, f, "ativo") for d, f in obsidian.listar_memoria_episodica()]
+                 + [(d, f, "frio") for d, f in obsidian.listar_memoria_arquivo()])
+    if not fato or not combinado:
+        return []
+    try:
+        efn = _emb_mem()
+        assinatura = tuple((f, origem) for _, f, origem in combinado)
+        if _mem_emb_cache["assinatura"] != assinatura:
+            vecs = efn([f for _, f, _ in combinado])
+            _mem_emb_cache.update(
+                assinatura=assinatura,
+                fatos=combinado,
+                vecs=[np.asarray(v, dtype=float) for v in vecs],
+            )
+        qv = np.asarray(efn([fato])[0], dtype=float)
+        ranked = sorted(
+            ((_cos(qv, v), texto)
+             for (_, texto, _), v in zip(_mem_emb_cache["fatos"],
+                                          _mem_emb_cache["vecs"])),
+            reverse=True,
+        )
+        return [texto for score, texto in ranked[:limite] if score >= minimo]
+    except Exception as e:
+        cor.vermelho(f"[Memória: erro ao comparar candidato — {e}]")
+        return []
+
+
+def mem_filtrar_candidatos(fatos: list, gerar_resposta_fn) -> list:
+    """Remove da curadoria fatos já confirmados, preservando atualizações reais.
+
+    Igualdade normalizada é decidida localmente. Só os casos semanticamente próximos
+    chegam ao 12B, cada um com no máximo três fatos existentes — nunca com as notas
+    incrementais inteiras.
+    """
+    conhecidos = {_mem_norm(f) for _, f in _memorias_episodicas_confirmadas()}
+    unicos, vistos = [], set()
+    for fato in fatos:
+        fato = (fato or "").strip()
+        norm = _mem_norm(fato)
+        if not norm or norm in conhecidos or norm in vistos:
+            continue
+        vistos.add(norm)
+        unicos.append(fato)
+
+    ambiguos = []
+    aceitos = []
+    for fato in unicos:
+        semelhantes = _memorias_semelhantes_para_dedup(fato)
+        if semelhantes:
+            ambiguos.append((fato, semelhantes))
+        else:
+            aceitos.append(fato)
+    if not ambiguos:
+        return aceitos
+
+    casos = []
+    for i, (fato, semelhantes) in enumerate(ambiguos):
+        refs = "\n".join(f"  - {r}" for r in semelhantes)
+        casos.append(f"CASO {i}\nCandidato: {fato}\nJá confirmado:\n{refs}")
+    prompt = (
+        "Decida quais candidatos de memória trazem informação NOVA ou uma ATUALIZAÇÃO "
+        "real em relação aos fatos já confirmados. REPETIÇÃO e mera paráfrase devem ser "
+        "rejeitadas. Mudança de estado ou progresso (quer comprar -> comprou; começou um "
+        "jogo -> chegou ao chefe final) é atualização e deve ser aceita.\n\n"
+        + "\n\n".join(casos)
+        + '\n\nResponda somente JSON: {"aceitar": [números dos CASOS]}.'
+    )
+    try:
+        bruto = gerar_resposta_fn(prompt, [], analisar=False, salvar=False,
+                                  modo_memoria=True, max_tokens=100)
+        m = re.search(r"\{.*\}", bruto or "", re.DOTALL)
+        if not m:
+            raise ValueError("classificador não retornou JSON")
+        indices = json.loads(m.group()).get("aceitar", [])
+        if not isinstance(indices, list):
+            raise ValueError("campo 'aceitar' não é uma lista")
+        for i in indices:
+            if isinstance(i, int) and 0 <= i < len(ambiguos):
+                aceitos.append(ambiguos[i][0])
+    except Exception as e:
+        # A curadoria humana continua sendo a última barreira; numa falha do classificador,
+        # é mais seguro mostrar o candidato do que perder uma atualização verdadeira.
+        cor.vermelho(f"[Memória: erro ao deduplicar candidatos — {e}]")
+        aceitos.extend(fato for fato, _ in ambiguos)
+    return aceitos
 
 def carregar_mem_pendente() -> dict:
     base = {"marcador_ts": 0.0, "pendentes": [], "lixo": [], "recusados": []}

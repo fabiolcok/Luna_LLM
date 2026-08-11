@@ -2326,6 +2326,7 @@ def _tarefa_extrair_memoria(forcar=False):
         m = re.search(r'\{.*\}', bruto or "", re.DOTALL)
         fatos = json.loads(m.group()).get("fatos", []) if m else []
         fatos = [f.strip() for f in fatos if isinstance(f, str) and len(f.strip()) >= 5][:8]
+        fatos = memoria.mem_filtrar_candidatos(fatos, gerar_resposta)
     except Exception as e:
         cor.vermelho(f"[🧠 Extração de memória falhou: {e}]")
         return
