@@ -47,3 +47,15 @@ Cada arquivo carrega o próprio DOM falso, e eles não são iguais — cada um p
 fidelidade diferente. Isso é proposital: já custou falha falsa três vezes o duble ser mais
 pobre que o DOM de verdade (`classList` não-variádico, `className` fora de sincronia com
 `classList`, `querySelector` inventando elemento em vez de devolver `null`).
+
+## Bancada da persona (modelo real)
+
+```bash
+.\venv\Scripts\python.exe -X utf8 testes\bancada_persona.py --repeticoes 3 --rotulo nome-do-experimento
+```
+
+Não sobe a Luna, voz, web ou Telegram, mas usa o TurboLLM e o modelo configurado. A bancada chama
+a mesma função de persona da aplicação com perfil, memória, ChromaDB e estado do PC substituídos
+por cenários controlados. As memórias irrelevantes são intencionais: medem se a Luna força conexão
+pessoal. Checks objetivos rodam automaticamente; as respostas completas ficam em
+`logs/bancada_persona.jsonl` (ignorado pelo Git) para comparar versões.

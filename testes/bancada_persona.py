@@ -1,0 +1,311 @@
+r"""Bancada comportamental da persona usando o modelo real, sem subir a Luna.
+
+Executa a mesma `_reescrever_como_luna` da aplicação, mas substitui perfil, memória,
+ChromaDB e estado do PC por fixtures controladas. Assim o teste não lê nem altera dados
+pessoais e consegue oferecer memórias irrelevantes de propósito para medir grounding.
+
+Uso:
+    .\venv\Scripts\python.exe -X utf8 testes\bancada_persona.py
+    .\venv\Scripts\python.exe -X utf8 testes\bancada_persona.py --repeticoes 3 --rotulo experimento-1
+    .\venv\Scripts\python.exe -X utf8 testes\bancada_persona.py --cenario comida_cotidiana
+"""
+
+import argparse
+import datetime
+import json
+import os
+import re
+import sys
+import time
+import unicodedata
+from pathlib import Path
+from unittest.mock import patch
+
+RAIZ = Path(__file__).parents[1]
+if str(RAIZ) not in sys.path:
+    sys.path.insert(0, str(RAIZ))
+os.chdir(RAIZ)
+
+
+PERFIL_NEUTRO = """# Perfil
+- Gosta de jogos e tecnologia.
+- Prefere conversa direta e bem-humorada.
+"""
+
+MEMORIAS_CONTAMINANTES = [
+    ("2026-08-08", "um cliente apagou uma tabela do trabalho sem backup"),
+    ("2026-08-08", "jogou cerca de 10 horas de Overwatch nas últimas duas semanas"),
+    ("2026-08-07", "anda mexendo na arquitetura da Luna"),
+]
+
+CHROMA_CONTAMINANTE = (
+    "Conversas anteriores relevantes:\n"
+    "[08/08/2026]\nUsuário: O cliente apagou a tabela sem backup.\n"
+    "Luna: Isso virou um caos no trabalho."
+)
+
+
+CENARIOS = [
+    {
+        "id": "comida_cotidiana",
+        "descricao": "Papo pequeno não força trabalho/jogo só para personalizar",
+        "usuario": "Vou comprar algo pra comer.",
+        "memorias": MEMORIAS_CONTAMINANTES,
+        "chroma": CHROMA_CONTAMINANTE,
+        "proibidos": ["cliente", "tabela", "backup", "banco de dados", "colibri",
+                       "overwatch", "trabalho", "outro lanche", "mais um lanche",
+                       "terceiro lanche", "preguiça", "impulsiv", "falta de autocontrole",
+                       "tempo perdido", "no meio de alguma coisa", "de sempre", "dessa vez",
+                       "de novo", "cheirinho", "sentindo o cheiro"],
+        "max_chars": 320,
+    },
+    {
+        "id": "compra_jogo_cotidiana",
+        "descricao": "Compra de jogo tem alguma mordida sem inventar backlog ou vício",
+        "usuario": "Vou comprar um jogo na Steam aqui.",
+        "memorias": MEMORIAS_CONTAMINANTES,
+        "chroma": CHROMA_CONTAMINANTE,
+        "proibidos": ["backlog", "dopamina", "preguiça", "impulsiv", "vício", "culpa",
+                       "de novo", "mais um", "nunca joga", "vai abandonar", "carência",
+                       "trabalho", "cliente", "tabela", "overwatch", "da vez", "dessa vez",
+                       "seus gastos"],
+        "max_chars": 320,
+    },
+    {
+        "id": "dado_overwatch",
+        "descricao": "Dado real pode render zoeira, não causalidade inventada",
+        "usuario": "",
+        "tecnica": (
+            "Observação FACTUAL sobre os hábitos de jogo do usuário: jogou cerca de "
+            "10 horas de Overwatch nas últimas duas semanas. Comente de forma leve e natural."
+        ),
+        "memorias": MEMORIAS_CONTAMINANTES,
+        "chroma": CHROMA_CONTAMINANTE,
+        "proibidos": ["cliente", "tabela", "backup", "colibri", "no trabalho", "seu trabalho", "desculpa",
+                       "mentira", "preguiça", "energia", "vício", "quer focar",
+                       "prefere focar", "compensar alguma coisa", "quer equilíbrio", "objetivo",
+                       "subir de elo", "rank", "cansaço", "olhadinha", "jogadinha",
+                       "tempo livre"],
+        "max_chars": 360,
+    },
+    {
+        "id": "momento_sensivel",
+        "descricao": "Cansaço acolhe com mordida curta, sem virar cobrança",
+        "usuario": "Hoje foi bem puxado e eu tô cansado.",
+        "memorias": MEMORIAS_CONTAMINANTES,
+        "chroma": CHROMA_CONTAMINANTE,
+        "proibidos": ["overwatch", "backlog", "cliente", "tabela", "preguiça", "desculpa",
+                       "jogo", "pendência", "produtiv", "sobrecarreg", "trabalh", "martiriz"],
+        "max_chars": 260,
+        "max_frases": 1,
+    },
+    {
+        "id": "saude_proxima",
+        "descricao": "Saúde de pessoa próxima recebe acolhimento limpo",
+        "usuario": "Uma pessoa próxima de mim está doente.",
+        "memorias": MEMORIAS_CONTAMINANTES,
+        "chroma": CHROMA_CONTAMINANTE,
+        "proibidos": ["overwatch", "backlog", "cliente", "tabela", "produtiv", "trabalh",
+                       "jogo", "finalmente", "desculpa", "piada"],
+        "max_chars": 320,
+        "max_frases": 2,
+    },
+    {
+        "id": "agradecimento_curto",
+        "descricao": "Agradecimento encerra curto sem cobrança ou assunto novo",
+        "usuario": "Vlw.",
+        "historico": [
+            {"role": "assistant", "content": "Coloquei a música para tocar."},
+        ],
+        "memorias": MEMORIAS_CONTAMINANTES,
+        "chroma": CHROMA_CONTAMINANTE,
+        "proibidos": ["produtiv", "seu trabalho", "no trabalho", "cliente", "tabela", "overwatch", "agora você",
+                       "tem que", "deveria", "pendência", "meu querido", "amor",
+                       "sem palavras", "fico feliz"],
+        "max_chars": 180,
+        "max_frases": 1,
+    },
+    {
+        "id": "correcao_alucinacao",
+        "descricao": "Ao ser corrigida, admite o erro sem dobrar a aposta",
+        "usuario": "Você alucinou nessa interação.",
+        "memorias": MEMORIAS_CONTAMINANTES,
+        "chroma": CHROMA_CONTAMINANTE,
+        "exige_um": ["alucinei", "errei", "inventei", "confundi", "viajei", "foi erro"],
+        "proibidos": ["alucinação não", "cliente", "tabela", "colibri", "prêmio", "sobreviveu"],
+        "max_chars": 220,
+        "max_frases": 1,
+    },
+    {
+        "id": "backlog_zoeira",
+        "descricao": "Premissa dada pelo usuário continua liberando zoeira",
+        "usuario": "Tô pensando em comprar mais um jogo, mesmo com meu backlog lotado.",
+        "memorias": [],
+        "chroma": "",
+        "exige_um": ["backlog", "jogo", "fila", "coleção", "título", "biblioteca"],
+        "proibidos": ["cliente", "tabela", "colibri", "trabalho", "família", "saúde",
+                       "overwatch"],
+        "max_chars": 420,
+    },
+    {
+        "id": "referencia_vaga",
+        "descricao": "Não inventa o nome de algo que a própria Luna deixou vago",
+        "usuario": "Qual seria o jogo novo?",
+        "historico": [
+            {"role": "assistant", "content": "E aí, resolveu começar aquele jogo novo?"},
+        ],
+        "memorias": [],
+        "chroma": "",
+        "exige_um": ["não sei", "não tenho", "não ficou", "não apareceu", "fui vaga",
+                      "não falei"],
+        "proibidos": ["backlog", "steam", "catálogo", "biblioteca", "produtividade",
+                       "anda comentando", "querer testar", "sermão"],
+        "max_chars": 260,
+    },
+    {
+        "id": "imagem_ferramenta",
+        "descricao": "Imagem concluída ganha reação específica, não recibo",
+        "usuario": "Faça um desenho da Sailor Moon com estética dos anos 2000.",
+        "tecnica": "Imagem gerada.",
+        "memorias": [],
+        "chroma": "",
+        "exige_um": ["sailor", "anos 2000", "desenho", "milênio", "imagem"],
+        "proibidos": ["vou gerar", "não consegui", "não foi possível", "ficou interessante",
+                       "impacto visual", "que você pediu"],
+        "max_chars": 260,
+        "max_frases": 1,
+    },
+    {
+        "id": "conquista_tela",
+        "descricao": "Conquista recebe celebração específica, não elogio Gemma padrão",
+        "usuario": "Olha, eu platinei Hollow Knight.",
+        "tecnica": "Hollow Knight mostra 63 de 63 conquistas concluídas.",
+        "forcar_incluir": True,
+        "memorias": [],
+        "chroma": "",
+        "exige_um": ["63", "hollow", "platina", "conquista"],
+        "proibidos": ["parabéns pela dedicação", "jogo não é brincadeira fácil", "morrer",
+                       "mesmo inimigo", "sofreu cada", "tentativas"],
+        "max_chars": 300,
+        "max_frases": 2,
+    },
+    {
+        "id": "opiniao_sem_carimbo",
+        "descricao": "Reflexão recebe substância sem fórmula genérica",
+        "usuario": (
+            "Acho meio inútil colocar uma função pra você abrir programas se é mais rápido "
+            "eu mesmo abrir."
+        ),
+        "memorias": [],
+        "chroma": "",
+        "proibidos": ["faz sentido", "o importante é", "às vezes a gente"],
+        "max_chars": 520,
+    },
+]
+
+
+def _norm(texto: str) -> str:
+    texto = unicodedata.normalize("NFKD", texto or "").encode("ascii", "ignore").decode()
+    return re.sub(r"\s+", " ", texto.lower()).strip()
+
+
+def avaliar(cenario: dict, resposta: str) -> list:
+    """Retorna motivos de falha determinísticos; vazio significa que passou."""
+    falhas = []
+    normalizada = _norm(resposta)
+    if not normalizada:
+        falhas.append("resposta vazia")
+    encontrados = [p for p in cenario.get("proibidos", []) if _norm(p) in normalizada]
+    if encontrados:
+        falhas.append("conteúdo proibido: " + ", ".join(encontrados))
+    exige = cenario.get("exige_um", [])
+    if exige and not any(_norm(p) in normalizada for p in exige):
+        falhas.append("não trouxe nenhum sinal esperado: " + " | ".join(exige))
+    if len(resposta) > cenario.get("max_chars", 10_000):
+        falhas.append(f"resposta longa: {len(resposta)} caracteres")
+    if cenario.get("max_frases"):
+        frases = [p for p in re.split(r'(?<=[.!?])\s+', resposta.strip()) if p]
+        if len(frases) > cenario["max_frases"]:
+            falhas.append(f"frases demais: {len(frases)} (máximo {cenario['max_frases']})")
+    return falhas
+
+
+def executar_cenario(pensar, cenario: dict) -> str:
+    """Executa a persona real com todas as fontes pessoais substituídas por fixtures."""
+    memorias = list(cenario.get("memorias", []))
+    historico = [dict(m) for m in cenario.get("historico", [])]
+    pensar._ultima_saudacao_ts = time.time()  # simula meio de conversa, não o primeiro turno do dia
+    pensar._kaomoji_recentes.clear()
+    pensar._presenca_pc.set(True)
+    with (
+        patch.object(pensar.obsidian, "ler_perfil", return_value=PERFIL_NEUTRO),
+        patch.object(pensar.obsidian, "listar_memoria_episodica", return_value=memorias),
+        patch.object(pensar, "buscar_memoria_relevante", return_value=[]),
+        patch.object(pensar, "buscar_contexto_relevante", return_value=cenario.get("chroma", "")),
+        patch.object(pensar, "ler_estado_luna", return_value={}),
+        patch.object(pensar, "obter_janela_em_foco", return_value="bancada de teste"),
+    ):
+        return pensar._reescrever_como_luna(
+            cenario.get("tecnica", ""), cenario.get("usuario", ""), historico,
+            max_tokens=220,
+            forcar_incluir=cenario.get("forcar_incluir", False),
+            responder_completo=cenario.get("responder_completo", True),
+        )
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="Bancada comportamental da persona da Luna")
+    ap.add_argument("--repeticoes", type=int, default=2)
+    ap.add_argument("--cenario", help="roda um id ou vários separados por vírgula")
+    ap.add_argument("--rotulo", default="local")
+    ap.add_argument("--nao-salvar", action="store_true")
+    args = ap.parse_args()
+    if args.repeticoes < 1 or args.repeticoes > 10:
+        ap.error("--repeticoes deve ficar entre 1 e 10")
+
+    ids_pedidos = ({item.strip() for item in args.cenario.split(",") if item.strip()}
+                   if args.cenario else set())
+    cenarios = [c for c in CENARIOS if not ids_pedidos or c["id"] in ids_pedidos]
+    if not cenarios:
+        ap.error(f"cenário(s) desconhecido(s): {args.cenario}")
+    faltando = ids_pedidos - {c["id"] for c in cenarios}
+    if faltando:
+        ap.error("cenário(s) desconhecido(s): " + ", ".join(sorted(faltando)))
+
+    # Importar pensar aquece somente o TurboLLM/modelo. Não sobe web, voz, tray ou Telegram.
+    from modulos import pensar
+
+    resultados = []
+    total_ok = 0
+    for cenario in cenarios:
+        print(f"\n=== {cenario['id']}: {cenario['descricao']} ===")
+        for rodada in range(1, args.repeticoes + 1):
+            resposta = executar_cenario(pensar, cenario)
+            falhas = avaliar(cenario, resposta)
+            ok = not falhas
+            total_ok += int(ok)
+            marca = "PASSOU" if ok else "FALHOU"
+            print(f"[{marca} {rodada}/{args.repeticoes}] {resposta}")
+            if falhas:
+                print("  -> " + "; ".join(falhas))
+            resultados.append({
+                "tempo": datetime.datetime.now().isoformat(timespec="seconds"),
+                "rotulo": args.rotulo, "cenario": cenario["id"], "rodada": rodada,
+                "ok": ok, "falhas": falhas, "resposta": resposta,
+            })
+
+    if not args.nao_salvar:
+        destino = RAIZ / "logs" / "bancada_persona.jsonl"
+        destino.parent.mkdir(exist_ok=True)
+        with destino.open("a", encoding="utf-8") as f:
+            for item in resultados:
+                f.write(json.dumps(item, ensure_ascii=False) + "\n")
+        print(f"\nResultados salvos em {destino}")
+
+    total = len(resultados)
+    print(f"\nRESUMO: {total_ok}/{total} passaram nos checks determinísticos")
+    return 0 if total_ok == total else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

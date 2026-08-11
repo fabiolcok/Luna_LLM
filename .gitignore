@@ -52,6 +52,7 @@ PyWhatKit_DB.txt
 # Logs
 *.log
 logs/avaliacoes.jsonl
+logs/bancada_persona.jsonl
 
 # VSCode
 .vscode/
