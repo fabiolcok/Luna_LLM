@@ -27,6 +27,7 @@ import json
 import os
 import re
 import httpx
+import modelos.cores as cor
 
 # Tags de expressão do Supertonic (<sigh>, <laugh>...) são só para a VOZ.
 # No texto (web/histórico) aparecem literais ou somem no innerHTML — então removemos.
@@ -48,6 +49,7 @@ _ultima_fala_usuario = "Aguardando áudio..."
 _ultima_fala_luna    = "Zzz... dormindo."
 _ultimo_pensamento   = ""
 _ultimo_status       = "🌚 Por aqui"   # o que a Luna está fazendo agora (linha de status do web)
+_ultimo_estado_rosto = None       # diagnóstico das transições reais enviadas ao mascote
 _historico_web       = []   # lista de {usuario, luna, tempo}
 
 _arquivo_pendente = None  # {"nome": str, "conteudo": str}
@@ -558,7 +560,12 @@ def atualizar_usuario(texto: str):
     _broadcast({'usuario': texto})
 
 def atualizar_estado_rosto(estado: str):
-    """Ainda mantida caso você queira usar lógica de cores no futuro."""
+    """Envia o estado visual e deixa a transição observável no terminal."""
+    global _ultimo_estado_rosto
+    if estado != _ultimo_estado_rosto:
+        anterior = _ultimo_estado_rosto or "inicial"
+        cor.cinza(f"[🎭 Estado visual: {anterior} → {estado}]")
+        _ultimo_estado_rosto = estado
     _broadcast({'estado': estado})
 
 # Catálogo CURADO de reações -> termos-meme testados (que dão GIF bom, não "pedra").

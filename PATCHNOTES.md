@@ -8,6 +8,25 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 11/08/2026
+
+- 🤝 ✨ **Ela pode acompanhar como uma situação terminou.** Quando existe um desfecho concreto
+  pela frente, a Luna pode oferecer perguntar depois. Ela só guarda o acompanhamento após
+  confirmação por botão, texto ou voz, e isso fica separado da agenda e da memória. Quando chega
+  a hora, pergunta naturalmente como ficou e permite resolver, adiar ou esquecer o assunto.
+
+- 🎭 🐛 **O mascote parou de ficar eternamente "ouvindo".** Enquanto aguardava o atalho de voz,
+  a interface mostrava a animação de escuta como se o microfone estivesse gravando. Agora ela
+  repousa enquanto espera, fica atenta ao pressionar o PTT, pensa ao processar e volta ao idle
+  depois de falar. O CMD também mostra cada transição visual para facilitar o diagnóstico.
+
+- 🪶 🐛 **O próprio modelo deixou de ser acusado de gastar memória.** O aviso de recursos ao
+  abrir um jogo ignorava os inicializadores da Luna, mas não o executável real `llama-server`.
+  Como o 12B sempre ocupa muita RAM por definição, ele entrou na lista branca; outros programas
+  realmente pesados continuam aparecendo no aviso.
+
+---
+
 ## 10/08/2026
 
 - 🙂 🔧 **As caras dela foram limpas.** Passei uma peneira: caiu quem tinha "olho" que não lia

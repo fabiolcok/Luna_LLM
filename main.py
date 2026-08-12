@@ -240,12 +240,17 @@ def loop_voz():
     except Exception:
         pass
 
+    # O HTML já nasce em repouso; declarar o mesmo estado no backend mantém o debug e
+    # clientes que conectarem neste momento coerentes antes do primeiro acionamento do PTT.
+    atualizar_estado_rosto("dormindo")
+
     while True:
         _interromper.clear()
 
         try:
             # 1. OUVIR
-            atualizar_estado_rosto("ouvindo")
+            # O estado "ouvindo" nasce no on_press real do PTT. Marcá-lo aqui fazia a
+            # mascote passar todo o tempo de espera atenta, sem nunca repousar entre falas.
             texto_usuario = escutar_usuario()
             atualizar_usuario(texto_usuario)
 

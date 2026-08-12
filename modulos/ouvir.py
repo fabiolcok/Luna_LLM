@@ -133,6 +133,7 @@ def escutar_usuario():
             try:
                 import servidor as _srv
                 _srv.atualizar_status_mic("gravando")
+                _srv.atualizar_estado_rosto("ouvindo")
             except Exception:
                 pass
 
@@ -171,6 +172,8 @@ def escutar_usuario():
     try:
         import servidor as _srv
         _srv.atualizar_status_mic("processando")
+        # Soltou o PTT: ela não está mais ouvindo, está entendendo o áudio.
+        _srv.atualizar_estado_rosto("pensando")
     except Exception:
         pass
     audio_completo = np.concatenate(audio_frames, axis=0)
