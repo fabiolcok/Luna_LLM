@@ -86,10 +86,14 @@ diz(voltou.length === 0, 'as caras podadas continuam fora' + (voltou.length ? ' 
 const semCara = [...blocoPy.matchAll(/"(\w+)":\s*\[(.*)\]/g)].filter(m => !m[2].trim()).map(m => m[1]);
 diz(semCara.length === 0, 'nenhum clima ficou órfão');
 diz(html.includes("ROSTO_MEDO = '°ᯅ°'"), 'a cara de medo é o °ᯅ° (o ᯅ volta a aparecer, é glifo de novo)');
+diz(html.includes("ROSTO_JOGO = 'ᓀ‸ᓂ'"), 'modo jogo usa a cara concentrada ᓀ‸ᓂ');
+diz(html.includes("ROSTO_RADAR_PROATIVO = '⇀‸↼'"), 'sonar proativo usa a cara fixa ⇀‸↼');
+diz(html.includes("pensando: '◐_◑'"), 'pensando usa a cara ◐_◑');
+diz(html.includes('⌐■_■ combina com um futuro eclipse'), 'a cara candidata ao eclipse ficou anotada');
 
 // ---- 4) a lista de quem pisca continua valendo ----
-const PISCAM = ['Ò﹏Ó','ಠ_ಠ','O_O','◉‿◉','ㆆ_ㆆ','⚈₋⚈','ᗜ⩊ᗜ','•𐃷•','• ₃ •','･ ᴗ ･','• _ •'];
-const NAOPISCAM = ['ᗒᗜᗕ','ᵔ ᵕ ᵔ','╥‸╥','◞_◟','ꈍ◡ꈍ','≖_≖','￢_￢','T_T','_　_ 💤','-⩊-','｀皿´','｀Д´','಄ᆺ಄','°ᯅ°','ᗒ_ᗕ','>_<','- _ -','◺_◿'];
+const PISCAM = ['Ò﹏Ó','ಠ_ಠ','O_O','◉‿◉','ㆆ_ㆆ','⚈₋⚈','ᗜ⩊ᗜ','•𐃷•','• ₃ •','･ ᴗ ･','• _ •','◐_◑'];
+const NAOPISCAM = ['ᗒᗜᗕ','ᵔ ᵕ ᵔ','╥‸╥','◞_◟','ꈍ◡ꈍ','≖_≖','￢_￢','T_T','_　_ 💤','｀皿´','｀Д´','಄ᆺ಄','°ᯅ°','ᗒ_ᗕ','>_<','- _ -','ᓀ‸ᓂ','⇀‸↼'];
 const errSim = PISCAM.filter(c => !t.podePiscar(c));
 const errNao = NAOPISCAM.filter(c => t.podePiscar(c));
 diz(errSim.length === 0, 'as ' + PISCAM.length + ' marcadas PISCA piscam' + (errSim.length ? ' — NÃO: ' + errSim.join(' ') : ''));

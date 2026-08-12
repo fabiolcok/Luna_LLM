@@ -35,6 +35,14 @@ class TestaEstadoVisual(unittest.TestCase):
         ):
             self.assertIn(f'_falar_atalho("{fala}")', fonte)
 
+    def test_fala_proativa_troca_sonar_por_falando_e_depois_repousa(self):
+        fonte = (Path(__file__).parents[1] / "modulos" / "proativa.py").read_text(encoding="utf-8")
+        self.assertIn('ao_iniciar=_iniciar_visual_fala_proativa', fonte)
+        self.assertIn('ao_terminar=_terminar_visual_fala_proativa', fonte)
+        self.assertIn('_srv.atualizar_status("◗ Por aqui")', fonte)
+        self.assertIn('_srv.atualizar_estado_rosto("falando")', fonte)
+        self.assertIn('_srv.atualizar_estado_rosto("dormindo")', fonte)
+
 
 if __name__ == "__main__":
     unittest.main()

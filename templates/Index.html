@@ -83,6 +83,7 @@
         #presenca.ferr-radar   { --cor-halo: #7dd3fc; } /* azul claro (web) */
         #presenca.ferr-tela    { --cor-halo: #f2f7ff; } /* branco (tela)    */
         #presenca.ferr-jogo    { --cor-halo: #b56cff; } /* violeta elétrico; verde fica exclusivo da música */
+        #presenca.proat-radar  { --cor-halo: #5de4ff; } /* sonar proativo; não é o radar da pesquisa web */
         #g-halo stop { stop-color: var(--cor-halo, #7aa2f7); transition: stop-color .7s ease; }
 
         #presenca { position: relative; display: flex; justify-content: center; padding: 4px 0 10px;
@@ -141,6 +142,53 @@
             74%  { transform: rotate(280deg); }  /* outra subida */
             94%  { transform: rotate(355deg); }  /* embala novamente */
             100% { transform: rotate(360deg); }
+        }
+
+        /* 🌚 PROATIVO: primeiro ela chama atenção; RSS/promo/anime ganham um SONAR.
+           A linha mora só entre a borda da cabeça e a órbita, então nunca corta o rosto. */
+        #sonar-proativo {
+            opacity: 0;
+            transform-box: view-box;
+            transform-origin: 100px 100px;
+            pointer-events: none;
+        }
+        #presenca.proat-radar #sonar-proativo {
+            opacity: .95;
+            animation: sonar-proativo-varre 1.8s linear infinite;
+        }
+        #presenca.proat-radar #sonar-proativo line {
+            stroke: #dffcff;
+            filter: drop-shadow(0 0 3px rgba(93,228,255,.9));
+        }
+        #presenca.proat-radar #sonar-proativo path {
+            fill: #5de4ff;
+            opacity: .18;
+            filter: drop-shadow(0 0 5px rgba(93,228,255,.35));
+        }
+        #presenca.proat-radar #orbita-escala {
+            opacity: 1;                 /* idle deixava até o branco limitado a 35% */
+            transform: scale(.95);
+        }
+        #presenca.proat-radar #orbita {
+            animation: none;
+            transform: rotate(0deg);
+        }
+        #presenca.proat-radar #orbita rect {
+            fill: #31506a;
+            opacity: .06;
+            filter: none;
+        }
+        #presenca.proat-radar #orbita rect:nth-child(4n+1) {
+            animation: sonar-alvo 1.8s linear infinite;
+            animation-delay: calc(var(--d-seq) * 1.8s);
+        }
+        #presenca.proat-radar #arcos { opacity: .18; }
+        @keyframes sonar-proativo-varre { to { transform: rotate(360deg); } }
+        @keyframes sonar-alvo {
+            0%, 5% { fill: #ffffff; opacity: 1; transform: scale(1.35);
+                     filter: drop-shadow(0 0 12px #ffffff); }
+            16%, 100% { fill: #31506a; opacity: .06; transform: scale(1);
+                        filter: drop-shadow(0 0 0 rgba(255,255,255,0)); }
         }
 
         /* 🚀 sacudir NÃO é tremer: quem move ela é o seu mouse (transform inline no JS).
@@ -1334,6 +1382,7 @@
             <button class="lab-btn" data-lab="video">🎬 vídeo</button>
             <button class="lab-btn" data-lab="tela">👁️ tela</button>
             <button class="lab-btn" data-lab="jogo">🎮 jogo</button>
+            <button class="lab-btn" data-lab="sonar">📡 sonar</button>
         </div>
         <div class="lab-titulo">Estados</div>
         <div class="lab-grade">
@@ -1619,6 +1668,12 @@
                     <path id="arco-2" fill="none" stroke="#b4f9f8" stroke-width="1.1" stroke-linecap="round" opacity="0.36"/>
                     <path id="arco-3" fill="none" stroke="#bb9af7" stroke-width="0.9" stroke-linecap="round" opacity="0.24"/>
                 </g>
+                <!-- SONAR PROATIVO: um raio curto varre o anel sem atravessar a cara. -->
+                <g id="sonar-proativo">
+                    <!-- setor atrás da linha: o rastro translúcido do radar clássico -->
+                    <path d="M 100 100 L 150.9 68.2 A 60 60 0 0 1 160 100 Z"/>
+                    <line x1="100" y1="100" x2="160" y2="100" stroke-width="1.5" stroke-linecap="round"/>
+                </g>
                 <!-- ONDAS: só no modo RADAR (pesquisar_web). No idle atravessavam o rosto. -->
                 <!-- MODO JOGO: controle orbitando + barra de vida no lugar dos arcos -->
                 <g id="controle" opacity="0">
@@ -1854,8 +1909,9 @@
         // Rosto padrão de cada estado (quando ela não está reagindo a nada)
         const ROSTO_ESTADO = {
             ouvindo:  '･ ᴗ ･',
-            pensando: '-⩊-',
+            pensando: '◐_◑',
         };
+        // Ideia guardada sem expor na documentação: ⌐■_■ combina com um futuro eclipse.
         // Parada, ela ALTERNA entre estas — cara única o tempo todo dava impressão de
         // congelada. Troca ao entrar em repouso e de tempos em tempos enquanto fica parada.
         const ROSTOS_IDLE = ['ᗜ⩊ᗜ', '•𐃷•', '• ₃ •'];
@@ -1863,7 +1919,8 @@
         const IDLE_TROCA_MS = 34000;
         let _idxIdle = -1, _timerIdle = null, _afk = false;
 
-        const ROSTO_JOGO = '◺_◿';            // concentrada, enquanto você joga
+        const ROSTO_JOGO = 'ᓀ‸ᓂ';            // concentrada, enquanto você joga
+        const ROSTO_RADAR_PROATIVO = '⇀‸↼'; // fixa enquanto o sonar varre
         function rostoIdle() {                 // sorteia sem repetir o anterior
             if (_jogoAtivo) return ROSTO_JOGO;
             let i;
@@ -1893,14 +1950,13 @@
         // ═══ QUEM PISCA — escolhido cara a cara. Tem uma regra por trás: olho que JÁ está
         //     fechado ou franzido (ᵔ ꈍ ≖ ￢ ╥ ◞ T ᗒ) não tem o que fechar, e trocá-lo por um
         //     traço vira um tremeliqueLe sem leitura nenhuma. Quem pisca é quem tem olho
-        //     ABERTO. Fora isso: a de pensar fica parada de propósito, e as de raiva/medo não
-        //     piscam porque olho fixo é parte do que faz elas assustarem.
+        //     ABERTO. As de raiva/medo não piscam porque olho fixo é parte do que faz elas
+        //     assustarem; a de pensar PISCA de propósito para quebrar brevemente o processamento.
         //     Vale pro piscar E pro cafuné (fechar olho já fechado não faria nada mesmo). ═══
         const NAO_PISCA = new Set([
             'ᵔ ᵕ ᵔ', '╥‸╥', '◞_◟', 'ꈍ◡ꈍ', '≖_≖', '￢_￢', 'T_T', 'ᗒᗜᗕ', // olho já franzido/fechado
-            '-⩊-',                                                  // pensando: parada
             '｀皿´', '｀Д´', '಄ᆺ಄', '°ᯅ°',                          // raiva, sacudida, medo
-            'ᗒ_ᗕ', '>_<', '- _ -', '◺_◿',                            // reações de olho apertado
+            'ᗒ_ᗕ', '>_<', '- _ -', 'ᓀ‸ᓂ', '⇀‸↼',                    // reações de olho apertado
             '_　_ 💤',                                              // AFK: já está de olho fechado
         ]);
         function podePiscar(cara) {
@@ -2154,11 +2210,14 @@
             _olhoX += (alvoX - _olhoX) * OLHAR_SUAV;
             _olhoY += (alvoY - _olhoY) * OLHAR_SUAV;
 
-            // 🎵 Spotify: ela GINGA de cima pra baixo no ritmo (no mesmo tempo do equalizador).
-            // Vai POR CIMA do olhar, então ela continua olhando pra você enquanto balança.
+            // 🗣️ Falando: articula com um balanço curto e rápido. Usa o mesmo canal do olhar
+            // porque uma animação CSS de transform substituiria a posição calculada aqui.
+            // Spotify usa uma ginga maior e lenta; fala ganha prioridade para não somar as duas.
             let ginga = 0;
             const pres = document.getElementById('presenca');
-            if (pres && !_afk && pres.classList.contains('ferr-spotify')) {
+            if (pres && !_afk && pres.classList.contains('est-falando')) {
+                ginga = Math.sin(agora / 150 * Math.PI) * 1.7;   // microarticulação: rápida, sem pular
+            } else if (pres && !_afk && pres.classList.contains('ferr-spotify')) {
                 ginga = Math.sin(agora / 580 * Math.PI) * 6;      // 0.58s de meia-volta, ±6px
             }
 
@@ -2710,7 +2769,7 @@
         // quando alguém chama, e aí tudo já existe.
         const CARAS_BASE = () => [
             ...ROSTOS_IDLE, ROSTO_ESTADO.ouvindo, ROSTO_ESTADO.pensando,
-            ROSTO_AFK, ROSTO_JOGO, '- _ -',
+            ROSTO_AFK, ROSTO_JOGO, ROSTO_RADAR_PROATIVO, '- _ -',
         ];
         const CARAS_HIST = () => [
             ...ROSTOS_IRRITADA, ROSTO_CHACOALHO, ROSTO_SUJA, ROSTO_ESFREGA,
@@ -2786,6 +2845,7 @@
                 video:    function () { aplicarFerramenta('▸ Usando: resumir_youtube'); },
                 tela:     function () { aplicarFerramenta('▸ Usando: ver_tela'); },
                 jogo:     function () { modoJogo(_jogoAtivo ? null : 'Teste'); },
+                sonar:    function () { aplicarFerramenta('◗ Proativo: radar_rss'); },
                 ouvindo:  function () { aplicarPresenca('ouvindo'); },
                 pensando: function () { aplicarPresenca('pensando'); },
                 falando:  function () { aplicarPresenca('falando'); },
@@ -3534,6 +3594,7 @@
             ver_tela:          'tela',
             analisar_aba_atual:'tela',
         };
+        const PROATIVOS_RADAR = new Set(['radar_rss', 'radar_promocoes', 'animes']);
         // ═══ EIXOS — `ferr-*` é o eixo ATIVIDADE, e as regras de ESTADO precisam saber se ele
         //     está ligado, sem enumerar as ferramentas uma a uma. `com-ferramenta` é esse
         //     marcador: um :not() no lugar de cinco, e ferramenta nova passa a custar zero no
@@ -3549,7 +3610,10 @@
 
         function limparFerramenta() {          // nova conversa: volta ao normal
             const el = document.getElementById('presenca');
-            if (el) Object.values(FERRAMENTAS_VISUAL).forEach(v => el.classList.remove('ferr-' + v));
+            if (el) {
+                Object.values(FERRAMENTAS_VISUAL).forEach(v => el.classList.remove('ferr-' + v));
+                el.classList.remove('proat-radar');
+            }
             sincronizarFerramenta();
             pararScanner(); pararOndas();
         }
@@ -3600,9 +3664,28 @@
         function aplicarFerramenta(statusTxt) {
             const el = document.getElementById('presenca');
             if (!el) return;
+            // Proativo é transitório: RSS/promo/anime usam sonar enquanto preparam a fala.
+            // Os demais ficam sem efeito próprio até acertarmos esta linguagem visual.
+            const eraRadarProativo = el.classList.contains('proat-radar');
+            el.classList.remove('proat-radar');
+            const proat = /Proativo:\s*([^\]]+)/i.exec(statusTxt || '');
+            if (proat) {
+                Object.values(FERRAMENTAS_VISUAL).forEach(v => el.classList.remove('ferr-' + v));
+                pararScanner(); pararOndas();
+                const tarefa = proat[1].trim().toLowerCase();
+                if (PROATIVOS_RADAR.has(tarefa)) {
+                    el.classList.add('proat-radar');
+                    rostoDireto(ROSTO_RADAR_PROATIVO);
+                } else if (eraRadarProativo) {
+                    rostoDireto(rostoIdle());
+                }
+                sincronizarFerramenta();
+                return;
+            }
+            if (eraRadarProativo) rostoDireto(rostoIdle());
             const m = /Usando:\s*([a-z_]+)/i.exec(statusTxt || '');
-            // Status SEM ferramenta ("Por aqui", "Proativo: ...") não mexe em nada: o modo
-            // da última ferramenta PERSISTE até outra trocar. (O status volta pra "Por aqui"
+            // Status comum SEM ferramenta ("Por aqui") não mexe no modo de ferramenta: ele
+            // PERSISTE até outra trocar. (O status volta pra "Por aqui"
             // em 1-2s, então cronômetro fixo nunca dava pra ver o efeito direito.)
             if (!m) return;
             Object.values(FERRAMENTAS_VISUAL).forEach(v => el.classList.remove('ferr-' + v));

@@ -289,17 +289,46 @@ def _pode_falar_proativo() -> bool:
     return (time.time() - _ultima_fala_proativa_ts) >= _cd_proativo_atual
 
 
+def _iniciar_visual_fala_proativa():
+    """O visual de preparação termina exatamente quando a voz proativa começa."""
+    try:
+        import servidor as _srv
+        _srv.atualizar_status("◗ Por aqui")
+        _srv.atualizar_estado_rosto("falando")
+    except Exception:
+        pass
+
+
+def _terminar_visual_fala_proativa():
+    try:
+        import servidor as _srv
+        _srv.atualizar_estado_rosto("dormindo")
+    except Exception:
+        pass
+
+
+def _limpar_visual_proativo():
+    """Evita sonar preso se a fala for descartada ou perder a janela de entrega."""
+    try:
+        import servidor as _srv
+        _srv.atualizar_status("◗ Por aqui")
+    except Exception:
+        pass
+
+
 def _falar_proativamente(texto_resposta) -> bool:
     """Fala o texto quando a Luna ficar livre. Retorna True SE falou de verdade —
     quem depende do aviso (ex: dedup da wishlist) só deve marcar 'avisado' com True."""
     global _ultima_fala_proativa_ts, _cd_proativo_atual
     if not texto_resposta or not str(texto_resposta).strip():
+        _limpar_visual_proativo()
         return False
     if not _pode_falar_proativo():   # cooldown (rede de segurança p/ falas sem _gerar_fala_proativa)
         return False
     timeout = time.time() + 300
     while not luna_esta_livre():
         if time.time() > timeout:
+            _limpar_visual_proativo()
             return False
         time.sleep(3)
     try:
@@ -313,7 +342,11 @@ def _falar_proativamente(texto_resposta) -> bool:
         _historico_principal.append({"role": "assistant", "content": texto_resposta})
         if len(_historico_principal) > 12:
             del _historico_principal[:-12]
-    falar_texto(texto_resposta)
+    falar_texto(
+        texto_resposta,
+        ao_iniciar=_iniciar_visual_fala_proativa,
+        ao_terminar=_terminar_visual_fala_proativa,
+    )
     # Arma o cooldown a partir do FIM da fala, com o próximo intervalo sorteado
     _ultima_fala_proativa_ts = time.time()
     _cd_proativo_atual = random.uniform(_CD_PROATIVO_MIN, _CD_PROATIVO_MAX)
@@ -366,15 +399,19 @@ def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150, variar=True)
         # (ela sempre trata por 'você'). Se vazar isso, descarta a fala.
         if resposta and re.search(r'\b(o|ao|do|pro)\s+usu[áa]rio\b', resposta, re.IGNORECASE):
             cor.vermelho("[⚠️ Fala proativa vazou a instrução (eco) — descartada]")
+            _limpar_visual_proativo()
             return None
         if resposta:
             _falas_recentes.append(resposta.strip()[:120])
             if len(_falas_recentes) > 5:
                 _falas_recentes.pop(0)
+        if not resposta:
+            _limpar_visual_proativo()
         return resposta
     except Exception as e:
         cor.vermelho(f"[Erro na geração proativa: {e}]")
         _historico_proativo = []
+        _limpar_visual_proativo()
         return None
 
 def ler_estado_proativo():
@@ -1797,7 +1834,11 @@ def _falar_morte_lol(texto: str):
         _historico_principal.append({"role": "assistant", "content": texto})
         if len(_historico_principal) > 12:
             del _historico_principal[:-12]
-    falar_texto(texto)
+    falar_texto(
+        texto,
+        ao_iniciar=_iniciar_visual_fala_proativa,
+        ao_terminar=_terminar_visual_fala_proativa,
+    )
 
 def _comentar_morte_lol(snap: dict):
     """Monta o briefing da morte e dispara a fala. O 12B decide zoeira vs apoio pelos dados."""

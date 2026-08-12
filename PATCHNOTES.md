@@ -27,8 +27,17 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 - 🎮 🔧 **O modo jogo ficou mais vivo e ganhou identidade própria.** A cabeça usa violeta
   elétrico estável — o verde continua sendo a assinatura da música —, os quatro pixels principais
-  ficaram maiores e a órbita alterna trechos lentos e rápidos. A expressão concentrada `◺_◿`
+  ficaram maiores e a órbita alterna trechos lentos e rápidos. A expressão concentrada `ᓀ‸ᓂ`
   também deixou de piscar.
+
+- 📡 ✨ **Novidades agora aparecem no radar.** Enquanto RSS, promoções ou animes são
+  preparados, uma linha de sonar varre a cabeça com rastro luminoso. As partículas ficam no
+  escuro e as quatro principais acendem em branco quando a varredura alcança cada uma. A cara
+  `⇀‸↼` acompanha o radar e a animação sai quando ela começa a falar.
+
+- 💭 🔧 **Pensar e falar ganharam mais movimento.** O pensamento agora usa `◐_◑` e
+  pisca brevemente durante o processamento. Na fala, o rosto faz uma microarticulação vertical
+  rápida e curta, sem virar a dança mais ampla do modo música.
 
 - 😌 🐛 **Olho fechado não pisca duas vezes.** A cara `ᗒᗜᗕ` já representa olhos
   fechados, mas o mecanismo de piscada ainda a transformava brevemente em `-ᗜ-`. Ela entrou

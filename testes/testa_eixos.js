@@ -41,7 +41,7 @@ global.clearInterval = () => {}; global.clearTimeout = () => {};
 new Function(src + `
 ;globalThis.__t = { aplicar: aplicarFerramenta, limpar: limparFerramenta, jogo: modoJogo,
   sincronizar: sincronizarFerramenta, VISUAL: FERRAMENTAS_VISUAL,
-  presenca: aplicarPresenca, ESTADOS: PRES_ESTADOS };`)();
+  presenca: aplicarPresenca, ESTADOS: PRES_ESTADOS, rosto: () => _rostoAtual };`)();
 const t = globalThis.__t;
 const pres = pega('presenca');
 let ok = true;
@@ -91,7 +91,26 @@ pres.classList.remove('ferr-spotify');
 t.sincronizar();
 diz(!tem('com-ferramenta'), '...nos dois sentidos');
 
-// ---- 4) uma classe por eixo: estado nao acumula ----
+// ---- 4) proativos são transitórios e o sonar é exclusivo dos radares ----
+for (const tarefa of ['radar_rss', 'radar_promocoes', 'animes']) {
+  t.aplicar('◗ Proativo: ' + tarefa);
+  diz(tem('proat-radar'), tarefa + ' liga o sonar proativo');
+  diz(t.rosto() === '⇀‸↼', tarefa + ' mantém a cara fixa do sonar');
+}
+t.aplicar('◗ Proativo: checar_agenda');
+diz(!tem('proat-radar'), 'outro proativo fica sem efeito enquanto refinamos o radar');
+t.aplicar('◗ Por aqui');
+diz(!tem('proat-radar'), 'Por aqui encerra o visual proativo');
+diz(html.includes('x1="100" y1="100" x2="160" y2="100"'),
+    'o sonar nasce no centro e termina dentro da cabeça');
+diz(html.includes('M 100 100 L 150.9 68.2 A 60 60 0 0 1 160 100 Z'),
+    'a linha do sonar carrega um setor translúcido como rastro');
+diz(css.includes('animation-delay: calc(var(--d-seq) * 1.8s)'),
+    'cada bola grande pisca quando a linha alcança seu ângulo');
+diz(css.includes('#presenca.proat-radar #orbita-escala') && css.includes('drop-shadow(0 0 12px #ffffff)'),
+    'o clarão branco das bolas não é apagado pela opacidade do idle');
+
+// ---- 5) uma classe por eixo: estado nao acumula ----
 for (const e of t.ESTADOS) {
   t.presenca(e);
   const ligados = t.ESTADOS.filter(x => tem('est-' + x));

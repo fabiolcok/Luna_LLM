@@ -15,3 +15,6 @@ diz(html.includes('animation: escuta-membrana 1.35s ease-in-out infinite alterna
     'os arcos respiram como uma membrana durante a escuta');
 diz(html.includes('#presenca.est-ouvindo { --cor-halo: #9edcff; }'),
     'o halo de escuta tem cor distinta do repouso');
+diz(html.includes("pres.classList.contains('est-falando')") &&
+    html.includes('Math.sin(agora / 150 * Math.PI) * 1.7'),
+    'o rosto articula com balanço curto e rápido enquanto ela fala');
