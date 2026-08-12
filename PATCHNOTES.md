@@ -21,6 +21,15 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
   depois de falar. Os comandos rápidos, como pausar ou avançar a música, também fecham esse
   ciclo corretamente. O CMD mostra cada transição visual para facilitar o diagnóstico.
 
+- 👂 🔧 **Ouvir agora parece ouvir.** Em vez de apenas girar um pouco mais rápido que o idle,
+  a periferia se recolhe, as 12 partículas pequenas ficam discretas, as quatro grandes pulsam
+  como sensores e os arcos respiram como uma membrana. Fica fácil distinguir escuta de repouso.
+
+- 🎮 🔧 **O modo jogo ficou mais vivo e ganhou identidade própria.** A cabeça usa violeta
+  elétrico estável — o verde continua sendo a assinatura da música —, os quatro pixels principais
+  ficaram maiores e a órbita alterna trechos lentos e rápidos. A expressão concentrada `◺_◿`
+  também deixou de piscar.
+
 - 😌 🐛 **Olho fechado não pisca duas vezes.** A cara `ᗒᗜᗕ` já representa olhos
   fechados, mas o mecanismo de piscada ainda a transformava brevemente em `-ᗜ-`. Ela entrou
   na curadoria das expressões que não piscam.

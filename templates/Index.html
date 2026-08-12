@@ -82,6 +82,7 @@
         #presenca.ferr-video   { --cor-halo: #ff3b30; } /* vermelho YouTube */
         #presenca.ferr-radar   { --cor-halo: #7dd3fc; } /* azul claro (web) */
         #presenca.ferr-tela    { --cor-halo: #f2f7ff; } /* branco (tela)    */
+        #presenca.ferr-jogo    { --cor-halo: #b56cff; } /* violeta elétrico; verde fica exclusivo da música */
         #g-halo stop { stop-color: var(--cor-halo, #7aa2f7); transition: stop-color .7s ease; }
 
         #presenca { position: relative; display: flex; justify-content: center; padding: 4px 0 10px;
@@ -114,10 +115,33 @@
         #presenca.afago #arcos { transform: scale(.97); opacity: .55; }
         #presenca.afago #rosto-txt { text-shadow: 0 0 18px rgba(255, 214, 165, .75); }
 
-        /* 🎮 MODO JOGO: as bolinhas viram PIXELS quadrados (estética 8-bit) */
+        /* 🎮 MODO JOGO: pixels em dois tamanhos e velocidade de montanha-russa.
+           O halo fica forte e ESTÁVEL: pulsar escala fazia a cabeça parecer que estava popando. */
+        #presenca.ferr-jogo #halo {
+            animation: none;
+            opacity: .68;
+            transform: scale(1.06);
+            filter: drop-shadow(0 0 10px rgba(181,108,255,.72));
+        }
+        #presenca.ferr-jogo #orbita {
+            animation: jogo-montanha-russa 14s ease-in-out infinite;
+        }
         #presenca.ferr-jogo #orbita rect { rx: 0; fill: #7bf98f; }
+        #presenca.ferr-jogo #orbita rect:nth-child(4n+1) {
+            transform: scale(1.85);
+            fill: #d5ff85;
+            filter: drop-shadow(0 0 4px rgba(123,249,143,.8));
+        }
         #presenca.ferr-jogo #arcos { opacity: .12; }
-        #presenca.ferr-jogo #rosto-txt { text-shadow: 0 0 14px rgba(123,249,143,.7); }
+        #presenca.ferr-jogo #rosto-txt { text-shadow: 0 0 16px rgba(181,108,255,.78); }
+        @keyframes jogo-montanha-russa {
+            0%   { transform: rotate(0deg);   }
+            24%  { transform: rotate(45deg);  }  /* subida lenta */
+            50%  { transform: rotate(235deg); }  /* descida rápida */
+            74%  { transform: rotate(280deg); }  /* outra subida */
+            94%  { transform: rotate(355deg); }  /* embala novamente */
+            100% { transform: rotate(360deg); }
+        }
 
         /* 🚀 sacudir NÃO é tremer: quem move ela é o seu mouse (transform inline no JS).
            O tremor de CSS foi embora — dava a sensação de "vibrou" e não de "puxei". */
@@ -263,13 +287,34 @@
         #presenca.afk #arcos, #presenca.afk #orbita-escala { opacity: .2; transform: scale(.9); }
         #presenca.afk #rosto  { opacity: .55; }
 
-        /* 👂 ouvindo — tudo CONTRAI, fica atenta */
+        /* 👂 ouvindo — tudo CONTRAI e os quatro pontos grandes viram sensores.
+           Velocidade sozinha quase não aparecia em falas curtas: idle e escuta pareciam iguais. */
+        #presenca.est-ouvindo { --cor-halo: #9edcff; }
+        .est-ouvindo #halo   { animation-duration: 2.2s; }
         .est-ouvindo #orbita { animation-duration: 16s; }
         .est-ouvindo #arco-1 { animation-duration: 20s; }
         .est-ouvindo #arco-2 { animation-duration: 14s; }
         .est-ouvindo #arco-3 { animation-duration: 9s;  }
-        .est-ouvindo #arcos  { opacity: 1; transform: scale(.82); }
+        .est-ouvindo #arcos  { animation: escuta-membrana 1.35s ease-in-out infinite alternate; }
         .est-ouvindo #orbita-escala { opacity: .9; transform: scale(.86); }
+        #presenca.est-ouvindo #orbita rect {
+            opacity: .2;
+            transform: scale(.62);
+            transition: opacity .25s ease, transform .25s ease;
+        }
+        #presenca.est-ouvindo #orbita rect:nth-child(4n+1) {
+            fill: #e8f8ff;
+            animation: escuta-sensor .85s ease-in-out infinite alternate;
+            filter: drop-shadow(0 0 5px rgba(158,220,255,.8));
+        }
+        @keyframes escuta-sensor {
+            from { transform: scale(.82); opacity: .62; }
+            to   { transform: scale(1.58); opacity: 1; }
+        }
+        @keyframes escuta-membrana {
+            from { transform: scale(.78); opacity: .72; }
+            to   { transform: scale(.86); opacity: 1; }
+        }
 
         /* 💭 pensando — arcos ACELERAM e se separam */
         .est-pensando #orbita { animation-duration: 4s;  }
@@ -1855,7 +1900,7 @@
             'ᵔ ᵕ ᵔ', '╥‸╥', '◞_◟', 'ꈍ◡ꈍ', '≖_≖', '￢_￢', 'T_T', 'ᗒᗜᗕ', // olho já franzido/fechado
             '-⩊-',                                                  // pensando: parada
             '｀皿´', '｀Д´', '಄ᆺ಄', '°ᯅ°',                          // raiva, sacudida, medo
-            'ᗒ_ᗕ', '>_<', '- _ -',                                  // reações de olho apertado
+            'ᗒ_ᗕ', '>_<', '- _ -', '◺_◿',                            // reações de olho apertado
             '_　_ 💤',                                              // AFK: já está de olho fechado
         ]);
         function podePiscar(cara) {

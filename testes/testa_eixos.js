@@ -72,6 +72,14 @@ diz(!tem('com-ferramenta'), 'limparFerramenta desliga o marcador');
 // modo jogo entra pelo mesmo eixo, por um caminho diferente
 t.jogo('Teste');
 diz(tem('ferr-jogo') && tem('com-ferramenta'), 'modo jogo também liga o marcador');
+diz(css.includes('#presenca.ferr-jogo    { --cor-halo: #b56cff; }'),
+    'modo jogo usa violeta elétrico na cabeça, sem disputar o verde do Spotify');
+diz(css.includes('animation: none;') && css.includes('opacity: .68;'),
+    'modo jogo mantém a cabeça violeta acesa e estável, sem efeito de pop');
+diz(css.includes('#presenca.ferr-jogo #orbita rect:nth-child(4n+1)'),
+    'os quatro pixels principais do jogo têm escala própria');
+diz(css.includes('animation: jogo-montanha-russa 14s ease-in-out infinite'),
+    'a órbita do jogo alterna aceleração e desaceleração');
 t.jogo(null);
 diz(!tem('ferr-jogo') && !tem('com-ferramenta'), '...e desliga ao sair');
 
