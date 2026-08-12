@@ -285,6 +285,12 @@
         #presenca.cutucada svg,
         #presenca.cutucada #rosto-txt { animation: cutuco .42s cubic-bezier(.2,.9,.3,1.6); }
         @keyframes cutuco { 0% { transform: scale(1); } 28% { transform: scale(1.07); } 100% { transform: scale(1); } }
+        /* Insistir MESMO depois da encarada aproxima só a cara — o corpo fica no lugar. */
+        #presenca.encarada-gigante #rosto-txt {
+            transform: scale(2.65);
+            text-shadow: 0 0 24px rgba(255,90,77,.9);
+            transition: transform .22s cubic-bezier(.2,.9,.3,1.35), text-shadow .22s ease;
+        }
         #presenca svg { width: 196px; height: 196px; overflow: visible; }
         /* o rosto ocupa o miolo livre dos anéis */
         #rosto {
@@ -2050,6 +2056,7 @@
             const el = document.getElementById('presenca');
             if (!el) return;
             if (!PRES_ESTADOS.includes(estado)) estado = 'dormindo';
+            if (estado !== 'dormindo' && _encaradaGigante) limparReacaoClique();
             PRES_ESTADOS.forEach(e => el.classList.remove('est-' + e));
             el.classList.add('est-' + estado);
 
@@ -2543,6 +2550,7 @@
             _fogMov = _fogMov.filter(([t]) => agora - t < FOG_JANELA);
             const total = _fogMov.reduce((a, [, d]) => a + d, 0);
             if (total > FOG_CHACOALHO * 0.35 && !_chacoalhando) {   // ficou tonta
+                if (_encaradaGigante) limparReacaoClique();         // o arrasto assume o rosto e precisa desfazer o zoom
                 _chacoalhando = true;
                 trocarRosto(ROSTO_CHACOALHO);
             }
@@ -3443,11 +3451,40 @@
         //     Se você INSISTIR, ela se irrita e fica de cara feia por mais tempo. ═══
         const CLIQUE_JANELA = 6000;   // cliques dentro disso contam como "insistência"
         const CLIQUE_PACIENCIA = 3;   // a partir do 4º clique seguido ela se irrita
-        let _cliques = [], _timersClique = [], _reagindo = false;
+        const ENCARADA_CLIQUES = 10, ENCARADA_JANELA = 3000, ENCARADA_GIGANTE_MS = 10000;
+        const ENCARADA_NORMAL_MS = 1500, ENCARADA_ALIVIO_MS = 1200;
+        let _cliques = [], _cliquesNaEncarada = [], _timersClique = [], _reagindo = false;
+        let _encaradaGigante = false;
 
         function limparReacaoClique() {
             _timersClique.forEach(clearTimeout);
             _timersClique = [];
+            const pres = document.getElementById('presenca');
+            if (pres) pres.classList.remove('encarada-gigante');
+            _encaradaGigante = false;
+        }
+
+        function encararGigante() {
+            const pres = document.getElementById('presenca');
+            if (!pres || _encaradaGigante) return;
+            limparReacaoClique();
+            _encaradaGigante = true;
+            _reagindo = true;
+            _cliques = []; _cliquesNaEncarada = [];
+            rostoDireto('≖_≖');
+            pres.classList.remove('cutucada');
+            pres.classList.add('encarada-gigante');
+            _timersClique.push(setTimeout(() => {
+                pres.classList.remove('encarada-gigante');       // encolhe ainda encarando
+            }, ENCARADA_GIGANTE_MS));
+            _timersClique.push(setTimeout(() => {
+                rostoDireto('• _ •');                       // alivia antes de voltar ao repouso
+            }, ENCARADA_GIGANTE_MS + ENCARADA_NORMAL_MS));
+            _timersClique.push(setTimeout(() => {
+                _encaradaGigante = false;
+                _reagindo = false;
+                trocarRosto(rostoIdle());
+            }, ENCARADA_GIGANTE_MS + ENCARADA_NORMAL_MS + ENCARADA_ALIVIO_MS));
         }
 
         function cutucar() {
@@ -3457,8 +3494,17 @@
             if (_desistiu) return;                                  // de costas: cutucão não alcança
             if (_medo) { atrapalhar(); return; }                    // cutucar durante a chuva: idem
             if (!pres.classList.contains('est-dormindo')) return;   // ocupada (ouvindo/pensando/falando)
+            if (_encaradaGigante) return;                            // não reinicia os 10s
 
             const agora = Date.now();
+            const jaEncarava = _rostoAtual === '≖_≖';
+            if (jaEncarava) {
+                _cliquesNaEncarada = _cliquesNaEncarada.filter(t => agora - t < ENCARADA_JANELA);
+                _cliquesNaEncarada.push(agora);
+                if (_cliquesNaEncarada.length >= ENCARADA_CLIQUES) { encararGigante(); return; }
+            } else {
+                _cliquesNaEncarada = [];
+            }
             _cliques = _cliques.filter(t => agora - t < CLIQUE_JANELA);
             _cliques.push(agora);
             const irritada = _cliques.length > CLIQUE_PACIENCIA;
@@ -3589,6 +3635,7 @@
         const FERRAMENTAS_VISUAL = {
             controlar_spotify: 'spotify',
             pesquisar_web:     'radar',
+            consultar_jogo_steam: 'radar',
             resumir_youtube:   'video',
             resumir_site:      'video',
             ver_tela:          'tela',
@@ -3664,6 +3711,7 @@
         function aplicarFerramenta(statusTxt) {
             const el = document.getElementById('presenca');
             if (!el) return;
+            if (_encaradaGigante) limparReacaoClique();
             // Proativo é transitório: RSS/promo/anime usam sonar enquanto preparam a fala.
             // Os demais ficam sem efeito próprio até acertarmos esta linguagem visual.
             const eraRadarProativo = el.classList.contains('proat-radar');

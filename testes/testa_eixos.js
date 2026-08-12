@@ -66,6 +66,8 @@ for (const [tool, modo] of Object.entries(t.VISUAL)) {
   t.aplicar('▸ Usando: ' + tool);
   diz(tem('ferr-' + modo) && tem('com-ferramenta'), tool + ' liga ferr-' + modo + ' E o marcador');
 }
+diz(t.VISUAL.consultar_jogo_steam === t.VISUAL.pesquisar_web,
+    'consulta de jogo Steam reutiliza exatamente o radar da pesquisa web');
 t.limpar();
 diz(!tem('com-ferramenta'), 'limparFerramenta desliga o marcador');
 
