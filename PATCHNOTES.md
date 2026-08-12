@@ -18,7 +18,12 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 - 🎭 🐛 **O mascote parou de ficar eternamente "ouvindo".** Enquanto aguardava o atalho de voz,
   a interface mostrava a animação de escuta como se o microfone estivesse gravando. Agora ela
   repousa enquanto espera, fica atenta ao pressionar o PTT, pensa ao processar e volta ao idle
-  depois de falar. O CMD também mostra cada transição visual para facilitar o diagnóstico.
+  depois de falar. Os comandos rápidos, como pausar ou avançar a música, também fecham esse
+  ciclo corretamente. O CMD mostra cada transição visual para facilitar o diagnóstico.
+
+- 😌 🐛 **Olho fechado não pisca duas vezes.** A cara `ᗒᗜᗕ` já representa olhos
+  fechados, mas o mecanismo de piscada ainda a transformava brevemente em `-ᗜ-`. Ela entrou
+  na curadoria das expressões que não piscam.
 
 - 🪶 🐛 **O próprio modelo deixou de ser acusado de gastar memória.** O aviso de recursos ao
   abrir um jogo ignorava os inicializadores da Luna, mas não o executável real `llama-server`.

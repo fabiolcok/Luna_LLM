@@ -192,6 +192,16 @@ def _registrar_turno_direto(historico: list, usuario: str, luna: str):
     if len(historico) > 12:
         del historico[:-12]
 
+
+def _falar_atalho(texto: str):
+    """TTS dos comandos locais também precisa fechar o ciclo visual do mascote."""
+    falar_texto(
+        texto,
+        ao_iniciar=lambda: atualizar_estado_rosto("falando"),
+        ao_terminar=lambda: atualizar_estado_rosto("dormindo"),
+    )
+
+
 def responder_texto_web(texto: str):
     """Mensagem DIGITADA na caixa do web: mesmas regras do Telegram (desenvolve, SEM TTS),
     mas presença = no PC. Compartilha o histórico com a voz."""
@@ -300,26 +310,26 @@ def loop_voz():
                 elif any(p in texto_lower for p in ATIVAR_MODO_JOGO):
                     for _ in range(MAX_TENTATIVAS):
                         registrar_tentativa()
-                    falar_texto("Modo jogo ativado. Pode jogar em paz, bot.")
+                    _falar_atalho("Modo jogo ativado. Pode jogar em paz, bot.")
                     continue
 
                 elif any(p in texto_lower for p in ATIVAR_SPOTIFY_PAUSA):
                     cor.amarelo("⏸️ Pausando Spotify (Ativado por palavra)...")
                     pausar_spotify()
-                    falar_texto("Pausado.")
+                    _falar_atalho("Pausado.")
                     continue
 
                 elif any(p in texto_lower for p in ATIVAR_SPOTIFY_PROXIMA):
                     cor.amarelo("⏭️ Pulando música (Ativado por palavra)...")
                     proxima_musica_spotify()
-                    falar_texto("Pulando.")
+                    _falar_atalho("Pulando.")
                     continue
 
                 elif any(p in texto_lower for p in ATIVAR_TRADUCAO):
                     cor.amarelo("🌐 Traduzindo texto selecionado...")
                     texto_selecionado = ler_texto_selecionado()
                     if "Erro:" in texto_selecionado or not texto_selecionado.strip():
-                        falar_texto("Nenhum texto selecionado para traduzir.")
+                        _falar_atalho("Nenhum texto selecionado para traduzir.")
                         continue
                     texto_usuario = f"Traduza para português do Brasil o seguinte texto:\n\n{texto_selecionado}"
 
@@ -328,11 +338,11 @@ def loop_voz():
                     cor.amarelo("🔇 Alternando mute (Ativado por palavra)...")
                     vai_desmutar = any(p in texto_lower for p in ATIVAR_MUTE_DESMUTAR)
                     if not vai_desmutar:
-                        falar_texto("Mutando.")
+                        _falar_atalho("Mutando.")
                     resultado = alternar_mute()
                     cor.amarelo(f"[🔇 {resultado}]")
                     if vai_desmutar:
-                        falar_texto("Som ativado.")
+                        _falar_atalho("Som ativado.")
                     continue
 
                 # 3. PENSAR

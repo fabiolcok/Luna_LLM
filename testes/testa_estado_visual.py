@@ -1,6 +1,7 @@
 """Contrato do diagnóstico de estados enviados ao mascote web."""
 
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 import servidor
@@ -21,6 +22,18 @@ class TestaEstadoVisual(unittest.TestCase):
         self.assertEqual(2, log.call_count)
         self.assertIn("inicial → ouvindo", log.call_args_list[0].args[0])
         self.assertIn("ouvindo → pensando", log.call_args_list[1].args[0])
+
+    def test_atalhos_de_voz_fecham_o_ciclo_visual(self):
+        fonte = (Path(__file__).parents[1] / "main.py").read_text(encoding="utf-8")
+        for fala in (
+            "Modo jogo ativado. Pode jogar em paz, bot.",
+            "Pausado.",
+            "Pulando.",
+            "Nenhum texto selecionado para traduzir.",
+            "Mutando.",
+            "Som ativado.",
+        ):
+            self.assertIn(f'_falar_atalho("{fala}")', fonte)
 
 
 if __name__ == "__main__":
