@@ -97,7 +97,9 @@ def consultar(nome_anime=""):
 
     if resultados:
         escopo = f"Consulta do anime pedido ({nome_anime})" if nome_anime else "Episódios dos animes acompanhados que saíram nas últimas 72 horas"
-        return f"SISTEMA: {escopo}:\n" + "\n".join(resultados)
+        # Retorno factual comum, não erro de sistema. O prefixo SISTEMA fazia o 12B
+        # ignorar os episódios válidos e alegar que a consulta havia falhado.
+        return f"{escopo}:\n" + "\n".join(resultados)
     if falhas == len(lista):
         return "SISTEMA: Não consegui consultar o AniList agora."
     if falhas:

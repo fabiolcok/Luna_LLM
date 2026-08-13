@@ -27,5 +27,9 @@ assert.ok(anime.includes('if temporada is False:') &&
           anime.includes('if temporada is None:') &&
           anime.includes('if falhas == len(lista):'),
           'FALHA: ausência de temporada voltou a ser confundida com falha do AniList');
+assert.ok(anime.includes('return f"{escopo}:\\n"') &&
+          pensar.includes('nome_funcao == "consultar_animes"') &&
+          pensar.includes('A consulta FUNCIONOU: é PROIBIDO'),
+          'FALHA: a persona pode voltar a transformar episódios válidos em erro de consulta');
 
 console.log('PASSOU — animes podem ser consultados sem interferir no radar');

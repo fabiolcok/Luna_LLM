@@ -68,6 +68,8 @@ for (const [tool, modo] of Object.entries(t.VISUAL)) {
 }
 diz(t.VISUAL.consultar_jogo_steam === t.VISUAL.pesquisar_web,
     'consulta de jogo Steam reutiliza exatamente o radar da pesquisa web');
+diz(t.VISUAL.consultar_animes === t.VISUAL.pesquisar_web,
+    'consulta reativa de animes reutiliza exatamente o radar da pesquisa web');
 t.limpar();
 diz(!tem('com-ferramenta'), 'limparFerramenta desliga o marcador');
 

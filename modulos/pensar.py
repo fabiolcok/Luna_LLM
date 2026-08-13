@@ -1748,6 +1748,19 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                     responder_completo=responder_completo,
                 )
                 lembranca_oculta = ""
+            elif ferramenta_chamada and nome_funcao == "consultar_animes" and not resultado_str.startswith("SISTEMA:"):
+                # O 12B recebeu episódios válidos e mesmo assim respondeu que houve erro.
+                # A persona pode dar o tom, mas não reinterpretar nem omitir o placar factual.
+                texto_resposta = _reescrever_como_luna(
+                    resultado_str, prompt_usuario, historico, max_tokens,
+                    tarefa_documento=(
+                        "Conte quais episódios saíram e, quando informado, quando sai o próximo. "
+                        "Inclua TODOS os animes e números recebidos. A consulta FUNCIONOU: é PROIBIDO "
+                        "alegar erro, lista incompleta ou falta de acesso. Seja breve e natural."
+                    ),
+                    responder_completo=responder_completo,
+                )
+                lembranca_oculta = ""
             else:
                 cor.amarelo("[🎭 Passando para LLM persona...]")
                 texto_resposta = _reescrever_como_luna(resultado_str, prompt_usuario, historico, max_tokens, forcar_incluir=eh_ver_tela, responder_completo=responder_completo)

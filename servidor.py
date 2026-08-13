@@ -75,7 +75,7 @@ _INTERVALOS_EVENTOS_VISUAIS = {
 _ACOES_LAB_VISUAL = {
     "foguete", "satelite", "cometao", "sujeira", "chuva", "invasao", "desistir",
     "cometa", "ovni", "eclipse", "confete", "spotify", "radar", "video", "tela",
-    "jogo", "sonar", "ouvindo", "pensando", "falando", "afk", "noite", "limpar", "rosto",
+    "jogo", "sonar", "ouvindo", "pensando", "falando", "digitando", "afk", "noite", "limpar", "rosto",
 }
 
 _arquivo_pendente = None  # {"nome": str, "conteudo": str}

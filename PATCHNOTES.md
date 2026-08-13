@@ -10,6 +10,10 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 13/08/2026
 
+- ⌨️ ✨ **Responder por texto ganhou movimento próprio.** Quando não usa voz, a Luna leva as
+  quatro bolinhas grandes suavemente até a base, pisca cada uma em branco num ritmo irregular
+  e acompanha a escrita com o rosto, antes de voltar ao repouso.
+
 - 📊 ✨ **As ferramentas agora deixam um placar local.** Cada uso registra sucesso ou erro,
   duração e canal; quando uma resposta recebe 👍 ou 👎, a nota também entra na conta daquela
   ferramenta. O resumo fica em `logs/uso_ferramentas_resumo.json`, sem salvar argumentos nem
@@ -17,7 +21,9 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 - 🎌 ✨ **Agora dá para perguntar pelos animes.** Além do aviso automático, a Luna consulta
   a pedido os episódios recentes da lista `animes.md` ou um anime citado, incluindo o próximo
-  episódio quando houver previsão, sem consumir nem silenciar o alerta proativo.
+  episódio quando houver previsão, sem consumir nem silenciar o alerta proativo. A apresentação
+  também fica presa aos dados encontrados, evitando a persona transformar um resultado válido
+  em um falso erro de consulta.
 
 - 🌙 🔧 **O widget ficou mais ajustável e atento.** No clique direito dá para alternar se ele
   fica sempre no topo e escolher tamanho pequeno, normal ou grande; tudo fica lembrado neste

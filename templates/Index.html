@@ -575,6 +575,29 @@
             to   { filter: drop-shadow(0 0 7px rgba(255,210,63,.95)); }
         }
 
+        /* ⌨️ digitando — as quatro bolinhas grandes descem como teclas; as pequenas
+           quase somem. A posição é animada nos atributos x/y pelo JS: transform CSS
+           substituiria o posicionamento do SVG e faria as peças pularem para a origem. */
+        #presenca.est-digitando { --cor-halo: #d8f2ff; }
+        #presenca.est-digitando #halo { animation-duration: 1.8s; }
+        #presenca.est-digitando #arcos { animation: digita-arcos .7s ease-in-out infinite alternate; }
+        #presenca.est-digitando #orbita,
+        #presenca.movendo-digitando #orbita { animation: none; transform: rotate(0deg); }
+        #presenca.est-digitando #orbita rect { opacity: .1; }
+        #presenca.est-digitando #orbita rect:nth-child(4n+1) {
+            fill: #ffffff;
+            animation: digita-tecla .42s ease-in-out infinite;
+            animation-delay: calc(var(--d-rand) * -.42s);
+        }
+        @keyframes digita-tecla {
+            0%, 55%, 100% { opacity: .24; filter: drop-shadow(0 0 0 rgba(255,255,255,0)); }
+            72% { opacity: 1; filter: drop-shadow(0 0 8px rgba(255,255,255,1)); }
+        }
+        @keyframes digita-arcos {
+            from { opacity: .38; transform: scale(.96); }
+            to   { opacity: .72; transform: scale(1.01); }
+        }
+
         /* Termo do GIF — aparece só ao passar o mouse sobre o GIF */
         #gif-termo {
             position: absolute;
@@ -1512,6 +1535,7 @@
             <button class="lab-btn" data-lab="ouvindo">👂 ouvindo</button>
             <button class="lab-btn" data-lab="pensando">💭 pensando</button>
             <button class="lab-btn" data-lab="falando">🗣️ falando</button>
+            <button class="lab-btn" data-lab="digitando">⌨️ digitando</button>
             <button class="lab-btn" data-lab="afk">💤 AFK</button>
             <button class="lab-btn" data-lab="noite">🌙 noite</button>
         </div>
@@ -2059,7 +2083,7 @@
             });
         })();
 
-        const PRES_ESTADOS = ['dormindo', 'ouvindo', 'pensando', 'falando'];
+        const PRES_ESTADOS = ['dormindo', 'ouvindo', 'pensando', 'falando', 'digitando'];
         // Rosto padrão de cada estado (quando ela não está reagindo a nada)
         const ROSTO_ESTADO = {
             ouvindo:  '･ ᴗ ･',
@@ -2209,6 +2233,7 @@
             if (estado !== 'dormindo' && _encaradaGigante) limparReacaoClique();
             PRES_ESTADOS.forEach(e => el.classList.remove('est-' + e));
             el.classList.add('est-' + estado);
+            moverBolasDigitando(estado === 'digitando');
 
             clearTimeout(_timerSono);
             if (estado === 'ouvindo' || estado === 'pensando') {
@@ -2218,7 +2243,7 @@
                 _afk = false; el.classList.remove('afk');
                 pararTrocaIdle();
                 trocarRosto(ROSTO_ESTADO[estado]);
-            } else if (estado === 'falando') {
+            } else if (estado === 'falando' || estado === 'digitando') {
                 pararTrocaIdle();
                 trocarRosto(_rostoReacao || ROSTO_ESTADO.pensando);
             } else {                                  // parada: segura a reação um pouco e repousa
@@ -2371,17 +2396,19 @@
             // 🗣️ Falando: articula com um balanço curto e rápido. Usa o mesmo canal do olhar
             // porque uma animação CSS de transform substituiria a posição calculada aqui.
             // Spotify usa uma ginga maior e lenta; fala ganha prioridade para não somar as duas.
-            let ginga = 0;
+            let ginga = 0, leituraX = 0;
             const pres = document.getElementById('presenca');
             if (pres && !_afk && pres.classList.contains('est-falando')) {
                 ginga = Math.sin(agora / 150 * Math.PI) * 1.7;   // microarticulação: rápida, sem pular
+            } else if (pres && !_afk && pres.classList.contains('est-digitando')) {
+                leituraX = Math.sin(agora / 520 * Math.PI) * 2.2;
             } else if (pres && !_afk && pres.classList.contains('ferr-spotify')) {
                 ginga = Math.sin(agora / 580 * Math.PI) * 6;      // 0.58s de meia-volta, ±6px
             }
 
             const el = document.getElementById('rosto');
             if (el) el.style.transform =
-                `translate(${_olhoX.toFixed(2)}px, ${(_olhoY + ginga).toFixed(2)}px)`;
+                `translate(${(_olhoX + leituraX).toFixed(2)}px, ${(_olhoY + ginga).toFixed(2)}px)`;
             requestAnimationFrame(olhar);
         })();
 
@@ -2772,9 +2799,14 @@
             _fogMov = _fogMov.filter(([t]) => agora - t < FOG_JANELA);
             const total = _fogMov.reduce((a, [, d]) => a + d, 0);
             if (total > FOG_CHACOALHO * 0.35 && !_chacoalhando) {   // ficou tonta
-                if (_encaradaGigante) limparReacaoClique();         // o arrasto assume o rosto e precisa desfazer o zoom
+                // O arrasto assume o rosto por completo. Antes só cancelava a encarada
+                // gigante; os timers de um cutucão comum sobreviviam e jogavam a cara
+                // de volta ao idle no meio da sacudida.
+                limparReacaoClique();
+                const pres = document.getElementById('presenca');
+                if (pres) pres.classList.remove('cutucada');
                 _chacoalhando = true;
-                trocarRosto(ROSTO_CHACOALHO);
+                rostoDireto(ROSTO_CHACOALHO);
             }
             if (total > FOG_CHACOALHO && _foguetes.length) {        // sacudiu o bastante
                 _chacoalhando = false;
@@ -3073,6 +3105,7 @@
                 ouvindo:  function () { aplicarPresenca('ouvindo'); },
                 pensando: function () { aplicarPresenca('pensando'); },
                 falando:  function () { aplicarPresenca('falando'); },
+                digitando:function () { aplicarPresenca('digitando'); },
                 afk:      function () { aplicarAfk(!_afk); },
                 noite:    function () {
                     const pres = document.getElementById('presenca');
@@ -3828,6 +3861,7 @@
             controlar_spotify: 'spotify',
             pesquisar_web:     'radar',
             consultar_jogo_steam: 'radar',
+            consultar_animes:  'radar',
             resumir_youtube:   'video',
             resumir_site:      'video',
             ver_tela:          'tela',
@@ -4099,6 +4133,32 @@
                     lista.appendChild(linha);
                 });
             }
+        }
+
+        function moverBolasDigitando(entrando) {
+            const pres = document.getElementById('presenca');
+            const grandes = Array.from(document.querySelectorAll('#orbita rect:nth-child(4n+1)'));
+            if (!pres || !grandes.length || !TEM_ANIME) return;
+            anime.remove(grandes);
+            pres.classList.add('movendo-digitando');
+            grandes.forEach((bola, i) => {
+                if (!bola.dataset.casaX) {
+                    bola.dataset.casaX = bola.getAttribute('x');
+                    bola.dataset.casaY = bola.getAttribute('y');
+                }
+                anime({
+                    targets: bola,
+                    x: entrando ? 72 + i * 18 : Number(bola.dataset.casaX),
+                    y: entrando ? 172 : Number(bola.dataset.casaY),
+                    duration: entrando ? 620 : 720,
+                    delay: i * 65,
+                    easing: 'easeInOutCubic',
+                    complete: () => {
+                        if (!entrando && i === grandes.length - 1)
+                            pres.classList.remove('movendo-digitando');
+                    },
+                });
+            });
         }
 
         function mostrarFeedbackAcompanhamento(texto) {

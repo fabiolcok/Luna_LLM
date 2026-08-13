@@ -30,6 +30,8 @@ diz(html.includes("if (estado !== 'dormindo' && _encaradaGigante) limparReacaoCl
     'ouvir, pensar ou falar interrompe a encarada gigante');
 diz(/function aplicarFerramenta\(statusTxt\)[\s\S]*?if \(_encaradaGigante\) limparReacaoClique\(\);/.test(html),
     'ferramentas e proativos interrompem a encarada gigante');
+diz(/if \(total > FOG_CHACOALHO \* 0\.35[\s\S]*?limparReacaoClique\(\);[\s\S]*?classList\.remove\('cutucada'\);[\s\S]*?rostoDireto\(ROSTO_CHACOALHO\)/.test(html),
+    'sacudir cancela timers do clique antes de assumir o rosto');
 
 console.log(ok ? '\nTUDO PASSOU' : '\nTEM FALHA');
 process.exit(ok ? 0 : 1);

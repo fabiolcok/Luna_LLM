@@ -233,7 +233,9 @@ def responder_texto_web(texto: str):
         resposta_direta = acompanhamentos.interceptar_resposta(texto)
         if resposta_direta:
             _registrar_turno_direto(_historico_conversa, texto, resposta_direta)
+            atualizar_estado_rosto("digitando")
             atualizar_legenda(resposta_direta)
+            time.sleep(min(9.0, max(4.0, len(resposta_direta) * 0.03)))
             _mostrar_resposta_web_no_terminal(resposta_direta)
             _log.info(f"[Web texto] Luna [acompanhamento]: {resposta_direta}")
             return
@@ -241,7 +243,9 @@ def responder_texto_web(texto: str):
         resposta = gerar_resposta(texto_modelo, _historico_conversa,
                                   responder_completo=True, presenca_pc=True)
         resposta = (resposta or "").strip()
+        atualizar_estado_rosto("digitando")
         atualizar_legenda(resposta)                    # mostra a resposta + registra o turno (SEM falar)
+        time.sleep(min(9.0, max(4.0, len(resposta) * 0.03)))
         if resposta:
             _mostrar_resposta_web_no_terminal(resposta)
             _log.info(f"[Web texto] Luna: {resposta[:200]}")
