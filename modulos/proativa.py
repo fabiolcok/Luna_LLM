@@ -1461,7 +1461,7 @@ def _tarefa_autoconhecimento():
     import modulos.pensar as _p   # introspecção: lê os próprios modelos/ferramentas
     horas = (time.time() - _sessao_inicio) / 3600 if _sessao_inicio else 0
     fatos = [
-        f"eu rodo num modelo local só, o {_p.MODELO_PERSONA}, que faz tanto a minha personalidade quanto decidir qual ferramenta eu uso",
+        f"eu rodo num modelo local só, o {_p.modelo()}, que faz tanto a minha personalidade quanto decidir qual ferramenta eu uso",
         f"eu tenho {len(_p.FUNCOES_DISPONIVEIS)} ferramentas à disposição",
     ]
     try:   # voz atual — lida ao vivo do falar.py (fica certa mesmo se trocar de novo)

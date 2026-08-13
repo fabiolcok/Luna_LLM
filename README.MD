@@ -85,14 +85,16 @@ Velocidade padrão **0.9x**. *(O Supertonic ficou como plano B arquivado em
 `G:\Projetos\TTS_teste`, fácil de retomar se sair um sucessor melhor.)*
 
 **LLM — MODO MONO (um modelo faz TUDO):**
-- **Modelo:** Gemma-4-12B QAT (Q4_0) — faz o roteamento de ferramentas **E** gera a persona.
+- **Modelo padrão:** Gemma-4-12B QAT (Q4_0) — faz o roteamento de ferramentas **E** gera a persona.
+- **Alternativas:** `MODELO_LLM` no `.env` seleciona outro modelo já cadastrado no TurboLLM.
 - **Servidor:** TurboLLM (OpenAI-compatível em `http://127.0.0.1:6996/v1`).
 - **Engine:** llama.cpp ROCm — ~32 tok/s de geração na RX 9060 XT.
 - Não existe roteador separado: `gerar_resposta` faz **2 chamadas ao mesmo modelo** —
   uma pra decidir a ferramenta, outra pra escrever a resposta.
-- **`THINK_OFF` (crítico):** o Gemma-4-12B é um modelo "thinking". Se deixar ele
-  raciocinar, ele gasta o orçamento de tokens pensando e devolve resposta vazia. Por
-  isso toda chamada passa `extra_body={"chat_template_kwargs": {"enable_thinking": False}}`.
+- **Thinking:** por padrão fica desligado, porque o Gemma-4-12B pode gastar o orçamento
+  pensando e devolver resposta vazia. `MODELO_THINKING` permite ligar ou deixar automático
+  ao testar outro modelo. Quando desligado, cada chamada passa
+  `extra_body={"chat_template_kwargs": {"enable_thinking": false}}`.
 - **Nome com espaços** (`"gemma 4 12b it qat"`): é o único formato que o gateway do
   TurboLLM casa na biblioteca pra auto-carregar (JIT). Com hífens dá 503.
 - **JIT + idle-unload:** o TurboLLM carrega na 1ª chamada (~6s a frio) e descarrega
@@ -456,17 +458,16 @@ O proativo usa `REGRA_PERSONA` (em `proativa.py`) com o mesmo tom.
 
 ---
 
-## ⚡ Configurações rápidas (topo de `pensar.py`)
+## ⚡ Configurações rápidas (`.env`)
 
-```python
-BASE_LOCAL     = "http://127.0.0.1:6996/v1"   # TurboLLM (OpenAI-compatível)
-MODELO_PERSONA = "gemma 4 12b it qat"         # ESPAÇOS (JIT do TurboLLM)
-THINK_OFF      = {"chat_template_kwargs": {"enable_thinking": False}}  # em TODA chamada
-ATIVAR_MEMORIA_PERMANENTE = False   # legado — substituído pela memória episódica
+```env
+MODELO_LLM=                 # vazio usa o Gemma padrão; preenchido usa o modelo do TurboLLM
+MODELO_THINKING=desligado   # desligado, ligado ou automatico
 ```
 
-Trocar de modelo: mudar `BASE_LOCAL` e `MODELO_PERSONA`. Se o novo modelo não for
-"thinking", o `THINK_OFF` é inofensivo.
+Cadastre primeiro o GGUF no TurboLLM e copie o nome ou ID exibido no painel — não o caminho
+do arquivo. Reinicie a Luna depois da troca. A bancada de persona ajuda a comparar modelos,
+mas ferramentas também precisam ser testadas porque dependem do suporte a tool calling.
 
 ---
 

@@ -73,7 +73,8 @@ def mostrar_diagnostico():
     elif not turbo["modelo"]:
         _erro("TurboLLM — servidor respondeu, mas o modelo não carregou")
     else:
-        _ok(f"TurboLLM — modelo carregado: {turbo['modelo_id']}")
+        _ok(f"TurboLLM — modelo carregado: {turbo['modelo_id']} "
+            f"(thinking: {turbo.get('thinking', 'desligado')})")
 
     print("[Integrações opcionais — preenchimento, sem teste de API]")
     for nome, chaves in _INTEGRACOES:

@@ -92,6 +92,8 @@ _estado_config = {
                 "radar_promocoes": True, "acompanhamentos": True},
     "voz": "jf_alpha",
     "velocidade": 0.9,
+    "modelo_local": "",
+    "modelo_thinking": "desligado",
     "teclas": {"ptt": "ctrl+alt+f8", "interromper": "ctrl+f9", "suspenso": "ctrl+f7"},
 }
 
@@ -189,6 +191,29 @@ def _aplicar_config(dados: dict):
         _estado_config[chave] = valor
     _salvar_config()
     _broadcast({"tipo": "config_estado", "estado": _estado_config.copy()})
+
+
+def _estado_modelos():
+    from modulos import pensar
+    return pensar.estado_seletor_modelos()
+
+
+def _trocar_modelo_web(chave: str, thinking: str):
+    """Carrega em thread: um GGUF grande não pode congelar o WebSocket do painel."""
+    from modulos import pensar
+    _broadcast({"tipo": "modelo_status", "carregando": True,
+                "texto": "Carregando o modelo escolhido..."})
+    resultado = pensar.trocar_modelo_local(chave, thinking)
+    if resultado.get("ok"):
+        _estado_config["modelo_local"] = str(chave or "").strip()
+        _estado_config["modelo_thinking"] = resultado["thinking"]
+        _salvar_config()
+        _broadcast({"tipo": "modelo_status", "carregando": False, "ok": True,
+                    "texto": f"Modelo ativo: {resultado['modelo']}"})
+    else:
+        _broadcast({"tipo": "modelo_status", "carregando": False, "ok": False,
+                    "texto": resultado.get("erro", "não consegui trocar o modelo")})
+    _broadcast({"tipo": "modelos", "estado": _estado_modelos()})
 
 @app.route('/')
 def index():
@@ -441,6 +466,21 @@ def websocket(ws):
                 elif dados.get('comando') == 'chaves_status':
                     ws.send(json.dumps({"tipo": "chaves", "itens": _status_chaves()},
                                        ensure_ascii=False))
+                elif dados.get('comando') == 'modelos_listar':
+                    ws.send(json.dumps({"tipo": "modelos", "estado": _estado_modelos()},
+                                       ensure_ascii=False))
+                elif dados.get('comando') == 'modelo_trocar':
+                    if not _eh_local:
+                        ws.send(json.dumps({"tipo": "modelo_status", "carregando": False,
+                                            "ok": False,
+                                            "texto": "trocar modelo só funciona no próprio PC"},
+                                           ensure_ascii=False))
+                    else:
+                        threading.Thread(
+                            target=_trocar_modelo_web,
+                            args=(dados.get('modelo', ''), dados.get('thinking', 'desligado')),
+                            daemon=True,
+                        ).start()
                 # ---- Memória episódica (caixa de revisão) ----
                 elif dados.get('comando') == 'memoria_listar':
                     ws.send(json.dumps({"tipo": "memoria", "estado": _memoria_estado()}, ensure_ascii=False))

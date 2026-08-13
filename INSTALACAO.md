@@ -71,10 +71,9 @@ O `turbollm` abre um **painel local** no navegador, onde você cadastra os model
 
 Baixe os `.gguf` e salve numa pasta sua (ex.: `G:\Projetos\Modelos\...`).
 
-> 💡 **Por que o 12B?** É o modelo que o código já espera (`MODELO_PERSONA` em `pensar.py`) e o
-> mais leve que roda em mais gente. Dá pra usar um modelo maior (ex.: um 26B-A4B MoE), mas aí
-> você troca o nome em `pensar.py` **e** precisa do drafter MTP **daquele** modelo — o MTP é
-> casado com o modelo (o do 12B não serve pro 26B).
+> 💡 **Por que o 12B?** É o padrão já testado com a personalidade e as ferramentas da Luna.
+> Dá pra usar outro modelo pelo `.env` (veja o passo 3.5), mas o drafter MTP precisa ser
+> compatível com ele — o MTP do 12B não serve para outra família ou tamanho.
 
 ### 3.3 Cadastre o Gemma no TurboLLM
 
@@ -122,6 +121,21 @@ draft-mtp
 
 > ✅ **Teste rápido:** com o `turbollm` rodando e o Gemma cadastrado, o chat do próprio
 > painel do TurboLLM já deve responder. Se responder lá, a Luna vai conversar.
+
+### 3.5 (Opcional) Testar outro modelo
+
+Cadastre o outro GGUF no painel do TurboLLM e copie o **nome ou ID** que aparece em Models.
+Depois, no `.env` da Luna:
+
+```env
+MODELO_LLM=nome ou id mostrado pelo TurboLLM
+MODELO_THINKING=desligado
+```
+
+Reinicie a Luna. Comece com o thinking desligado para preservar o comportamento atual; se o
+modelo depender dele, teste `automatico` ou `ligado`. Não reutilize um drafter MTP de outra
+família: ele precisa ser compatível com o modelo principal. Para voltar ao Gemma padrão, deixe
+`MODELO_LLM=` vazio e mantenha `MODELO_THINKING=desligado`.
 
 ---
 

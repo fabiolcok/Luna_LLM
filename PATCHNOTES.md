@@ -10,6 +10,13 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 13/08/2026
 
+- 🧠 🔧 **Trocar o cérebro não exige mais editar Python.** O modelo local pode ser escolhido
+  por `MODELO_LLM` no `.env`, e `MODELO_THINKING` decide se o raciocínio fica ligado,
+  desligado ou por conta do próprio modelo. O Gemma continua sendo o padrão quando ambos
+  ficam como vieram, e o diagnóstico mostra a escolha realmente carregada. Com o `.env`
+  vazio, a configuração web lista a biblioteca do TurboLLM e troca o modelo na hora; a opção
+  fica salva só naquele PC e pode voltar ao Gemma pelo item padrão.
+
 - 🧊 🐛 **Modelo frio não exige mais abrir o TurboLLM na mão.** Se o prazo de ociosidade
   descarregar o modelo, a Luna agora pede o carregamento pela API do próprio TurboLLM, espera
   ele ficar pronto e repete a solicitação uma vez. Outros erros 503 continuam visíveis em vez

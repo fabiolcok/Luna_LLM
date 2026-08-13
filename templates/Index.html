@@ -1363,6 +1363,26 @@
             text-align: right;
         }
 
+        .modelo-campo {
+            width: 100%; box-sizing: border-box; margin-top: 7px;
+            padding: 8px 9px; border-radius: 6px;
+            border: 1px solid #1e1e2e; background: #11111a; color: #cfc9c2;
+            font-family: inherit; font-size: 0.8rem; outline: none;
+        }
+        .modelo-campo:focus { border-color: #7aa2f7; }
+        .modelo-campo:disabled { opacity: .45; cursor: not-allowed; }
+        #modelo-aplicar {
+            width: 100%; margin-top: 9px; padding: 8px;
+            border: 1px solid #293b5f; border-radius: 6px;
+            background: #101827; color: #7aa2f7; cursor: pointer;
+            font-family: inherit; font-size: 0.82rem;
+        }
+        #modelo-aplicar:hover:not(:disabled) { border-color: #7aa2f7; background: #142039; }
+        #modelo-aplicar:disabled { opacity: .45; cursor: not-allowed; }
+        #modelo-status { min-height: 1.2em; margin-top: 7px; overflow-wrap: anywhere; }
+        #modelo-status.ok { color: #9ece6a; }
+        #modelo-status.erro { color: #f7768e; }
+
         /* Drag & drop overlay */
         #drag-overlay {
             position: fixed;
@@ -1578,6 +1598,23 @@
             </div>
             <div class="oficina-dica">Aqui só entram assuntos que você confirmou. Cancelar não
                 apaga memória nem evento da agenda porque este estado é separado dos dois.</div>
+        </div>
+
+        <!-- Modelo local — a preferência fica no config_luna.json, nunca grava no .env -->
+        <div class="config-secao" id="secao-modelo">
+            <div class="config-secao-titulo">🧠 Cérebro local</div>
+            <select class="modelo-campo" id="cfg-modelo">
+                <option value="">Padrão — Gemma-4-12B</option>
+            </select>
+            <select class="modelo-campo" id="cfg-modelo-thinking">
+                <option value="desligado">Thinking desligado</option>
+                <option value="automatico">Thinking automático</option>
+                <option value="ligado">Thinking ligado</option>
+            </select>
+            <button id="modelo-aplicar">Aplicar e trocar modelo</button>
+            <div class="oficina-dica" id="modelo-status">consultando o TurboLLM...</div>
+            <div class="oficina-dica">A troca vale na hora e fica salva só neste PC. Se
+                <code>MODELO_LLM</code> estiver preenchido, o .env tem prioridade.</div>
         </div>
 
         <!-- Voz + Velocidade -->
@@ -4140,6 +4177,10 @@
         // --- Config panel ---
         const configPanel  = document.getElementById('config-panel');
         const configOverlay = document.getElementById('config-overlay');
+        const modeloSelect = document.getElementById('cfg-modelo');
+        const modeloThinking = document.getElementById('cfg-modelo-thinking');
+        const modeloAplicar = document.getElementById('modelo-aplicar');
+        const modeloStatus = document.getElementById('modelo-status');
 
         document.getElementById('btn-config').onclick = function() {
             configPanel.classList.add('aberto');
@@ -4186,6 +4227,58 @@
                 (estado.proativo === false) ? 'none' : '';
             if (estado.proativo !== undefined) atualizarBtnProativo(estado.proativo);
         }
+
+        function renderModelos(estado) {
+            const selecionado = estado.selecionado || '';
+            modeloSelect.innerHTML = '';
+            const padrao = document.createElement('option');
+            padrao.value = '';
+            padrao.textContent = 'Padrão — Gemma-4-12B';
+            modeloSelect.appendChild(padrao);
+
+            for (const modelo of (estado.modelos || [])) {
+                const opcao = document.createElement('option');
+                opcao.value = modelo.key;
+                opcao.textContent = modelo.name + (modelo.key === estado.ativo ? '  • ativo' : '');
+                modeloSelect.appendChild(opcao);
+            }
+            if (selecionado && !Array.from(modeloSelect.options).some(o => o.value === selecionado)) {
+                const externa = document.createElement('option');
+                externa.value = selecionado;
+                externa.textContent = selecionado + '  • escolhido';
+                modeloSelect.appendChild(externa);
+            }
+            modeloSelect.value = selecionado;
+            modeloThinking.value = estado.thinking || 'desligado';
+
+            const bloqueado = !!estado.bloqueado_env;
+            modeloSelect.disabled = bloqueado || !estado.ok;
+            modeloThinking.disabled = bloqueado || !estado.ok;
+            modeloAplicar.disabled = bloqueado || !estado.ok;
+            modeloAplicar.textContent = bloqueado ? 'Controlado pelo .env' : 'Aplicar e trocar modelo';
+            modeloStatus.className = 'oficina-dica' + (estado.ok ? '' : ' erro');
+            if (bloqueado) {
+                modeloStatus.textContent = 'MODELO_LLM está preenchido; apague o valor e reinicie para liberar.';
+            } else if (!estado.ok) {
+                modeloStatus.textContent = 'TurboLLM indisponível: ' + (estado.erro || 'sem resposta');
+            } else if (estado.ativo) {
+                const atual = (estado.modelos || []).find(m => m.key === estado.ativo);
+                modeloStatus.textContent = 'Ativo agora: ' + (atual ? atual.name : estado.ativo);
+            } else {
+                modeloStatus.textContent = 'Modelo salvo; o engine está frio no momento.';
+            }
+        }
+
+        modeloAplicar.onclick = function() {
+            this.disabled = true;
+            modeloStatus.className = 'oficina-dica';
+            modeloStatus.textContent = 'Pedindo a troca ao TurboLLM...';
+            socket.send(JSON.stringify({
+                comando: 'modelo_trocar',
+                modelo: modeloSelect.value,
+                thinking: modeloThinking.value,
+            }));
+        };
 
         // Botão proativo rápido
         const btnToggleProativo = document.getElementById('btn-toggle-proativo');
@@ -4352,6 +4445,17 @@
                 aplicarEstadoConfig(dados.estado);
                 return;
             }
+            if (dados.tipo === 'modelos') {
+                renderModelos(dados.estado || {});
+                return;
+            }
+            if (dados.tipo === 'modelo_status') {
+                modeloAplicar.disabled = !!dados.carregando;
+                modeloStatus.className = 'oficina-dica' +
+                    (dados.carregando ? '' : (dados.ok ? ' ok' : ' erro'));
+                modeloStatus.textContent = dados.texto || '';
+                return;
+            }
             if (dados.tipo === 'status_mic') {
                 const el = document.getElementById('status-mic');
                 const txt = document.getElementById('status-mic-texto');
@@ -4439,6 +4543,7 @@
         socket.addEventListener('open', function() {
             socket.send(JSON.stringify({ comando: 'pronuncia_listar' }));
             socket.send(JSON.stringify({ comando: 'chaves_status' }));
+            socket.send(JSON.stringify({ comando: 'modelos_listar' }));
         });
 
         function renderPronuncia(itens) {
@@ -4572,6 +4677,7 @@
         });
         document.getElementById('btn-config').addEventListener('click', function() {
             socket.send(JSON.stringify({ comando: 'memoria_listar' }));
+            socket.send(JSON.stringify({ comando: 'modelos_listar' }));
         });
 
         // sub-sanfona do Lixo (fechado por padrão)

@@ -28,7 +28,10 @@ from modulos.memoria import (
 )
 from modulos.falar import limpar_texto_para_voz, periodo_atual
 from modulos import obsidian, config_env
-from modulos.turbollm_api import erro_modelo_descarregado, recarregar_modelo
+from modulos.turbollm_api import (
+    erro_modelo_descarregado, listar_biblioteca,
+    opcoes_pensamento, recarregar_modelo,
+)
 import httpx
 
 from modulos import config_env
@@ -40,14 +43,14 @@ Responsável por todo o ciclo de raciocínio da Luna: recebe o texto do usuário
 decide se aciona uma ferramenta, executa a ferramenta e gera a resposta final
 com personalidade via LLM de persona.
 
-MODO MONO (jul/2026): um único modelo local — Gemma-4-12B QAT no TurboLLM — faz TUDO:
-roteia as ferramentas E gera a resposta com persona. O 12B é "thinking", então
-desligamos o raciocínio (THINK_OFF) em toda chamada, senão ele devolve resposta vazia.
+MODO MONO (jul/2026): um único modelo local no TurboLLM faz TUDO: roteia as
+ferramentas E gera a resposta com persona. Gemma é o padrão, mas MODELO_LLM permite
+testar outra opção sem alterar este arquivo.
 
 Configurações principais (topo do arquivo):
   BASE_LOCAL             — endpoint OpenAI-compatível do TurboLLM (porta 6996)
-  MODELO_PERSONA         — o modelo que faz roteamento + persona (Gemma-4-12B QAT)
-  THINK_OFF              — desliga o raciocínio do modelo em cada chamada
+  MODELO_PERSONA         — modelo padrão quando MODELO_LLM não foi preenchido
+  OPCOES_MODELO          — controla o thinking conforme MODELO_THINKING no .env
   ATIVAR_MEMORIA_PERMANENTE — True: extrai e salva fatos sobre o usuário em background
                               False: desativado (ChromaDB de conversas ainda funciona)
 
@@ -67,8 +70,8 @@ Prompt:
 """
 
 # Servidor local de inferência: TurboLLM (OpenAI-compatível na porta 6996).
-# MODO MONO: um único modelo (Gemma-4-12B QAT) faz TUDO — roteia as ferramentas E
-# gera a resposta com persona. Rápido (~32 tok/s) na engine ROCm b9870 da tua AMD.
+# MODO MONO: um único modelo faz TUDO — roteia ferramentas e gera a persona.
+# O Gemma continua sendo o padrão conhecido, mas a escolha explícita vive no .env.
 BASE_LOCAL     = "http://127.0.0.1:6996/v1"
 # NOME COM ESPAÇOS (não hífens!): é o único formato que o TurboLLM casa na biblioteca
 # pra AUTO-CARREGAR (JIT) quando o modelo não está carregado. Com hífens dá 503.
@@ -91,8 +94,23 @@ def _norm(t: str) -> str:
 # realmente expõe e passa a usar esse. Se nada estiver carregado, cai no nome preferido (que é
 # o que dispara o auto-load). E dá pra cravar um id no .env com MODELO_LLM, pra quem usa outro
 # modelo ou outra versão do servidor.
-_modelo_configurado = config_env.texto("MODELO_LLM")
-_modelo_ativo = _modelo_configurado   # do .env; vazio = descobre sozinho
+def _preferencia_local_salva() -> tuple[str, str]:
+    """Lê só a escolha local antes de o servidor carregar o restante da configuração."""
+    caminho = os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                           "modelos", "config_luna.json")
+    try:
+        with open(caminho, encoding="utf-8") as arquivo:
+            dados = json.load(arquivo)
+        return (str(dados.get("modelo_local") or "").strip(),
+                str(dados.get("modelo_thinking") or "desligado").strip())
+    except Exception:
+        return "", "desligado"
+
+
+_modelo_local_salvo, _thinking_local_salvo = _preferencia_local_salva()
+_modelo_env = config_env.texto("MODELO_LLM")
+_modelo_preferencia = _modelo_env or _modelo_local_salvo
+_modelo_ativo = _modelo_preferencia   # chave estável; nunca o caminho devolvido pelo engine
 _turbollm_pronto = False
 _modelo_pronto = False
 _ciclo_modelo = 0
@@ -102,9 +120,12 @@ def modelo() -> str:
     """Id a mandar no campo `model`. Prefere o que o TurboLLM REALMENTE expõe."""
     return _modelo_ativo or MODELO_PERSONA
 
-# O Gemma-4-12B é "thinking": se deixar ele raciocinar, gasta o orçamento pensando e
-# devolve resposta VAZIA. Desligamos o raciocínio em TODA chamada com isto.
-THINK_OFF = {"chat_template_kwargs": {"enable_thinking": False}}
+# Alguns modelos entendem enable_thinking; outros preferem decidir pelo próprio template.
+# O padrão desligado preserva o Gemma atual. "automatico" não envia parâmetro nenhum.
+MODO_PENSAMENTO, OPCOES_MODELO = opcoes_pensamento(
+    (config_env.texto("MODELO_THINKING", "desligado")
+     if _modelo_env else _thinking_local_salvo)
+)
 
 # True  = analisa conversas e salva fatos na memória permanente em background
 # False = desativa completamente (útil enquanto o modelo estiver salvando lixo)
@@ -124,7 +145,7 @@ def _recarregar_modelo_esfriado() -> bool:
     cor.amarelo("[🧊 O modelo esfriou; pedindo ao TurboLLM para carregá-lo novamente...]")
     resultado = recarregar_modelo(
         BASE_LOCAL,
-        configurado=_modelo_configurado,
+        configurado=_modelo_preferencia,
         preferido=MODELO_PERSONA,
         marca=_MARCA_MODELO,
     )
@@ -210,19 +231,58 @@ def garantir_modelo_turbollm():
         return
     _turbollm_pronto = True
 
-    if config_env.esta_configurado("MODELO_LLM"):
-        print(f"[⏳ Pedindo ao TurboLLM pra carregar o modelo fixado no .env: {_modelo_ativo}...]")
+    if _modelo_preferencia:
+        origem = ".env" if _modelo_env else "configurações"
+        print(f"[⏳ Pedindo ao TurboLLM pra carregar o modelo escolhido nas {origem}: {_modelo_ativo}...]")
+        resultado = recarregar_modelo(
+            BASE_LOCAL,
+            configurado=_modelo_preferencia,
+            preferido=MODELO_PERSONA,
+            marca=_MARCA_MODELO,
+        )
+        if not resultado["ok"]:
+            cor.vermelho(f"[⚠️ Não consegui selecionar o modelo escolhido '{_modelo_ativo}' "
+                         f"({resultado['erro']})]")
+            cor.amarelo("[   Confira a escolha nas configurações ou MODELO_LLM no .env.]")
+            return
+        _modelo_ativo = resultado["modelo"]
         try:
             w = cliente.chat.completions.create(
                 model=_modelo_ativo, messages=[{"role": "user", "content": "oi"}],
-                max_tokens=1, extra_body=THINK_OFF, timeout=60)
-            _modelo_ativo = w.model or _modelo_ativo
+                max_tokens=1, extra_body=OPCOES_MODELO, timeout=60)
+            # O llama-server devolve o CAMINHO do GGUF em `w.model`. Esse caminho funciona
+            # enquanto o processo está quente, mas não é uma chave da biblioteca: após o
+            # idle-unload o gateway responde "No model matching <caminho>". Preserve a chave
+            # estável escolhida pela API de gerenciamento.
             _modelo_pronto = True
             print(f"[✅ Modelo carregado no TurboLLM como '{_modelo_ativo}']")
         except Exception as e:
-            cor.vermelho(f"[⚠️ Não consegui carregar o modelo fixado '{_modelo_ativo}' ({e})]")
-            cor.amarelo("[   Confira MODELO_LLM no .env: ele precisa casar com o nome/id do modelo no TurboLLM.]")
+            cor.vermelho(f"[⚠️ O modelo '{_modelo_ativo}' carregou, mas não respondeu ao teste ({e})]")
+            cor.amarelo("[   Confira a escolha nas configurações ou MODELO_LLM no .env.]")
         return
+
+    # MODELO_LLM vazio significa voltar ao padrão, não "usar o que ficou carregado no
+    # último teste". A API de gerenciamento permite fazer isso mesmo com autoSwap desligado.
+    padrao = recarregar_modelo(
+        BASE_LOCAL,
+        preferido=MODELO_PERSONA,
+        marca=_MARCA_MODELO,
+        aceitar_atual=False,
+    )
+    if padrao["ok"]:
+        _modelo_ativo = padrao["modelo"]
+        try:
+            w = cliente.chat.completions.create(
+                model=_modelo_ativo, messages=[{"role": "user", "content": "oi"}],
+                max_tokens=1, extra_body=OPCOES_MODELO, timeout=60)
+            # Não adota w.model: nessa engine ele pode ser o caminho local do GGUF, que
+            # deixa de ser roteável assim que o modelo é descarregado por ociosidade.
+            _modelo_pronto = True
+            print(f"[✅ Modelo padrão carregado no TurboLLM como '{_modelo_ativo}']")
+            return
+        except Exception as e:
+            cor.amarelo(f"[⚠️ A seleção automática do modelo padrão não respondeu ({e}); "
+                        "tentando a descoberta compatível...]")
 
     # Achou o Gemma na lista? Usa o id EXATO que o servidor deu, seja ele qual for.
     # O TurboLLM expõe cada modelo DUAS vezes (o id e uma cópia com prefixo 'claude-'), então
@@ -241,7 +301,7 @@ def garantir_modelo_turbollm():
     try:
         w = cliente.chat.completions.create(
             model=MODELO_PERSONA, messages=[{"role": "user", "content": "oi"}],
-            max_tokens=1, extra_body=THINK_OFF)
+            max_tokens=1, extra_body=OPCOES_MODELO)
         servido = _norm(w.model)
         if _norm(_MARCA_MODELO) in servido:
             _modelo_ativo = w.model            # o auto-load funcionou: fica com o id real
@@ -265,7 +325,58 @@ def garantir_modelo_turbollm():
 def estado_turbollm() -> dict:
     """Estado já apurado no warm-up; não faz nova chamada nem tenta carregar nada."""
     return {"servidor": _turbollm_pronto, "modelo": _modelo_pronto,
-            "modelo_id": modelo() if _modelo_pronto else ""}
+            "modelo_id": modelo() if _modelo_pronto else "",
+            "thinking": MODO_PENSAMENTO}
+
+
+def estado_seletor_modelos() -> dict:
+    """Estado público do seletor web; não expõe caminhos locais dos GGUFs."""
+    biblioteca = listar_biblioteca(BASE_LOCAL)
+    biblioteca.update({
+        "selecionado": _modelo_preferencia,
+        "thinking": MODO_PENSAMENTO,
+        "bloqueado_env": bool(_modelo_env),
+    })
+    return biblioteca
+
+
+def trocar_modelo_local(chave: str, thinking: str = "desligado") -> dict:
+    """Troca o cérebro em tempo de execução quando o .env não fixou uma escolha."""
+    global _modelo_preferencia, _modelo_ativo, _modelo_pronto
+    global _ciclo_modelo, MODO_PENSAMENTO, OPCOES_MODELO
+    if _modelo_env:
+        return {"ok": False, "erro": "MODELO_LLM está preenchido no .env"}
+
+    chave = str(chave or "").strip()
+    novo_modo, novas_opcoes = opcoes_pensamento(thinking)
+    with _trava_recarregamento:
+        resultado = recarregar_modelo(
+            BASE_LOCAL,
+            configurado=chave,
+            preferido=MODELO_PERSONA,
+            marca=_MARCA_MODELO,
+            aceitar_atual=bool(chave),
+        )
+        if not resultado["ok"]:
+            return resultado
+        chave_estavel = resultado["modelo"]
+        try:
+            cliente.chat.completions.create(
+                model=chave_estavel,
+                messages=[{"role": "user", "content": "oi"}],
+                max_tokens=1, extra_body=novas_opcoes, timeout=60,
+            )
+        except Exception as erro:
+            return {"ok": False, "erro": f"o modelo carregou, mas não respondeu: {erro}"}
+
+        _modelo_preferencia = chave
+        _modelo_ativo = chave_estavel
+        _modelo_pronto = True
+        MODO_PENSAMENTO = novo_modo
+        OPCOES_MODELO = novas_opcoes
+        _ciclo_modelo += 1
+        print(f"[🧠 Modelo trocado para '{_modelo_ativo}' (thinking: {MODO_PENSAMENTO})]")
+        return {"ok": True, "modelo": _modelo_ativo, "thinking": MODO_PENSAMENTO}
 
 def aquecer_modelo():
     """Cutucão mínimo (max_tokens=1) que RESETA o idle-unload do TurboLLM — mantém o
@@ -274,7 +385,7 @@ def aquecer_modelo():
     try:
         _chamar_llm(
             messages=[{"role": "user", "content": "oi"}],
-            max_tokens=1, extra_body=THINK_OFF, timeout=8)
+            max_tokens=1, extra_body=OPCOES_MODELO, timeout=8)
     except Exception:
         pass
 
@@ -592,7 +703,7 @@ def frase_confirmacao(instrucao: str, max_tokens: int = 120) -> str:
             ],
             temperature=0.65,
             max_tokens=max_tokens,
-            extra_body=THINK_OFF,   # 12B é thinking: sem isto a resposta vem vazia
+            extra_body=OPCOES_MODELO,
         )
         texto = (r.choices[0].message.content or "").strip()
         texto = re.sub(r'\[gif:[^\]]*\]', '', texto).strip()   # este fluxo não usa o GIF
@@ -1123,7 +1234,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             presence_penalty=0.3,
             frequency_penalty=0.3,
             max_tokens=max_tokens,
-            extra_body=THINK_OFF,   # 12B é thinking: sem isto a resposta vem vazia
+            extra_body=OPCOES_MODELO,
         )
         _dur = time.time() - _t0
         _msg_persona = resposta.choices[0].message
@@ -1377,7 +1488,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             temperature=0.0,
             tools=ferramentas_ativas,
             max_tokens=max_tokens,
-            extra_body=THINK_OFF,
+            extra_body=OPCOES_MODELO,
         )
         fim = time.time()
 
