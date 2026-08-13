@@ -10,6 +10,10 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 13/08/2026
 
+- 💬 🐛 **Texto digitado voltou a aparecer no CMD.** A resposta do modo web continuava na
+  interface, mas o terminal só imprimia falas que passavam pelo TTS. Agora respostas digitadas
+  ganham um banner próprio no diagnóstico, sem começar a tocar áudio por conta disso.
+
 - 🧠 🔧 **Trocar o cérebro não exige mais editar Python.** O modelo local pode ser escolhido
   por `MODELO_LLM` no `.env`, e `MODELO_THINKING` decide se o raciocínio fica ligado,
   desligado ou por conta do próprio modelo. O Gemma continua sendo o padrão quando ambos

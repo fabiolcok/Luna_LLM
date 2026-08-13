@@ -203,6 +203,15 @@ def _falar_atalho(texto: str):
     )
 
 
+def _mostrar_resposta_web_no_terminal(texto: str):
+    """Texto web não usa TTS, mas a resposta precisa continuar observável no CMD."""
+    if not texto or not texto.strip():
+        return
+    print("===================================")
+    cor.ciano(f"[🌚💬 Luna respondeu] '{texto.strip()}'")
+    print("===================================")
+
+
 def responder_texto_web(texto: str):
     """Mensagem DIGITADA na caixa do web: mesmas regras do Telegram (desenvolve, SEM TTS),
     mas presença = no PC. Compartilha o histórico com a voz."""
@@ -225,6 +234,7 @@ def responder_texto_web(texto: str):
         if resposta_direta:
             _registrar_turno_direto(_historico_conversa, texto, resposta_direta)
             atualizar_legenda(resposta_direta)
+            _mostrar_resposta_web_no_terminal(resposta_direta)
             _log.info(f"[Web texto] Luna [acompanhamento]: {resposta_direta}")
             return
         texto_modelo = injetar_arquivo_pendente(texto)
@@ -233,6 +243,7 @@ def responder_texto_web(texto: str):
         resposta = (resposta or "").strip()
         atualizar_legenda(resposta)                    # mostra a resposta + registra o turno (SEM falar)
         if resposta:
+            _mostrar_resposta_web_no_terminal(resposta)
             _log.info(f"[Web texto] Luna: {resposta[:200]}")
     except Exception as e:
         _log.exception(f"Erro no texto web: {e}")
