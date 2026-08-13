@@ -28,6 +28,7 @@ from modulos.memoria import (
 )
 from modulos.falar import limpar_texto_para_voz, periodo_atual
 from modulos import obsidian, config_env
+from modulos.turbollm_api import erro_modelo_descarregado, recarregar_modelo
 import httpx
 
 from modulos import config_env
@@ -90,9 +91,12 @@ def _norm(t: str) -> str:
 # realmente expõe e passa a usar esse. Se nada estiver carregado, cai no nome preferido (que é
 # o que dispara o auto-load). E dá pra cravar um id no .env com MODELO_LLM, pra quem usa outro
 # modelo ou outra versão do servidor.
-_modelo_ativo = config_env.texto("MODELO_LLM")   # do .env; vazio = descobre sozinho
+_modelo_configurado = config_env.texto("MODELO_LLM")
+_modelo_ativo = _modelo_configurado   # do .env; vazio = descobre sozinho
 _turbollm_pronto = False
 _modelo_pronto = False
+_ciclo_modelo = 0
+_trava_recarregamento = threading.Lock()
 
 def modelo() -> str:
     """Id a mandar no campo `model`. Prefere o que o TurboLLM REALMENTE expõe."""
@@ -112,6 +116,46 @@ def configurar_memoria(ativo: bool):
 
 
 cliente = OpenAI(base_url=BASE_LOCAL, api_key="turbollm")
+
+
+def _recarregar_modelo_esfriado() -> bool:
+    """Religa pela API de gerenciamento quando o idle-unload venceu."""
+    global _modelo_ativo, _modelo_pronto, _ciclo_modelo
+    cor.amarelo("[🧊 O modelo esfriou; pedindo ao TurboLLM para carregá-lo novamente...]")
+    resultado = recarregar_modelo(
+        BASE_LOCAL,
+        configurado=_modelo_configurado,
+        preferido=MODELO_PERSONA,
+        marca=_MARCA_MODELO,
+    )
+    if not resultado["ok"]:
+        cor.vermelho(f"[⚠️ O TurboLLM não conseguiu reaquecer o modelo: {resultado['erro']}]")
+        return False
+    _modelo_ativo = resultado["modelo"]
+    _modelo_pronto = True
+    _ciclo_modelo += 1
+    print(f"[🔥 Modelo recarregado como '{_modelo_ativo}'; repetindo a solicitação]")
+    return True
+
+
+def _chamar_llm(**parametros):
+    """Repete uma vez somente quando o TurboLLM confirma que descarregou por ociosidade."""
+    ciclo_antes = _ciclo_modelo
+
+    def chamar():
+        return cliente.chat.completions.create(model=modelo(), **parametros)
+
+    try:
+        return chamar()
+    except Exception as erro:
+        if not erro_modelo_descarregado(erro):
+            raise
+        with _trava_recarregamento:
+            # Outra thread pode ter recebido o mesmo 503 e terminado o cold-start enquanto
+            # esta aguardava a trava. Nesse caso, basta usar o modelo que ela já acordou.
+            if ciclo_antes == _ciclo_modelo and not _recarregar_modelo_esfriado():
+                raise erro
+        return chamar()
 
 def _listar_modelos_turbollm() -> list | None:
     """Ids expostos pelo daemon, ou None quando ele ainda não está respondendo."""
@@ -228,8 +272,8 @@ def aquecer_modelo():
     modelo quente. Usado durante a partida de LoL pra o comentário de morte sair na hora
     (senão cada fala paga cold-start de ~15s). Silencioso e barato."""
     try:
-        cliente.chat.completions.create(
-            model=modelo(), messages=[{"role": "user", "content": "oi"}],
+        _chamar_llm(
+            messages=[{"role": "user", "content": "oi"}],
             max_tokens=1, extra_body=THINK_OFF, timeout=8)
     except Exception:
         pass
@@ -541,8 +585,7 @@ def frase_confirmacao(instrucao: str, max_tokens: int = 120) -> str:
     com a voz da persona em vez de frase pronta em Python. Retorna '' se o LLM falhar —
     o chamador deve ter um fallback."""
     try:
-        r = cliente.chat.completions.create(
-            model=modelo(),
+        r = _chamar_llm(
             messages=[
                 {"role": "system", "content": PROMPT_LUNA_PERSONA},
                 {"role": "user", "content": instrucao},
@@ -1074,8 +1117,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             msgs.extend(_hist_curto(historico, 8))
         msgs.append({"role": "user", "content": user_msg})
         _t0 = time.time()
-        resposta = cliente.chat.completions.create(
-            model=modelo(),
+        resposta = _chamar_llm(
             messages=msgs,
             temperature=0.8,   # Fase 2 (experimento persona): +variância pra ela ser menos previsível
             presence_penalty=0.3,
@@ -1330,8 +1372,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
 
         # MONO: o mesmo modelo (Gemma-4-12B) roteia as ferramentas. Thinking desligado —
         # senão ele gastaria o orçamento pensando antes de decidir a ferramenta.
-        resposta_ferramenta = cliente.chat.completions.create(
-            model=modelo(),
+        resposta_ferramenta = _chamar_llm(
             messages=mensagens_ferramenta,
             temperature=0.0,
             tools=ferramentas_ativas,

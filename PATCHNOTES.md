@@ -10,6 +10,11 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 13/08/2026
 
+- 🧊 🐛 **Modelo frio não exige mais abrir o TurboLLM na mão.** Se o prazo de ociosidade
+  descarregar o modelo, a Luna agora pede o carregamento pela API do próprio TurboLLM, espera
+  ele ficar pronto e repete a solicitação uma vez. Outros erros 503 continuam visíveis em vez
+  de entrarem num ciclo de tentativas.
+
 - 🌙 ✨ **A Luna pode sair da janela e ficar na área de trabalho.** Um botão destaca o mascote
   como widget transparente, sempre visível e arrastável. O clique direito oferece o caminho de
   volta, e a posição escolhida fica guardada para a próxima vez.
