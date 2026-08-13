@@ -1226,6 +1226,18 @@ ferramentas_disponiveis = [
     {
         "type": "function",
         "function": {
+            "name": "consultar_animes",
+            "description": "Consulta no AniList quais episódios dos animes acompanhados saíram recentemente. Use quando o usuário perguntar se saiu anime/episódio novo, o que tem para assistir ou sobre o último/próximo episódio de um anime. Sem nome, consulta a lista animes.md; com nome, consulta aquele anime.",
+            "parameters": {
+                "type": "object",
+                "properties": {"nome_anime": {"type": "string", "description": "Nome do anime citado. Omita para consultar toda a lista acompanhada."}},
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "consultar_jogo_steam",
             "description": "Informações de um JOGO: preço, valor, quanto custa, promoção/desconto, do que se trata, gênero, data de lançamento. Use SEMPRE que a pergunta for sobre um jogo (mesmo que ele não cite 'Steam'). PREFIRA esta ferramenta a 'pesquisar_web' para qualquer pergunta sobre jogos.",
             "parameters": {

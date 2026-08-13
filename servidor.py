@@ -634,14 +634,22 @@ def _registrar_avaliacao(rating: str, motivo: str = "", usuario=None, luna=None,
     import datetime
     try:
         os.makedirs("logs", exist_ok=True)
+        usuario_real = usuario if usuario is not None else _ultima_fala_usuario
+        luna_real = luna if luna is not None else _ultima_fala_luna
+        from modulos import metricas_ferramentas
+        ferramenta = metricas_ferramentas.vincular_avaliacao(
+            rating, usuario_real, luna_real, canal
+        )
         registro = {
             "tempo": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
             "canal": canal,
             "rating": rating,
             "motivo": (motivo or "").strip(),
-            "usuario": usuario if usuario is not None else _ultima_fala_usuario,
-            "luna": luna if luna is not None else _ultima_fala_luna,
+            "usuario": usuario_real,
+            "luna": luna_real,
         }
+        if ferramenta:
+            registro["ferramenta"] = ferramenta
         with open("logs/avaliacoes.jsonl", "a", encoding="utf-8") as f:
             f.write(json.dumps(registro, ensure_ascii=False) + "\n")
         print(f"[{'👍' if rating == 'bom' else '👎'} Avaliação ({canal}): {rating}]")

@@ -10,6 +10,15 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 13/08/2026
 
+- 📊 ✨ **As ferramentas agora deixam um placar local.** Cada uso registra sucesso ou erro,
+  duração e canal; quando uma resposta recebe 👍 ou 👎, a nota também entra na conta daquela
+  ferramenta. O resumo fica em `logs/uso_ferramentas_resumo.json`, sem salvar argumentos nem
+  retornos das integrações.
+
+- 🎌 ✨ **Agora dá para perguntar pelos animes.** Além do aviso automático, a Luna consulta
+  a pedido os episódios recentes da lista `animes.md` ou um anime citado, incluindo o próximo
+  episódio quando houver previsão, sem consumir nem silenciar o alerta proativo.
+
 - 🌙 🔧 **O widget ficou mais ajustável e atento.** No clique direito dá para alternar se ele
   fica sempre no topo e escolher tamanho pequeno, normal ou grande; tudo fica lembrado neste
   PC. A Luna também percebe o cursor se aproximando fora da janelinha transparente, e o gesto

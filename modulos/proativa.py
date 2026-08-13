@@ -11,7 +11,7 @@ from modulos.habilidades import checar_emails_nao_lidos, ler_agenda_google, obte
 from modulos.pensar import gerar_resposta, aquecer_modelo
 from modulos.falar import falar_texto
 from modulos.memoria import carregar_vistos, salvar_vistos, atualizar_estado_luna
-from modulos import obsidian
+from modulos import obsidian, animes
 import modelos.cores as cor
 import psutil
 import re
@@ -1346,48 +1346,7 @@ def _tarefa_radar_promocoes():
         _ultima_execucao["radar_promocoes"] = 0   # fala starved -> re-tenta já (não perde card nem voz)
 
 
-def _anilist_temporada_no_ar(nome):
-    """Acha a temporada EM EXIBIÇÃO do anime pelo nome — (media_id, titulo) ou None.
-    No AniList cada temporada é uma entrada separada; a busca simples pegava a 1ª
-    (encerrada) e silenciava franquias com temporada nova no ar (ex: Slime S4).
-    Por isso buscamos vários e ficamos com a que tem episódio agendado (RELEASING)."""
-    q = ("query($busca: String) { Page(perPage: 8) {"
-         " media(search: $busca, type: ANIME, sort: SEARCH_MATCH) {"
-         " id title { romaji english } nextAiringEpisode { episode } } } }")
-    try:
-        r = requests.post("https://graphql.anilist.co",
-                          json={"query": q, "variables": {"busca": nome}}, timeout=10)
-        medias = ((r.json().get("data") or {}).get("Page") or {}).get("media", [])
-        m = next((x for x in medias if x.get("nextAiringEpisode")), None)
-        if not m:
-            return None
-        # prefere o título em inglês (o da Crunchyroll, que o usuário conhece)
-        titulo = m["title"].get("english") or m["title"]["romaji"]
-        return (m["id"], titulo)
-    except Exception:
-        return None
-
-
-def _anilist_ultimo_episodio(media_id):
-    """Último episódio JÁ EXIBIDO dessa temporada — (episodio, timestamp) ou None.
-    O nextAiringEpisode aponta pro FUTURO (quando sai o ep 15, ele já pula pro 16),
-    então não serve pra 'já saiu'. Aqui pegamos a agenda ordenada por tempo
-    decrescente e ficamos com o episódio mais recente que JÁ foi ao ar."""
-    q = ("query($id: Int) { Page(perPage: 1) {"
-         " airingSchedules(mediaId: $id, notYetAired: false, sort: TIME_DESC) {"
-         " episode airingAt } } }")
-    try:
-        r = requests.post("https://graphql.anilist.co",
-                          json={"query": q, "variables": {"id": media_id}}, timeout=10)
-        nodes = ((r.json().get("data") or {}).get("Page") or {}).get("airingSchedules", [])
-        if not nodes:
-            return None
-        return (nodes[0]["episode"], nodes[0]["airingAt"])
-    except Exception:
-        return None
-
-
-_ANIMES_JANELA_H = 72   # avisa se o episódio saiu nas últimas N horas (não "vai sair"); 72h =
+_ANIMES_JANELA_H = animes.JANELA_RECENTES_H   # mesma janela usada na consulta reativa
                         # não perde episódio que saiu enquanto a Luna estava off / você jogando
 
 def _tarefa_avisar_animes():
@@ -1406,12 +1365,12 @@ def _tarefa_avisar_animes():
     agora = time.time()
     sairam = []
     for nome, apelido in lista[:10]:     # teto de sanidade na quantidade de consultas
-        temporada = _anilist_temporada_no_ar(nome)
+        temporada = animes.temporada_no_ar(nome)
         time.sleep(1)                    # gentileza com a API
         if not temporada:
             continue
-        media_id, titulo = temporada
-        ult = _anilist_ultimo_episodio(media_id)
+        media_id, titulo, _ = temporada
+        ult = animes.ultimo_episodio(media_id)
         time.sleep(1)
         if not ult:
             continue

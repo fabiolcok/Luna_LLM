@@ -27,7 +27,7 @@ from modulos.memoria import (
     buscar_memoria_relevante
 )
 from modulos.falar import limpar_texto_para_voz, periodo_atual
-from modulos import obsidian, config_env
+from modulos import obsidian, config_env, animes
 from modulos.turbollm_api import (
     erro_modelo_descarregado, listar_biblioteca,
     opcoes_pensamento, recarregar_modelo,
@@ -514,7 +514,7 @@ _CAPACIDADES_REATIVAS = (
     "pesquisar na web, checar emails não lidos, adicionar e ler eventos da agenda Google, "
     "controlar o Spotify, ler e anotar nas suas notas do Obsidian (inclusive guardar fotos "
     "que você manda no Telegram), acompanhar o desfecho de assuntos que você confirmar, "
-    "verificar o clima, mutar/desmutar o som, "
+    "verificar o clima, consultar episódios dos animes que você acompanha, mutar/desmutar o som, "
     "consultar suas stats do Overwatch, consultar jogos na Steam (preço, promoção e descrição), "
     "gerar imagens e controlar o Firefox"
 )
@@ -546,6 +546,7 @@ FUNCOES_DISPONIVEIS = {
     "obter_clima": obter_previsao_tempo,
     "alternar_mute": alternar_mute,
     "consultar_overwatch": consultar_overwatch,
+    "consultar_animes": animes.consultar,
     "consultar_jogo_steam": consultar_jogo_steam,
     "duvida_do_jogo": duvida_do_jogo,
     "ler_obsidian": _executar_ler_obsidian,
@@ -1508,6 +1509,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
         lembranca_oculta = ""
         resultado_ferramenta = ""
         ferramenta_chamada = False
+        inicio_ferramenta = None
 
         raciocinio = getattr(mensagem_modelo, 'reasoning_content', None) or ""
         if raciocinio:
@@ -1528,6 +1530,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
 
         if _tool_calls:
             ferramenta_chamada = True
+            inicio_ferramenta = time.time()
             tool_call = _tool_calls[0]
             nome_funcao = tool_call.function.name
             _log.info(f"Ferramenta: {nome_funcao}")
@@ -1775,6 +1778,19 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 args=(prompt_usuario, texto_para_memoria, gerar_resposta),
                 daemon=True
             ).start()
+
+        if ferramenta_chamada:
+            try:
+                from modulos import metricas_ferramentas
+                _resultado = str(resultado_ferramenta).lstrip()
+                _sucesso = not _resultado.startswith(("Erro", "ERRO", "SISTEMA: Erro", "SISTEMA: Não consegui"))
+                metricas_ferramentas.registrar_uso(
+                    nome_funcao, _sucesso, time.time() - inicio_ferramenta,
+                    prompt_usuario, texto_resposta,
+                    "telegram" if responder_completo else "web",
+                )
+            except Exception:
+                _log.exception("Não foi possível registrar a métrica da ferramenta")
 
         return texto_resposta
 
