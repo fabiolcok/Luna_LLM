@@ -8,6 +8,19 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 13/08/2026
+
+- 🌙 ✨ **A Luna pode sair da janela e ficar na área de trabalho.** Um botão destaca o mascote
+  como widget transparente, sempre visível e arrastável. O clique direito oferece o caminho de
+  volta, e a posição escolhida fica guardada para a próxima vez.
+
+- 🎭 🔧 **O widget continua sendo a mesma Luna.** Estados, ferramentas, expressões, interações
+  e acontecimentos visuais acompanham o mascote que estiver aparecendo, sem reiniciar os
+  relógios ao alternar entre a janela e a área de trabalho. O laboratório também controla a
+  cópia visível, e o tamanho agora é consistente nos dois modos.
+
+---
+
 ## 11/08/2026
 
 - 🤝 ✨ **Ela pode acompanhar como uma situação terminou.** Quando existe um desfecho concreto

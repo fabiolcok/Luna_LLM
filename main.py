@@ -21,6 +21,7 @@ _bi.print = _print_com_hora
 
 import os
 import logging
+import subprocess
 import time
 import threading
 import webview
@@ -42,7 +43,7 @@ from servidor import (
     atualizar_usuario, registrar_callback_interrupcao,
     iniciar_servidor, registrar_config_handler, sincronizar_config,
     injetar_arquivo_pendente, obter_e_limpar_imagem_anexada, carregar_e_aplicar_config,
-    registrar_handler_texto_web
+    registrar_handler_texto_web, atualizar_mascote_solto
 )
 
 from pynput import keyboard as kb
@@ -434,7 +435,7 @@ def _criar_icone_bandeja():
     draw.ellipse([18, 4, 74, 60], fill=(13,  13,  18,  255))  # corte → crescente
     return img
 
-def _iniciar_bandeja(janela):
+def _iniciar_bandeja(janela, api_interface):
     def abrir(_icon, _item):
         janela.show()
 
@@ -445,6 +446,7 @@ def _iniciar_bandeja(janela):
 
     def fechar(_icon, _item):
         _icon.stop()
+        api_interface.encerrar_widget()
         janela.destroy()
         os._exit(0)
 
@@ -462,6 +464,60 @@ def _iniciar_bandeja(janela):
     )
     icone.run_detached()
     return icone
+
+
+class _ApiInterface:
+    """Controla o processo visual do widget sem iniciar uma segunda instância da Luna."""
+
+    def __init__(self):
+        self._janela_principal = None
+        self._processo_widget = None
+        self._lock = threading.RLock()
+
+    def _avisar_principal(self, solto):
+        atualizar_mascote_solto(solto)
+        janela = self._janela_principal
+        if janela:
+            try:
+                janela.run_js(f"window.definirMascoteSolto({str(bool(solto)).lower()})")
+            except Exception:
+                pass
+
+    def _vigiar_widget(self, processo):
+        processo.wait()
+        with self._lock:
+            if self._processo_widget is processo:
+                self._processo_widget = None
+        self._avisar_principal(False)
+
+    def soltar_mascote(self):
+        with self._lock:
+            if self._processo_widget and self._processo_widget.poll() is None:
+                return True
+            caminho = os.path.join(os.path.dirname(os.path.abspath(__file__)), "widget.py")
+            flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+            processo = subprocess.Popen(
+                [sys.executable, caminho], cwd=os.path.dirname(caminho), creationflags=flags
+            )
+            self._processo_widget = processo
+            threading.Thread(
+                target=self._vigiar_widget, args=(processo,), daemon=True
+            ).start()
+
+        self._avisar_principal(True)
+        return True
+
+    def recolher_mascote(self):
+        self.encerrar_widget()
+        self._avisar_principal(False)
+        return True
+
+    def encerrar_widget(self):
+        with self._lock:
+            processo = self._processo_widget
+            self._processo_widget = None
+        if processo and processo.poll() is None:
+            processo.terminate()
 
 def main():
     _log.info("Luna iniciando...")
@@ -490,7 +546,11 @@ def main():
     iniciar_bot_telegram()
     threading.Thread(target=loop_voz, daemon=True).start()
 
-    janela = webview.create_window("Luna", "http://localhost:5000", width=460, height=760)
+    api_interface = _ApiInterface()
+    janela = webview.create_window(
+        "Luna", "http://localhost:5000", width=460, height=760, js_api=api_interface
+    )
+    api_interface._janela_principal = janela
 
     # Fechar o X esconde para a bandeja em vez de encerrar
     def ao_fechar_janela():
@@ -500,7 +560,7 @@ def main():
     janela.events.closing += ao_fechar_janela
 
     # Bandeja inicia junto com o webview
-    webview.start(func=_iniciar_bandeja, args=(janela,))
+    webview.start(func=_iniciar_bandeja, args=(janela, api_interface))
 
 if __name__ == "__main__":
     main()

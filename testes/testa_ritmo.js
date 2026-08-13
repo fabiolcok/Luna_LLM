@@ -3,6 +3,7 @@
 const fs = require('fs');
 const RAIZ = require('path').join(__dirname, '..');
 const html = fs.readFileSync(require('path').join(RAIZ, 'templates', 'Index.html'), 'utf8');
+const servidor = fs.readFileSync(require('path').join(RAIZ, 'servidor.py'), 'utf8');
 const src = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]).join('\n;\n');
 
 function El(tag) {
@@ -74,13 +75,14 @@ t.afk(false); t.desistir(true);
 diz(t.pode() === false, 'de costas também não');
 t.desistir(false);
 
-// nenhum agendamento pode ter voltado a ser curto
-const agendas = [...src.matchAll(/(\d{5,})\s*\+\s*Math\.random\(\)\s*\*\s*(\d{5,})/g)]
-                  .map(m => ({ min: +m[1], max: +m[1] + +m[2] }));
-diz(agendas.length >= 8, 'achei os ' + agendas.length + ' agendamentos no arquivo');
-const curtos = agendas.filter(a => a.min < 600000);
+// nenhum agendamento pode ter voltado a ser curto. Agora eles moram no servidor para o
+// relógio sobreviver à troca entre a janela principal e o widget.
+const agendas = [...servidor.matchAll(/"[a-z]+": \((\d+), (\d+)\)/g)]
+                  .map(m => ({ min: +m[1], max: +m[2] }));
+diz(agendas.length === 9, 'achei os ' + agendas.length + ' agendamentos no relógio central');
+const curtos = agendas.filter(a => a.min < 600);
 diz(curtos.length === 0, 'nenhum agendamento dispara em menos de 10 min — mínimos: ' +
-    agendas.map(a => (a.min/60000).toFixed(0)).sort((x,y)=>x-y).join(', ') + ' min');
+    agendas.map(a => (a.min/60).toFixed(0)).sort((x,y)=>x-y).join(', ') + ' min');
 
 console.log(ok ? '\nTUDO PASSOU' : '\nTEM FALHA');
 process.exit(ok ? 0 : 1);

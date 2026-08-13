@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const html = fs.readFileSync(path.join(__dirname, '..', 'templates', 'Index.html'), 'utf8');
+const servidor = fs.readFileSync(path.join(__dirname, '..', 'servidor.py'), 'utf8');
 
 let ok = true;
 function diz(cond, msg) {
@@ -20,7 +21,10 @@ diz(html.includes('#presenca.eclipse #nucleo-eclipse { opacity: 1; }'),
     'o núcleo opaco só aparece durante o eclipse');
 diz(html.includes('<circle cx="0" cy="0" r="78" fill="url(#g-eclipse)"/>'),
     'o disco do sol é maior que a cabeça da Luna');
-diz(html.includes('duration: 20000'), 'a travessia rara acontece lentamente por vinte segundos');
+diz(html.includes('{ p: .5, duration: 10000') &&
+    html.includes('{ p: .5, duration: 2000') &&
+    html.includes('{ p: 1,  duration: 10000'),
+    'o Sol leva dez segundos até o centro, para dois atrás da Luna e sai em mais dez');
 diz(html.includes('borda * borda * (3 - 2 * borda)') && html.includes("opacidade.toFixed(3)"),
     'fade in e fade out usam uma curva suave e contínua');
 diz(html.includes('Math.hypot(x - 100, y - 100) <= 155') &&
@@ -39,7 +43,7 @@ diz(html.includes("pres.classList.contains('est-dormindo')") &&
     html.includes("!pres.classList.contains('com-ferramenta')") &&
     html.includes("!pres.classList.contains('proat-radar')") && html.includes('!_afagando && !_desistiu'),
     'não começa durante conversa, ferramenta ou proativo');
-diz(html.includes('2700000 + Math.random() * 2700000') && html.includes('Math.random() < 0.25'),
+diz(servidor.includes('"eclipse": (2700, 5400)') && html.includes('Math.random() < 0.25'),
     'tenta em 45–90 minutos e somente uma em quatro tentativas acontece');
 diz(html.includes('chaveHoraEclipse(agora) !== _ultimaHoraEclipse'),
     'não repete dentro da mesma hora');

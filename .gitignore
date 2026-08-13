@@ -38,6 +38,7 @@ modelos/diag_prompt.flag
 modelos/historico_jogos.json
 modelos/acompanhamentos.json
 modelos/tom_baseline.json
+modelos/widget_posicao.json
 modelos/manifests/
 chroma_db/
 *.db

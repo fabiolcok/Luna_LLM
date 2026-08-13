@@ -27,6 +27,61 @@
             gap: 16px;
         }
 
+        /* A mesma página também alimenta a janela transparente do mascote. Manter um único
+           motor visual evita que rostos e easter eggs divirjam entre interface e widget. */
+        html:has(body.widget), body.widget, body.widget .container {
+            /* O Qt compõe estes pixels transparentes diretamente com a área de trabalho. */
+            background: rgba(0, 0, 0, 0) !important;
+        }
+        body.widget {
+            min-height: 0; width: 100vw; height: 100vh; padding: 0;
+            overflow: hidden; color-scheme: dark;
+            align-items: center; justify-content: center;
+        }
+        body.widget > :not(.container):not(#widget-menu) { display: none !important; }
+        body.widget .container {
+            width: 320px; height: 320px; max-width: none; display: flex;
+            align-items: center; justify-content: center; overflow: visible;
+        }
+        body.widget .container > :not(#presenca) { display: none !important; }
+        body.widget #presenca { width: 100%; padding: 0; }
+        /* Na página a Luna foi desenhada sobre um painel escuro. Solta no desktop, os mesmos
+           alfas deixavam rosto e corpo lavados em papéis de parede claros. O núcleo continua
+           circular para preservar a transparência ao redor, mas dá contraste próprio a ela. */
+        body.widget #presenca::before {
+            content: ''; position: absolute; left: 50%; top: 50%; width: 168px; height: 168px;
+            transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none; z-index: 0;
+            background: radial-gradient(circle,
+                rgba(10,15,27,.96) 0%, rgba(12,19,33,.92) 62%,
+                rgba(18,27,46,.58) 78%, rgba(18,27,46,0) 100%);
+            box-shadow: 0 0 22px rgba(8,12,24,.38);
+        }
+        body.widget #presenca svg {
+            width: 230px; height: 230px; position: relative; z-index: 1;
+            filter: saturate(1.2) brightness(1.18);
+        }
+        body.widget #rosto {
+            inset: 0; z-index: 2; color: #d9ffff;
+            text-shadow: 0 0 4px rgba(217,255,255,.95), 0 0 15px rgba(122,162,247,.9);
+        }
+        body.widget #presenca.est-dormindo:not(.afk) #arcos,
+        body.widget #presenca.est-dormindo:not(.afk) #orbita-escala { opacity: .68; }
+        body.widget #presenca.noite #estrelas rect { animation-name: cintila-widget; }
+        @keyframes cintila-widget { 0%,100% { opacity: .28; } 50% { opacity: .88; } }
+        body.mascote-solto:not(.widget) #presenca { visibility: hidden; }
+
+        #widget-menu {
+            display: none; position: fixed; z-index: 1000;
+            background: rgba(17,17,26,.96); border: 1px solid #3a3a5a;
+            border-radius: 9px; padding: 5px; box-shadow: 0 6px 24px rgba(0,0,0,.45);
+        }
+        body.widget #widget-menu.aberto { display: block; }
+        #btn-widget-retornar {
+            border: 0; border-radius: 6px; padding: 8px 11px; cursor: pointer;
+            color: #b4f9f8; background: #1b2135; font: 0.8rem 'Segoe UI', sans-serif;
+        }
+        #btn-widget-retornar:hover { background: #26304d; }
+
         /* GIF — invisível até o primeiro GIF chegar */
         #gif-container {
             width: 100%;
@@ -296,7 +351,7 @@
             text-shadow: 0 0 24px rgba(255,90,77,.9);
             transition: transform .22s cubic-bezier(.2,.9,.3,1.35), text-shadow .22s ease;
         }
-        #presenca svg { width: 196px; height: 196px; overflow: visible; }
+        #presenca svg { width: 230px; height: 230px; overflow: visible; }
         /* o rosto ocupa o miolo livre dos anéis */
         #rosto {
             position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
@@ -1001,6 +1056,14 @@
             z-index: 100;
         }
         #btn-config:hover { color: #7aa2f7; border-color: #7aa2f7; background: #0d1526; }
+        #btn-soltar-mascote {
+            position: fixed; top: 16px; right: 64px; z-index: 100;
+            width: 40px; height: 40px; border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            color: #565f89; background: #11111a; border: 1px solid #2a2a4a;
+            font-size: 1.05rem; transition: color .2s, border-color .2s, background .2s;
+        }
+        #btn-soltar-mascote:hover { color: #b4f9f8; border-color: #7aa2f7; background: #0d1526; }
 
         /* Botão de patchnotes (📜) — mesmo estilo do ⚙, logo abaixo dele */
         /* ── Oficina (teste de fala, dicionário, atalhos, chaves) ── */
@@ -1348,7 +1411,8 @@
         #btn-anexo-remover:hover { color: #f7768e; }
     </style>
 </head>
-<body>
+<body class="{{ 'widget' if request.args.get('widget') == '1' else '' }}">
+    <div id="widget-menu"><button id="btn-widget-retornar">↩ Retornar</button></div>
     <div id="drag-overlay">
         <div id="drag-overlay-icone">📎</div>
         <span>Solte para anexar</span>
@@ -1418,6 +1482,7 @@
         </div>
     </div>
 
+    <button id="btn-soltar-mascote" title="Soltar Luna na área de trabalho">◲</button>
     <button id="btn-config" title="Configurações">⚙<span id="config-badge"></span></button>
     <div id="config-overlay"></div>
 
@@ -1824,6 +1889,7 @@
     <script src="/static/anime.min.js"></script>
     <script>
         const socket = new WebSocket('ws://' + window.location.host + '/ws');
+        const PAPEL_MASCOTE = document.body.classList.contains('widget') ? 'widget' : 'principal';
         const TEM_ANIME = typeof anime !== 'undefined';   // degrada sem quebrar se faltar
 
         // --- Typewriter ---
@@ -2304,7 +2370,7 @@
         const ROSTOS_FESTA = ['◉‿◉', 'ᵔᗜᵔ'];
         function confete() {
             const g = document.getElementById('confete');
-            if (!g || !TEM_ANIME) return;
+            if (!mascoteClienteAtivo() || !g || !TEM_ANIME) return;
             const cores = ['#b4f9f8', '#7aa2f7', '#bb9af7', '#7bf98f', '#ffd580', '#ff9ecd', '#ffffff'];
             g.innerHTML = '';
             const pres = document.getElementById('presenca');
@@ -2482,9 +2548,14 @@
             }
 
             anime({
-                targets: pos, p: 1,
-                duration: 20000,
-                easing: 'easeInOutSine',
+                targets: pos,
+                // A pausa no centro dá peso ao evento raro sem acelerar a entrada ou a saída.
+                // Repetir p=.5 cria dois segundos realmente imóveis atrás da cabeça.
+                keyframes: [
+                    { p: .5, duration: 10000, easing: 'easeInOutSine' },
+                    { p: .5, duration: 2000,  easing: 'linear' },
+                    { p: 1,  duration: 10000, easing: 'easeInOutSine' },
+                ],
                 update: function () {
                     const x = dir > 0 ? -100 + pos.p * 400 : 300 - pos.p * 400;
                     const arco = 2 * pos.p - 1;
@@ -2503,13 +2574,6 @@
             });
             return true;
         }
-
-        (function agendarEclipse() {
-            setTimeout(function () {
-                if (Math.random() < 0.25) eclipse(false);
-                agendarEclipse();
-            }, 2700000 + Math.random() * 2700000);       // tenta a cada 45–90 min; 1 em 4 consegue
-        })();
 
         // ═══ OVNI (easter egg) — mesma raridade do cometa, mas ele ZANZA uns 10s. ═══
         function ovni() {
@@ -2540,15 +2604,14 @@
             anime({ targets: g, opacity: [0, 0.95], duration: 700, easing: 'linear' });
             setTimeout(() => anime({ targets: g, opacity: 0, duration: 800, easing: 'linear' }), 9200);
         }
-        (function agendarOvni() {
-            setTimeout(() => { ovni(); agendarOvni(); }, 840000 + Math.random() * 1200000);   // 14 a 34 min
-        })();
-
         // ═══ ANIVERSÁRIO DA LUNA — 14/05, dia do primeiro commit do projeto. ═══
         (function aniversario() {
             const d = new Date();
             if (d.getMonth() !== 4 || d.getDate() !== 14) return;   // maio = mês 4
-            setTimeout(() => { confete(); trocarRosto('◉‿◉'); }, 4000);
+            setTimeout(() => {
+                if (!mascoteClienteAtivo()) return;
+                confete(); trocarRosto('◉‿◉');
+            }, 4000);
             setInterval(confete, 900000);                            // uma lembrancinha a cada 15min
         })();
 
@@ -2709,13 +2772,6 @@
             }, fim));
         }
 
-        (function agendarFoguete() {   // raro: é um evento, não um enfeite
-            setTimeout(() => {
-                if (!_foguetes.length && podeComecarHistoria()) { marcarHistoria(); novoFoguete(); }
-                agendarFoguete();
-            }, 900000 + Math.random() * 1500000);      // 15 a 40 min
-        })();
-
         // ═══ 🛰️ SATÉLITES — a segunda história. Diferente do foguete: eles não POUSAM,
         //     ficam em ÓRBITA (com a mesma profundidade do controle do modo jogo) e cada um
         //     sai com um CLIQUE nele. Verbo diferente pra problema diferente. ═══
@@ -2813,13 +2869,6 @@
             });
         }
 
-        (function agendarSatelites() {
-            setTimeout(function () {
-                if (!_satelites.length && podeComecarHistoria()) { marcarHistoria(); novoSatelite(); }
-                agendarSatelites();
-            }, 1080000 + Math.random() * 1620000);     // 18 a 45 min
-        })();
-
         // ═══ IRRITAÇÃO — sobe por quantas HISTÓRIAS estão ativas ao mesmo tempo, não por
         //     quantos objetos. Uma função só manda no rosto e na intensidade, pra as duas
         //     histórias não brigarem pelo controle da cara. ═══
@@ -2904,7 +2953,7 @@
                     b.addEventListener('click', () => {
                         document.querySelectorAll('.lab-cara.posta').forEach(o => o.classList.remove('posta'));
                         b.classList.add('posta');
-                        rostoDireto(cara);      // direto: sem transição, pra comparar rápido
+                        enviarLaboratorio('rosto', cara);
                     });
                     alvo.appendChild(b);
                 });
@@ -2923,17 +2972,24 @@
             if (_konami.length > KONAMI.length) _konami.shift();
             if (_konami.join(',') === KONAMI.join(',')) {
                 const b = document.getElementById('btn-lab');
-                if (b && !b.classList.contains('ativo')) { b.classList.add('ativo'); confete(); }
+                if (b && !b.classList.contains('ativo')) {
+                    b.classList.add('ativo'); enviarLaboratorio('confete');
+                }
                 _konami = [];
             }
         });
 
-        (function ligarLab() {
-            const btn = document.getElementById('btn-lab');
-            const painel = document.getElementById('lab-panel');
-            if (!btn || !painel) return;
-            btn.addEventListener('click', function () { painel.classList.toggle('aberto'); });
+        function enviarLaboratorio(acao, valor) {
+            if (socket.readyState !== 1) return;
+            socket.send(JSON.stringify({ comando: 'laboratorio_visual', acao, valor }));
+        }
 
+        function executarLaboratorio(acao, valor) {
+            if (!mascoteClienteAtivo()) return;
+            if (acao === 'rosto') {
+                if (valor) rostoDireto(valor);       // direto: sem transição, pra comparar rápido
+                return;
+            }
             const acoes = {
                 foguete:  function () { novoFoguete(); },
                 satelite: function () { novoSatelite(); },
@@ -2972,10 +3028,19 @@
                     aplicarPresenca('dormindo');
                 },
             };
+            const fn = acoes[acao];
+            if (fn) fn();
+        }
+
+        (function ligarLab() {
+            const btn = document.getElementById('btn-lab');
+            const painel = document.getElementById('lab-panel');
+            if (!btn || !painel) return;
+            btn.addEventListener('click', function () { painel.classList.toggle('aberto'); });
+
             painel.querySelectorAll('.lab-btn').forEach(function (b) {
                 b.addEventListener('click', function () {
-                    const fn = acoes[b.dataset.lab];
-                    if (fn) fn();
+                    enviarLaboratorio(b.dataset.lab);
                 });
             });
         })();
@@ -3165,13 +3230,6 @@
             setTimeout(() => { if (!_afk && !_reagindo && !historiasAtivas()) trocarRosto(rostoIdle()); }, 2800);
         }
 
-        (function agendarInvasao() {
-            setTimeout(() => {
-                if (!_medo && podeComecarHistoria()) { marcarHistoria(); invasaoOvnis(); }
-                agendarInvasao();
-            }, 1560000 + Math.random() * 1920000);     // 26 a 58 min
-        })();
-
         // ═══ 🛸 INVASÃO (fim)
 
         // ═══ 🌠 CHUVA DE ASTEROIDES — a 5ª história, e a única cujo VERBO é NÃO FAZER NADA.
@@ -3265,13 +3323,6 @@
             trocarRosto('◉‿◉');
             setTimeout(() => { if (!_afk && !_reagindo && !historiasAtivas()) trocarRosto(rostoIdle()); }, 2800);
         }
-
-        (function agendarChuva() {   // raro, como as outras histórias
-            setTimeout(() => {
-                if (!_medo && podeComecarHistoria()) { marcarHistoria(); chuvaAsteroides(); }
-                agendarChuva();
-            }, 1320000 + Math.random() * 1680000);     // 22 a 50 min
-        })();
 
         // ═══ 🌠 CHUVA DE ASTEROIDES (fim)
 
@@ -3373,13 +3424,6 @@
             _sujeira = []; _sujeiraNaCara = 0; _esfregando = false;
             clearTimeout(_sujTimer); _sujTimer = null;
         }
-
-        (function agendarSujeira() {   // poeira estelar que assenta sozinha: raro
-            setTimeout(() => {
-                if (!_sujeira.length && podeComecarHistoria()) { marcarHistoria(); sujar(1); }
-                agendarSujeira();
-            }, 1200000 + Math.random() * 1800000);     // 20 a 50 min
-        })();
 
         // ═══ 🌫️ FULIGEM (fim)
 
@@ -3507,13 +3551,6 @@
             if (g) g.addEventListener('click', function (ev) { ev.stopPropagation(); marretar(); });
         })();
 
-        (function agendarCometao() {
-            setTimeout(function () {
-                if (_cometaoVida <= 0 && podeComecarHistoria()) { marcarHistoria(); cometao(); }
-                agendarCometao();
-            }, 1500000 + Math.random() * 1800000);     // 25 a 55 min
-        })();
-
         // ═══ COMETA (easter egg) — cruza o fundo de vez em quando. Ângulo, sentido, altura
         //     e velocidade sorteados: nunca passa igual duas vezes. ═══
         function cometa() {
@@ -3540,11 +3577,6 @@
                 complete: () => { g.setAttribute('opacity', '0'); olharObjeto(null); },
             });
         }
-        (function agendarCometa() {
-            // raro: é easter egg. Se passasse toda hora deixaria de ser achado.
-            setTimeout(() => { cometa(); agendarCometa(); }, 720000 + Math.random() * 1080000);   // 12 a 30 min
-        })();
-
         // ═══ CUTUCAR — clicar nela: leva um susto, te encara, pisca e volta ao normal.
         //     Se você INSISTIR, ela se irrita e fica de cara feia por mais tempo. ═══
         const CLIQUE_JANELA = 6000;   // cliques dentro disso contam como "insistência"
@@ -4233,9 +4265,70 @@
             enviarConfig({ config: 'velocidade', valor: parseFloat(this.value) });
         });
 
+        // O relógio mora no Python para não reiniciar ao destacar/recolher o mascote. As duas
+        // páginas recebem o aviso, mas somente a que está visível pode assumir o evento.
+        function mascoteClienteAtivo() {
+            return PAPEL_MASCOTE === 'widget'
+                || !document.body.classList.contains('mascote-solto');
+        }
+
+        function executarEventoVisual(nome) {
+            if (!mascoteClienteAtivo()) return;
+            switch (nome) {
+                case 'eclipse':
+                    if (Math.random() < 0.25) eclipse(false);
+                    break;
+                case 'ovni':
+                    ovni();
+                    break;
+                case 'cometa':
+                    cometa();
+                    break;
+                case 'foguete':
+                    if (!_foguetes.length && podeComecarHistoria()) {
+                        marcarHistoria(); novoFoguete();
+                    }
+                    break;
+                case 'satelites':
+                    if (!_satelites.length && podeComecarHistoria()) {
+                        marcarHistoria(); novoSatelite();
+                    }
+                    break;
+                case 'invasao':
+                    if (!_medo && podeComecarHistoria()) {
+                        marcarHistoria(); invasaoOvnis();
+                    }
+                    break;
+                case 'chuva':
+                    if (!_medo && podeComecarHistoria()) {
+                        marcarHistoria(); chuvaAsteroides();
+                    }
+                    break;
+                case 'sujeira':
+                    if (!_sujeira.length && podeComecarHistoria()) {
+                        marcarHistoria(); sujar(1);
+                    }
+                    break;
+                case 'cometao':
+                    if (_cometaoVida <= 0 && podeComecarHistoria()) {
+                        marcarHistoria(); cometao();
+                    }
+                    break;
+            }
+        }
+
         // --- WebSocket ---
         socket.onmessage = function(event) {
             const dados = JSON.parse(event.data);
+            if (dados.tipo === 'evento_visual') {
+                if (dados.destino === PAPEL_MASCOTE) executarEventoVisual(dados.evento);
+                return;
+            }
+            if (dados.tipo === 'laboratorio_visual') {
+                if (dados.destino === PAPEL_MASCOTE)
+                    executarLaboratorio(dados.acao, dados.valor);
+                return;
+            }
             if (dados.tipo === 'arquivo_confirmado') {
                 anexoNome.textContent = dados.nome;
                 anexoBar.classList.add('ativo');
@@ -4540,6 +4633,90 @@
                 if (!this.value) this.value = this.dataset.anterior || '';   // cancelou: volta o que era
             });
         });
+
+        // ═══ WIDGET DESKTOP — um processo VISUAL isolado abre esta mesma página como janela
+        //     principal transparente. Ele não inicia outra Luna; só evita a limitação de
+        //     transparência do WebView2 quando usado como segunda janela dinâmica. ═══
+        window.definirMascoteSolto = function(solto) {
+            document.body.classList.toggle('mascote-solto', !!solto);
+            const btn = document.getElementById('btn-soltar-mascote');
+            if (btn) {
+                btn.textContent = solto ? '◱' : '◲';
+                btn.title = solto ? 'Mascote solto na área de trabalho' : 'Soltar Luna na área de trabalho';
+            }
+        };
+
+        (function ligarWidgetDesktop() {
+            const widget = document.body.classList.contains('widget');
+            const btnSoltar = document.getElementById('btn-soltar-mascote');
+            const menu = document.getElementById('widget-menu');
+            const btnRetornar = document.getElementById('btn-widget-retornar');
+
+            if (!widget && btnSoltar) {
+                btnSoltar.addEventListener('click', async function() {
+                    if (!window.pywebview || !window.pywebview.api) return;
+                    btnSoltar.disabled = true;
+                    try {
+                        if (document.body.classList.contains('mascote-solto')) {
+                            await window.pywebview.api.recolher_mascote();
+                            window.definirMascoteSolto(false);
+                        } else {
+                            const abriu = await window.pywebview.api.soltar_mascote();
+                            if (abriu) window.definirMascoteSolto(true);
+                        }
+                    } finally {
+                        btnSoltar.disabled = false;
+                    }
+                });
+            }
+            if (!widget || !menu || !btnRetornar) return;
+
+            // easy_drag do pywebview captura a janela INTEIRA e engole até o botão direito.
+            // Aqui o movimento só nasce do botão esquerdo sobre a Luna e após um limiar:
+            // clique curto continua cutucão; gesto de verdade desloca a janela nativa.
+            let puxaoWidget = null;
+            const presWidget = document.getElementById('presenca');
+            presWidget.addEventListener('mousedown', function(e) {
+                if (e.button !== 0) return;
+                puxaoWidget = { clientX: e.clientX, clientY: e.clientY,
+                                screenX: e.screenX, screenY: e.screenY, movendo: false };
+            });
+            document.addEventListener('mousemove', function(e) {
+                if (!puxaoWidget || !(e.buttons & 1)) return;
+                const distancia = Math.hypot(e.screenX - puxaoWidget.screenX,
+                                             e.screenY - puxaoWidget.screenY);
+                if (!puxaoWidget.movendo && distancia < 6) return;
+                puxaoWidget.movendo = true;
+                if (window.pywebview && window.pywebview._jsApiCallback) {
+                    window.pywebview._jsApiCallback(
+                        'pywebviewMoveWindow',
+                        [e.screenX - puxaoWidget.clientX, e.screenY - puxaoWidget.clientY],
+                        'widget-move'
+                    );
+                }
+            });
+            document.addEventListener('mouseup', function(e) {
+                if (e.button === 0) puxaoWidget = null;
+            });
+
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                const margem = 8;
+                menu.classList.add('aberto');
+                const medidas = menu.getBoundingClientRect();
+                const largura = medidas.width || 105, altura = medidas.height || 42;
+                menu.style.left = Math.max(margem, Math.min(e.clientX, innerWidth - largura - margem)) + 'px';
+                menu.style.top = Math.max(margem, Math.min(e.clientY, innerHeight - altura - margem)) + 'px';
+            });
+            document.addEventListener('mousedown', function(e) {
+                if (e.button === 0 && !menu.contains(e.target)) menu.classList.remove('aberto');
+            });
+            btnRetornar.addEventListener('click', async function(e) {
+                e.stopPropagation();
+                if (window.pywebview && window.pywebview.api)
+                    await window.pywebview.api.recolher_mascote();
+            });
+        })();
 
         // Sanfona interna: Dicionário de pronúncia (dentro de Voz)
         (function() {

@@ -25,7 +25,9 @@ from flask_sock import Sock
 import threading
 import json
 import os
+import random
 import re
+import time
 import httpx
 import modelos.cores as cor
 
@@ -50,7 +52,31 @@ _ultima_fala_luna    = "Zzz... dormindo."
 _ultimo_pensamento   = ""
 _ultimo_status       = "🌚 Por aqui"   # o que a Luna está fazendo agora (linha de status do web)
 _ultimo_estado_rosto = None       # diagnóstico das transições reais enviadas ao mascote
+_ultimo_kaomoji      = None       # nova janela do widget já nasce com a expressão atual
 _historico_web       = []   # lista de {usuario, luna, tempo}
+_mascote_solto       = False
+_relogio_visual_iniciado = False
+_relogio_visual_lock = threading.Lock()
+
+# Os intervalos continuam os mesmos que existiam no JavaScript, agora em segundos. Um relógio
+# no servidor sobrevive à troca entre WebView2 e Qt; antes cada página recomeçava do zero.
+_INTERVALOS_EVENTOS_VISUAIS = {
+    "cometa": (720, 1800),
+    "ovni": (840, 2040),
+    "foguete": (900, 2400),
+    "satelites": (1080, 2700),
+    "sujeira": (1200, 3000),
+    "chuva": (1320, 3000),
+    "cometao": (1500, 3300),
+    "invasao": (1560, 3480),
+    "eclipse": (2700, 5400),
+}
+
+_ACOES_LAB_VISUAL = {
+    "foguete", "satelite", "cometao", "sujeira", "chuva", "invasao", "desistir",
+    "cometa", "ovni", "eclipse", "confete", "spotify", "radar", "video", "tela",
+    "jogo", "sonar", "ouvindo", "pensando", "falando", "afk", "noite", "limpar", "rosto",
+}
 
 _arquivo_pendente = None  # {"nome": str, "conteudo": str}
 _imagem_anexada_pendente = None  # {"nome": str, "dados": bytes, "ext": str} — imagem anexada no web p/ arquivar
@@ -319,6 +345,8 @@ def websocket(ws):
             'usuario': _ultima_fala_usuario,
             'legenda': _ultima_fala_luna,
             'pensamento': _ultimo_pensamento,
+            'estado': _ultimo_estado_rosto,
+            'kaomoji': _ultimo_kaomoji,
         }, ensure_ascii=False)
         ws.send(boas_vindas)
         ws.send(json.dumps({"tipo": "config_estado", "estado": _estado_config.copy()}))
@@ -374,6 +402,17 @@ def websocket(ws):
                     if _txt and _handler_texto_web:
                         import threading as _th
                         _th.Thread(target=_handler_texto_web, args=(_txt,), daemon=True).start()
+                elif dados.get('comando') == 'laboratorio_visual':
+                    acao = str(dados.get('acao', ''))
+                    if acao in _ACOES_LAB_VISUAL:
+                        pacote = {
+                            "tipo": "laboratorio_visual",
+                            "acao": acao,
+                            "destino": "widget" if _mascote_solto else "principal",
+                        }
+                        if acao == "rosto":
+                            pacote["valor"] = str(dados.get('valor', ''))[:32]
+                        _broadcast(pacote)
                 # ---- Oficina (painel de config) ----
                 elif dados.get('comando') == 'abrir_arquivo':
                     if _eh_local:
@@ -467,6 +506,43 @@ def _broadcast(dados: dict):
                 mortos.append(ws)
         for ws in mortos:
             _clientes.discard(ws)
+
+
+def atualizar_mascote_solto(solto: bool):
+    """Define qual das duas interfaces deve receber o próximo evento visual."""
+    global _mascote_solto
+    _mascote_solto = bool(solto)
+
+
+def _relogio_eventos_visuais():
+    """Mantém um cronômetro por evento numa única thread, sem depender da página aberta."""
+    agora = time.monotonic()
+    proximos = {
+        nome: agora + random.uniform(*intervalo)
+        for nome, intervalo in _INTERVALOS_EVENTOS_VISUAIS.items()
+    }
+    while True:
+        agora = time.monotonic()
+        vencidos = [nome for nome, quando in proximos.items() if quando <= agora]
+        for nome in vencidos:
+            _broadcast({
+                "tipo": "evento_visual",
+                "evento": nome,
+                "destino": "widget" if _mascote_solto else "principal",
+            })
+            proximos[nome] = agora + random.uniform(*_INTERVALOS_EVENTOS_VISUAIS[nome])
+
+        proximo = min(proximos.values())
+        time.sleep(max(0.25, min(60.0, proximo - time.monotonic())))
+
+
+def _iniciar_relogio_eventos_visuais():
+    global _relogio_visual_iniciado
+    with _relogio_visual_lock:
+        if _relogio_visual_iniciado:
+            return
+        _relogio_visual_iniciado = True
+    threading.Thread(target=_relogio_eventos_visuais, daemon=True).start()
 
 def _processar_arquivo(dados: dict) -> dict:
     nome = dados.get('nome', 'arquivo')
@@ -656,6 +732,8 @@ def atualizar_jogo(nome):
 
 def atualizar_kaomoji(k: str):
     """Manda o kaomoji pro web — ele aparece GRANDE, no lugar onde ficava o GIF."""
+    global _ultimo_kaomoji
+    _ultimo_kaomoji = k
     _broadcast({"kaomoji": k})
 
 def atualizar_gif(termo: str):
@@ -670,6 +748,7 @@ def atualizar_gif(termo: str):
 
 def iniciar_servidor():
     """Inicia o servidor Flask em uma thread separada para não bloquear o main.py"""
+    _iniciar_relogio_eventos_visuais()
     threading.Thread(
         target=lambda: app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False),
         daemon=True
