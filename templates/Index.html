@@ -111,6 +111,11 @@
         .luz-ovni:nth-of-type(3) { animation-delay: -.74s; }
         @keyframes luz-pisca { 0%,100% { opacity: .35; } 50% { opacity: 1; } }
 
+        /* ECLIPSE: o astro passa atrás do miolo, aquecendo só a presença enquanto cruza. */
+        #presenca.eclipse { --cor-halo: #ff9a3d; }
+        #presenca.eclipse #rosto-txt { text-shadow: 0 0 14px rgba(255,154,61,.72); }
+        #presenca.eclipse #nucleo-eclipse { opacity: 1; }
+
         /* 🤍 AFAGO: mouse parado em cima dela. Tudo desacelera e o brilho aquece. */
         #presenca.afago #orbita-escala { transform: scale(.94); opacity: .8; }
         #presenca.afago #arcos { transform: scale(.97); opacity: .55; }
@@ -534,7 +539,9 @@
             min-height: 48px;
         }
 
-        #luna-bloco    { border-color: #7aa2f7; }
+        /* Passageiros do SVG podem sair do viewBox. A fala é uma superfície da interface e
+           precisa continuar na frente deles quando a trajetória cruza sua área. */
+        #luna-bloco    { border-color: #7aa2f7; position: relative; z-index: 2; }
         #usuario-bloco { border-color: #bb9af7; opacity: 0.75; }
 
         label {
@@ -1379,6 +1386,7 @@
         <div class="lab-grade">
             <button class="lab-btn" data-lab="cometa">☄️ cometa</button>
             <button class="lab-btn" data-lab="ovni">🛸 OVNI</button>
+            <button class="lab-btn" data-lab="eclipse">🌘 eclipse</button>
             <button class="lab-btn" data-lab="confete">🎉 confete</button>
         </div>
         <div class="lab-titulo">Ferramentas</div>
@@ -1644,11 +1652,23 @@
                         <stop offset="0%"   stop-color="#dff0ff" stop-opacity="0"/>
                         <stop offset="100%" stop-color="#ffffff" stop-opacity="0.9"/>
                     </linearGradient>
+                    <radialGradient id="g-eclipse">
+                        <stop offset="0%"   stop-color="#ffd27a"/>
+                        <stop offset="68%"  stop-color="#ff922e"/>
+                        <stop offset="100%" stop-color="#d95716"/>
+                    </radialGradient>
                 </defs>
                 <!-- COMETA (easter egg): primeiro no SVG = passa ATRÁS de tudo, inclusive do
                      brilho da cabeça, que é o que vende a profundidade. -->
                 <g id="estrelas"></g>
                 <g id="confete"></g>
+                <g id="eclipse" opacity="0">
+                    <circle cx="0" cy="0" r="90" fill="#ff8a32" opacity="0.18"/>
+                    <circle cx="0" cy="0" r="78" fill="url(#g-eclipse)"/>
+                </g>
+                <!-- A Luna normalmente é um halo transparente. No eclipse este disco temporário
+                     cria uma cabeça opaca ENTRE o Sol e o rosto, vendendo a profundidade real. -->
+                <circle id="nucleo-eclipse" cx="100" cy="100" r="68" fill="#0d0d12" opacity="0"/>
                 <!-- OVNI: aparece raro e fica ZANZANDO uns 10s antes de sumir -->
                 <g id="ovni" opacity="0">
                     <ellipse cx="0" cy="0" rx="9" ry="2.5" fill="#9ecbff" opacity="0.85"/>
@@ -1927,6 +1947,7 @@
 
         const ROSTO_JOGO = 'ᓀ‸ᓂ';            // concentrada, enquanto você joga
         const ROSTO_RADAR_PROATIVO = '⇀‸↼'; // fixa enquanto o sonar varre
+        const ROSTO_ECLIPSE = '⌐■_■';        // óculos fixos enquanto o astro cruza ao fundo
         function rostoIdle() {                 // sorteia sem repetir o anterior
             if (_jogoAtivo) return ROSTO_JOGO;
             let i;
@@ -1963,6 +1984,7 @@
             'ᵔ ᵕ ᵔ', '╥‸╥', '◞_◟', 'ꈍ◡ꈍ', '≖_≖', '￢_￢', 'T_T', 'ᗒᗜᗕ', // olho já franzido/fechado
             '｀皿´', '｀Д´', '಄ᆺ಄', '°ᯅ°',                          // raiva, sacudida, medo
             'ᗒ_ᗕ', '>_<', '- _ -', 'ᓀ‸ᓂ', '⇀‸↼',                    // reações de olho apertado
+            ROSTO_ECLIPSE,                                          // os óculos já cobrem os olhos
             '_　_ 💤',                                              // AFK: já está de olho fechado
         ]);
         function podePiscar(cara) {
@@ -2107,6 +2129,7 @@
         let _pegou = false, _pegouX = 0, _pegouY = 0, _arrX = 0, _arrY = 0, _animVolta = null;
         let _satelitesNaOrbita = 0, _cometaoNaCabeca = 0, _cometaoTimer = null;
         let _sujeiraNaCara = 0, _medo = false, _invasao = false;
+        let _eclipseAtivo = false, _ultimaHoraEclipse = '';
         let _desistiu = false, _desdeTres = 0;
         const AFAGO_RAIO = 58;        // rosto + o alto da cabeça
         const AFAGO_SOBE = 14;        // desloca a área pra CIMA: carinho é na cabeça,
@@ -2414,10 +2437,84 @@
         }
         setInterval(checarAfago, 200);
 
+        // ═══ ECLIPSE — passageiro diurno ultrarraro. Um núcleo temporário fica ENTRE o Sol
+        //     e o halo: ele preserva o círculo do astro e dá opacidade à cabeça normalmente
+        //     transparente. O laboratório ignora as travas para não exigir horas de espera. ═══
+        function chaveHoraEclipse(agora) {
+            return [agora.getFullYear(), agora.getMonth(), agora.getDate(), agora.getHours()].join('-');
+        }
+
+        function podeEclipse(agora) {
+            const pres = document.getElementById('presenca');
+            const h = agora.getHours();
+            return !!pres && h >= 6 && h < 20
+                && chaveHoraEclipse(agora) !== _ultimaHoraEclipse
+                && pres.classList.contains('est-dormindo')
+                && !pres.classList.contains('com-ferramenta')
+                && !pres.classList.contains('proat-radar')
+                && !_afk && !_jogoAtivo && !_reagindo && !_chacoalhando && !_afagando && !_desistiu
+                && !_eclipseAtivo && !_olharObjeto && !historiasAtivas();
+        }
+
+        function eclipse(forcar) {
+            const g = document.getElementById('eclipse');
+            const pres = document.getElementById('presenca');
+            const agora = new Date();
+            if (!g || !pres || !TEM_ANIME || (!forcar && !podeEclipse(agora))) return false;
+
+            const rostoAntes = _rostoAtual;
+            const dir = Math.random() < 0.5 ? 1 : -1;
+            const pos = { p: 0 };
+            let reagindoAoEclipse = false;
+            _eclipseAtivo = true;
+            if (!forcar) _ultimaHoraEclipse = chaveHoraEclipse(agora);
+
+            function reagirAoEclipse(ativar) {
+                if (ativar === reagindoAoEclipse) return;
+                reagindoAoEclipse = ativar;
+                pres.classList.toggle('eclipse', ativar);
+                if (ativar) {
+                    // Se uma conversa já assumiu a Luna, o fenômeno muda a luz mas não rouba a expressão.
+                    if (pres.classList.contains('est-dormindo')) trocarRosto(ROSTO_ECLIPSE);
+                } else if (_rostoAtual === ROSTO_ECLIPSE && pres.classList.contains('est-dormindo')) {
+                    trocarRosto(rostoAntes);
+                }
+            }
+
+            anime({
+                targets: pos, p: 1,
+                duration: 20000,
+                easing: 'easeInOutSine',
+                update: function () {
+                    const x = dir > 0 ? -100 + pos.p * 400 : 300 - pos.p * 400;
+                    const arco = 2 * pos.p - 1;
+                    const y = 92 + arco * arco * 178; // nasce embaixo, sobe atrás dela e desce do outro lado
+                    g.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+                    reagirAoEclipse(Math.hypot(x - 100, y - 100) <= 155);
+                    const borda = Math.min(1, pos.p / 0.16, (1 - pos.p) / 0.16);
+                    const opacidade = borda * borda * (3 - 2 * borda); // smoothstep: sem tranco nas pontas
+                    g.setAttribute('opacity', opacidade.toFixed(3));
+                },
+                complete: function () {
+                    g.setAttribute('opacity', '0');
+                    reagirAoEclipse(false);             // segurança caso o último frame não chegue à borda
+                    _eclipseAtivo = false;
+                },
+            });
+            return true;
+        }
+
+        (function agendarEclipse() {
+            setTimeout(function () {
+                if (Math.random() < 0.25) eclipse(false);
+                agendarEclipse();
+            }, 2700000 + Math.random() * 2700000);       // tenta a cada 45–90 min; 1 em 4 consegue
+        })();
+
         // ═══ OVNI (easter egg) — mesma raridade do cometa, mas ele ZANZA uns 10s. ═══
         function ovni() {
             const g = document.getElementById('ovni');
-            if (!g || !TEM_ANIME) return;
+            if (!g || !TEM_ANIME || _eclipseAtivo) return;
             const ladoEsq = Math.random() < 0.5;
             const pontos = [{ x: ladoEsq ? -40 : 240, y: 40 + Math.random() * 120 }];
             for (let i = 0; i < 5; i++)                      // zanzada: pontos aleatórios no meio
@@ -2759,7 +2856,7 @@
         let _ultimaHistoria = 0;
 
         function podeComecarHistoria() {
-            if (_afk || _desistiu) return false;
+            if (_afk || _desistiu || _eclipseAtivo) return false;
             if (historiasAtivas() >= HISTORIA_TETO) return false;
             return (Date.now() - _ultimaHistoria) >= HISTORIA_ESPACO;
         }
@@ -2847,6 +2944,7 @@
                 desistir: function () { if (_desistiu) voltarAtencao(); else virarDeCostas(); },
                 cometa:   function () { cometa(); },
                 ovni:     function () { ovni(); },
+                eclipse:  function () { eclipse(true); },
                 confete:  function () { confete(); },
                 spotify:  function () { aplicarFerramenta('▸ Usando: controlar_spotify'); },
                 radar:    function () { aplicarFerramenta('▸ Usando: pesquisar_web'); },
@@ -3420,7 +3518,7 @@
         //     e velocidade sorteados: nunca passa igual duas vezes. ═══
         function cometa() {
             const g = document.getElementById('cometa');
-            if (!g || !TEM_ANIME) return;
+            if (!g || !TEM_ANIME || _eclipseAtivo) return;
             const ang = (-32 + Math.random() * 64) * Math.PI / 180;   // quase horizontal
             const dir = Math.random() < 0.5 ? 1 : -1;                 // vem da esquerda ou da direita
             const desvio = -62 + Math.random() * 124;                 // altura da passagem

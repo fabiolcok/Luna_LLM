@@ -93,7 +93,7 @@ diz(html.includes('⌐■_■ combina com um futuro eclipse'), 'a cara candidata
 
 // ---- 4) a lista de quem pisca continua valendo ----
 const PISCAM = ['Ò﹏Ó','ಠ_ಠ','O_O','◉‿◉','ㆆ_ㆆ','⚈₋⚈','ᗜ⩊ᗜ','•𐃷•','• ₃ •','･ ᴗ ･','• _ •','◐_◑'];
-const NAOPISCAM = ['ᗒᗜᗕ','ᵔ ᵕ ᵔ','╥‸╥','◞_◟','ꈍ◡ꈍ','≖_≖','￢_￢','T_T','_　_ 💤','｀皿´','｀Д´','಄ᆺ಄','°ᯅ°','ᗒ_ᗕ','>_<','- _ -','ᓀ‸ᓂ','⇀‸↼'];
+const NAOPISCAM = ['ᗒᗜᗕ','ᵔ ᵕ ᵔ','╥‸╥','◞_◟','ꈍ◡ꈍ','≖_≖','￢_￢','T_T','_　_ 💤','｀皿´','｀Д´','಄ᆺ಄','°ᯅ°','ᗒ_ᗕ','>_<','- _ -','ᓀ‸ᓂ','⇀‸↼','⌐■_■'];
 const errSim = PISCAM.filter(c => !t.podePiscar(c));
 const errNao = NAOPISCAM.filter(c => t.podePiscar(c));
 diz(errSim.length === 0, 'as ' + PISCAM.length + ' marcadas PISCA piscam' + (errSim.length ? ' — NÃO: ' + errSim.join(' ') : ''));
