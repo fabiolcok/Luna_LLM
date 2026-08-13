@@ -10,6 +10,11 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 13/08/2026
 
+- 🌙 🔧 **O widget ficou mais ajustável e atento.** No clique direito dá para alternar se ele
+  fica sempre no topo e escolher tamanho pequeno, normal ou grande; tudo fica lembrado neste
+  PC. A Luna também percebe o cursor se aproximando fora da janelinha transparente, e o gesto
+  de arrastar ficou menos propenso a virar um cutucão acidental.
+
 - 💬 🐛 **Texto digitado voltou a aparecer no CMD.** A resposta do modo web continuava na
   interface, mas o terminal só imprimia falas que passavam pelo TTS. Agora respostas digitadas
   ganham um banner próprio no diagnóstico, sem começar a tocar áudio por conta disso.

@@ -28,8 +28,9 @@ diz(html.includes('body.widget #presenca::before') &&
 diz(html.includes('#presenca svg { width: 230px; height: 230px;') &&
     html.includes('body.widget #presenca svg {'),
     'o mascote da janela principal tem os mesmos 230 px do widget');
-diz(widget.includes('frameless=True') && widget.includes('transparent=True') && widget.includes('on_top=True'),
-    'o processo visual abre sua janela principal transparente, sem moldura e no topo');
+diz(widget.includes('frameless=True') && widget.includes('transparent=True') &&
+    widget.includes('on_top=config["sempre_no_topo"]'),
+    'o processo visual abre transparente, sem moldura e respeita a preferência de topo');
 diz(widget.includes('os.environ["QT_API"] = "pyside6"') &&
     widget.includes('webview.start(gui="qt")') &&
     !widget.includes('System.Windows.Forms'),
@@ -37,15 +38,30 @@ diz(widget.includes('os.environ["QT_API"] = "pyside6"') &&
 diz(requirements.includes('PySide6==6.11.1') && requirements.includes('QtPy==2.4.3'),
     'uma instalação nova também recebe o backend transparente do widget');
 diz(widget.includes('easy_drag=False') && html.includes("'pywebviewMoveWindow'") &&
-    html.includes('distancia < 6'),
+    html.includes('distancia < 4') && html.includes('_arrastou = true'),
     'arrasto global fica desligado e só começa sobre a Luna após um pequeno limiar');
 diz(widget.includes('focus=True, js_api=api'),
     'a janela do widget aceita clique, arrasto e menu de contexto');
 diz(html.includes("document.addEventListener('contextmenu'") &&
     html.includes('id="btn-widget-retornar"'),
     'o botão de retornar aparece pelo clique direito');
-diz(widget.includes('janela.events.moved += _salvar_posicao') && widget.includes('widget_posicao.json'),
+diz(widget.includes('janela.events.moved += api.registrar_posicao') && widget.includes('widget_posicao.json'),
     'a posição do widget é lembrada entre execuções');
+diz(widget.includes('def definir_sempre_no_topo') && widget.includes('self._janela.on_top = ativo') &&
+    html.includes('id="btn-widget-topo"'),
+    'o menu alterna sempre no topo e persiste a decisão');
+diz(widget.includes('_TAMANHOS = {"pequeno": 240, "normal": 320, "grande": 460}') &&
+    widget.includes('def definir_tamanho') &&
+    ['pequeno', 'normal', 'grande'].every(t => html.includes(`data-tamanho="${t}"`)),
+    'o menu oferece três tamanhos que redimensionam a janela nativa');
+diz(html.includes('--widget-svg: 165px; --widget-nucleo: 120px') &&
+    html.includes('--widget-svg: 350px; --widget-nucleo: 256px') &&
+    html.includes('font-size: var(--widget-rosto)') &&
+    html.includes('width: var(--widget-nucleo)'),
+    'corpo, halo e rosto escalam juntos em vez de deixar uma borda desproporcional');
+diz(widget.includes('def cursor_relativo') && widget.includes('QCursor.pos()') &&
+    html.includes('window.pywebview.api.cursor_relativo()') && html.includes('d <= 430'),
+    'o widget acompanha o cursor global quando ele se aproxima');
 diz(html.includes("body.classList.toggle('mascote-solto'") &&
     html.includes('body.mascote-solto:not(.widget) #presenca'),
     'o mascote original some enquanto a cópia desktop está solta');

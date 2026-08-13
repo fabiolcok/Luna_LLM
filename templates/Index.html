@@ -34,13 +34,15 @@
             background: rgba(0, 0, 0, 0) !important;
         }
         body.widget {
+            --widget-svg: 230px; --widget-nucleo: 168px;
+            --widget-rosto: 2.75rem; --widget-rosto-sobe: 20px;
             min-height: 0; width: 100vw; height: 100vh; padding: 0;
             overflow: hidden; color-scheme: dark;
             align-items: center; justify-content: center;
         }
         body.widget > :not(.container):not(#widget-menu) { display: none !important; }
         body.widget .container {
-            width: 320px; height: 320px; max-width: none; display: flex;
+            width: 100vw; height: 100vh; max-width: none; display: flex;
             align-items: center; justify-content: center; overflow: visible;
         }
         body.widget .container > :not(#presenca) { display: none !important; }
@@ -49,7 +51,8 @@
            alfas deixavam rosto e corpo lavados em papéis de parede claros. O núcleo continua
            circular para preservar a transparência ao redor, mas dá contraste próprio a ela. */
         body.widget #presenca::before {
-            content: ''; position: absolute; left: 50%; top: 50%; width: 168px; height: 168px;
+            content: ''; position: absolute; left: 50%; top: 50%;
+            width: var(--widget-nucleo); height: var(--widget-nucleo);
             transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none; z-index: 0;
             background: radial-gradient(circle,
                 rgba(10,15,27,.96) 0%, rgba(12,19,33,.92) 62%,
@@ -57,11 +60,12 @@
             box-shadow: 0 0 22px rgba(8,12,24,.38);
         }
         body.widget #presenca svg {
-            width: 230px; height: 230px; position: relative; z-index: 1;
+            width: var(--widget-svg); height: var(--widget-svg); position: relative; z-index: 1;
             filter: saturate(1.2) brightness(1.18);
         }
         body.widget #rosto {
             inset: 0; z-index: 2; color: #d9ffff;
+            font-size: var(--widget-rosto); padding-bottom: var(--widget-rosto-sobe);
             text-shadow: 0 0 4px rgba(217,255,255,.95), 0 0 15px rgba(122,162,247,.9);
         }
         body.widget #presenca.est-dormindo:not(.afk) #arcos,
@@ -73,14 +77,28 @@
         #widget-menu {
             display: none; position: fixed; z-index: 1000;
             background: rgba(17,17,26,.96); border: 1px solid #3a3a5a;
-            border-radius: 9px; padding: 5px; box-shadow: 0 6px 24px rgba(0,0,0,.45);
+            border-radius: 9px; padding: 6px; min-width: 154px;
+            box-shadow: 0 6px 24px rgba(0,0,0,.45);
         }
         body.widget #widget-menu.aberto { display: block; }
-        #btn-widget-retornar {
-            border: 0; border-radius: 6px; padding: 8px 11px; cursor: pointer;
-            color: #b4f9f8; background: #1b2135; font: 0.8rem 'Segoe UI', sans-serif;
+        .widget-menu-btn {
+            display: block; width: 100%; text-align: left;
+            border: 0; border-radius: 6px; padding: 7px 9px; cursor: pointer;
+            color: #cfc9c2; background: transparent; font: 0.8rem 'Segoe UI', sans-serif;
         }
-        #btn-widget-retornar:hover { background: #26304d; }
+        .widget-menu-btn:hover { background: #26304d; }
+        .widget-menu-btn.ativo { color: #9ece6a; }
+        #btn-widget-retornar { color: #b4f9f8; background: #1b2135; margin-top: 5px; }
+        .widget-menu-titulo { color: #565f89; font: .68rem 'Segoe UI', sans-serif;
+                              padding: 6px 9px 3px; text-transform: uppercase; letter-spacing: .8px; }
+        body.widget.tamanho-pequeno {
+            --widget-svg: 165px; --widget-nucleo: 120px;
+            --widget-rosto: 2rem; --widget-rosto-sobe: 14px;
+        }
+        body.widget.tamanho-grande {
+            --widget-svg: 350px; --widget-nucleo: 256px;
+            --widget-rosto: 4.15rem; --widget-rosto-sobe: 30px;
+        }
 
         /* GIF — invisível até o primeiro GIF chegar */
         #gif-container {
@@ -1432,7 +1450,14 @@
     </style>
 </head>
 <body class="{{ 'widget' if request.args.get('widget') == '1' else '' }}">
-    <div id="widget-menu"><button id="btn-widget-retornar">↩ Retornar</button></div>
+    <div id="widget-menu">
+        <button class="widget-menu-btn" id="btn-widget-topo">✓ Sempre no topo</button>
+        <div class="widget-menu-titulo">Tamanho</div>
+        <button class="widget-menu-btn widget-tamanho" data-tamanho="pequeno">Pequeno</button>
+        <button class="widget-menu-btn widget-tamanho" data-tamanho="normal">Normal</button>
+        <button class="widget-menu-btn widget-tamanho" data-tamanho="grande">Grande</button>
+        <button class="widget-menu-btn" id="btn-widget-retornar">↩ Retornar</button>
+    </div>
     <div id="drag-overlay">
         <div id="drag-overlay-icone">📎</div>
         <span>Solte para anexar</span>
@@ -4757,6 +4782,7 @@
             const btnSoltar = document.getElementById('btn-soltar-mascote');
             const menu = document.getElementById('widget-menu');
             const btnRetornar = document.getElementById('btn-widget-retornar');
+            const btnTopo = document.getElementById('btn-widget-topo');
 
             if (!widget && btnSoltar) {
                 btnSoltar.addEventListener('click', async function() {
@@ -4775,7 +4801,28 @@
                     }
                 });
             }
-            if (!widget || !menu || !btnRetornar) return;
+            if (!widget || !menu || !btnRetornar || !btnTopo) return;
+
+            function aplicarEstadoWidget(estado) {
+                const tamanho = estado.tamanho || 'normal';
+                document.body.classList.remove('tamanho-pequeno', 'tamanho-normal', 'tamanho-grande');
+                document.body.classList.add('tamanho-' + tamanho);
+                btnTopo.classList.toggle('ativo', !!estado.sempre_no_topo);
+                btnTopo.textContent = (estado.sempre_no_topo ? '✓ ' : '○ ') + 'Sempre no topo';
+                document.querySelectorAll('.widget-tamanho').forEach(btn => {
+                    const ativo = btn.dataset.tamanho === tamanho;
+                    btn.classList.toggle('ativo', ativo);
+                    btn.textContent = (ativo ? '✓ ' : '') +
+                        btn.dataset.tamanho[0].toUpperCase() + btn.dataset.tamanho.slice(1);
+                });
+            }
+
+            async function carregarEstadoWidget() {
+                if (!window.pywebview || !window.pywebview.api) return;
+                aplicarEstadoWidget(await window.pywebview.api.estado_widget());
+            }
+            window.addEventListener('pywebviewready', carregarEstadoWidget);
+            carregarEstadoWidget();   // a ponte pode já estar pronta quando este script chegar aqui
 
             // easy_drag do pywebview captura a janela INTEIRA e engole até o botão direito.
             // Aqui o movimento só nasce do botão esquerdo sobre a Luna e após um limiar:
@@ -4791,8 +4838,9 @@
                 if (!puxaoWidget || !(e.buttons & 1)) return;
                 const distancia = Math.hypot(e.screenX - puxaoWidget.screenX,
                                              e.screenY - puxaoWidget.screenY);
-                if (!puxaoWidget.movendo && distancia < 6) return;
+                if (!puxaoWidget.movendo && distancia < 4) return;
                 puxaoWidget.movendo = true;
+                _arrastou = true;   // o click sintético após o mouseup não pode virar cutucão
                 if (window.pywebview && window.pywebview._jsApiCallback) {
                     window.pywebview._jsApiCallback(
                         'pywebviewMoveWindow',
@@ -4805,6 +4853,32 @@
                 if (e.button === 0) puxaoWidget = null;
             });
 
+            // A página normal enxerga o cursor em toda a janela. O widget é só um quadrado
+            // pequeno e transparente, então o Qt informa a posição global para ela notar a
+            // aproximação antes de o mouse entrar fisicamente na janela.
+            let consultandoCursor = false;
+            setInterval(async function() {
+                if (consultandoCursor || puxaoWidget || !window.pywebview || !window.pywebview.api) return;
+                consultandoCursor = true;
+                try {
+                    const cursor = await window.pywebview.api.cursor_relativo();
+                    const svg = document.querySelector('#presenca svg');
+                    if (!cursor || !svg) return;
+                    const r = svg.getBoundingClientRect();
+                    const dx = cursor.x - (r.left + r.width / 2);
+                    const dy = cursor.y - (r.top + r.height / 2);
+                    const d = Math.hypot(dx, dy) || 1;
+                    if (d <= 430) {
+                        const forca = Math.min(1, d / OLHAR_ALCANCE);
+                        _olhoAlvoX = (dx / d) * OLHAR_MAX * forca;
+                        _olhoAlvoY = (dy / d) * OLHAR_MAX * forca;
+                        _mouseTs = Date.now();
+                    }
+                } finally {
+                    consultandoCursor = false;
+                }
+            }, 90);
+
             document.addEventListener('contextmenu', function(e) {
                 e.preventDefault();
                 const margem = 8;
@@ -4816,6 +4890,18 @@
             });
             document.addEventListener('mousedown', function(e) {
                 if (e.button === 0 && !menu.contains(e.target)) menu.classList.remove('aberto');
+            });
+            btnTopo.addEventListener('click', async function(e) {
+                e.stopPropagation();
+                const ativo = !this.classList.contains('ativo');
+                aplicarEstadoWidget(await window.pywebview.api.definir_sempre_no_topo(ativo));
+            });
+            document.querySelectorAll('.widget-tamanho').forEach(btn => {
+                btn.addEventListener('click', async function(e) {
+                    e.stopPropagation();
+                    aplicarEstadoWidget(await window.pywebview.api.definir_tamanho(this.dataset.tamanho));
+                    menu.classList.remove('aberto');
+                });
             });
             btnRetornar.addEventListener('click', async function(e) {
                 e.stopPropagation();
