@@ -407,6 +407,28 @@
         @keyframes pres-gira     { to { transform: rotate(360deg);  } }
         @keyframes pres-gira-inv { to { transform: rotate(-360deg); } }
 
+        /* Embalo alto do fidget: os clones ficam atrás da órbita e atrasam alguns graus,
+           formando caudas. O brilho cresce pela velocidade no JS e some sem corte. */
+        #fidget-rastros { pointer-events: none; }
+        #fidget-rastros .fidget-rastro {
+            opacity: 0;
+            filter: blur(.75px) drop-shadow(0 0 5px rgba(255,255,255,.9));
+            transition: opacity .18s ease;
+        }
+        #presenca.fidget-girando #orbita rect {
+            fill: #d8f2ff;
+            opacity: .88;
+            filter: drop-shadow(0 0 4px rgba(216,242,255,.78));
+        }
+        #presenca.fidget-rapido #orbita rect {
+            fill: #ffffff;
+            opacity: 1;
+            filter: drop-shadow(0 0 8px #ffffff) drop-shadow(0 0 14px #7dd3fc);
+        }
+        #presenca.fidget-rapido #orbita {
+            filter: brightness(2.15) drop-shadow(0 0 8px rgba(255,255,255,.95));
+        }
+
         /* 🌙 parada — tudo lento e apagado */
         .est-dormindo #halo   { animation-duration: 9s; opacity: .1; }
         .est-dormindo #orbita { animation-duration: 110s; }
@@ -1843,7 +1865,12 @@
                 <g id="frota"></g>
                 <g id="feixes"></g>
                 <circle id="halo" cx="100" cy="100" r="66" fill="url(#g-halo)"/>
-                <g id="orbita-escala"><g id="orbita"></g></g>
+                <g id="orbita-escala"><g id="orbita-fidget">
+                    <g id="fidget-rastros">
+                        <g class="fidget-rastro"></g><g class="fidget-rastro"></g><g class="fidget-rastro"></g>
+                    </g>
+                    <g id="orbita"></g>
+                </g></g>
                 <path id="scanner" fill="none" stroke="#b4f9f8" stroke-width="1.8" stroke-linecap="round" opacity="0"/>
                 <g id="arcos">
                     <path id="arco-1" fill="none" stroke="#7aa2f7" stroke-width="1.4" stroke-linecap="round" opacity="0.5"/>
@@ -4981,6 +5008,67 @@
                 if (window.pywebview && window.pywebview.api)
                     await window.pywebview.api.recolher_mascote();
             });
+        })();
+
+        // ═══ FIDGET DA ÓRBITA — a rodinha não gira uma quantidade fixa: cada passo soma
+        //     velocidade. Scrolls seguidos pegam embalo; inverter primeiro freia e depois
+        //     leva as bolinhas para o outro lado. O wrapper próprio evita disputar o
+        //     transform do #orbita (animação normal) e do #orbita-escala (estados). ═══
+        (function ligarFidgetOrbita() {
+            const pres = document.getElementById('presenca');
+            const fidget = document.getElementById('orbita-fidget');
+            if (!pres || !fidget) return;
+            const rastros = Array.from(document.querySelectorAll('#fidget-rastros .fidget-rastro'));
+            const bolas = Array.from(document.querySelectorAll('#orbita rect'));
+            rastros.forEach(rastro => bolas.forEach(bola => {
+                const copia = bola.cloneNode(true);
+                copia.setAttribute('fill', '#ffffff');
+                copia.setAttribute('opacity', '.9');
+                rastro.appendChild(copia);
+            }));
+            let angulo = 0, velocidade = 0, quadro = null, anterior = 0;
+
+            function animar(agora) {
+                const dt = Math.min(32, Math.max(1, agora - (anterior || agora - 16)));
+                anterior = agora;
+                angulo = (angulo + velocidade * dt) % 360;
+                velocidade *= Math.pow(0.975, dt / 16.67);
+                const modulo = Math.abs(velocidade);
+                const forcaCentrifuga = Math.min(1, Math.max(0, (modulo - .30) / 1.20));
+                const escalaCentrifuga = 1 + forcaCentrifuga * .08;
+                fidget.setAttribute('transform',
+                    `translate(100 100) rotate(${angulo.toFixed(2)}) scale(${escalaCentrifuga.toFixed(3)}) translate(-100 -100)`);
+                const intensidade = Math.min(1, Math.max(0, (modulo - .72) / .73));
+                pres.classList.toggle('fidget-girando', modulo > .03);
+                pres.classList.toggle('fidget-rapido', modulo > 1.0);
+                rastros.forEach((rastro, i) => {
+                    const atraso = -Math.sign(velocidade) * (i + 1) * (4 + intensidade * 5);
+                    rastro.setAttribute('transform', `rotate(${atraso.toFixed(2)} 100 100)`);
+                    rastro.style.opacity = (intensidade * (.34 - i * .08)).toFixed(2);
+                });
+                if (Math.abs(velocidade) < 0.008) {
+                    velocidade = 0; quadro = null; anterior = 0;
+                    pres.classList.remove('fidget-girando', 'fidget-rapido');
+                    rastros.forEach(rastro => { rastro.style.opacity = '0'; });
+                    return;
+                }
+                quadro = requestAnimationFrame(animar);
+            }
+
+            pres.addEventListener('wheel', function(e) {
+                const svg = pres.querySelector('svg');
+                if (!svg || !pres.classList.contains('est-dormindo')) return;
+                const r = svg.getBoundingClientRect();
+                const dx = e.clientX - (r.left + r.width / 2);
+                const dy = e.clientY - (r.top + r.height / 2);
+                if (Math.hypot(dx, dy) > r.width * .48) return;
+                e.preventDefault();
+                const direcao = Math.sign(e.deltaY) || 1;
+                const impulso = Math.min(.18, Math.max(.06, Math.abs(e.deltaY) * .0015));
+                velocidade = Math.max(-1.5, Math.min(1.5, velocidade + direcao * impulso));
+                _ultimaInteracao = Date.now();
+                if (!quadro) quadro = requestAnimationFrame(animar);
+            }, { passive: false });
         })();
 
         // Sanfona interna: Dicionário de pronúncia (dentro de Voz)

@@ -10,6 +10,13 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 13/08/2026
 
+- 🖱️ ✨ **A órbita virou um fidget.** Com o cursor sobre a Luna em repouso, a rodinha do mouse
+  dá embalo às bolinhas: movimentos seguidos acumulam velocidade, a direção pode ser invertida
+  e o giro desacelera sozinho sem roubar o scroll do restante da página. Em alta velocidade,
+  as bolinhas ficam brancas e deixam pequenas caudas luminosas de cometa. O primeiro giro já
+  clareia a órbita, mas alcançar o efeito máximo agora exige bem mais embalo; a força centrífuga
+  também afasta o anel depois que ele ganha embalo, mantendo o raio normal nas velocidades baixas.
+
 - 🪟 🔧 **A janela principal lembra onde ficou.** Ao mover ou redimensionar o modo web, a
   posição e o tamanho ficam salvos apenas neste PC e são restaurados na próxima abertura.
 
