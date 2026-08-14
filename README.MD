@@ -1,7 +1,7 @@
 # 🌙 Luna
 
 <p align="center">
-  <img src="docs/luna-demo.gif" alt="Luna comentando por voz uma notícia do radar RSS" width="380">
+  <img src="docs/Home.gif" alt="Luna em sua interface principal" width="520">
 </p>
 
 Imagine uma Alexa que:
@@ -302,6 +302,10 @@ só onde o CSS não chega.
 
 **Anatomia:** uma **cabeça** (círculo que respira e muda de cor), o **rosto** (um kaomoji no
 miolo), **3 arcos** girando em sentidos diferentes e **16 bolinhas** em órbita.
+
+<p align="center">
+  <img src="docs/eclipse2.gif" alt="Uma transformação visual rara da presença da Luna" width="520">
+</p>
 
 **O rosto é o kaomoji — e quem escolhe é o Python.** O modelo termina a fala com uma TAG de
 clima (`[clima:zoeira]`, `[clima:carinho]`, …, 12 opções) e o `pensar.py` traduz num rosto do
