@@ -58,7 +58,7 @@ A Luna foi testada nestas duas configurações com Windows 11:
 | AMD RX 9060 XT 16GB (RDNA4, gfx1200) | Ryzen 5 5600 | 32GB | Windows 11 |
 | NVIDIA RTX 3060 12GB | Ryzen 5 5500 | 32GB | Windows 11 |
 
-São configurações testadas, não requisitos mínimos. Na RX 9060 XT, somente a Luna com o
+São configurações testadas, não requisitos mínimos. Nas duas máquinas, somente a Luna com o
 Gemma-4-12B consome atualmente cerca de 12GB de RAM e 8GB de VRAM.
 
 A inferência é acelerada pelo TurboLLM: **ROCm** na AMD — não Vulkan, que ficou lento nessa
