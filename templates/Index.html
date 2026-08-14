@@ -2116,6 +2116,10 @@
         })();
 
         const PRES_ESTADOS = ['dormindo', 'ouvindo', 'pensando', 'falando', 'digitando'];
+        // O scroll deixa rotação e força centrífuga no wrapper da órbita. Estados e
+        // ferramentas precisam parti-lo da posição neutra; a implementação real é ligada
+        // mais abaixo, depois que o SVG existe, e este no-op evita zona morta de let/const.
+        let _resetarFidgetOrbita = function() {};
         // Rosto padrão de cada estado (quando ela não está reagindo a nada)
         const ROSTO_ESTADO = {
             ouvindo:  '･ ᴗ ･',
@@ -2262,6 +2266,7 @@
             const el = document.getElementById('presenca');
             if (!el) return;
             if (!PRES_ESTADOS.includes(estado)) estado = 'dormindo';
+            if (estado !== 'dormindo') _resetarFidgetOrbita();
             if (estado !== 'dormindo' && _encaradaGigante) limparReacaoClique();
             PRES_ESTADOS.forEach(e => el.classList.remove('est-' + e));
             el.classList.add('est-' + estado);
@@ -3984,6 +3989,7 @@
             el.classList.remove('proat-radar');
             const proat = /Proativo:\s*([^\]]+)/i.exec(statusTxt || '');
             if (proat) {
+                _resetarFidgetOrbita();
                 Object.values(FERRAMENTAS_VISUAL).forEach(v => el.classList.remove('ferr-' + v));
                 pararScanner(); pararOndas();
                 const tarefa = proat[1].trim().toLowerCase();
@@ -4002,6 +4008,7 @@
             // PERSISTE até outra trocar. (O status volta pra "Por aqui"
             // em 1-2s, então cronômetro fixo nunca dava pra ver o efeito direito.)
             if (!m) return;
+            _resetarFidgetOrbita();
             Object.values(FERRAMENTAS_VISUAL).forEach(v => el.classList.remove('ferr-' + v));
             pararScanner(); pararOndas();
             const modo = FERRAMENTAS_VISUAL[m[1]];
@@ -5027,6 +5034,17 @@
                 rastro.appendChild(copia);
             }));
             let angulo = 0, velocidade = 0, quadro = null, anterior = 0;
+
+            _resetarFidgetOrbita = function() {
+                if (quadro) cancelAnimationFrame(quadro);
+                angulo = 0; velocidade = 0; quadro = null; anterior = 0;
+                fidget.removeAttribute('transform');
+                pres.classList.remove('fidget-girando', 'fidget-rapido');
+                rastros.forEach(rastro => {
+                    rastro.removeAttribute('transform');
+                    rastro.style.opacity = '0';
+                });
+            };
 
             function animar(agora) {
                 const dt = Math.min(32, Math.max(1, agora - (anterior || agora - 16)));

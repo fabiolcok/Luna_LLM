@@ -51,16 +51,18 @@ nuvem. As **ferramentas** ligam pra serviços externos só quando você as acion
 
 ## 🖥️ Hardware
 
-| Peça | Detalhe |
-|------|---------|
-| GPU  | AMD RX 9060 XT 16GB (RDNA4, gfx1200) |
-| CPU  | Ryzen 5 5600 |
-| RAM  | 32GB |
-| OS   | Windows 11 |
+A Luna foi testada nestas duas configurações com Windows 11:
 
-Atualmente, somente pra rodar a luna ele consome 9gb ram e 8gb gpu
+| GPU | CPU | RAM | Sistema |
+|-----|-----|-----|---------|
+| AMD RX 9060 XT 16GB (RDNA4, gfx1200) | Ryzen 5 5600 | 32GB | Windows 11 |
+| NVIDIA RTX 3060 12GB | Ryzen 5 5500 | 32GB | Windows 11 |
 
-Inferência acelerada por **ROCm** (via TurboLLM) — **não** Vulkan (Vulkan é lento nessa AMD).
+São configurações testadas, não requisitos mínimos. Na RX 9060 XT, somente a Luna com o
+Gemma-4-12B consome atualmente cerca de 12GB de RAM e 8GB de VRAM.
+
+A inferência é acelerada pelo TurboLLM: **ROCm** na AMD — não Vulkan, que ficou lento nessa
+placa — e **CUDA** na NVIDIA.
 
 ---
 

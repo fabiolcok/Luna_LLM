@@ -39,6 +39,18 @@ assert.ok(html.includes('Math.max(0, (modulo - .30) / 1.20)') &&
           'FALHA: velocidade nao afasta a orbita com zona morta e limite de 8%');
 assert.ok(html.includes('<g id="orbita-escala"><g id="orbita-fidget">'),
           'FALHA: forca centrifuga deixou de ser independente das animacoes de entrar e sair');
+const presenca = html.slice(html.indexOf('function aplicarPresenca'), html.indexOf('function mostrarKaomoji'));
+assert.ok(presenca.includes("if (estado !== 'dormindo') _resetarFidgetOrbita()") &&
+          presenca.indexOf('_resetarFidgetOrbita()') < presenca.indexOf('moverBolasDigitando('),
+          'FALHA: estado digitando nao neutraliza o fidget antes de alinhar as bolas embaixo');
+const ferramenta = html.slice(html.indexOf('function aplicarFerramenta'), html.indexOf('function trocarGif'));
+assert.ok((ferramenta.match(/_resetarFidgetOrbita\(\)/g) || []).length === 2,
+          'FALHA: ferramenta ou radar proativo pode herdar rotacao do fidget');
+assert.ok(html.includes("if (quadro) cancelAnimationFrame(quadro)") &&
+          html.includes("fidget.removeAttribute('transform')") &&
+          html.includes("rastro.removeAttribute('transform')") &&
+          html.includes("pres.classList.remove('fidget-girando', 'fidget-rapido')"),
+          'FALHA: reset do fidget nao limpa animacao, deslocamento e rastros');
 assert.ok(!/ligarFidgetOrbita[\s\S]*?pintarRosto\(/.test(html.slice(html.indexOf('function ligarFidgetOrbita'), html.indexOf("const PRES_ESTADOS"))),
           'FALHA: primeiro rascunho do fidget não deve mudar o rosto');
 

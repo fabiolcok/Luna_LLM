@@ -8,6 +8,12 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 14/08/2026
+
+- 🪐 🐛 **As órbitas não carregam mais o embalo para outras animações.** Ao sair do fidget
+  para digitar, usar uma ferramenta ou abrir o radar proativo, as bolinhas zeram a rotação e
+  a força centrífuga antes de assumir a formação própria do novo estado.
+
 ## 13/08/2026
 
 - 🖱️ ✨ **A órbita virou um fidget.** Com o cursor sobre a Luna em repouso, a rodinha do mouse
