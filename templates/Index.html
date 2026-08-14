@@ -19,6 +19,11 @@
             padding: 24px;
         }
 
+        /* Transformar a Luna perto da borda aumenta a área visual do documento e o WebView
+           cria uma barra horizontal no meio do gesto. A trava existe só enquanto ela está
+           na mão ou voltando no elástico; a rolagem vertical do painel continua normal. */
+        html.arrastando-luna, html.arrastando-luna body { overflow-x: clip; }
+
         .container {
             width: 100%;
             max-width: 780px;
@@ -3772,6 +3777,7 @@
                                      e.clientY - (r.top + r.height / 2 - AFAGO_SOBE));
                 if (d > AFAGO_RAIO) return;                    // clicou no vazio ao lado dela
                 _pegou = true;                                 // PEGOU a cabeça dela
+                document.documentElement.classList.add('arrastando-luna');
                 // o puxão começa de onde ela está agora, não do zero — senão pular pra
                 // mão dá um solavanco quando você reagarra no meio da volta elástica
                 _pegouX = e.clientX - _arrX / ARRASTO_RESIST;
@@ -3788,8 +3794,15 @@
                             targets: alvo, x: 0, y: 0,
                             duration: 950, easing: 'easeOutElastic(1, .42)',
                             update: () => { _arrX = alvo.x; _arrY = alvo.y; aplicarArrasto(); },
+                            complete: () => {
+                                _animVolta = null;
+                                document.documentElement.classList.remove('arrastando-luna');
+                            },
                         });
-                    } else { _arrX = _arrY = 0; aplicarArrasto(); }
+                    } else {
+                        _arrX = _arrY = 0; aplicarArrasto();
+                        document.documentElement.classList.remove('arrastando-luna');
+                    }
                 }
                 setTimeout(() => { _arrastou = false; }, 60);   // deixa o click checar antes
             });

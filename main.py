@@ -20,6 +20,7 @@ def _print_com_hora(*a, **k):
 _bi.print = _print_com_hora
 
 import os
+import json
 import logging
 import subprocess
 import time
@@ -534,6 +535,56 @@ class _ApiInterface:
         if processo and processo.poll() is None:
             processo.terminate()
 
+
+_JANELA_CONFIG = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                              "modelos", "janela_principal.json")
+
+
+class _GeometriaJanela:
+    """Persiste a janela principal localmente, sem misturar preferência pessoal no .env."""
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self.dados = self._carregar()
+
+    def _carregar(self):
+        padrao = {"width": 460, "height": 760, "x": None, "y": None}
+        try:
+            with open(_JANELA_CONFIG, "r", encoding="utf-8") as arquivo:
+                salvo = json.load(arquivo)
+            largura, altura = int(salvo["width"]), int(salvo["height"])
+            # Um arquivo truncado ou uma janela quase invisível não pode estragar o boot.
+            if not (380 <= largura <= 4000 and 520 <= altura <= 2400):
+                return padrao
+            return {"width": largura, "height": altura,
+                    "x": int(salvo["x"]) if salvo.get("x") is not None else None,
+                    "y": int(salvo["y"]) if salvo.get("y") is not None else None}
+        except (OSError, ValueError, KeyError, TypeError):
+            return padrao
+
+    def _salvar(self):
+        try:
+            os.makedirs(os.path.dirname(_JANELA_CONFIG), exist_ok=True)
+            temporario = _JANELA_CONFIG + ".tmp"
+            with open(temporario, "w", encoding="utf-8") as arquivo:
+                json.dump(self.dados, arquivo)
+            os.replace(temporario, _JANELA_CONFIG)
+        except OSError:
+            pass
+
+    def mover(self, x, y):
+        with self._lock:
+            self.dados.update(x=int(x), y=int(y))
+            self._salvar()
+
+    def redimensionar(self, width, height):
+        width, height = int(width), int(height)
+        if width < 380 or height < 520:
+            return
+        with self._lock:
+            self.dados.update(width=width, height=height)
+            self._salvar()
+
 def main():
     _log.info("Luna iniciando...")
     threading.Thread(target=_listener_global, daemon=True).start()
@@ -562,10 +613,16 @@ def main():
     threading.Thread(target=loop_voz, daemon=True).start()
 
     api_interface = _ApiInterface()
+    geometria = _GeometriaJanela()
+    janela_kwargs = dict(width=geometria.dados["width"], height=geometria.dados["height"])
+    if geometria.dados["x"] is not None and geometria.dados["y"] is not None:
+        janela_kwargs.update(x=geometria.dados["x"], y=geometria.dados["y"])
     janela = webview.create_window(
-        "Luna", "http://localhost:5000", width=460, height=760, js_api=api_interface
+        "Luna", "http://localhost:5000", js_api=api_interface, **janela_kwargs
     )
     api_interface._janela_principal = janela
+    janela.events.moved += geometria.mover
+    janela.events.resized += geometria.redimensionar
 
     # Fechar o X esconde para a bandeja em vez de encerrar
     def ao_fechar_janela():

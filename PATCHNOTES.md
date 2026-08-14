@@ -10,6 +10,9 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 13/08/2026
 
+- 🪟 🔧 **A janela principal lembra onde ficou.** Ao mover ou redimensionar o modo web, a
+  posição e o tamanho ficam salvos apenas neste PC e são restaurados na próxima abertura.
+
 - ⌨️ ✨ **Responder por texto ganhou movimento próprio.** Quando não usa voz, a Luna leva as
   quatro bolinhas grandes suavemente até a base, pisca cada uma em branco num ritmo irregular
   e acompanha a escrita com o rosto, antes de voltar ao repouso.

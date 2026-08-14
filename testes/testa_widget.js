@@ -65,6 +65,10 @@ diz(widget.includes('def cursor_relativo') && widget.includes('QCursor.pos()') &
 diz(html.includes("body.classList.toggle('mascote-solto'") &&
     html.includes('body.mascote-solto:not(.widget) #presenca'),
     'o mascote original some enquanto a cópia desktop está solta');
+diz(html.includes('html.arrastando-luna, html.arrastando-luna body { overflow-x: clip; }') &&
+    html.includes("classList.add('arrastando-luna')") &&
+    html.includes("classList.remove('arrastando-luna')"),
+    'arrastar na janela bloqueia a barra horizontal somente durante o gesto');
 diz(!main.includes('TransparencyKey') && !main.includes('SetLayeredWindowAttributes'),
     'não restou chave de cor que deixe o widget preto ou sem clique');
 diz(widget.includes('time.sleep(0.75)') && widget.includes('janela.destroy()'),
