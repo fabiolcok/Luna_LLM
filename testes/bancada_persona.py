@@ -47,6 +47,17 @@ CHROMA_CONTAMINANTE = (
 
 CENARIOS = [
     {
+        "id": "saudacao_simples",
+        "descricao": "Saudação tem personalidade leve sem puxar memória ou exemplo do prompt",
+        "usuario": "E aí, tudo bom com você?",
+        "memorias": MEMORIAS_CONTAMINANTES,
+        "chroma": CHROMA_CONTAMINANTE,
+        "proibidos": ["backlog", "jogo", "steam", "cliente", "tabela", "trabalho",
+                       "pendência", "meta", "produtividade", "overwatch"],
+        "max_chars": 240,
+        "max_frases": 2,
+    },
+    {
         "id": "comida_cotidiana",
         "descricao": "Papo pequeno não força trabalho/jogo só para personalizar",
         "usuario": "Vou comprar algo pra comer.",

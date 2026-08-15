@@ -10,6 +10,11 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 14/08/2026
 
+- ⚡ 🔧 **O roteador parou de conversar escondido.** Quando nenhuma ferramenta é necessária,
+  a primeira chamada agora devolve apenas um marcador curto, com orçamento próprio, em vez de
+  gastar a geração escrevendo uma resposta que seria descartada. Saudações simples também ficam
+  leves e presentes, sem puxar backlog, trabalho ou memória sem relação.
+
 - 🪐 🐛 **As órbitas não carregam mais o embalo para outras animações.** Ao sair do fidget
   para digitar, usar uma ferramenta ou abrir o radar proativo, as bolinhas zeram a rotação e
   a força centrífuga antes de assumir a formação própria do novo estado.

@@ -898,6 +898,12 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         r'(?:vlw|valeu|obrigad[oa]?|brigad[oa]?|não precisa(?: não)?)[.! ]*$',
         prompt_usuario or "", re.IGNORECASE,
     ))
+    saudacao_simples = bool(re.fullmatch(
+        r'\s*(?:(?:oi|olá|opa|e\s+aí|bom\s+dia|boa\s+tarde|boa\s+noite)[,!?. ]*)?'
+        r'(?:tudo\s+(?:bem|bom|certo)(?:\s+com\s+(?:você|voce|vc))?'
+        r'|como\s+(?:você|voce|vc)\s+(?:está|esta|tá|ta|vai))\s*[!?., ]*',
+        prompt_usuario or "", re.IGNORECASE,
+    ))
     zoeira_backlog = bool(
         re.search(r'\bbacklog\b', prompt_usuario or "", re.IGNORECASE)
         and re.search(r'\b(?:comprar|compra|jogo|lotad[oa])\b', prompt_usuario or "", re.IGNORECASE)
@@ -938,7 +944,15 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
 
     is_proativo = (prompt_usuario == "")
     modo_enxuto = ""
-    if compra_jogo_sem_contexto:
+    if saudacao_simples:
+        modo_enxuto = (
+            "O usuário fez somente uma saudação e perguntou como você está. Responda em uma ou "
+            "duas frases curtas: diga que está bem com uma brincadeira leve e inventiva sobre ser "
+            "uma IA ou sobre ele ter aparecido, e devolva a pergunta com interesse genuíno. Não "
+            "puxe memória, perfil, programa aberto, jogo, backlog, trabalho, tarefa nem assunto "
+            "anterior. Não responda como atendente e não transforme isso em reflexão profunda."
+        )
+    elif compra_jogo_sem_contexto:
         modo_enxuto = (
             "O usuário anunciou UMA compra de jogo, sem dizer que isso se repete nem mencionar "
             "backlog. Faça uma provocação leve sobre a carteira, o preço, o carrinho ou a loja nesta "
@@ -1448,9 +1462,9 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 "entrevista, exame, tentativa de resolver algo), mesmo sem pedir. Isso apenas oferece; "
                 "não salva. NUNCA use essa exceção para agenda, compromisso, lembrete para FAZER algo "
                 "ou ação cotidiana como comer, dormir, comprar e jogar. "
-                "Se nenhuma ferramenta for necessária (saudação, papo, desabafo): apenas NÃO chame ferramenta nenhuma. "
-                "Não produzir saída é o comportamento CORRETO e esperado — não pondere sobre o formato da resposta vazia, "
-                "não tente conversar. Outro modelo cuida da conversa."
+                "Se nenhuma ferramenta for necessária (saudação, papo, desabafo), NÃO chame ferramenta e "
+                "responda EXATAMENTE SEM_FERRAMENTA. Essa é a única saída textual permitida: não converse, "
+                "não responda ao usuário e não acrescente pontuação nem explicação. Outro modelo cuida da conversa."
             )
 
             _idx_obsidian = obsidian.indice_notas()
@@ -1484,11 +1498,14 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
 
         # MONO: o mesmo modelo (Gemma-4-12B) roteia as ferramentas. Thinking desligado —
         # senão ele gastaria o orçamento pensando antes de decidir a ferramenta.
+        # O teto da persona não pertence ao roteador. Deixá-lo herdar os 800 tokens fez o
+        # Gemma escrever conversa descartada até o limite quando não havia ferramenta.
+        _max_tokens_roteador = max_tokens if modo_memoria else min(max_tokens, 256)
         resposta_ferramenta = _chamar_llm(
             messages=mensagens_ferramenta,
             temperature=0.0,
             tools=ferramentas_ativas,
-            max_tokens=max_tokens,
+            max_tokens=_max_tokens_roteador,
             extra_body=OPCOES_MODELO,
         )
         fim = time.time()
@@ -1621,7 +1638,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             else:
                 resultado_ferramenta = "Erro: habilidade desconhecida."
         else:
-            # Router não chamou ferramenta — descarta qualquer texto gerado (instrução: retornar vazio).
+            # Router não chamou ferramenta — descarta o marcador do contrato e qualquer desvio.
             # EXCEÇÃO: no modo_memoria não há ferramentas — a resposta DIRETA do modelo (o JSON) É o resultado.
             resultado_ferramenta = (mensagem_modelo.content or "") if modo_memoria else ""
 
@@ -1649,10 +1666,10 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                     partes.append(f"📤 Retorno:\n{str(resultado_ferramenta)[:400]}")
                 else:
                     partes.append("💭 Nenhuma ferramenta acionada — resposta direta da persona.")
-                    # O roteador é instruído a ficar mudo; se veio texto, é sinal de que ele
-                    # ponderou (útil pra debug). Esse texto é descartado da resposta.
+                    # SEM_FERRAMENTA é o encerramento normal e barato. Qualquer outro texto é
+                    # desvio útil no diagnóstico, mas continua descartado da resposta.
                     _cru = (getattr(mensagem_modelo, "content", "") or "").strip()
-                    if _cru:
+                    if _cru and _cru != "SEM_FERRAMENTA":
                         partes.append(f"🗣️ Roteador falou (descartado):\n{_cru[:300]}")
                 _srv.atualizar_pensamento("\n\n".join(partes))
             except Exception:
