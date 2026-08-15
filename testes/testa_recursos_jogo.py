@@ -24,6 +24,11 @@ class TestaRecursosJogo(unittest.TestCase):
         self.assertIn("llama-server.exe", intocaveis)
         self.assertIn("llama-server", intocaveis)
 
+    def test_python_da_luna_esta_na_lista_branca_com_e_sem_extensao(self):
+        intocaveis = _processos_intocaveis()
+        self.assertIn("python3.12.exe", intocaveis)
+        self.assertIn("python3.12", intocaveis)
+
 
 if __name__ == "__main__":
     unittest.main()

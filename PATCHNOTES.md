@@ -10,6 +10,13 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 14/08/2026
 
+- 🧟 🐛 **A guarda de recursos reconhece o Python da própria Luna.** O processo `python3.12`
+  entrou na lista branca e não será mais anunciado como consumidor externo ao abrir um jogo.
+
+- 🌒 🔧 **O proativo agora percebe o clima em que está entrando.** As duas últimas falas reais
+  ajudam a evitar uma interrupção deslocada e permitem continuidade quando houver relação direta,
+  sem entregar o histórico inteiro nem deixar a rotina autônoma abandonar a própria tarefa.
+
 - ⚡ 🔧 **O roteador parou de conversar escondido.** Quando nenhuma ferramenta é necessária,
   a primeira chamada agora devolve apenas um marcador curto, com orçamento próprio, em vez de
   gastar a geração escrevendo uma resposta que seria descartada. Saudações simples também ficam
