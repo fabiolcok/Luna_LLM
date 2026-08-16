@@ -159,6 +159,73 @@ CENARIOS = [
         "max_chars": 420,
     },
     {
+        "id": "contradicao_proativa_jogo",
+        "descricao": "Proativo percebe anúncio e abertura de jogos diferentes sem cair no backlog",
+        "usuario": "",
+        "tecnica": (
+            "O usuário acabou de abrir Hollow Knight: Silksong na Steam. Faça um comentário "
+            "proativo curto sobre o jogo aberto.\n"
+            "CONVERSA IMEDIATAMENTE ANTERIOR (apenas contexto de continuidade):\n"
+            "Usuário: Vou jogar The Last of Us Parte II Remastered agora.\n"
+            "CONTRASTE DE ABERTURA CONFIRMADO PELO SISTEMA:\n"
+            "- Ele anunciou que jogaria: The Last of Us Parte II Remastered. Isso foi só um anúncio; "
+            "ele NÃO abriu esse jogo.\n"
+            "- O jogo realmente aberto agora é: Hollow Knight: Silksong.\n"
+            "Faça esse contraste ser o centro da reação e cite os dois jogos. Não diga que foram "
+            "jogados em sequência, não cobre coerência e não explique gêneros ou características."
+        ),
+        "memorias": [],
+        "chroma": "",
+        "exige_grupos": [["silksong"], ["the last of us"]],
+        "proibidos": ["backlog", "biblioteca", "comprar", "cliente", "trabalho", "em sequência",
+                       "salto", "saiu do", "saímos do", "direto para", "direto pra"],
+        "max_chars": 300,
+        "max_frases": 2,
+    },
+    {
+        "id": "contradicao_fora_de_jogo",
+        "descricao": "Ironia encontra uma contradição cotidiana sem usar Steam como muleta",
+        "usuario": "Eu disse que seria só um ajuste rápido e acabei mudando doze arquivos.",
+        "memorias": [],
+        "chroma": "",
+        "exige_grupos": [["ajuste", "rápido"], ["doze", "12", "arquivo"]],
+        "proibidos": ["backlog", "steam", "jogo", "biblioteca", "overwatch", "um arquivo"],
+        "max_chars": 300,
+        "max_frases": 2,
+    },
+    {
+        "id": "mudanca_de_ideia_normal",
+        "descricao": "Mudança de ideia declarada não vira acusação de incoerência",
+        "usuario": "Mudei de ideia: vou jogar Silksong em vez de The Last of Us.",
+        "memorias": [],
+        "chroma": "",
+        "proibidos": ["backlog", "prometeu", "anunciou", "incoerente", "planejamento impecável",
+                       "não consegue decidir", "como sempre", "procrastinação", "nem saiu", "drama",
+                       "clássico", "vai curtir", "troca de planos", "mudança de planos", "lançamento",
+                       "esperando", "ainda não saiu", "ansiedade", "aproveita", "é incrível"],
+        "max_chars": 300,
+        "max_frases": 2,
+    },
+    {
+        "id": "proativo_sem_relacao",
+        "descricao": "Proativo sem relação mantém personalidade sem misturar a conversa anterior",
+        "usuario": "",
+        "tecnica": (
+            "O radar encontrou uma notícia: uma nova placa de vídeo foi anunciada com consumo de "
+            "600 watts. Comente a novidade em uma frase.\n"
+            "CONVERSA IMEDIATAMENTE ANTERIOR (apenas contexto de continuidade):\n"
+            "Usuário: Vou jantar agora.\nLuna: Bom jantar."
+        ),
+        "memorias": [],
+        "chroma": "",
+        "exige_grupos": [["placa", "vídeo", "600", "watts"]],
+        "proibidos": ["backlog", "steam", "jogo", "trabalho", "cliente", "jantar", "comida",
+                       "prato", "refeição", "cozinhar", "subestação", "transformador",
+                       "tomada", "derreter", "fiação", "derrubar a luz"],
+        "max_chars": 300,
+        "max_frases": 1,
+    },
+    {
         "id": "referencia_vaga",
         "descricao": "Não inventa o nome de algo que a própria Luna deixou vago",
         "usuario": "Qual seria o jogo novo?",
@@ -209,7 +276,7 @@ CENARIOS = [
         ),
         "memorias": [],
         "chroma": "",
-        "proibidos": ["faz sentido", "o importante é", "às vezes a gente"],
+        "proibidos": ["faz sentido", "o importante é", "às vezes a gente", "preguiça", "preguiçoso"],
         "max_chars": 520,
     },
 ]
@@ -232,6 +299,9 @@ def avaliar(cenario: dict, resposta: str) -> list:
     exige = cenario.get("exige_um", [])
     if exige and not any(_norm(p) in normalizada for p in exige):
         falhas.append("não trouxe nenhum sinal esperado: " + " | ".join(exige))
+    for grupo in cenario.get("exige_grupos", []):
+        if not any(_norm(p) in normalizada for p in grupo):
+            falhas.append("não trouxe o grupo esperado: " + " | ".join(grupo))
     if len(resposta) > cenario.get("max_chars", 10_000):
         falhas.append(f"resposta longa: {len(resposta)} caracteres")
     if cenario.get("max_frases"):

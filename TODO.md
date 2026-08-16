@@ -12,8 +12,13 @@ definitiva. Itens daqui não estão automaticamente aprovados para commit.
     ressuscitar assunto encerrado ou forçar referência pessoal.
   - Primeiro teste real: o usuário anunciou que jogaria The Last of Us Parte II Remastered e
     abriu Hollow Knight: Silksong. O proativo manteve a tarefa, mas não percebeu o contraste.
-    Não ampliar isso como regra global. Próximo experimento possível: somente proativos de
-    abertura verificam se a intenção imediatamente anterior citava outro item da mesma categoria.
+  - Experimento atual: somente a abertura de jogo tem um detector estreito em Python. Ele compara
+    um anúncio explícito de "vou jogar/abrir A" com o jogo B realmente aberto e entrega os dois
+    fatos estruturados ao 12B. Menção solta e mudança de ideia declarada não viram cobrança.
+  - A bancada produziu uma reação aprovada ao contraste The Last of Us/Silksong. Confirmar no uso
+    real se isso continua raro e certeiro, sem recorrer automaticamente a Steam/backlog.
+  - Contexto sem relação direta não vira ponte: jantar não deve ser misturado com promoção,
+    radar ou notícia só porque os eventos aconteceram perto no tempo.
   - Se frequentemente faltar uma conexão importante, experimentar quatro mensagens
     (`usuário → Luna → usuário → Luna`) mantendo os mesmos limites.
   - Antes de commitar, pedir a avaliação do usuário sobre os testes cotidianos.

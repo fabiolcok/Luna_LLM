@@ -32,10 +32,10 @@ from PIL import Image, ImageDraw
 
 _log = logging.getLogger("luna.main")
 from modulos.ouvir import escutar_usuario
-from modulos.pensar import gerar_resposta
+from modulos.pensar import gerar_resposta, continuar_apos_acompanhamento
 from modulos.falar import falar_texto
 from modulos.habilidades import ler_agenda_google, capturar_tela_base64, iniciar_servidor_extensao, pausar_spotify, proxima_musica_spotify, alternar_mute, ler_texto_selecionado
-from modulos.proativa import iniciar_modo_proativo, registrar_interacao, registrar_tentativa, MAX_TENTATIVAS, marcar_luna_ocupada, configurar_proativo, configurar_tarefa
+from modulos.proativa import iniciar_modo_proativo, registrar_interacao, registrar_tentativa, MAX_TENTATIVAS, marcar_luna_ocupada, luna_esta_livre, configurar_proativo, configurar_tarefa
 from modulos.telegram_bot import iniciar_bot_telegram
 from modulos.falar import configurar_voz
 from modulos.pensar import configurar_memoria
@@ -44,7 +44,7 @@ from servidor import (
     atualizar_usuario, registrar_callback_interrupcao,
     iniciar_servidor, registrar_config_handler, sincronizar_config,
     injetar_arquivo_pendente, obter_e_limpar_imagem_anexada, carregar_e_aplicar_config,
-    registrar_handler_texto_web, atualizar_mascote_solto
+    registrar_handler_texto_web, registrar_handler_acompanhamento_web, atualizar_mascote_solto
 )
 
 from pynput import keyboard as kb
@@ -253,6 +253,40 @@ def responder_texto_web(texto: str):
     except Exception as e:
         _log.exception(f"Erro no texto web: {e}")
         atualizar_legenda("Deu um erro aqui, tenta de novo.")
+    finally:
+        atualizar_estado_rosto("dormindo")
+        marcar_luna_ocupada(False)
+
+
+def responder_clique_acompanhamento(acao: str, confirmacao: dict, resposta_sistema: str):
+    """Transforma o botão em turno real; o estado já foi resolvido antes de chegar aqui."""
+    assunto = str(confirmacao.get("assunto", "")).strip()
+    confirmou = acao in ("confirmar", "sim", "acompanhar")
+    escolha = "Acompanhar resultado." if confirmou else "Só comentei."
+    fim_espera = time.time() + 120
+    while not luna_esta_livre() and time.time() < fim_espera:
+        time.sleep(0.3)
+    marcar_luna_ocupada(True)
+    try:
+        cor.azul(f"[🖱️ Web] Você: {escolha}")
+        _log.info(f"[Web botão acompanhamento] Usuário: {escolha} | assunto: {assunto}")
+        atualizar_usuario(escolha)
+        atualizar_estado_rosto("pensando")
+        resposta = continuar_apos_acompanhamento(
+            "confirmar" if confirmou else "descartar",
+            assunto,
+            resposta_sistema,
+            _historico_conversa,
+        ).strip()
+        _registrar_turno_direto(_historico_conversa, escolha, resposta)
+        atualizar_estado_rosto("digitando")
+        atualizar_legenda(resposta)
+        time.sleep(min(9.0, max(4.0, len(resposta) * 0.03)))
+        _mostrar_resposta_web_no_terminal(resposta)
+        _log.info(f"[Web botão acompanhamento] Luna: {resposta[:200]}")
+    except Exception as e:
+        _log.exception(f"Erro ao continuar acompanhamento pelo botão: {e}")
+        atualizar_legenda(resposta_sistema or "Pronto.")
     finally:
         atualizar_estado_rosto("dormindo")
         marcar_luna_ocupada(False)
@@ -592,6 +626,7 @@ def main():
     iniciar_servidor_extensao()
     registrar_callback_interrupcao(ao_interromper)
     registrar_handler_texto_web(responder_texto_web)
+    registrar_handler_acompanhamento_web(responder_clique_acompanhamento)
     registrar_config_handler("proativo", configurar_proativo)
     registrar_config_handler("memoria", configurar_memoria)
     registrar_config_handler("voz", lambda v: configurar_voz(voz=v))

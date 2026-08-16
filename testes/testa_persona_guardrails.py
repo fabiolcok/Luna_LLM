@@ -49,6 +49,31 @@ class TestaGuardrailsPersona(unittest.TestCase):
         self.assertIn("ELOGIO também não pode ser carimbo", self.fonte)
         self.assertIn("parabéns pela dedicação", self.fonte)
 
+    def test_humor_prioriza_contradicao_concreta_sem_muleta(self):
+        self.assertIn("CONTRADIÇÃO CONCRETA é matéria-prima forte", self.fonte)
+        self.assertIn("A piada precisa continuar clara", self.fonte)
+        self.assertIn("não recorra automaticamente a Steam, backlog ou jogos", self.fonte)
+
+    def test_deadpan_nao_e_meta_explicita(self):
+        prompt = self.fonte.split("PROMPT_LUNA_PERSONA = (", 1)[1].split("_ROSTOS =", 1)[0]
+        self.assertNotIn("deadpan", prompt.lower())
+
+    def test_mudanca_de_ideia_nao_vira_defeito(self):
+        self.assertIn("mudanca_ideia_explicita", self.fonte)
+        self.assertIn("não como incoerência, falha, promessa quebrada ou procrastinação", self.fonte)
+
+    def test_contradicao_declarada_fica_curta(self):
+        self.assertIn("contradicao_declarada", self.fonte)
+        self.assertIn("o centro de UMA frase curta e irônica", self.fonte)
+
+    def test_prioridade_proativa_fica_no_fim_para_modelo_menor(self):
+        self.assertIn("PRIORIDADE FINAL OBRIGATÓRIA", self.fonte)
+        self.assertIn("não descreva passagem, sequência, salto", self.fonte)
+
+    def test_proativo_nao_forca_ponte_sem_relacao(self):
+        self.assertIn("Sem relação direta, não conecte os assuntos", self.fonte)
+        self.assertNotIn("PONTE FINAL OBRIGATÓRIA", self.fonte)
+
 
 if __name__ == "__main__":
     unittest.main()

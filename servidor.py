@@ -47,6 +47,7 @@ sock = Sock(app)
 _clientes      = set()
 _clientes_lock = threading.Lock()
 _callback_interrupcao = None
+_handler_acompanhamento_web = None
 _ultima_fala_usuario = "Aguardando áudio..."
 _ultima_fala_luna    = "Zzz... dormindo."
 _ultimo_pensamento   = ""
@@ -149,6 +150,11 @@ def registrar_handler_texto_web(fn):
     """main.py registra aqui a função que processa uma mensagem DIGITADA na caixa do web."""
     global _handler_texto_web
     _handler_texto_web = fn
+
+def registrar_handler_acompanhamento_web(fn):
+    """Entrega decisões dos botões ao fluxo de conversa sem acoplar servidor.py ao main.py."""
+    global _handler_acompanhamento_web
+    _handler_acompanhamento_web = fn
 
 def sincronizar_config(chave: str, valor):
     """Atualiza o estado de config e faz broadcast sem chamar os handlers Python."""
@@ -513,12 +519,23 @@ def websocket(ws):
                 # ---- Acompanhamentos: botões e fala resolvem o mesmo estado ----
                 elif dados.get('comando') == 'acompanhamento_acao':
                     from modulos import acompanhamentos
+                    confirmacao = acompanhamentos.estado_interface().get("confirmacao")
                     resposta = acompanhamentos.resolver(
                         dados.get('acao', ''), dados.get('id', ''), dados.get('quando', ''))
                     ws.send(json.dumps({"tipo": "acompanhamento_feedback",
                                         "texto": resposta or "Essa decisão já expirou."},
                                        ensure_ascii=False))
                     notificar_acompanhamentos()
+                    # O toast confirma o estado, mas não substitui a conversa. Antes o clique
+                    # encerrava tudo em silêncio; agora a persona recebe a escolha e o contexto.
+                    if (resposta and confirmacao and confirmacao.get("tipo") == "proposta"
+                            and _handler_acompanhamento_web):
+                        import threading as _th
+                        _th.Thread(
+                            target=_handler_acompanhamento_web,
+                            args=(dados.get('acao', ''), confirmacao, resposta),
+                            daemon=True,
+                        ).start()
                 elif dados.get('comando') == 'acompanhamento_cancelar':
                     from modulos import acompanhamentos
                     ok = acompanhamentos.cancelar(dados.get('id', ''))
