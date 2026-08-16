@@ -590,9 +590,13 @@ class _GeometriaJanela:
             # Um arquivo truncado ou uma janela quase invisível não pode estragar o boot.
             if not (380 <= largura <= 4000 and 520 <= altura <= 2400):
                 return padrao
-            return {"width": largura, "height": altura,
-                    "x": int(salvo["x"]) if salvo.get("x") is not None else None,
-                    "y": int(salvo["y"]) if salvo.get("y") is not None else None}
+            x = int(salvo["x"]) if salvo.get("x") is not None else None
+            y = int(salvo["y"]) if salvo.get("y") is not None else None
+            # O Windows move janelas minimizadas para -32000. Restaurar esse valor literalmente
+            # deixa a Web viva, mas invisível fora de todas as telas.
+            if (x is not None and x <= -30000) or (y is not None and y <= -30000):
+                x = y = None
+            return {"width": largura, "height": altura, "x": x, "y": y}
         except (OSError, ValueError, KeyError, TypeError):
             return padrao
 
@@ -607,8 +611,11 @@ class _GeometriaJanela:
             pass
 
     def mover(self, x, y):
+        x, y = int(x), int(y)
+        if x <= -30000 or y <= -30000:
+            return
         with self._lock:
-            self.dados.update(x=int(x), y=int(y))
+            self.dados.update(x=x, y=y)
             self._salvar()
 
     def redimensionar(self, width, height):

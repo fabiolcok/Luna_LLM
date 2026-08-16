@@ -21,6 +21,8 @@ assert.ok(main.includes('**janela_kwargs') &&
           'FALHA: posição e tamanho salvos não são restaurados no boot');
 assert.ok(main.includes('380 <= largura <= 4000') && main.includes('520 <= altura <= 2400'),
           'FALHA: geometria corrompida pode tornar a janela inutilizável');
+assert.ok(main.includes('x <= -30000') && main.includes('y <= -30000'),
+          'FALHA: posição especial de janela minimizada pode ser restaurada fora da tela');
 assert.ok(ignore.includes('modelos/janela_principal.json'),
           'FALHA: preferência pessoal da janela pode ir para o Git');
 
