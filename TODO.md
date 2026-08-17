@@ -20,7 +20,7 @@ definitiva. Itens daqui não estão automaticamente aprovados para commit.
     fase 2 pode registrar declarações explícitas de "zerei", "desisti" e opinião sobre o jogo.
 
 - [ ] **Validar contexto recente nas falas proativas.**
-  - Implementação atual, ainda local: o proativo recebe as duas últimas mensagens reais
+  - Implementação atual: o proativo recebe as duas últimas mensagens reais
     (`usuário → Luna`), limitadas a 350 caracteres cada.
   - Confirmar se isso melhora continuidade e sensibilidade sem fazer o 12B abandonar a tarefa,
     ressuscitar assunto encerrado ou forçar referência pessoal.
@@ -35,7 +35,7 @@ definitiva. Itens daqui não estão automaticamente aprovados para commit.
     radar ou notícia só porque os eventos aconteceram perto no tempo.
   - Se frequentemente faltar uma conexão importante, experimentar quatro mensagens
     (`usuário → Luna → usuário → Luna`) mantendo os mesmos limites.
-  - Antes de commitar, pedir a avaliação do usuário sobre os testes cotidianos.
+  - Pedir a avaliação do usuário depois de mais testes cotidianos antes de ampliar o contexto.
 
 ---
 
@@ -68,13 +68,10 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
 - [ ] **Devolver algum movimento à cara de medo.** Ela ficou totalmente estática quando o rosto
       voltou a ser kaomoji inteiro. Um tremor leve no `#rosto-txt` via CSS na classe `.medo`
       resolveria sem reabrir a discussão da boca.
-- [ ] **Trocar o `docs/luna-demo.gif` do README.** Ainda mostra a interface antiga, de antes da
-      presença — quem chega no repositório vê algo que não existe mais.
-
 ### Ferramental
 
-- [ ] **Unificar o runner de testes.** Hoje `node testes/rodar.js` roda **26** arquivos `.js` e
-      deixa **11** `.py` de fora. Quem roda o comando acha que cobriu tudo e não cobriu.
+- [ ] **Unificar o runner de testes.** Hoje `node testes/rodar.js` roda **27** arquivos `.js` e
+      deixa **13** `.py` de fora. Quem roda o comando acha que cobriu tudo e não cobriu.
       Detalhe pra quem for fazer: os testes Python precisam da raiz no `sys.path` —
       `python -m testes.testa_x` funciona, `python testes/testa_x.py` dá `ModuleNotFoundError`.
       O runner unificado tem que invocar do jeito certo e somar os dois lados num placar só.

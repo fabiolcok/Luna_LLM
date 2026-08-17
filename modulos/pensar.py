@@ -27,7 +27,7 @@ from modulos.memoria import (
     buscar_memoria_relevante
 )
 from modulos.falar import limpar_texto_para_voz, periodo_atual
-from modulos import obsidian, config_env, animes
+from modulos import obsidian, config_env, animes, briefing
 from modulos.turbollm_api import (
     erro_modelo_descarregado, listar_biblioteca,
     opcoes_pensamento, recarregar_modelo,
@@ -547,6 +547,7 @@ FUNCOES_DISPONIVEIS = {
     "alternar_mute": alternar_mute,
     "consultar_overwatch": consultar_overwatch,
     "consultar_animes": animes.consultar,
+    "briefing_diario": briefing.consultar,
     "consultar_jogo_steam": consultar_jogo_steam,
     "duvida_do_jogo": duvida_do_jogo,
     "ler_obsidian": _executar_ler_obsidian,
@@ -1869,6 +1870,25 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                         "Conte quais episódios saíram e, quando informado, quando sai o próximo. "
                         "Inclua TODOS os animes e números recebidos. A consulta FUNCIONOU: é PROIBIDO "
                         "alegar erro, lista incompleta ou falta de acesso. Seja breve e natural."
+                    ),
+                    responder_completo=responder_completo,
+                )
+                lembranca_oculta = ""
+            elif ferramenta_chamada and nome_funcao == "briefing_diario":
+                texto_resposta = _reescrever_como_luna(
+                    resultado_str,
+                    prompt_usuario,
+                    historico,
+                    max_tokens=min(max_tokens, 320),
+                    tarefa_documento=(
+                        "Monte um briefing pessoal CONVERSANDO, não um relatório. Escolha de dois a quatro "
+                        "destaques realmente úteis entre as fontes; não precisa citar seção vazia nem fonte "
+                        "isoladamente indisponível. Preserve nomes, datas, horários, episódios e valores. "
+                        "Não diga que algo acontece hoje se o dado só informa uma data futura. Termine com "
+                        "UMA pergunta curta e específica baseada em um dos destaques, oferecendo aprofundar "
+                        "aquele assunto. Clima é informação, não pretexto para cobrar foco, produtividade ou "
+                        "mandar o usuário sair de casa. Não use listas, títulos ou markdown e não invente "
+                        "recomendação que os dados não sustentem."
                     ),
                     responder_completo=responder_completo,
                 )

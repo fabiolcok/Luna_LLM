@@ -1166,6 +1166,14 @@ ferramentas_disponiveis = [
     {
         "type": "function",
         "function": {
+            "name": "briefing_diario",
+            "description": "Reúne o que há de relevante para o usuário agora: clima, próximos compromissos, animes recentes, acompanhamentos, novidades e promoções. Use quando ele perguntar 'o que tem pra mim hoje?', pedir um briefing/resumo do dia ou quiser saber de tudo que merece atenção agora.",
+            "parameters": {"type": "object", "properties": {}, "required": []}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "ler_agenda_google",
             "description": "Lê os eventos e compromissos agendados nos próximos 30 dias.",
             "parameters": {"type": "object", "properties": {}, "required": []}

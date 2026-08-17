@@ -8,6 +8,16 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 17/08/2026
+
+- 🌅 ✨ **“O que tem pra mim hoje?” virou um briefing de verdade.** A Luna reúne clima, agenda,
+  animes, acompanhamentos, novidades e promoções, escolhe poucos destaques e termina abrindo
+  espaço para continuar a conversa. Consultar o resumo não consome os avisos automáticos.
+
+- 🎮 ✨ **A rotina dos jogos começou a ganhar memória própria.** Aberturas, fechamentos e tempo
+  observado ficam registrados apenas neste PC. Em alguns marcos de uso, a reação ao abrir um
+  jogo pode considerar essa convivência sem criar uma segunda fala nem entupir o modelo de dados.
+
 ## 14/08/2026
 
 - 🧟 🐛 **A guarda de recursos reconhece o Python da própria Luna.** O processo `python3.12`

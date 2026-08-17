@@ -2227,9 +2227,13 @@ def _tarefa_monitorar_steam():
         print(f"[🎮 Steam: {nome} aberto]")
         _avisar_jogo_web(nome)
 
+        from modulos import rotina_jogos
+        rotina = rotina_jogos.registrar_abertura(appid, nome)
+        contexto_rotina = rotina_jogos.contexto_abertura(rotina)
         total, recente, ultima = _steam_dados_jogo(appid)
         _STEAM_SESSAO["horas_inicio"] = total   # p/ o marco de horas totais no fechamento
-        info = _steam_info_jogo(appid)
+        # Em marco de rotina, repetir a sinopse só disputa atenção com o fato novo.
+        info = "" if contexto_rotina else _steam_info_jogo(appid)
         partes = [f"Jogo: {nome}."]
         if total >= 1:
             # horas inteiras: '642.4h' vira '642 horas' (a voz lê número quebrado mal)
@@ -2243,14 +2247,28 @@ def _tarefa_monitorar_steam():
         if info:
             partes.append(f"Sobre o jogo: {info}")
         dados = " ".join(partes)
+        cor.cinza(
+            f"[📏 Steam abertura — dados {len(dados)}c≈{len(dados)//4}tok · "
+            f"rotina {len(contexto_rotina)}c≈{len(contexto_rotina)//4}tok]"
+        )
 
+        if contexto_rotina:
+            instrucao = (
+                f"{contexto_rotina}\nFaça desse marco o centro da reação e CITE o número exato de "
+                "aberturas. Use NO MÁXIMO um dado Steam de apoio (horas totais OU recentes). Não "
+                "conte os outros dados, não explique que existe um arquivo de rotina e não transforme "
+                "o marco em recorde, obsessão, vício ou número de vezes na vida dele."
+            )
+        else:
+            instrucao = (
+                "Puxe UM detalhe específico do jogo (história/premissa, prêmio ou modo — nunca algo "
+                "genérico) E encaixe um dado de tempo dele (horas totais ou recentes)."
+            )
         prompt = (
             f"O usuário acabou de abrir {nome} na Steam.\n"
-            f"DADOS: {dados}\n"
-            f"Comente a abertura da sessão de forma leve e amigável. Puxe UM detalhe ESPECÍFICO "
-            f"do jogo (a história/premissa, um prêmio ou um modo de jogo — nunca algo genérico) "
-            f"E encaixe um dado de tempo dele (horas totais ou recentes). {REGRA_PERSONA} "
-            f"(exceção: aqui pode usar até 3 frases pra caber o detalhe do jogo; +1 se precisar caber o aviso de RAM abaixo)."
+            f"DADOS DISPONÍVEIS: {dados}\n"
+            f"{instrucao} Comente a abertura de forma leve e amigável. {REGRA_PERSONA} "
+            f"Use até 2 frases (+1 somente se precisar caber o aviso de RAM abaixo)."
             f"{_dica_recursos_prompt(nome)}"
         )
         texto = _gerar_fala_proativa(prompt, f"steam_abriu_{nome}")
@@ -2263,6 +2281,8 @@ def _tarefa_monitorar_steam():
         conq_inicio = _STEAM_SESSAO["conq_inicio"]
 
         dur_min = int((time.time() - inicio) / 60) if inicio else 0
+        from modulos import rotina_jogos
+        rotina_jogos.registrar_fechamento(appid_antes, nome_antes, dur_min)
         det_fim = _steam_conquistas_detalhe(appid_antes)
         nomes_novos, platinou = [], False
         if conq_inicio is not None and det_fim:
