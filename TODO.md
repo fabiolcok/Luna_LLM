@@ -9,28 +9,6 @@ definitiva. Itens daqui não estão automaticamente aprovados para commit.
       guardar introdução nem comando; reação curta como “boa ideia, deixa anotado” deve salvar
       a fala anterior da conversa. A origem precisa distinguir web, Telegram e voz.
 
-- [ ] **Validar conclusão confirmada de tarefas no Obsidian.**
-  - O pedido localiza uma checkbox aberta, mas só troca `[ ]` por `[x]` depois de confirmação
-    por botão, texto, voz ou Telegram.
-  - Confirmar no uso real se o 12B identifica bem o item pedido e se ambiguidades são recusadas
-    em vez de escolher uma tarefa parecida por conta própria.
-
-- [ ] **Validar briefing diário reativo.**
-  - O pedido "o que tem pra mim hoje?" reúne clima, agenda, animes, acompanhamentos,
-    novidades e promoções sem consumir os avisos proativos.
-  - Confirmar no uso real se a seleção de dois a quatro destaques compensa a latência das
-    fontes externas e se a pergunta final gera uma continuação natural.
-
-- [ ] **Validar rotina estruturada de jogos — fases 1 e 2.**
-  - O monitor Steam registra abertura, fechamento e duração no arquivo local
-    `modelos/rotina_jogos.json`, sem criar uma segunda fala.
-  - A rotina só disputa espaço no prompt nos marcos de 3, 5, 10 e depois a cada 10 sessões;
-    nesses casos substitui a sinopse e permite apenas mais um dado Steam.
-  - Declarações explícitas de "zerei", "desisti", "estou jogando" e opiniões ficam vinculadas
-    ao jogo; gosto nunca é deduzido por horas, conquistas ou ausência. Listas pessoais importadas
-    só pelo nome ganham o appid automaticamente quando o jogo abrir.
-  - Confirmar se as reações ficam mais pessoais sem parecer contador mecânico ou ficha cadastral.
-
 - [ ] **Validar contexto recente nas falas proativas.**
   - Implementação atual: o proativo recebe as duas últimas mensagens reais
     (`usuário → Luna`), limitadas a 350 caracteres cada.
@@ -47,7 +25,8 @@ definitiva. Itens daqui não estão automaticamente aprovados para commit.
     radar ou notícia só porque os eventos aconteceram perto no tempo.
   - Se frequentemente faltar uma conexão importante, experimentar quatro mensagens
     (`usuário → Luna → usuário → Luna`) mantendo os mesmos limites.
-  - Pedir a avaliação do usuário depois de mais testes cotidianos antes de ampliar o contexto.
+  - Não há validação manual objetiva para uma fala isolada. Manter as duas mensagens atuais e
+    só reabrir o ajuste se aparecer um caso concreto de assunto ignorado ou conexão forçada.
 
 ---
 
@@ -63,7 +42,6 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
       prioridade, não por dúvida.
 - [ ] **Barge-in.** Interromper a fala dela falando por cima, em vez de esperar terminar.
 - [ ] **Radar de encomendas.** Mesma ideia do radar de promoções, para rastreio de pedidos.
-- [ ] **Backup automático no GitHub.**
 ### Presença (front — `templates/Index.html`)
 
 > Combine antes de mexer neste arquivo: são ~4100 linhas com CSS, HTML e todo o JS juntos, e é
