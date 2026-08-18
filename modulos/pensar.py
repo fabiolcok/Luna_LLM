@@ -451,12 +451,17 @@ def _executar_propor_acompanhamento(assunto="", perguntar_em=""):
 
 # Detecta "anota/salva/..." no começo da mensagem e extrai o conteúdo (texto ORIGINAL,
 # fiel — não a reprodução do roteador 4B, que mangla textos longos).
-_RE_INICIO_SALVAR = re.compile(r'^\s*(anota|salva|registra|guarda|arquiva|toma\s+nota|lembra(r)?(\s+que)?)\b', re.IGNORECASE)
+_RE_INICIO_SALVAR = re.compile(
+    r'^\s*(anota|salva|registra|guarda|arquiva|'
+    r'(escreve|grava|aponta|coloca)\w*(?=\s+(?:isso|a[íi]|aqui|pra\s+mim|nas?\s+notas?|no\s+obsidian))|'
+    r'toma\s+nota|lembra(r)?(\s+que)?)\b', re.IGNORECASE)
 # Intenção EXPLÍCITA de anotar (em qualquer lugar da fala) — usada como guard: o roteador
 # às vezes fira salvar_obsidian num comentário casual ('vou fazer a VM pendente'). Sem uma
 # destas palavras, não salva (avaliação 👎: salvou algo que já estava no perfil).
 _RE_INTENCAO_SALVAR = re.compile(
-    r'\b(anota\w*|salva\w*|registra\w*|guarda\w*|arquiva\w*|toma\s+nota|lembra\w*|'
+    r'\b(anota\w*|salva\w*|registra\w*|guarda\w*|arquiva\w*|'
+    r'(?:escreve|grava|aponta|coloca)\w*\s+(?:isso|a[íi]|aqui|pra\s+mim|nas?\s+notas?|no\s+obsidian)|'
+    r'toma\s+nota|lembra\w*|'
     r'anot[ae]|not[ae]\s+a[íi]|não\s+esque[çc]\w*|nao\s+esque[çc]\w*)\b', re.IGNORECASE)
 # Pergunta que se refere a uma anotação PESSOAL do usuário (posse). Quando o ler_obsidian
 # não acha nota relevante: se É pessoal → honesto ("não tenho isso anotado"); se NÃO é
@@ -482,9 +487,8 @@ def _origem_salvamento(responder_completo: bool) -> str:
     return anotacoes.origem(responder_completo, _presenca_pc.get())
 
 def _ultima_fala_do_historico(historico, prompt_atual) -> str:
-    """O que 'anota isso' referencia: a última fala substancial do histórico (dele OU da
-    Luna), ignorando o próprio comando atual."""
-    return anotacoes.ultima_fala(historico, prompt_atual)
+    """O que 'anota isso' referencia: a última troca substancial, sem o comando atual."""
+    return anotacoes.contexto_anterior(historico, prompt_atual)
 
 def _confirmar_salvamento(res, conteudo, prompt_usuario, historico, max_tokens, responder_completo):
     """Confirma um save de nota: salvou → a persona confirma COMENTANDO o assunto (rico),

@@ -62,7 +62,6 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
 - [ ] **Barge-in.** Interromper a fala dela falando por cima, em vez de esperar terminar.
 - [ ] **Radar de encomendas.** Mesma ideia do radar de promoções, para rastreio de pedidos.
 - [ ] **Backup automático no GitHub.**
-- [ ] **Testar a voz `af_nicole`** no Kokoro, pra comparar com a `jf_alpha` atual.
 ### Presença (front — `templates/Index.html`)
 
 > Combine antes de mexer neste arquivo: são ~4100 linhas com CSS, HTML e todo o JS juntos, e é

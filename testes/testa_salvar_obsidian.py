@@ -27,9 +27,24 @@ class TestSalvarObsidian(unittest.TestCase):
             {"role": "user", "content": "Como poderíamos melhorar isso?"},
             {"role": "assistant", "content": "Podemos criar um radar de encomendas por código de rastreio."},
         ]
-        anterior = anotacoes.ultima_fala(
+        anterior = anotacoes.contexto_anterior(
             historico, "boa ideia, deixa isso anotado por favor")
-        self.assertEqual(anterior, historico[-1]["content"])
+        self.assertEqual(
+            anterior,
+            "Ideia discutida:\nComo poderíamos melhorar isso?\n\n"
+            "Considerações:\nPodemos criar um radar de encomendas por código de rastreio.",
+        )
+
+    def test_adiamento_vago_continua_apontando_para_conversa(self):
+        self.assertTrue(anotacoes.pedido_anaforico(
+            "deixa anotado, vou ver isso mais pra frente"))
+        self.assertTrue(anotacoes.pedido_anaforico(
+            "entendi, então por agora, deixa anotado."))
+
+    def test_sinonimos_referenciais_apontam_para_conversa(self):
+        for pedido in ("escreve isso", "grava isso aí", "aponta isso", "coloca nas notas"):
+            with self.subTest(pedido=pedido):
+                self.assertTrue(anotacoes.pedido_anaforico(pedido))
 
     def test_mensagem_com_ideia_nova_nao_vira_referencia(self):
         self.assertFalse(anotacoes.pedido_anaforico(

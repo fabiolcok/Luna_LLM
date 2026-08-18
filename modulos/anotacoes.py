@@ -4,15 +4,19 @@ import re
 
 
 _RE_TIRA_COMANDO = re.compile(
-    r'^\s*(anota|salva|registra|guarda|arquiva|toma\s+nota|lembra(r)?(\s+que)?)\w*\s*'
+    r'^\s*(anota|salva|registra|guarda|arquiva|'
+    r'(escreve|grava|aponta|coloca)\w*(?=\s+(?:isso|a[íi]|aqui|pra\s+mim|nas?\s+notas?|no\s+obsidian))|'
+    r'toma\s+nota|lembra(r)?(\s+que)?)\w*\s*'
     r'(isso|a[íi]|aqui|essa\s+nota|pra\s+mim|no\s+obsidian)?\s*[:,\-–]?\s*', re.IGNORECASE)
 _RE_TITULO = re.compile(r'(?im)^\s*t[íi]tulo\s*:\s*(.+?)\s*$')
 _RE_CONTEUDO = re.compile(r'(?im)^\s*conte[uú]do(?:\s*:\s*|\s+)')
 _TOKENS_REFERENCIA = re.compile(
-    r'\b(beleza|blz|ok|okay|ent[ãa]o|obrigad\w*|valeu|vlw|favor|pfv|pf|'
+    r'\b(beleza|blz|ok|okay|entendi|ent[ãa]o|obrigad\w*|valeu|vlw|favor|pfv|pf|'
     r'boa|ideia|gostei|curti|perfeit[oa]|[óo]tim[oa]|massa|legal|bacana|excelente|'
     r'acho|pode|[ée]|eh|deixa|dexa|isso|aquilo|a[íi]|aqui|ess[ae]s?|'
+    r'vou|ver|olhar|pensar|decidir|resolver|fazer|depois|agora|mais|pra|frente|futuro|'
     r'anota\w*|anotad\w*|salva\w*|registra\w*|guarda\w*|guardad\w*|arquiva\w*|'
+    r'escreve\w*|grava\w*|aponta\w*|coloca\w*|notas?|'
     r'lembra\w*|toma|nota|not[ae]|pra|mim|no|na|nas|obsidian|por|de|o|a|e|um|uma)\b',
     re.IGNORECASE)
 
@@ -41,6 +45,26 @@ def ultima_fala(historico: list, prompt_atual: str) -> str:
         if len(conteudo) > 15 and conteudo.lower() != alvo:
             return conteudo
     return ''
+
+
+def contexto_anterior(historico: list, prompt_atual: str) -> str:
+    """Preserva a ideia e a resposta que um "deixa isso anotado" está referenciando."""
+    alvo = re.sub(r'\s+', ' ', (prompt_atual or '')).strip().lower()
+    mensagens = []
+    for mensagem in historico or []:
+        conteudo = re.sub(r'\s+', ' ', str(mensagem.get('content', ''))).strip()
+        if len(conteudo) > 15 and conteudo.lower() != alvo:
+            mensagens.append((mensagem.get('role'), conteudo))
+
+    if not mensagens:
+        return ''
+
+    papel, ultima = mensagens[-1]
+    if papel == "assistant":
+        for papel_anterior, conteudo_anterior in reversed(mensagens[:-1]):
+            if papel_anterior == "user":
+                return f"Ideia discutida:\n{conteudo_anterior}\n\nConsiderações:\n{ultima}"
+    return ultima
 
 
 def origem(responder_completo: bool, presenca_pc: bool) -> str:

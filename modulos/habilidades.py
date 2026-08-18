@@ -1312,7 +1312,7 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "salvar_obsidian",
-            "description": "Anota/salva um recado, ideia ou lembrete SEM data e hora marcadas nas notas do usuário (Obsidian) — sempre cria uma nota NOVA. Use quando ele disser 'anota', 'salva isso', 'registra', 'guarda', 'lembra que', 'toma nota' seguido do que guardar (ex: 'anota que preciso renovar o seguro'). Se for compromisso COM dia e hora, use adicionar_agenda. NÃO use para LER nota (isso é ler_obsidian). NÃO use para EDITAR nota existente (marcar como concluído, riscar item, alterar linha) — você NÃO consegue editar notas; nesse caso NÃO use ferramenta nenhuma e avise honestamente que não consegue.",
+            "description": "Anota/salva um recado, ideia ou lembrete SEM data e hora marcadas nas notas do usuário (Obsidian) — sempre cria uma nota NOVA. Use quando ele disser 'anota', 'salva isso', 'registra', 'guarda', 'escreve isso', 'grava isso', 'coloca nas notas', 'lembra que' ou 'toma nota' seguido do que guardar (ex: 'anota que preciso renovar o seguro'). 'Grava' ou 'escreve' sem referência a isto/notas não significa automaticamente salvar. Se for compromisso COM dia e hora, use adicionar_agenda. NÃO use para LER nota (isso é ler_obsidian). NÃO use para EDITAR nota existente (marcar como concluído, riscar item, alterar linha) — você NÃO consegue editar notas; nesse caso NÃO use ferramenta nenhuma e avise honestamente que não consegue.",
             "parameters": {
                 "type": "object",
                 "properties": {
