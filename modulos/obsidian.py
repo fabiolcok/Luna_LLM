@@ -184,6 +184,64 @@ def buscar_nota(assunto: str) -> str:
     return _limpar_md(bruto)
 
 
+def listar_tarefas_pendentes(assunto: str = "", limite: int = 30) -> str:
+    """Lista checkboxes abertas sem confundir notas comuns com tarefas.
+
+    Quando há assunto, restringe primeiro pelo nome da nota. Isso faz "contas pendentes"
+    consultar Contas mensais.md, em vez de catar a palavra "conta" pelo vault inteiro.
+    """
+    notas = _listar_notas()
+    if not notas:
+        return "SISTEMA: Não há notas acessíveis no Obsidian (vault vazio ou caminho errado)."
+
+    assunto = (assunto or "").strip()
+    alvo = set()
+    filtrar_itens = False
+    if assunto:
+        alvo = {_stem(p) for p in _norm(assunto).split()
+                if len(p) >= 3 and p not in _STOPWORDS and p not in {"pendente", "tarefa"}}
+        candidatas = []
+        for caminho in notas:
+            nome = {_stem(p) for p in _norm(os.path.splitext(os.path.basename(caminho))[0]).split()}
+            score = len(alvo & nome)
+            if score:
+                candidatas.append((score, caminho))
+        if candidatas:
+            melhor = max(score for score, _ in candidatas)
+            notas = [caminho for score, caminho in candidatas if score == melhor]
+        else:
+            # Sem nota de mesmo nome, só devolve checkbox cujo texto realmente case.
+            # Deixar todas passarem faria "projeto X" responder com contas e compras alheias.
+            filtrar_itens = True
+
+    itens = []
+    for caminho in notas:
+        try:
+            with open(caminho, encoding="utf-8") as arquivo:
+                linhas = arquivo.read().splitlines()
+        except Exception:
+            continue
+        abertos = []
+        for linha in linhas:
+            match = re.match(r'^\s*[-*]\s*\[\s*\]\s*(.+?)\s*$', linha)
+            if match:
+                item = match.group(1)
+                palavras_item = {_stem(p) for p in _norm(item).split() if len(p) >= 3}
+                if not filtrar_itens or alvo & palavras_item:
+                    abertos.append(item)
+        if abertos:
+            nome = os.path.splitext(os.path.basename(caminho))[0]
+            for item in abertos:
+                itens.append(f"- [{nome}] {item}")
+                if len(itens) >= limite:
+                    return "Tarefas abertas no Obsidian:\n" + "\n".join(itens) + "\n[restante omitido]"
+
+    if not itens:
+        detalhe = f" sobre '{assunto}'" if assunto else ""
+        return f"Nenhuma tarefa aberta encontrada no Obsidian{detalhe}."
+    return "Tarefas abertas no Obsidian:\n" + "\n".join(itens)
+
+
 # Pasta de ESCRITA da Luna. Ela só CRIA notas aqui — nunca edita nota existente,
 # nunca toca no perfil.md nem no resto do vault. É a "caixa de entrada" dela.
 _PASTA_INBOX = ("Luna", "Inbox")

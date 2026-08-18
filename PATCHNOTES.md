@@ -10,6 +10,15 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 17/08/2026
 
+- ✅ ✨ **“O que tenho pendente?” agora olha nos lugares certos.** A consulta reúne tarefas
+  abertas do Obsidian, compromissos futuros da agenda e acompanhamentos esperando desfecho,
+  mantendo cada categoria separada. Quando o pedido cita contas ou outro assunto específico,
+  a busca fica restrita à nota relacionada e ignora checkboxes já concluídas.
+
+- 💬 🔧 **Textos maiores ganharam espaço para respirar.** Respostas desenvolvidas no web e no
+  Telegram passam a separar ideias em parágrafos curtos. A caixa de escrita do web também aceita
+  várias linhas com `Shift+Enter` e cresce até um limite sem deformar a interface.
+
 - 🌅 ✨ **“O que tem pra mim hoje?” virou um briefing de verdade.** A Luna reúne clima, agenda,
   animes, acompanhamentos, novidades e promoções, escolhe poucos destaques e termina abrindo
   espaço para continuar a conversa. Consultar o resumo não consome os avisos automáticos.

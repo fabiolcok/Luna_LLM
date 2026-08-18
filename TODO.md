@@ -70,7 +70,7 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
       resolveria sem reabrir a discussão da boca.
 ### Ferramental
 
-- [ ] **Unificar o runner de testes.** Hoje `node testes/rodar.js` roda **27** arquivos `.js` e
+- [ ] **Unificar o runner de testes.** Hoje `node testes/rodar.js` roda **29** arquivos `.js` e
       deixa **13** `.py` de fora. Quem roda o comando acha que cobriu tudo e não cobriu.
       Detalhe pra quem for fazer: os testes Python precisam da raiz no `sys.path` —
       `python -m testes.testa_x` funciona, `python testes/testa_x.py` dá `ModuleNotFoundError`.

@@ -27,7 +27,7 @@ from modulos.memoria import (
     buscar_memoria_relevante
 )
 from modulos.falar import limpar_texto_para_voz, periodo_atual
-from modulos import obsidian, config_env, animes, briefing
+from modulos import obsidian, config_env, animes, briefing, pendencias
 from modulos.turbollm_api import (
     erro_modelo_descarregado, listar_biblioteca,
     opcoes_pensamento, recarregar_modelo,
@@ -548,6 +548,7 @@ FUNCOES_DISPONIVEIS = {
     "consultar_overwatch": consultar_overwatch,
     "consultar_animes": animes.consultar,
     "briefing_diario": briefing.consultar,
+    "consultar_pendencias": pendencias.consultar,
     "consultar_jogo_steam": consultar_jogo_steam,
     "duvida_do_jogo": duvida_do_jogo,
     "ler_obsidian": _executar_ler_obsidian,
@@ -821,7 +822,9 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         canal_hint = ("\n- CANAL DE TEXTO (Telegram): quando o assunto for de FATO profundo (uma ideia, "
                       "problema ou reflexão que ele quer explorar), pode se estender e desenvolver o raciocínio. "
                       "MAS recado, zoeira ou pergunta leve continua CURTO (1 a 3 frases) mesmo no texto — "
-                      "não transforme papo casual em textão.")
+                      "não transforme papo casual em textão. Se a resposta passar de um parágrafo, separe as "
+                      "ideias em blocos curtos com uma linha em branco; não entregue uma parede de texto. "
+                      "Use texto puro, sem títulos ou listas por enfeite.")
     else:
         canal_hint = ("\n- CANAL DE VOZ: sua resposta vira ÁUDIO falado. Seja concisa e direta "
                       "(1 a 3 frases); frase longa cansa no ouvido. Só estenda se ele pedir detalhe.")
@@ -1889,6 +1892,23 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                         "aquele assunto. Clima é informação, não pretexto para cobrar foco, produtividade ou "
                         "mandar o usuário sair de casa. Não use listas, títulos ou markdown e não invente "
                         "recomendação que os dados não sustentem."
+                    ),
+                    responder_completo=responder_completo,
+                )
+                lembranca_oculta = ""
+            elif ferramenta_chamada and nome_funcao == "consultar_pendencias":
+                texto_resposta = _reescrever_como_luna(
+                    resultado_str,
+                    prompt_usuario,
+                    historico,
+                    max_tokens=min(max_tokens, 320),
+                    tarefa_documento=(
+                        "Responda somente com o que continua aberto. Diferencie tarefa do Obsidian, "
+                        "compromisso futuro da agenda e acompanhamento esperando desfecho; não chame "
+                        "aniversário ou outro compromisso de tarefa atrasada. Omita categorias vazias e "
+                        "fontes isoladamente indisponíveis. Preserve nomes, datas e horários. Se a consulta "
+                        "foi específica, responda só sobre aquele assunto. Use blocos curtos no canal de "
+                        "texto e não invente urgência, prazo ou pendência ausente nos dados."
                     ),
                     responder_completo=responder_completo,
                 )

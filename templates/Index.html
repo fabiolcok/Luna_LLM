@@ -678,12 +678,14 @@
         }
 
         #luna-texto    { font-size: 1.15rem; line-height: 1.55; color: #b4f9f8; white-space: pre-wrap; }
-        #usuario-texto { font-size: 1.15rem; font-style: italic; color: #cfc9c2; }
+        #usuario-texto { font-size: 1.15rem; font-style: italic; color: #cfc9c2; white-space: pre-wrap; }
         /* Separa visualmente a zona de SAÍDA (Luna, em cima) da zona de ENTRADA (você, embaixo) */
         .zona-divisor { height: 1px; background: linear-gradient(to right, transparent, #3a3a5a, transparent);
                         margin: 18px 0 12px; }
         #texto-input-bloco { display: flex; gap: 8px; margin: 8px 0 4px; }
-        #texto-input { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid #3a3a5a;
+        #texto-input { flex: 1; min-height: 42px; max-height: 132px; padding: 10px 12px;
+                       border-radius: 10px; border: 1px solid #3a3a5a; resize: none;
+                       overflow-y: auto; font-family: inherit; line-height: 1.4;
                        background: #16161e; color: #cfc9c2; font-size: 1rem; outline: none; }
         #texto-input:focus { border-color: #bb9af7; }
         #texto-enviar { padding: 0 16px; border-radius: 10px; border: none; background: #bb9af7;
@@ -1987,7 +1989,7 @@
 
         <!-- Digitar em vez de falar: sem TTS, mesmas regras de tamanho do Telegram -->
         <div id="texto-input-bloco">
-            <input type="text" id="texto-input" placeholder="Digite aqui e aperte Enter…" maxlength="2000" autocomplete="off">
+            <textarea id="texto-input" rows="1" placeholder="Digite aqui · Shift+Enter pula linha…" maxlength="2000" autocomplete="off"></textarea>
             <button id="texto-enviar" title="Enviar">➤</button>
         </div>
 
@@ -4092,13 +4094,19 @@
 
         // --- Caixa de texto (digitar em vez de falar) ---
         const textoInput = document.getElementById('texto-input');
+        function ajustarAlturaTexto() {
+            textoInput.style.height = 'auto';
+            textoInput.style.height = Math.min(textoInput.scrollHeight || 42, 132) + 'px';
+        }
         function enviarTexto() {
             const txt = textoInput.value.trim();
             if (!txt) return;
             socket.send(JSON.stringify({ tipo: 'mensagem_texto', texto: txt }));
             textoInput.value = '';
+            ajustarAlturaTexto();
         }
         document.getElementById('texto-enviar').onclick = enviarTexto;
+        textoInput.addEventListener('input', ajustarAlturaTexto);
         textoInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarTexto(); }
         });

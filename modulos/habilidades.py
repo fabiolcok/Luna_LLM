@@ -1174,6 +1174,20 @@ ferramentas_disponiveis = [
     {
         "type": "function",
         "function": {
+            "name": "consultar_pendencias",
+            "description": "Consulta o que ainda está pendente. Use quando o usuário perguntar de forma ampla 'o que tenho pendente?' ou pedir tarefas/contas ainda abertas. Sem assunto, reúne checkboxes abertas do Obsidian, compromissos futuros da agenda e acompanhamentos esperando desfecho, distinguindo as categorias. Se ele especificar contas, projeto ou outro assunto, procure somente as tarefas abertas da nota relacionada. Para perguntar APENAS o que há na agenda, use ler_agenda_google.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "assunto": {"type": "string", "description": "Filtro opcional, como 'contas mensais' ou nome de um projeto. Vazio para consultar tudo."}
+                },
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "ler_agenda_google",
             "description": "Lê os eventos e compromissos agendados nos próximos 30 dias.",
             "parameters": {"type": "object", "properties": {}, "required": []}
