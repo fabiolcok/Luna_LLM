@@ -1311,6 +1311,23 @@ ferramentas_disponiveis = [
     {
         "type": "function",
         "function": {
+            "name": "registrar_rotina_jogo",
+            "description": "Registra uma declaração PESSOAL e EXPLÍCITA do usuário sobre um jogo: que está jogando, zerou/terminou, abandonou/desistiu ou qual é a opinião dele. Use somente quando o usuário declarar isso sobre um jogo identificável na mensagem ou no histórico. NÃO deduza gosto por horas jogadas, conquistas ou tempo sem abrir. NÃO use para perguntar preço/informações do jogo (use consultar_jogo_steam).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "nome_jogo": {"type": "string", "description": "Nome do jogo declarado pelo usuário; resolva pronomes apenas se o histórico deixar inequívoco."},
+                    "estado_jogo": {"type": "string", "enum": ["jogando", "zerado", "abandonado"], "description": "Estado explicitamente declarado. Deixe vazio se ele apenas deu uma opinião."},
+                    "platinado": {"type": "boolean", "description": "True se ele declarou que platinou; false se declarou que ainda não platinou, faltam conquistas ou quer/pretende platinar. Omita se não falou de platina."},
+                    "opiniao": {"type": "string", "description": "Opinião nas palavras do usuário, sem inventar ou completar. Deixe vazio se ele apenas declarou o estado."}
+                },
+                "required": ["nome_jogo"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "salvar_obsidian",
             "description": "Anota/salva um recado, ideia ou lembrete SEM data e hora marcadas nas notas do usuário (Obsidian) — sempre cria uma nota NOVA. Use quando ele disser 'anota', 'salva isso', 'registra', 'guarda', 'escreve isso', 'grava isso', 'coloca nas notas', 'lembra que' ou 'toma nota' seguido do que guardar (ex: 'anota que preciso renovar o seguro'). 'Grava' ou 'escreve' sem referência a isto/notas não significa automaticamente salvar. Se for compromisso COM dia e hora, use adicionar_agenda. NÃO use para LER nota (isso é ler_obsidian). NÃO use para EDITAR nota existente (marcar como concluído, riscar item, alterar linha) — você NÃO consegue editar notas; nesse caso NÃO use ferramenta nenhuma e avise honestamente que não consegue.",
             "parameters": {

@@ -2230,6 +2230,7 @@ def _tarefa_monitorar_steam():
         from modulos import rotina_jogos
         rotina = rotina_jogos.registrar_abertura(appid, nome)
         contexto_rotina = rotina_jogos.contexto_abertura(rotina)
+        contexto_pessoal = rotina_jogos.contexto_pessoal(rotina)
         total, recente, ultima = _steam_dados_jogo(appid)
         _STEAM_SESSAO["horas_inicio"] = total   # p/ o marco de horas totais no fechamento
         # Em marco de rotina, repetir a sinopse só disputa atenção com o fato novo.
@@ -2246,6 +2247,8 @@ def _tarefa_monitorar_steam():
                 partes.append(f"Faz uns {dias} dias que você não abria esse jogo.")
         if info:
             partes.append(f"Sobre o jogo: {info}")
+        if contexto_pessoal:
+            partes.append(f"Memória pessoal relevante: {contexto_pessoal}")
         dados = " ".join(partes)
         cor.cinza(
             f"[📏 Steam abertura — dados {len(dados)}c≈{len(dados)//4}tok · "
@@ -2262,7 +2265,9 @@ def _tarefa_monitorar_steam():
         else:
             instrucao = (
                 "Puxe UM detalhe específico do jogo (história/premissa, prêmio ou modo — nunca algo "
-                "genérico) E encaixe um dado de tempo dele (horas totais ou recentes)."
+                "genérico) E encaixe um dado de tempo dele (horas totais ou recentes). Se houver memória "
+                "pessoal relevante, ela pode substituir o detalhe genérico; use-a naturalmente, sem dizer "
+                "que consultou cadastro, arquivo ou memória e sem repetir a mesma informação à força."
             )
         prompt = (
             f"O usuário acabou de abrir {nome} na Steam.\n"

@@ -444,6 +444,12 @@ def _executar_salvar_obsidian(conteudo="", titulo="", origem=""):
     return obsidian.salvar_nota(conteudo, titulo or None, origem)
 
 
+def _executar_registrar_rotina_jogo(nome_jogo="", estado_jogo="", opiniao="", platinado=None):
+    from modulos import rotina_jogos
+    return rotina_jogos.registrar_declaracao(
+        nome_jogo, estado_jogo, opiniao, platinado=platinado)
+
+
 def _executar_propor_acompanhamento(assunto="", perguntar_em=""):
     from modulos import acompanhamentos
     origem = "pc" if _presenca_pc.get() else "telegram"
@@ -469,6 +475,9 @@ _RE_INTENCAO_SALVAR = re.compile(
 _RE_REF_NOTA_PESSOAL = re.compile(
     r'\b(anotei|salvei|guardei|minhas?\s+(notas?|anota\w*)|meu\s+obsidian|na\s+minha\s+nota|'
     r'que\s+eu\s+(salvei|anotei|guardei)|nas\s+minhas\s+anota\w*)\b', re.IGNORECASE)
+_RE_DECLARACAO_JOGO = re.compile(
+    r'\b(zerei|terminei|finalizei|platin\w*|desisti|abandonei|estou\s+jogando|comecei\s+a\s+jogar|'
+    r'gostei|curti|n[aã]o\s+gostei|n[aã]o\s+curti|achei)\b', re.IGNORECASE)
 def _conteudo_para_anotar(prompt):
     return anotacoes.dados_para_anotar(prompt)[0]
 
@@ -511,6 +520,7 @@ _CAPACIDADES_REATIVAS = (
     "que você manda no Telegram), acompanhar o desfecho de assuntos que você confirmar, "
     "verificar o clima, consultar episódios dos animes que você acompanha, mutar/desmutar o som, "
     "consultar suas stats do Overwatch, consultar jogos na Steam (preço, promoção e descrição), "
+    "lembrar estados e opiniões sobre jogos quando você os declarar explicitamente, "
     "gerar imagens e controlar o Firefox"
 )
 
@@ -549,6 +559,7 @@ FUNCOES_DISPONIVEIS = {
     "duvida_do_jogo": duvida_do_jogo,
     "ler_obsidian": _executar_ler_obsidian,
     "salvar_obsidian": _executar_salvar_obsidian,
+    "registrar_rotina_jogo": _executar_registrar_rotina_jogo,
     "propor_acompanhamento": _executar_propor_acompanhamento,
 }
 
@@ -1635,6 +1646,10 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 and not _RE_INTENCAO_SALVAR.search(prompt_usuario or "")):
             cor.vermelho("[⚠️ salvar_obsidian sem intenção de anotar — ignorado, respondendo normal]")
             _tool_calls = None
+        if (_tool_calls and _tool_calls[0].function.name == "registrar_rotina_jogo"
+                and not _RE_DECLARACAO_JOGO.search(prompt_usuario or "")):
+            cor.vermelho("[⚠️ rotina de jogo sem declaração explícita — ignorada]")
+            _tool_calls = None
         if _tool_calls and _tool_calls[0].function.name == "propor_acompanhamento":
             from modulos import acompanhamentos as _acomp
             if not _acomp.pode_propor(prompt_usuario or ""):
@@ -1725,6 +1740,9 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                             argumentos_dit["conteudo"] = _bruto
                         if _titulo:
                             argumentos_dit["titulo"] = _titulo
+                    if nome_funcao == "registrar_rotina_jogo" and argumentos_dit.get("opiniao"):
+                        # A classificação é do roteador; a opinião guardada é a frase REAL do usuário.
+                        argumentos_dit["opiniao"] = prompt_usuario.strip()
                     if argumentos_dit:
                         cor.amarelo(f"[Argumentos enviados: {argumentos_dit}]")
                     resultado_ferramenta = FUNCOES_DISPONIVEIS[nome_funcao](**argumentos_dit)
@@ -1743,6 +1761,22 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             # Router não chamou ferramenta — descarta o marcador do contrato e qualquer desvio.
             # EXCEÇÃO: no modo_memoria não há ferramentas — a resposta DIRETA do modelo (o JSON) É o resultado.
             resultado_ferramenta = (mensagem_modelo.content or "") if modo_memoria else ""
+            if not modo_memoria:
+                from modulos import rotina_jogos as _rotina_jogos
+                _declaracao = _rotina_jogos.detectar_declaracao(prompt_usuario)
+                if _declaracao:
+                    ferramenta_chamada = True
+                    inicio_ferramenta = time.time()
+                    nome_funcao = "registrar_rotina_jogo"
+                    argumentos_dit = _declaracao
+                    cor.amarelo("[🎮 Rotina: declaração explícita recuperada pela rede de segurança]")
+                    cor.amarelo(f"[Argumentos enviados: {argumentos_dit}]")
+                    resultado_ferramenta = _executar_registrar_rotina_jogo(**argumentos_dit)
+                    _log.info("Resultado (%s): %s", nome_funcao, resultado_ferramenta)
+                    lembranca_oculta = (
+                        f"\n[MEMÓRIA DA FERRAMENTA: A ferramenta {nome_funcao} retornou: "
+                        f"{resultado_ferramenta}]"
+                    )
 
         if modo_memoria:
             texto_resposta = str(resultado_ferramenta).strip()
@@ -1865,6 +1899,44 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 # assunto — rico, mas sem poder mentir (o save é fato, não invenção).
                 _cont_salvo = conteudo_salvo_turno or _conteudo_para_anotar(prompt_usuario)
                 texto_resposta = _confirmar_salvamento(resultado_str, _cont_salvo, prompt_usuario, historico, max_tokens, responder_completo)
+                lembranca_oculta = ""
+            elif ferramenta_chamada and nome_funcao == "registrar_rotina_jogo":
+                # O registro é fato decidido pelo Python. O 12B já transformou um sucesso real
+                # em "deu erro"; ele pode reagir ao conteúdo, mas não auditar a ferramenta.
+                if resultado_str.startswith("SISTEMA: rotina de "):
+                    _nome_real = re.match(r'^SISTEMA: rotina de (.+) atualizada \(', resultado_str)
+                    _nome = (_nome_real.group(1) if _nome_real
+                             else str(argumentos_dit.get("nome_jogo") or "jogo").strip())
+                    confirmacao = f"Registrei isso na rotina de {_nome}."
+                    if argumentos_dit.get("opiniao"):
+                        reacao = _reescrever_como_luna(
+                            prompt_usuario, prompt_usuario, historico, min(max_tokens, 140),
+                            tarefa_documento=(
+                                "O registro local JÁ FOI CONCLUÍDO COM SUCESSO e outra frase confirmará isso. "
+                                "Reaja somente à opinião ou motivo literal do usuário, em uma frase natural. "
+                                "Não invente dificuldade anterior, tempo sobrando, pendência, backlog, promessa, "
+                                "hábito ou motivo. Não mencione sistema, ferramenta, rotina, acesso ou registro."
+                            ),
+                            responder_completo=responder_completo,
+                        ).strip()
+                        if re.search(r'\b(n[aã]o\s+consegui|deu\s+erro|erro\s+no|n[aã]o\s+registr)',
+                                     reacao, re.IGNORECASE):
+                            reacao = ""
+                    elif argumentos_dit.get("platinado") is True:
+                        reacao = "Aí você não deixou nem as conquistas escaparem."
+                    elif argumentos_dit.get("platinado") is False:
+                        reacao = "A platina continua na mira."
+                    elif argumentos_dit.get("estado_jogo") == "zerado":
+                        reacao = "Esse entrou oficialmente na lista dos finalizados."
+                    elif argumentos_dit.get("estado_jogo") == "abandonado":
+                        reacao = "Esse fica na lista dos abandonados."
+                    elif argumentos_dit.get("estado_jogo") == "jogando":
+                        reacao = "Esse entrou na rotação."
+                    else:
+                        reacao = ""
+                    texto_resposta = confirmacao + (f" {reacao}" if reacao else "")
+                else:
+                    texto_resposta = "Não consegui registrar isso na rotina do jogo desta vez."
                 lembranca_oculta = ""
             elif ferramenta_chamada and nome_funcao == "propor_acompanhamento":
                 # A proposta é estado temporário, não um fato ocorrido nem memória de ferramenta.

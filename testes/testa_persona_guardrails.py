@@ -76,6 +76,12 @@ class TestaGuardrailsPersona(unittest.TestCase):
         self.assertIn("Sem relação direta, não conecte os assuntos", self.fonte)
         self.assertNotIn("PONTE FINAL OBRIGATÓRIA", self.fonte)
 
+    def test_registro_de_jogo_nao_deixa_persona_inventar_erro(self):
+        self.assertIn('nome_funcao == "registrar_rotina_jogo"', self.fonte)
+        self.assertIn("O registro local JÁ FOI CONCLUÍDO COM SUCESSO", self.fonte)
+        self.assertIn("Registrei isso na rotina de", self.fonte)
+        self.assertIn("Aí você não deixou nem as conquistas escaparem", self.fonte)
+
 
 if __name__ == "__main__":
     unittest.main()

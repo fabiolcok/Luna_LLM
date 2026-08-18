@@ -10,6 +10,11 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 17/08/2026
 
+- 🎮 ✨ **A rotina de jogos agora entende o que você conta sobre cada jogo.** Declarações
+  explícitas de que zerou, abandonou ou está jogando e opiniões ditas na conversa ficam no histórico
+  local daquele título. A Luna não deduz gosto por horas jogadas e só recebe esse contexto quando
+  o próprio jogo estiver envolvido.
+
 - 📝 🐛 **Anotações no Obsidian ficaram mais limpas.** Pedidos com `título:` e
   `conteúdo:` salvam somente a nota de verdade, sem levar junto a introdução nem o comando.
   Quando o pedido é “boa ideia, deixa anotado”, a Luna usa a fala anterior da conversa e também

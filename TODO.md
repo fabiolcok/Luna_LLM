@@ -21,13 +21,15 @@ definitiva. Itens daqui não estão automaticamente aprovados para commit.
   - Confirmar no uso real se a seleção de dois a quatro destaques compensa a latência das
     fontes externas e se a pergunta final gera uma continuação natural.
 
-- [ ] **Validar rotina estruturada de jogos — fase 1.**
+- [ ] **Validar rotina estruturada de jogos — fases 1 e 2.**
   - O monitor Steam registra abertura, fechamento e duração no arquivo local
     `modelos/rotina_jogos.json`, sem criar uma segunda fala.
   - A rotina só disputa espaço no prompt nos marcos de 3, 5, 10 e depois a cada 10 sessões;
     nesses casos substitui a sinopse e permite apenas mais um dado Steam.
-  - Confirmar se as reações ficam mais pessoais sem parecer contador mecânico. Se funcionar,
-    fase 2 pode registrar declarações explícitas de "zerei", "desisti" e opinião sobre o jogo.
+  - Declarações explícitas de "zerei", "desisti", "estou jogando" e opiniões ficam vinculadas
+    ao jogo; gosto nunca é deduzido por horas, conquistas ou ausência. Listas pessoais importadas
+    só pelo nome ganham o appid automaticamente quando o jogo abrir.
+  - Confirmar se as reações ficam mais pessoais sem parecer contador mecânico ou ficha cadastral.
 
 - [ ] **Validar contexto recente nas falas proativas.**
   - Implementação atual: o proativo recebe as duas últimas mensagens reais
