@@ -6,6 +6,16 @@ node testes/rodar.js
 
 Sem dependência. Só Node. ~2 segundos.
 
+Para validar também o backend Python antes de fechar uma mudança maior:
+
+```bash
+node testes/rodar_tudo.js
+```
+
+Esse segundo comando roda primeiro a suíte rápida acima e depois todos os `testa_*.py` como
+módulos. Ele procura o Python do `venv` e tem fallback para o launcher do sistema. As bancadas
+que usam modelo real ficam de fora de propósito.
+
 ## Por que existem
 
 O `templates/Index.html` tem ~4100 linhas com CSS, HTML e todo o JS da interface num arquivo só.

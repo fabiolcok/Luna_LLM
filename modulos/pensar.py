@@ -27,7 +27,7 @@ from modulos.memoria import (
     buscar_memoria_relevante
 )
 from modulos.falar import limpar_texto_para_voz, periodo_atual
-from modulos import obsidian, config_env, animes, briefing, pendencias, conclusao_tarefas
+from modulos import obsidian, config_env, animes, briefing, pendencias, conclusao_tarefas, anotacoes
 from modulos.turbollm_api import (
     erro_modelo_descarregado, listar_biblioteca,
     opcoes_pensamento, recarregar_modelo,
@@ -464,36 +464,27 @@ _RE_INTENCAO_SALVAR = re.compile(
 _RE_REF_NOTA_PESSOAL = re.compile(
     r'\b(anotei|salvei|guardei|minhas?\s+(notas?|anota\w*)|meu\s+obsidian|na\s+minha\s+nota|'
     r'que\s+eu\s+(salvei|anotei|guardei)|nas\s+minhas\s+anota\w*)\b', re.IGNORECASE)
-_RE_TIRA_CMD_SALVAR = re.compile(
-    r'^\s*(anota|salva|registra|guarda|arquiva|toma\s+nota|lembra(r)?(\s+que)?)\w*\s*'
-    r'(isso|a[íi]|aqui|essa\s+nota|pra\s+mim|no\s+obsidian)?\s*[:,\-–]?\s*', re.IGNORECASE)
 def _conteudo_para_anotar(prompt):
-    return _RE_TIRA_CMD_SALVAR.sub('', prompt or '').strip()
+    return anotacoes.dados_para_anotar(prompt)[0]
 
-# Tokens de um pedido de salvar SEM conteúdo próprio (comando + cortesia + referência).
-# Se sobra só isso, o "isso"/"aí" é anafórico: aponta pra fala ANTERIOR, não pro comando.
-_TOKENS_COMANDO_SALVAR = re.compile(
-    r'\b(beleza|blz|ok|okay|ent[ãa]o|obrigad\w*|valeu|vlw|favor|pfv|pf|'
-    r'deixa|dexa|isso|aquilo|a[íi]|aqui|ess[ae]s?|'
-    r'anota\w*|anotad\w*|salva\w*|registra\w*|guarda\w*|guardad\w*|arquiva\w*|'
-    r'lembra\w*|toma|nota|not[ae]|pra|mim|no|na|nas|obsidian|por|de|o|a|e|um|uma)\b',
-    re.IGNORECASE)
+
+def _dados_para_anotar(prompt: str, titulo_modelo: str = "") -> tuple[str, str]:
+    """Extrai o envelope humano sem resumir nem parafrasear o conteúdo real."""
+    return anotacoes.dados_para_anotar(prompt, titulo_modelo)
 
 def _so_comando_salvar(prompt: str) -> bool:
-    """True se o pedido é SÓ comando+cortesia+referência (ex: 'deixa isso anotado por favor')
+    """True se o pedido é só reação/comando/referência (ex: 'boa ideia, deixa anotado')
     — aí o conteúdo real está na mensagem anterior, não no comando."""
-    resto = _TOKENS_COMANDO_SALVAR.sub('', prompt or '')
-    return not re.sub(r'[\s,.\-–!?:;]+', '', resto)
+    return anotacoes.pedido_anaforico(prompt)
+
+
+def _origem_salvamento(responder_completo: bool) -> str:
+    return anotacoes.origem(responder_completo, _presenca_pc.get())
 
 def _ultima_fala_do_historico(historico, prompt_atual) -> str:
     """O que 'anota isso' referencia: a última fala substancial do histórico (dele OU da
     Luna), ignorando o próprio comando atual."""
-    alvo = re.sub(r'\s+', ' ', (prompt_atual or '')).strip().lower()
-    for msg in reversed(historico or []):
-        c = re.sub(r'\s+', ' ', str(msg.get('content', ''))).strip()
-        if len(c) > 15 and c.lower() != alvo:
-            return c
-    return ''
+    return anotacoes.ultima_fala(historico, prompt_atual)
 
 def _confirmar_salvamento(res, conteudo, prompt_usuario, historico, max_tokens, responder_completo):
     """Confirma um save de nota: salvou → a persona confirma COMENTANDO o assunto (rico),
@@ -1633,6 +1624,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             print(f"\n\033[90m[🧠 LÓGICA INTERNA]:\n{raciocinio.strip()}\033[0m\n")
 
         _tool_calls = getattr(mensagem_modelo, 'tool_calls', None)
+        conteudo_salvo_turno = ""
         # Guard anti-salvamento indevido: se o roteador firou salvar_obsidian num comentário
         # casual (sem intenção explícita de anotar), ignora a ferramenta e responde normal.
         if (_tool_calls and _tool_calls[0].function.name == "salvar_obsidian"
@@ -1713,18 +1705,22 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                     if nome_funcao == "concluir_tarefa_obsidian":
                         argumentos_dit["origem"] = "telegram" if not _presenca_pc.get() else "pc"
                     if nome_funcao == "salvar_obsidian":
-                        argumentos_dit["origem"] = "telegram" if responder_completo else "voz"
+                        argumentos_dit["origem"] = _origem_salvamento(responder_completo)
                         # Usa o texto ORIGINAL do usuário como conteúdo (fiel), não a
                         # reprodução do roteador — que trunca/parafraseia textos longos.
-                        _bruto = _conteudo_para_anotar(prompt_usuario)
+                        _bruto, _titulo = _dados_para_anotar(
+                            prompt_usuario, argumentos_dit.get("titulo", ""))
                         # "deixa isso anotado" / "anota aí": o comando não tem conteúdo próprio —
                         # o "isso" aponta pra fala ANTERIOR (senão salva o eco do comando).
                         if _so_comando_salvar(prompt_usuario):
                             _ant = _ultima_fala_do_historico(historico, prompt_usuario)
                             if _ant:
                                 _bruto = _ant
+                        conteudo_salvo_turno = _bruto
                         if len(_bruto) >= 3:
                             argumentos_dit["conteudo"] = _bruto
+                        if _titulo:
+                            argumentos_dit["titulo"] = _titulo
                     if argumentos_dit:
                         cor.amarelo(f"[Argumentos enviados: {argumentos_dit}]")
                     resultado_ferramenta = FUNCOES_DISPONIVEIS[nome_funcao](**argumentos_dit)
@@ -1787,8 +1783,14 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             if (not ferramenta_chamada) and (not modo_memoria) and _RE_INICIO_SALVAR.match(prompt_usuario or ""):
                 # O usuário claramente pediu pra ANOTAR, mas o roteador não firou salvar_obsidian
                 # (comum com texto longo). Salva na mão, com o texto fiel, sem depender do 4B.
-                _cont = _conteudo_para_anotar(prompt_usuario)
-                _res = obsidian.salvar_nota(_cont, origem=("telegram" if responder_completo else "voz")) if len(_cont) >= 3 else "SISTEMA: Erro"
+                _cont, _titulo = _dados_para_anotar(prompt_usuario)
+                if _so_comando_salvar(prompt_usuario):
+                    _ant = _ultima_fala_do_historico(historico, prompt_usuario)
+                    if _ant:
+                        _cont = _ant
+                _res = (obsidian.salvar_nota(_cont, _titulo or None,
+                                             origem=_origem_salvamento(responder_completo))
+                        if len(_cont) >= 3 else "SISTEMA: Erro")
                 cor.amarelo("[📝 Obsidian: salvo pela rede de segurança (roteador não firou)]")
                 texto_resposta = _confirmar_salvamento(_res, _cont, prompt_usuario, historico, max_tokens, responder_completo)
                 lembranca_oculta = ""
@@ -1857,7 +1859,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             elif ferramenta_chamada and nome_funcao == "salvar_obsidian":
                 # O save já aconteceu (determinístico). A persona confirma COMENTANDO o
                 # assunto — rico, mas sem poder mentir (o save é fato, não invenção).
-                _cont_salvo = _conteudo_para_anotar(prompt_usuario)
+                _cont_salvo = conteudo_salvo_turno or _conteudo_para_anotar(prompt_usuario)
                 texto_resposta = _confirmar_salvamento(resultado_str, _cont_salvo, prompt_usuario, historico, max_tokens, responder_completo)
                 lembranca_oculta = ""
             elif ferramenta_chamada and nome_funcao == "propor_acompanhamento":

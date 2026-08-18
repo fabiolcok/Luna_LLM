@@ -5,6 +5,10 @@ definitiva. Itens daqui não estão automaticamente aprovados para commit.
 
 ## Em teste
 
+- [ ] **Validar limpeza do `salvar_obsidian`.** Mensagens com `título:`/`conteúdo:` não devem
+      guardar introdução nem comando; reação curta como “boa ideia, deixa anotado” deve salvar
+      a fala anterior da conversa. A origem precisa distinguir web, Telegram e voz.
+
 - [ ] **Validar conclusão confirmada de tarefas no Obsidian.**
   - O pedido localiza uma checkbox aberta, mas só troca `[ ]` por `[x]` depois de confirmação
     por botão, texto, voz ou Telegram.
@@ -59,8 +63,6 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
 - [ ] **Radar de encomendas.** Mesma ideia do radar de promoções, para rastreio de pedidos.
 - [ ] **Backup automático no GitHub.**
 - [ ] **Testar a voz `af_nicole`** no Kokoro, pra comparar com a `jf_alpha` atual.
-- [ ] **Limpar o eco do `salvar_obsidian`** — ela repete o conteúdo depois de salvar.
-
 ### Presença (front — `templates/Index.html`)
 
 > Combine antes de mexer neste arquivo: são ~4100 linhas com CSS, HTML e todo o JS juntos, e é
@@ -72,14 +74,6 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
 - [ ] **Devolver algum movimento à cara de medo.** Ela ficou totalmente estática quando o rosto
       voltou a ser kaomoji inteiro. Um tremor leve no `#rosto-txt` via CSS na classe `.medo`
       resolveria sem reabrir a discussão da boca.
-### Ferramental
-
-- [ ] **Unificar o runner de testes.** Hoje `node testes/rodar.js` roda **30** arquivos `.js` e
-      deixa **13** `.py` de fora. Quem roda o comando acha que cobriu tudo e não cobriu.
-      Detalhe pra quem for fazer: os testes Python precisam da raiz no `sys.path` —
-      `python -m testes.testa_x` funciona, `python testes/testa_x.py` dá `ModuleNotFoundError`.
-      O runner unificado tem que invocar do jeito certo e somar os dois lados num placar só.
-
 ---
 
 ## Decidido NÃO fazer

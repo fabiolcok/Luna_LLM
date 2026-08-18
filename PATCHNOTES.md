@@ -10,6 +10,14 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 17/08/2026
 
+- 📝 🐛 **Anotações no Obsidian ficaram mais limpas.** Pedidos com `título:` e
+  `conteúdo:` salvam somente a nota de verdade, sem levar junto a introdução nem o comando.
+  Quando o pedido é “boa ideia, deixa anotado”, a Luna usa a fala anterior da conversa e também
+  registra corretamente se o pedido veio do web, da voz ou do Telegram.
+
+- 🧪 🔧 **Os testes ganharam uma revisão completa em um comando.** O runner completo
+  valida interface e backend juntos, mantendo o teste rápido da presença separado para o dia a dia.
+
 - ☑️ ✨ **A Luna agora conclui tarefas no Obsidian com confirmação.** Pedidos para marcar uma
   checkbox como feita ou uma conta como paga localizam a linha exata e aguardam um “sim” por
   botão, texto, voz ou Telegram antes de trocar `[ ]` por `[x]`. Ambiguidades, decisões vencidas

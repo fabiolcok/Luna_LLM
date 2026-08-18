@@ -60,11 +60,13 @@ class TestaGuardrailsPersona(unittest.TestCase):
 
     def test_mudanca_de_ideia_nao_vira_defeito(self):
         self.assertIn("mudanca_ideia_explicita", self.fonte)
-        self.assertIn("não como incoerência, falha, promessa quebrada ou procrastinação", self.fonte)
+        self.assertIn("Trate a escolha atual como escolha", self.fonte)
+        self.assertIn("como incoerência, falha, promessa quebrada ou procrastinação", self.fonte)
 
     def test_contradicao_declarada_fica_curta(self):
         self.assertIn("contradicao_declarada", self.fonte)
-        self.assertIn("o centro de UMA frase curta e irônica", self.fonte)
+        self.assertIn("Faça dela o centro de UMA frase curta", self.fonte)
+        self.assertIn("irônica, reutilizando os detalhes e a escala", self.fonte)
 
     def test_prioridade_proativa_fica_no_fim_para_modelo_menor(self):
         self.assertIn("PRIORIDADE FINAL OBRIGATÓRIA", self.fonte)
