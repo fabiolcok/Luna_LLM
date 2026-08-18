@@ -242,6 +242,46 @@ def listar_tarefas_pendentes(assunto: str = "", limite: int = 30) -> str:
     return "Tarefas abertas no Obsidian:\n" + "\n".join(itens)
 
 
+def encontrar_tarefas_abertas(tarefa: str, nota: str = "") -> list[dict]:
+    """Candidatas estruturadas para uma edição posterior e confirmada."""
+    termos = {_stem(p) for p in _norm(tarefa).split()
+              if len(p) >= 3 and p not in _STOPWORDS
+              and p not in {"marcar", "marca", "pagar", "pago", "paga", "concluir", "concluido"}}
+    filtro_nota = {_stem(p) for p in _norm(nota).split()
+                   if len(p) >= 3 and p not in _STOPWORDS}
+    candidatas = []
+    for caminho in _listar_notas():
+        nome = os.path.splitext(os.path.basename(caminho))[0]
+        palavras_nome = {_stem(p) for p in _norm(nome).split() if len(p) >= 3}
+        if filtro_nota and not (filtro_nota & palavras_nome):
+            continue
+        try:
+            with open(caminho, encoding="utf-8") as arquivo:
+                linhas = arquivo.read().splitlines()
+        except Exception:
+            continue
+        for numero, linha in enumerate(linhas, start=1):
+            match = re.match(r'^\s*[-*]\s*\[\s*\]\s*(.+?)\s*$', linha)
+            if not match:
+                continue
+            texto = match.group(1)
+            palavras = {_stem(p) for p in _norm(texto).split() if len(p) >= 3}
+            exato = bool(_norm(tarefa) and _norm(tarefa) in _norm(texto))
+            score = (100 if exato else 0) + len(termos & palavras)
+            if score <= 0:
+                continue
+            candidatas.append({
+                "caminho": os.path.relpath(caminho, _VAULT),
+                "nota": nome,
+                "linha": numero,
+                "texto": texto,
+                "original": linha,
+                "score": score,
+            })
+    candidatas.sort(key=lambda item: (-item["score"], item["nota"].casefold(), item["linha"]))
+    return candidatas
+
+
 # Pasta de ESCRITA da Luna. Ela só CRIA notas aqui — nunca edita nota existente,
 # nunca toca no perfil.md nem no resto do vault. É a "caixa de entrada" dela.
 _PASTA_INBOX = ("Luna", "Inbox")

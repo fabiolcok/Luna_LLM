@@ -5,6 +5,12 @@ definitiva. Itens daqui não estão automaticamente aprovados para commit.
 
 ## Em teste
 
+- [ ] **Validar conclusão confirmada de tarefas no Obsidian.**
+  - O pedido localiza uma checkbox aberta, mas só troca `[ ]` por `[x]` depois de confirmação
+    por botão, texto, voz ou Telegram.
+  - Confirmar no uso real se o 12B identifica bem o item pedido e se ambiguidades são recusadas
+    em vez de escolher uma tarefa parecida por conta própria.
+
 - [ ] **Validar briefing diário reativo.**
   - O pedido "o que tem pra mim hoje?" reúne clima, agenda, animes, acompanhamentos,
     novidades e promoções sem consumir os avisos proativos.
@@ -46,8 +52,6 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
 
 ### Luna (Python)
 
-- [ ] **Marcar item como concluído no Obsidian.** O usuário pediu explicitamente. Hoje ela lê e
-      escreve nota, mas não fecha tarefa.
 - [ ] **Introspecção nível 3 — ela ler o próprio código.** Via `inspect.getsource`, pra responder
       "como você faz X?" olhando a função de verdade. O desenho já foi discutido; parou por
       prioridade, não por dúvida.
@@ -70,7 +74,7 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
       resolveria sem reabrir a discussão da boca.
 ### Ferramental
 
-- [ ] **Unificar o runner de testes.** Hoje `node testes/rodar.js` roda **29** arquivos `.js` e
+- [ ] **Unificar o runner de testes.** Hoje `node testes/rodar.js` roda **30** arquivos `.js` e
       deixa **13** `.py` de fora. Quem roda o comando acha que cobriu tudo e não cobriu.
       Detalhe pra quem for fazer: os testes Python precisam da raiz no `sys.path` —
       `python -m testes.testa_x` funciona, `python testes/testa_x.py` dá `ModuleNotFoundError`.

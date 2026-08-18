@@ -1188,6 +1188,21 @@ ferramentas_disponiveis = [
     {
         "type": "function",
         "function": {
+            "name": "concluir_tarefa_obsidian",
+            "description": "PREPARA, mas ainda não executa, a conclusão de uma tarefa checkbox existente no Obsidian. Use quando o usuário pedir para marcar, riscar, concluir ou dar como paga/feita uma tarefa já anotada (ex: 'marca a parcela do carro como paga'). A ferramenta localiza o item e pede confirmação; nunca diga que concluiu antes do próximo sim do usuário. Para criar nota nova use salvar_obsidian; para apenas consultar use consultar_pendencias ou ler_obsidian.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "tarefa": {"type": "string", "description": "Texto identificador da tarefa, sem inventar detalhes."},
+                    "nota": {"type": "string", "description": "Nome da nota se o usuário informou; deixe vazio caso contrário."}
+                },
+                "required": ["tarefa"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "ler_agenda_google",
             "description": "Lê os eventos e compromissos agendados nos próximos 30 dias.",
             "parameters": {"type": "object", "properties": {}, "required": []}

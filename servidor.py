@@ -48,6 +48,7 @@ _clientes      = set()
 _clientes_lock = threading.Lock()
 _callback_interrupcao = None
 _handler_acompanhamento_web = None
+_handler_conclusao_web = None
 _ultima_fala_usuario = "Aguardando áudio..."
 _ultima_fala_luna    = "Zzz... dormindo."
 _ultimo_pensamento   = ""
@@ -155,6 +156,11 @@ def registrar_handler_acompanhamento_web(fn):
     """Entrega decisões dos botões ao fluxo de conversa sem acoplar servidor.py ao main.py."""
     global _handler_acompanhamento_web
     _handler_acompanhamento_web = fn
+
+def registrar_handler_conclusao_web(fn):
+    """Entrega confirmação de checkbox ao fluxo visual sem deixar o servidor editar notas."""
+    global _handler_conclusao_web
+    _handler_conclusao_web = fn
 
 def sincronizar_config(chave: str, valor):
     """Atualiza o estado de config e faz broadcast sem chamar os handlers Python."""
@@ -350,9 +356,15 @@ def notificar_memoria(n=None):
 def _acompanhamentos_estado() -> dict:
     try:
         from modulos import acompanhamentos
-        return acompanhamentos.estado_interface()
+        estado = acompanhamentos.estado_interface()
     except Exception:
-        return {"confirmacao": None, "ativos": []}
+        estado = {"confirmacao": None, "ativos": []}
+    try:
+        from modulos import conclusao_tarefas
+        estado["conclusao_tarefa"] = conclusao_tarefas.estado_interface().get("confirmacao")
+    except Exception:
+        estado["conclusao_tarefa"] = None
+    return estado
 
 
 def notificar_acompanhamentos():
@@ -544,6 +556,21 @@ def websocket(ws):
                                                   else "Esse acompanhamento não existe mais.")},
                                        ensure_ascii=False))
                     notificar_acompanhamentos()
+                elif dados.get('comando') == 'conclusao_tarefa_acao':
+                    from modulos import conclusao_tarefas
+                    confirmacao = conclusao_tarefas.estado_interface().get("confirmacao")
+                    resposta = conclusao_tarefas.resolver(dados.get('acao', ''), dados.get('id', ''))
+                    ws.send(json.dumps({"tipo": "acompanhamento_feedback",
+                                        "texto": resposta or "Essa decisão já expirou."},
+                                       ensure_ascii=False))
+                    notificar_acompanhamentos()
+                    if resposta and confirmacao and _handler_conclusao_web:
+                        import threading as _th
+                        _th.Thread(
+                            target=_handler_conclusao_web,
+                            args=(dados.get('acao', ''), confirmacao, resposta),
+                            daemon=True,
+                        ).start()
                 elif dados.get('config'):
                     _aplicar_config(dados)
     except Exception:

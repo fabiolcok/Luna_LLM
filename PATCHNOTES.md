@@ -10,6 +10,11 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 17/08/2026
 
+- ☑️ ✨ **A Luna agora conclui tarefas no Obsidian com confirmação.** Pedidos para marcar uma
+  checkbox como feita ou uma conta como paga localizam a linha exata e aguardam um “sim” por
+  botão, texto, voz ou Telegram antes de trocar `[ ]` por `[x]`. Ambiguidades, decisões vencidas
+  e notas alteradas durante a espera são recusadas sem mexer no arquivo.
+
 - ✅ ✨ **“O que tenho pendente?” agora olha nos lugares certos.** A consulta reúne tarefas
   abertas do Obsidian, compromissos futuros da agenda e acompanhamentos esperando desfecho,
   mantendo cada categoria separada. Quando o pedido cita contas ou outro assunto específico,

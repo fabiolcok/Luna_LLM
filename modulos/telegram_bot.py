@@ -67,8 +67,9 @@ def iniciar_bot_telegram():
         import servidor as _srv
         import modelos.cores as cor
         try:
-            from modulos import acompanhamentos
-            resposta_direta = acompanhamentos.interceptar_resposta(texto)
+            from modulos import acompanhamentos, conclusao_tarefas
+            resposta_direta = (conclusao_tarefas.interceptar_resposta(texto)
+                               or acompanhamentos.interceptar_resposta(texto))
             if resposta_direta:
                 _historico_telegram.extend([
                     {"role": "user", "content": texto},
@@ -77,8 +78,8 @@ def iniciar_bot_telegram():
                 if len(_historico_telegram) > 12:
                     del _historico_telegram[:-12]
                 bot.send_message(TELEGRAM_CHAT_ID, resposta_direta)
-                cor.ciano(f"[📱 Telegram Luna acompanhamento] {resposta_direta}")
-                _log.info(f"[Telegram] Luna [acompanhamento]: {resposta_direta}")
+                cor.ciano(f"[📱 Telegram Luna confirmação] {resposta_direta}")
+                _log.info(f"[Telegram] Luna [confirmação]: {resposta_direta}")
                 return
             from modulos.pensar import (gerar_resposta, obter_e_limpar_imagem_pendente,
                                         obter_e_limpar_kaomoji)

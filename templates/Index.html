@@ -4114,12 +4114,12 @@
         // --- Acompanhamentos: o mesmo id é resolvido por botão, voz ou texto ---
         let acompanhamentoEstado = { confirmacao: null, ativos: [] };
 
-        function botaoAcompanhamento(rotulo, acao, id, secundario) {
+        function botaoAcompanhamento(rotulo, acao, id, secundario, comando) {
             const btn = document.createElement('button');
             btn.className = 'acomp-btn' + (secundario ? ' secundario' : '');
             btn.textContent = rotulo;
             btn.onclick = () => socket.send(JSON.stringify({
-                comando: 'acompanhamento_acao', acao: acao, id: id
+                comando: comando || 'acompanhamento_acao', acao: acao, id: id
             }));
             return btn;
         }
@@ -4139,27 +4139,41 @@
             const assunto = document.getElementById('acompanhamento-assunto');
             const quando = document.getElementById('acompanhamento-quando');
             const acoes = document.getElementById('acompanhamento-acoes');
-            const conf = acompanhamentoEstado.confirmacao;
+            // A confirmação de edição tem prioridade no único card; o acompanhamento
+            // continua guardado e reaparece assim que a decisão da nota for resolvida.
+            const confTarefa = acompanhamentoEstado.conclusao_tarefa;
+            const conf = confTarefa || acompanhamentoEstado.confirmacao;
             acoes.innerHTML = '';
             if (!conf) {
                 card.classList.remove('ativo');
             } else {
                 card.classList.add('ativo');
-                assunto.textContent = conf.assunto || '';
-                const sugestao = quandoAcompanhamento(conf.perguntar_em);
-                quando.textContent = conf.tipo === 'proposta'
-                    ? ('Nada será salvo até você confirmar.' + (sugestao ? ' Sugestão: ' + sugestao + '.' : ''))
-                    : 'O que aconteceu com esse assunto?';
-                if (conf.tipo === 'proposta') {
-                    titulo.textContent = 'Acompanhar resultado?';
-                    acoes.appendChild(botaoAcompanhamento('Acompanhar resultado', 'confirmar', conf.id, false));
-                    acoes.appendChild(botaoAcompanhamento('Só comentei', 'descartar', conf.id, true));
+                assunto.textContent = confTarefa
+                    ? `“${conf.tarefa || ''}” em ${conf.nota || 'nota'}.md`
+                    : (conf.assunto || '');
+                if (confTarefa) {
+                    titulo.textContent = 'Marcar como concluída?';
+                    quando.textContent = 'A nota só será alterada depois da confirmação.';
+                    acoes.appendChild(botaoAcompanhamento(
+                        'Confirmar', 'confirmar', conf.id, false, 'conclusao_tarefa_acao'));
+                    acoes.appendChild(botaoAcompanhamento(
+                        'Cancelar', 'cancelar', conf.id, true, 'conclusao_tarefa_acao'));
                 } else {
-                    titulo.textContent = 'Como ficou?';
-                    acoes.appendChild(botaoAcompanhamento('Resolvido', 'resolvido', conf.id, false));
-                    acoes.appendChild(botaoAcompanhamento('Amanhã', 'amanha', conf.id, true));
-                    acoes.appendChild(botaoAcompanhamento('Semana que vem', 'semana_que_vem', conf.id, true));
-                    acoes.appendChild(botaoAcompanhamento('Esquecer', 'esquecer', conf.id, true));
+                    const sugestao = quandoAcompanhamento(conf.perguntar_em);
+                    quando.textContent = conf.tipo === 'proposta'
+                        ? ('Nada será salvo até você confirmar.' + (sugestao ? ' Sugestão: ' + sugestao + '.' : ''))
+                        : 'O que aconteceu com esse assunto?';
+                    if (conf.tipo === 'proposta') {
+                        titulo.textContent = 'Acompanhar resultado?';
+                        acoes.appendChild(botaoAcompanhamento('Acompanhar resultado', 'confirmar', conf.id, false));
+                        acoes.appendChild(botaoAcompanhamento('Só comentei', 'descartar', conf.id, true));
+                    } else {
+                        titulo.textContent = 'Como ficou?';
+                        acoes.appendChild(botaoAcompanhamento('Resolvido', 'resolvido', conf.id, false));
+                        acoes.appendChild(botaoAcompanhamento('Amanhã', 'amanha', conf.id, true));
+                        acoes.appendChild(botaoAcompanhamento('Semana que vem', 'semana_que_vem', conf.id, true));
+                        acoes.appendChild(botaoAcompanhamento('Esquecer', 'esquecer', conf.id, true));
+                    }
                 }
             }
 

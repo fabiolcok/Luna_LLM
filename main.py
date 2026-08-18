@@ -44,7 +44,8 @@ from servidor import (
     atualizar_usuario, registrar_callback_interrupcao,
     iniciar_servidor, registrar_config_handler, sincronizar_config,
     injetar_arquivo_pendente, obter_e_limpar_imagem_anexada, carregar_e_aplicar_config,
-    registrar_handler_texto_web, registrar_handler_acompanhamento_web, atualizar_mascote_solto
+    registrar_handler_texto_web, registrar_handler_acompanhamento_web,
+    registrar_handler_conclusao_web, atualizar_mascote_solto
 )
 
 from pynput import keyboard as kb
@@ -230,8 +231,9 @@ def responder_texto_web(texto: str):
         _log.info(f"[Web texto] Usuário: {texto}")
         atualizar_usuario(texto)                       # mostra "Você: ..." no web
         atualizar_estado_rosto("pensando")             # anima a presença (a lua) também no texto
-        from modulos import acompanhamentos
-        resposta_direta = acompanhamentos.interceptar_resposta(texto)
+        from modulos import acompanhamentos, conclusao_tarefas
+        resposta_direta = (conclusao_tarefas.interceptar_resposta(texto)
+                           or acompanhamentos.interceptar_resposta(texto))
         if resposta_direta:
             _registrar_turno_direto(_historico_conversa, texto, resposta_direta)
             atualizar_estado_rosto("digitando")
@@ -292,6 +294,28 @@ def responder_clique_acompanhamento(acao: str, confirmacao: dict, resposta_siste
         marcar_luna_ocupada(False)
 
 
+def responder_clique_conclusao(acao: str, confirmacao: dict, resposta: str):
+    """Botão da tarefa vira o mesmo turno que um 'sim' digitado ou falado."""
+    confirmou = acao in ("confirmar", "sim")
+    escolha = "Confirmar conclusão." if confirmou else "Cancelar conclusão."
+    fim_espera = time.time() + 120
+    while not luna_esta_livre() and time.time() < fim_espera:
+        time.sleep(0.3)
+    marcar_luna_ocupada(True)
+    try:
+        cor.azul(f"[🖱️ Web] Você: {escolha}")
+        _log.info(f"[Web botão tarefa] Usuário: {escolha} | tarefa: {confirmacao.get('tarefa', '')}")
+        atualizar_usuario(escolha)
+        _registrar_turno_direto(_historico_conversa, escolha, resposta)
+        atualizar_estado_rosto("digitando")
+        atualizar_legenda(resposta)
+        time.sleep(min(9.0, max(4.0, len(resposta) * 0.03)))
+        _mostrar_resposta_web_no_terminal(resposta)
+    finally:
+        atualizar_estado_rosto("dormindo")
+        marcar_luna_ocupada(False)
+
+
 def loop_voz():
     historico = _historico_conversa
     try:
@@ -328,14 +352,15 @@ def loop_voz():
 
                 # Confirmação de acompanhamento é igual por botão, texto e STT. Resolve antes
                 # do roteador para um simples "sim" não virar conversa ou evento de agenda.
-                from modulos import acompanhamentos
-                resposta_acomp = acompanhamentos.interceptar_resposta(texto_usuario)
-                if resposta_acomp:
-                    _registrar_turno_direto(historico, texto_usuario, resposta_acomp)
-                    atualizar_legenda(resposta_acomp)
-                    _log.info(f"[PC] Luna [acompanhamento]: {resposta_acomp}")
+                from modulos import acompanhamentos, conclusao_tarefas
+                resposta_direta = (conclusao_tarefas.interceptar_resposta(texto_usuario)
+                                    or acompanhamentos.interceptar_resposta(texto_usuario))
+                if resposta_direta:
+                    _registrar_turno_direto(historico, texto_usuario, resposta_direta)
+                    atualizar_legenda(resposta_direta)
+                    _log.info(f"[PC] Luna [confirmação]: {resposta_direta}")
                     falar_texto(
-                        resposta_acomp,
+                        resposta_direta,
                         ao_iniciar=lambda: atualizar_estado_rosto("falando"),
                         ao_terminar=lambda: atualizar_estado_rosto("dormindo"),
                     )
@@ -634,6 +659,7 @@ def main():
     registrar_callback_interrupcao(ao_interromper)
     registrar_handler_texto_web(responder_texto_web)
     registrar_handler_acompanhamento_web(responder_clique_acompanhamento)
+    registrar_handler_conclusao_web(responder_clique_conclusao)
     registrar_config_handler("proativo", configurar_proativo)
     registrar_config_handler("memoria", configurar_memoria)
     registrar_config_handler("voz", lambda v: configurar_voz(voz=v))

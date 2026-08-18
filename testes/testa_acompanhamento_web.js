@@ -8,7 +8,7 @@ const main = fs.readFileSync(path.join(__dirname, '..', 'main.py'), 'utf8');
 const pensar = fs.readFileSync(path.join(__dirname, '..', 'modulos', 'pensar.py'), 'utf8');
 const exigidos = [
     'id="acompanhamento-card"',
-    "comando: 'acompanhamento_acao'",
+    "comando || 'acompanhamento_acao'",
     "comando: 'acompanhamento_cancelar'",
     "dados.tipo === 'acompanhamentos'",
     "'Acompanhar resultado'",

@@ -14,8 +14,8 @@ assert.ok(fonte.includes('[🌚💬 Luna respondeu]'),
 const trecho = fonte.slice(fonte.indexOf('def responder_texto_web'),
                            fonte.indexOf('\ndef loop_voz'));
 const chamadas = trecho.match(/_mostrar_resposta_web_no_terminal\(/g) || [];
-assert.strictEqual(chamadas.length, 3,
-                   'FALHA: resposta normal, interceptação e clique de acompanhamento precisam aparecer no CMD');
+assert.strictEqual(chamadas.length, 4,
+                   'FALHA: resposta normal, interceptação e cliques de acompanhamento/tarefa precisam aparecer no CMD');
 assert.ok(!trecho.includes('falar_texto('),
           'FALHA: digitar no web passou a tocar áudio sem decisão explícita');
 

@@ -27,7 +27,7 @@ from modulos.memoria import (
     buscar_memoria_relevante
 )
 from modulos.falar import limpar_texto_para_voz, periodo_atual
-from modulos import obsidian, config_env, animes, briefing, pendencias
+from modulos import obsidian, config_env, animes, briefing, pendencias, conclusao_tarefas
 from modulos.turbollm_api import (
     erro_modelo_descarregado, listar_biblioteca,
     opcoes_pensamento, recarregar_modelo,
@@ -549,6 +549,7 @@ FUNCOES_DISPONIVEIS = {
     "consultar_animes": animes.consultar,
     "briefing_diario": briefing.consultar,
     "consultar_pendencias": pendencias.consultar,
+    "concluir_tarefa_obsidian": conclusao_tarefas.propor,
     "consultar_jogo_steam": consultar_jogo_steam,
     "duvida_do_jogo": duvida_do_jogo,
     "ler_obsidian": _executar_ler_obsidian,
@@ -1709,6 +1710,8 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                         # acompanhamento é resolvida deterministicamente a partir da fala ORIGINAL;
                         # o modelo só escolhe qual é o assunto cujo desfecho vale acompanhar.
                         argumentos_dit["perguntar_em"] = prompt_usuario
+                    if nome_funcao == "concluir_tarefa_obsidian":
+                        argumentos_dit["origem"] = "telegram" if not _presenca_pc.get() else "pc"
                     if nome_funcao == "salvar_obsidian":
                         argumentos_dit["origem"] = "telegram" if responder_completo else "voz"
                         # Usa o texto ORIGINAL do usuário como conteúdo (fiel), não a
@@ -1912,6 +1915,11 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                     ),
                     responder_completo=responder_completo,
                 )
+                lembranca_oculta = ""
+            elif ferramenta_chamada and nome_funcao == "concluir_tarefa_obsidian":
+                # A pergunta exata vem do Python porque contém a linha que será editada.
+                # Reescrevê-la com o 12B poderia trocar o item depois de ele já estar travado no estado.
+                texto_resposta = resultado_str
                 lembranca_oculta = ""
             else:
                 cor.amarelo("[🎭 Passando para LLM persona...]")
