@@ -122,11 +122,6 @@ CONFIGURACAO = {
         "intervalo_minutos": 30,
         "horario_silencio": (0, 7),
     },
-    "Autoconhecimento": {
-        "ativo": True,
-        "intervalo_minutos": 240,     # ~a cada 4h — reflexão ocasional, não repetitiva
-        "horario_silencio": (0, 8),
-    },
     "Animes": {
         "ativo": True,
         "intervalo_minutos": 120,     # checa a cada 2h — como só roda quando você está livre
@@ -207,7 +202,7 @@ _proativo_ativo = True
 TAREFAS_ATIVAS = {
     "jogos": True, "emails": True, "agenda": True,
     "pausa": True, "clima": True, "bom_dia": True, "steam": True, "navegador": True,
-    "radar_rss": True, "autoconhecimento": True, "steam_jogo": True, "animes": True,
+    "radar_rss": True, "steam_jogo": True, "animes": True,
     "memoria": True, "retomar": True, "habitos": True, "lol_mortes": True,
     "radar_promocoes": True, "acompanhamentos": True,
 }
@@ -1493,37 +1488,6 @@ def _tarefa_avisar_animes():
         _ultima_execucao["animes"] = 0
 
 
-def _tarefa_autoconhecimento():
-    """Introspecção: a Luna comenta algo REAL sobre o próprio funcionamento (modelo,
-    roteador, nº de ferramentas, tempo ligada). Python junta os fatos; a persona
-    embrulha de leve. Não é 'consciência' — é autoconhecimento factual do programa."""
-    cfg = CONFIGURACAO["Autoconhecimento"]
-    if not cfg["ativo"] or _em_horario_silencio(*cfg["horario_silencio"]) or not _passou_intervalo("autoconhecimento", cfg["intervalo_minutos"]):
-        return
-    import modulos.pensar as _p   # introspecção: lê os próprios modelos/ferramentas
-    horas = (time.time() - _sessao_inicio) / 3600 if _sessao_inicio else 0
-    fatos = [
-        f"eu rodo num modelo local só, o {_p.modelo()}, que faz tanto a minha personalidade quanto decidir qual ferramenta eu uso",
-        f"eu tenho {len(_p.FUNCOES_DISPONIVEIS)} ferramentas à disposição",
-    ]
-    try:   # voz atual — lida ao vivo do falar.py (fica certa mesmo se trocar de novo)
-        from modulos import falar as _f
-        fatos.append(f"minha voz é a {_f._voz_padrao} do Kokoro, sintetizada na CPU do teu PC")
-    except Exception:
-        pass
-    ativas = sum(1 for v in TAREFAS_ATIVAS.values() if v)
-    fatos.append(f"eu tenho {ativas} tarefas proativas ligadas agora — jogos, radar de notícias, clima, essas coisas")
-    if horas >= 0.5:
-        fatos.append(f"tô ligada há {horas:.1f} horas nessa sessão")
-    fato = random.choice(fatos)
-    prompt = (
-        f"Faça um comentário curto, leve e curioso sobre VOCÊ MESMA, como quem se dá conta de "
-        f"algo sobre o próprio funcionamento. Fato REAL pra usar: {fato}. "
-        f"Fale natural, sem soar como relatório técnico nem se gabando. {REGRA_PERSONA}"
-    )
-    _falar_proativamente(_gerar_fala_proativa(prompt, "autoconhecimento"))
-    registrar_tentativa()
-
 def _tarefa_bom_dia():
     cfg = CONFIGURACAO["bom_dia"]
     if not cfg["ativo"]: return
@@ -2537,7 +2501,6 @@ def _loop_proativo():
                     if TAREFAS_ATIVAS.get("radar_rss", True): _tarefa_radar_rss()
                     if TAREFAS_ATIVAS.get("radar_promocoes", True): _tarefa_radar_promocoes()
                     if TAREFAS_ATIVAS.get("animes", True): _tarefa_avisar_animes()
-                    if TAREFAS_ATIVAS.get("autoconhecimento", True): _tarefa_autoconhecimento()
             else:
                 if not _ja_imprimiu_jogando:
                     cor.amarelo("[🔇 Modo Não Perturbe Ativado — Aguardando o fim da partida]")
@@ -2569,7 +2532,7 @@ def iniciar_modo_proativo():
 
     # CURA DA AVALANCHE: Definindo o 'ponto zero' como agora
     agora = time.time()
-    for chave in ["emails", "agenda", "pausa", "clima", "autoconhecimento"]:
+    for chave in ["emails", "agenda", "pausa", "clima"]:
         _ultima_execucao[chave] = agora
 
     _sessao_inicio = agora

@@ -37,9 +37,6 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
 
 ### Luna (Python)
 
-- [ ] **Introspecção nível 3 — ela ler o próprio código.** Via `inspect.getsource`, pra responder
-      "como você faz X?" olhando a função de verdade. O desenho já foi discutido; parou por
-      prioridade, não por dúvida.
 - [ ] **Barge-in.** Interromper a fala dela falando por cima, em vez de esperar terminar.
 - [ ] **Radar de encomendas.** Mesma ideia do radar de promoções, para rastreio de pedidos.
 ### Presença (front — `templates/Index.html`)

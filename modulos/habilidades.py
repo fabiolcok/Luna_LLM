@@ -1247,6 +1247,20 @@ ferramentas_disponiveis = [
     {
         "type": "function",
         "function": {
+            "name": "consultar_proprio_codigo",
+            "description": "Consulta trechos REAIS e atuais do código da própria Luna para responder como ela foi implementada ou como uma parte interna funciona. Use quando o usuário perguntar COMO você faz algo internamente: memória, roteamento de ferramentas, personalidade, voz, escuta, proativos, Steam/jogos, Obsidian, rosto/clima ou TurboLLM. NÃO use para perguntar apenas quais capacidades existem (use listar_capacidades), nem para analisar código externo ou acessar configurações/segredos.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "assunto": {"type": "string", "description": "Parte interna que o usuário quer entender, em poucas palavras."}
+                },
+                "required": ["assunto"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "listar_capacidades",
             "description": "Use SOMENTE quando o usuário perguntar o que a Luna consegue fazer, quais são suas capacidades, habilidades ou funções disponíveis.",
             "parameters": {"type": "object", "properties": {}, "required": []}

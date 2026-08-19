@@ -27,7 +27,8 @@ from modulos.memoria import (
     buscar_memoria_relevante
 )
 from modulos.falar import limpar_texto_para_voz, periodo_atual
-from modulos import obsidian, config_env, animes, briefing, pendencias, conclusao_tarefas, anotacoes
+from modulos import (obsidian, config_env, animes, briefing, pendencias,
+                     conclusao_tarefas, anotacoes, autoconhecimento)
 from modulos.turbollm_api import (
     erro_modelo_descarregado, listar_biblioteca,
     opcoes_pensamento, recarregar_modelo,
@@ -450,6 +451,10 @@ def _executar_registrar_rotina_jogo(nome_jogo="", estado_jogo="", opiniao="", pl
         nome_jogo, estado_jogo, opiniao, platinado=platinado)
 
 
+def _executar_consultar_proprio_codigo(assunto=""):
+    return autoconhecimento.consultar(assunto)
+
+
 def _executar_propor_acompanhamento(assunto="", perguntar_em=""):
     from modulos import acompanhamentos
     origem = "pc" if _presenca_pc.get() else "telegram"
@@ -478,6 +483,10 @@ _RE_REF_NOTA_PESSOAL = re.compile(
 _RE_DECLARACAO_JOGO = re.compile(
     r'\b(zerei|terminei|finalizei|platin\w*|desisti|abandonei|estou\s+jogando|comecei\s+a\s+jogar|'
     r'gostei|curti|n[aã]o\s+gostei|n[aã]o\s+curti|achei)\b', re.IGNORECASE)
+_RE_AUTOCONHECIMENTO = re.compile(
+    r'\b(luna|voc(?:ê|e)|seu|sua|teu|tua|próprio\s+código|proprio\s+codigo|por\s+dentro)\b',
+    re.IGNORECASE,
+)
 def _conteudo_para_anotar(prompt):
     return anotacoes.dados_para_anotar(prompt)[0]
 
@@ -521,6 +530,7 @@ _CAPACIDADES_REATIVAS = (
     "verificar o clima, consultar episódios dos animes que você acompanha, mutar/desmutar o som, "
     "consultar suas stats do Overwatch, consultar jogos na Steam (preço, promoção e descrição), "
     "lembrar estados e opiniões sobre jogos quando você os declarar explicitamente, "
+    "consultar meu próprio código para explicar como meu funcionamento foi implementado, "
     "gerar imagens e controlar o Firefox"
 )
 
@@ -560,6 +570,7 @@ FUNCOES_DISPONIVEIS = {
     "ler_obsidian": _executar_ler_obsidian,
     "salvar_obsidian": _executar_salvar_obsidian,
     "registrar_rotina_jogo": _executar_registrar_rotina_jogo,
+    "consultar_proprio_codigo": _executar_consultar_proprio_codigo,
     "propor_acompanhamento": _executar_propor_acompanhamento,
 }
 
@@ -1650,6 +1661,10 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 and not _RE_DECLARACAO_JOGO.search(prompt_usuario or "")):
             cor.vermelho("[⚠️ rotina de jogo sem declaração explícita — ignorada]")
             _tool_calls = None
+        if (_tool_calls and _tool_calls[0].function.name == "consultar_proprio_codigo"
+                and not _RE_AUTOCONHECIMENTO.search(prompt_usuario or "")):
+            cor.vermelho("[⚠️ introspecção sem referência à própria Luna — ignorada]")
+            _tool_calls = None
         if _tool_calls and _tool_calls[0].function.name == "propor_acompanhamento":
             from modulos import acompanhamentos as _acomp
             if not _acomp.pode_propor(prompt_usuario or ""):
@@ -1954,6 +1969,26 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                         "Conte quais episódios saíram e, quando informado, quando sai o próximo. "
                         "Inclua TODOS os animes e números recebidos. A consulta FUNCIONOU: é PROIBIDO "
                         "alegar erro, lista incompleta ou falta de acesso. Seja breve e natural."
+                    ),
+                    responder_completo=responder_completo,
+                )
+                lembranca_oculta = ""
+            elif ferramenta_chamada and nome_funcao == "consultar_proprio_codigo":
+                texto_resposta = _reescrever_como_luna(
+                    resultado_str,
+                    prompt_usuario,
+                    historico,
+                    max_tokens=min(max_tokens, 280),
+                    tarefa_documento=(
+                        "Responda em primeira pessoa como a Luna, explicando o funcionamento pedido com "
+                        "base SOMENTE nos trechos reais fornecidos. Cite os nomes dos módulos ou funções "
+                        "que sustentam a resposta, mas não despeje o código inteiro. Separe claramente o "
+                        "que o código confirma do que for inferência. Nunca revele nem alegue ter lido "
+                        "tokens, `.env`, dados pessoais ou arquivos fora dos trechos. Se o sistema disser "
+                        "que o assunto não é seguro/suportado, explique essa limitação honestamente. "
+                        "Se houver estado atual em execução, diferencie mecanismo existente de recurso "
+                        "ativo. Não cumprimente. PRIORIDADE FINAL: no máximo 140 palavras em dois "
+                        "parágrafos curtos, terminando a última frase por completo."
                     ),
                     responder_completo=responder_completo,
                 )

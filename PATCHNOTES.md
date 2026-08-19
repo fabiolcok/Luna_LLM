@@ -8,6 +8,13 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 18/08/2026
+
+- 🪞 🔧 **O autoconhecimento deixou de interromper e passou a responder com código real.**
+  A observação aleatória sobre horas ligada, voz e quantidade de ferramentas saiu dos proativos.
+  Quando perguntada sobre o próprio funcionamento, a Luna agora consulta trechos atuais e seguros
+  da implementação, sem abrir configurações, dados pessoais ou caminhos arbitrários.
+
 ## 17/08/2026
 
 - 🎮 ✨ **A rotina de jogos agora entende o que você conta sobre cada jogo.** Declarações
