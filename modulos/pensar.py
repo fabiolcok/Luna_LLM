@@ -127,6 +127,14 @@ MODO_PENSAMENTO, OPCOES_MODELO = opcoes_pensamento(
     (config_env.texto("MODELO_THINKING", "desligado")
      if _modelo_env else _thinking_local_salvo)
 )
+# O roteador precisa apenas escolher uma ferramenta. Thinking aqui duplica a latência e pode
+# consumir o teto curto antes de emitir o tool call; a escolha do painel vale só para a persona.
+OPCOES_ROTEADOR = {"chat_template_kwargs": {"enable_thinking": False}}
+
+
+def _orcamento_persona(max_tokens: int) -> int:
+    """Dá espaço ao raciocínio oculto sem alongar respostas quando thinking está desligado."""
+    return max(max_tokens, 3000) if MODO_PENSAMENTO == "ligado" else max_tokens
 
 # True  = analisa conversas e salva fatos na memória permanente em background
 # False = desativa completamente (útil enquanto o modelo estiver salvando lixo)
@@ -487,6 +495,8 @@ _RE_AUTOCONHECIMENTO = re.compile(
     r'\b(luna|voc(?:ê|e)|seu|sua|teu|tua|próprio\s+código|proprio\s+codigo|por\s+dentro)\b',
     re.IGNORECASE,
 )
+
+
 def _conteudo_para_anotar(prompt):
     return anotacoes.dados_para_anotar(prompt)[0]
 
@@ -1350,7 +1360,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             temperature=0.8,   # Fase 2 (experimento persona): +variância pra ela ser menos previsível
             presence_penalty=0.3,
             frequency_penalty=0.3,
-            max_tokens=max_tokens,
+            max_tokens=_orcamento_persona(max_tokens),
             extra_body=OPCOES_MODELO,
         )
         _dur = time.time() - _t0
@@ -1613,8 +1623,8 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
         mensagens_ferramenta.extend(_hist_curto(historico, 4))  # contexto mínimo para calibrar tool calling
         mensagens_ferramenta.append({"role": "user", "content": prompt_usuario})
 
-        # MONO: o mesmo modelo (Gemma-4-12B) roteia as ferramentas. Thinking desligado —
-        # senão ele gastaria o orçamento pensando antes de decidir a ferramenta.
+        # MONO: o mesmo modelo (Gemma-4-12B) roteia as ferramentas. Thinking fica desligado
+        # somente nesta chamada para não gastar o orçamento antes de decidir a ferramenta.
         # O teto da persona não pertence ao roteador. Deixá-lo herdar os 800 tokens fez o
         # Gemma escrever conversa descartada até o limite quando não havia ferramenta.
         _max_tokens_roteador = max_tokens if modo_memoria else min(max_tokens, 256)
@@ -1623,7 +1633,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             temperature=0.0,
             tools=ferramentas_ativas,
             max_tokens=_max_tokens_roteador,
-            extra_body=OPCOES_MODELO,
+            extra_body=OPCOES_ROTEADOR,
         )
         fim = time.time()
 

@@ -25,5 +25,9 @@ assert.ok(pensar.includes('if _modelo_env:'),
 assert.ok(pensar.includes('"modelo_local", "config_luna.json"') ||
           pensar.includes('dados.get("modelo_local")'),
           'FALHA: escolha local deixou de ser recuperada na inicialização');
+assert.ok(pensar.includes('extra_body=OPCOES_ROTEADOR'),
+          'FALHA: roteador deixou de forçar thinking desligado');
+assert.ok(pensar.includes('return max(max_tokens, 3000) if MODO_PENSAMENTO == "ligado"'),
+          'FALHA: persona perdeu o orçamento extra para thinking');
 
 console.log('PASSOU — seletor de modelo mantém os contratos web/Python');

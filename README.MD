@@ -93,10 +93,9 @@ Velocidade padrão **0.9x**. *(O Supertonic ficou como plano B arquivado em
 - **Engine:** llama.cpp ROCm — ~32 tok/s de geração na RX 9060 XT.
 - Não existe roteador separado: `gerar_resposta` faz **2 chamadas ao mesmo modelo** —
   uma pra decidir a ferramenta, outra pra escrever a resposta.
-- **Thinking:** por padrão fica desligado, porque o Gemma-4-12B pode gastar o orçamento
-  pensando e devolver resposta vazia. `MODELO_THINKING` permite ligar ou deixar automático
-  ao testar outro modelo. Quando desligado, cada chamada passa
-  `extra_body={"chat_template_kwargs": {"enable_thinking": false}}`.
+- **Thinking:** por padrão fica desligado. `MODELO_THINKING` permite ligar ou deixar automático
+  ao testar outro modelo. O roteador permanece sempre sem thinking; quando ligado, somente a
+  persona recebe um teto total de 3.000 tokens para caber raciocínio oculto e resposta.
 - **Nome com espaços** (`"gemma 4 12b it qat"`): é o único formato que o gateway do
   TurboLLM casa na biblioteca pra auto-carregar (JIT). Com hífens dá 503.
 - **JIT + idle-unload:** o TurboLLM carrega na 1ª chamada (~6s a frio) e descarrega
@@ -158,8 +157,8 @@ cresce sem fim.
 
 1. **OUVIR** → `ouvir.py`: PTT (`Ctrl+Alt+F8`), grava áudio, Whisper transcreve.
 2. **INTERCEPTA** → `main.py`: palavras-chave disparam ações sem passar pela LLM (ver abaixo).
-3. **PENSAR** → `pensar.py`: o Gemma decide a ferramenta (chamada 1, thinking off) →
-   executa → o mesmo modelo escreve a resposta com persona (chamada 2, thinking off).
+3. **PENSAR** → `pensar.py`: o Gemma decide a ferramenta (chamada 1, thinking sempre off) →
+   executa → o mesmo modelo escreve a resposta com persona (chamada 2, thinking configurável).
 4. **FALAR** → `falar.py`: limpa markdown/artefatos → Kokoro sintetiza → `sounddevice` toca.
 
 **3 canais, 2 dimensões** — cada entrada define o *estilo* (curto pra voz, desenvolvido pra

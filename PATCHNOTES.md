@@ -10,6 +10,10 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 18/08/2026
 
+- 🧠 🔧 **O thinking agora pertence à persona, não ao roteador.** Quando ativado no
+  seletor de modelo, a resposta final recebe espaço para raciocinar sem atrasar nem confundir a
+  escolha de ferramentas. O limite maior é apenas um teto; as respostas continuam orientadas a ser curtas.
+
 - 🪞 🔧 **O autoconhecimento deixou de interromper e passou a responder com código real.**
   A observação aleatória sobre horas ligada, voz e quantidade de ferramentas saiu dos proativos.
   Quando perguntada sobre o próprio funcionamento, a Luna agora consulta trechos atuais e seguros
