@@ -20,6 +20,10 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
   Luna mostra discretamente a tarefa proativa responsável, como `radar_rss` ou `checar_agenda`.
   Ferramentas pedidas pelo usuário continuam fora do rótulo para não transformar o chat em log.
 
+- 🔎 🔧 **O tamanho da conversa agora se adapta ao monitor.** Um controle nas configurações
+  permite reduzir ou ampliar o texto e guarda a preferência neste PC. Os nomes “VOCÊ” e “LUNA”
+  também ganharam mais destaque para separar melhor quem está falando.
+
 ## 20/08/2026
 
 - 💬 🔧 **O modo web agora tem uma conversa de verdade.** Os turnos aparecem numa área

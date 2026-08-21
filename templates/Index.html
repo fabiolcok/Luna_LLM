@@ -1171,6 +1171,7 @@
         #historico-lista {
             flex: 1; overflow-y: auto; padding: 6px 4px 12px 2px;
             display: flex; flex-direction: column; min-height: 0;
+            font-size: 100%;
             user-select: text; -webkit-user-select: text; scroll-behavior: smooth;
         }
         /* O espaço flexível fica ACIMA dos turnos: conversa curta já nasce no rodapé e,
@@ -1182,6 +1183,9 @@
             text-align: left; font: inherit; font-size: .82rem; cursor: pointer;
         }
         #config-panel #btn-historico-limpar:hover { color: #f7768e; background: #2b1820; }
+        #cfg-fonte-conversa-valor {
+            min-width: 42px; color: #9aa5ce; font-size: .78rem; text-align: right;
+        }
         #historico-lista.fade-topo {
             -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 28px, #000 100%);
             mask-image: linear-gradient(to bottom, transparent 0, #000 28px, #000 100%);
@@ -1200,12 +1204,12 @@
         .turno-usuario {
             align-self: flex-end; max-width: 82%; margin: 0; padding: 10px 13px;
             border-radius: 13px 13px 3px 13px; background: #242033; border: 1px solid #352d4a;
-            color: #ddd7e8; font-size: .94rem; font-style: normal; line-height: 1.5;
+            color: #ddd7e8; font-size: .94em; font-style: normal; line-height: 1.5;
             white-space: pre-wrap;
         }
         .turno-usuario::before {
             content: 'Você'; display: block; margin-bottom: 4px; color: #8d70bd;
-            font-size: .65rem; text-transform: uppercase; letter-spacing: 1px;
+            font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
         }
         .turno-luna {
             position: relative; align-self: flex-start; max-width: 92%;
@@ -1213,11 +1217,11 @@
             background: #11111a; border: 1px solid #20243a;
             /* Ciano puro funciona no mascote, mas em paragrafo longo vira luz demais.
                O cinza azulado preserva a identidade da Luna sem cansar a leitura. */
-            color: #c1ccd5; font-size: .98rem; line-height: 1.55;
+            color: #c1ccd5; font-size: .98em; line-height: 1.55;
         }
         .turno-luna::before {
             content: 'Luna'; display: block; margin-bottom: 5px; color: #527a87;
-            font-size: .65rem; text-transform: uppercase; letter-spacing: 1px;
+            font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
         }
         .turno-luna[data-origem-proativa]::before {
             content: 'Luna · Proativo: ' attr(data-origem-proativa);
@@ -1748,6 +1752,13 @@
 
         <div class="config-secao">
             <div class="config-secao-titulo">💬 Conversa</div>
+            <div class="config-linha">Tamanho do texto <span id="cfg-fonte-conversa-valor">100%</span></div>
+            <div class="config-slider-linha">
+                <span aria-hidden="true">A</span>
+                <input type="range" id="cfg-fonte-conversa" min="80" max="140" step="10" value="100"
+                       aria-label="Tamanho do texto da conversa">
+                <span aria-hidden="true" style="font-size:1.25em">A</span>
+            </div>
             <button id="btn-historico-limpar" title="Limpar conversa desta sessão">🗑 Limpar conversa</button>
             <div class="oficina-dica">Remove apenas os turnos exibidos nesta sessão.</div>
         </div>
@@ -4456,6 +4467,21 @@
         const historicoPanel   = document.getElementById('historico-panel');
         const historicoOverlay = document.getElementById('historico-overlay');
         const historicoLista   = document.getElementById('historico-lista');
+        const fonteConversa    = document.getElementById('cfg-fonte-conversa');
+        const fonteConversaValor = document.getElementById('cfg-fonte-conversa-valor');
+
+        // Preferência puramente visual fica local: cada monitor pode pedir uma escala diferente.
+        function aplicarFonteConversa(valor, salvar) {
+            const escala = Math.max(80, Math.min(140, parseInt(valor, 10) || 100));
+            historicoLista.style.fontSize = escala + '%';
+            fonteConversa.value = escala;
+            fonteConversaValor.textContent = escala + '%';
+            if (salvar) localStorage.setItem('luna_fonte_conversa', String(escala));
+        }
+        aplicarFonteConversa(localStorage.getItem('luna_fonte_conversa'), false);
+        fonteConversa.addEventListener('input', function() {
+            aplicarFonteConversa(this.value, true);
+        });
 
         function atualizarFadeConversa() {
             const acima = historicoLista.scrollTop > 4;

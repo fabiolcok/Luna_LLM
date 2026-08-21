@@ -8,6 +8,17 @@ const vm = require('vm');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'templates', 'Index.html'), 'utf8');
 
+assert.ok(/id="cfg-fonte-conversa"[^>]*min="80"[^>]*max="140"/.test(html) &&
+          html.includes("localStorage.getItem('luna_fonte_conversa')") &&
+          html.includes("localStorage.setItem('luna_fonte_conversa'") &&
+          html.includes("historicoLista.style.fontSize = escala + '%'") &&
+          /\.turno-luna\s*\{[^}]*font-size:\s*\.98em/s.test(html) &&
+          /\.turno-usuario\s*\{[^}]*font-size:\s*\.94em/s.test(html),
+          'FALHA: ajuste persistente do tamanho da conversa deixou de funcionar');
+assert.ok(/\.turno-usuario::before\s*\{[^}]*font-weight:\s*700/s.test(html) &&
+          /\.turno-luna::before\s*\{[^}]*font-weight:\s*700/s.test(html),
+          'FALHA: nomes de quem fala deixaram de ter destaque na conversa');
+
 assert.ok(/#historico-panel\s*\{[^}]*position:\s*static/s.test(html),
           'FALHA: histórico deixou de ser a conversa principal');
 assert.ok(/#historico-panel\s*\{[^}]*background:\s*transparent;\s*border:\s*0;\s*border-radius:\s*0/s.test(html),
