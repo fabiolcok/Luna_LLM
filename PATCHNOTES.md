@@ -16,6 +16,10 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
   luminosas, Markdown seguro, cópia e controles compactos; o nome técnico da ferramenta ficou
   disponível apenas no hover do mascote para ajudar no diagnóstico sem poluir a conversa.
 
+- 🌘 🔧 **Falas espontâneas agora explicam de onde vieram.** Cada balão iniciado pela própria
+  Luna mostra discretamente a tarefa proativa responsável, como `radar_rss` ou `checar_agenda`.
+  Ferramentas pedidas pelo usuário continuam fora do rótulo para não transformar o chat em log.
+
 ## 20/08/2026
 
 - 💬 🔧 **O modo web agora tem uma conversa de verdade.** Os turnos aparecem numa área

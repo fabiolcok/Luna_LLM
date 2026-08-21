@@ -700,7 +700,7 @@ def _registrar_avaliacao(rating: str, motivo: str = "", usuario=None, luna=None,
     except Exception:
         pass
 
-def _registrar_turno(usuario: str, luna: str):
+def _registrar_turno(usuario: str, luna: str, origem_proativa: str = ""):
     import datetime
     if _historico_web and _historico_web[-1].get("luna") == luna:
         return  # evita duplicação quando atualizar_legenda é chamada duas vezes
@@ -709,18 +709,20 @@ def _registrar_turno(usuario: str, luna: str):
         "luna": luna,
         "tempo": datetime.datetime.now().strftime("%H:%M"),
     }
+    if origem_proativa:
+        turno["origem_proativa"] = origem_proativa
     _historico_web.append(turno)
     if len(_historico_web) > 40:
         _historico_web.pop(0)
     _broadcast({"tipo": "historico_novo", "turno": turno})
 
-def atualizar_legenda(texto: str):
+def atualizar_legenda(texto: str, origem_proativa: str = ""):
     global _ultima_fala_luna
     texto = _remover_tags_voz(texto)   # voz fica com os tags; texto exibido não
     _ultima_fala_luna = texto
     _broadcast({'legenda': texto})
     if texto:
-        _registrar_turno(_ultima_fala_usuario, texto)
+        _registrar_turno(_ultima_fala_usuario, texto, origem_proativa)
 
 def atualizar_stream_resposta(texto: str):
     """Mostra uma prévia da persona sem contaminar histórico, avaliação ou última fala."""

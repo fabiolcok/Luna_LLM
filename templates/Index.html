@@ -1219,6 +1219,10 @@
             content: 'Luna'; display: block; margin-bottom: 5px; color: #527a87;
             font-size: .65rem; text-transform: uppercase; letter-spacing: 1px;
         }
+        .turno-luna[data-origem-proativa]::before {
+            content: 'Luna · Proativo: ' attr(data-origem-proativa);
+            text-transform: none;
+        }
         .turno-pendente { opacity: .72; }
         .turno-pendente .turno-tempo::after { content: ' · processando'; }
         .balao-entrando { animation: balao-entra .46s cubic-bezier(.22,1,.36,1) both; }
@@ -4621,6 +4625,8 @@
             if (turno.luna) {
                 const luna = document.createElement('div');
                 luna.className = 'turno-luna';
+                if (turno.origem_proativa)
+                    luna.dataset.origemProativa = turno.origem_proativa;
                 const conteudo = document.createElement('div');
                 conteudo.className = 'mensagem-conteudo';
                 conteudo.innerHTML = renderizarMarkdownSeguro(turno.luna);

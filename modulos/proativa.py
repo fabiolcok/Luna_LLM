@@ -387,6 +387,14 @@ def _limpar_visual_proativo():
         pass
 
 
+class _FalaProativa(str):
+    """Texto que carrega sua origem até o histórico sem alterar o que vai para o TTS."""
+    def __new__(cls, texto, origem=""):
+        obj = super().__new__(cls, texto)
+        obj.origem_proativa = str(origem or "").strip()
+        return obj
+
+
 def _falar_proativamente(texto_resposta) -> bool:
     """Fala o texto quando a Luna ficar livre. Retorna True SE falou de verdade —
     quem depende do aviso (ex: dedup da wishlist) só deve marcar 'avisado' com True."""
@@ -404,8 +412,11 @@ def _falar_proativamente(texto_resposta) -> bool:
         time.sleep(3)
     try:
         import servidor as _srv
-        _srv.atualizar_legenda(texto_resposta)
         _srv.atualizar_usuario("")
+        _srv.atualizar_legenda(
+            texto_resposta,
+            origem_proativa=getattr(texto_resposta, "origem_proativa", ""),
+        )
     except Exception:
         pass
     # Registra a fala na conversa principal pra follow-ups terem contexto
@@ -485,7 +496,7 @@ def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150, variar=True)
                 _falas_recentes.pop(0)
         if not resposta:
             _limpar_visual_proativo()
-        return resposta
+        return _FalaProativa(resposta, tarefa) if resposta else None
     except Exception as e:
         cor.vermelho(f"[Erro na geração proativa: {e}]")
         _historico_proativo = []
@@ -1832,8 +1843,8 @@ def _falar_morte_lol(texto: str):
         time.sleep(1)
     try:
         import servidor as _srv
-        _srv.atualizar_legenda(texto)
         _srv.atualizar_usuario("")
+        _srv.atualizar_legenda(texto, origem_proativa="lol_mortes")
     except Exception:
         pass
     if _historico_principal is not None:
