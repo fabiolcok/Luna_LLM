@@ -5,6 +5,20 @@ definitiva. Itens daqui não estão automaticamente aprovados para commit.
 
 ## Em teste
 
+- [ ] **Deixar o streaming de texto Web redondo.**
+  - Implementação atual: somente a chamada da persona no texto Web usa streaming; roteador,
+    Telegram e voz continuam aguardando a resposta completa. O balão parcial é provisório e
+    apenas a resposta final limpa entra no histórico e pode ser avaliada.
+  - Validar no TurboLLM real respostas comuns, respostas com ferramenta, Markdown grande,
+    troca de modelo e reaquecimento depois do `idle-unload`.
+  - Fazer o botão `⏹️` cancelar também a geração da persona, não apenas o TTS. Ao interromper,
+    manter o trecho parcial visível, marcá-lo como interrompido e não salvar no histórico nem
+    liberar avaliação de uma frase incompleta.
+  - Tratar queda do WebSocket ou erro durante o stream sem deixar balão provisório ou animação
+    `digitando` presos na tela.
+  - Se o texto ficar estável no uso real, avaliar uma fase separada de voz por frases completas;
+    nunca mandar token cru ao TTS, porque isso quebra entonação e ordem das frases.
+
 - [ ] **Validar limpeza do `salvar_obsidian`.** Mensagens com `título:`/`conteúdo:` não devem
       guardar introdução nem comando; reação curta como “boa ideia, deixa anotado” deve salvar
       a fala anterior da conversa. A origem precisa distinguir web, Telegram e voz.
@@ -39,10 +53,27 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
 
 - [ ] **Barge-in.** Interromper a fala dela falando por cima, em vez de esperar terminar.
 - [ ] **Radar de encomendas.** Mesma ideia do radar de promoções, para rastreio de pedidos.
+- [ ] **Modo de datas comemorativas.** Em aniversário do usuário, Natal, Ano-Novo e outras
+      datas selecionadas, adaptar por tempo limitado o jeito de falar e a aparência/animação do
+      mascote. O aniversário deve vir de configuração pessoal (`.env` ou painel Web), nunca ficar
+      gravado no código público. Definir uma curadoria pequena de datas e comportamentos para não
+      transformar toda resposta do dia em bordão temático nem depender da LLM acertar a data.
+- [ ] **Modo manutenção com agente de programação externo.** Ideia futura para debug: a Luna
+      detecta ou recebe um erro, pede confirmação e prepara um pacote seguro com log recente,
+      estado do Git e módulo provável para Codex, Claude Code, Pi ou OpenCode investigar. Começar
+      apenas gerando o diagnóstico; qualquer edição, teste, commit ou push continua dependendo de
+      autorização humana. Não priorizar agora: antes, investir em deixá-la mais viva nas interações.
+
 ### Presença (front — `templates/Index.html`)
 
 > Combine antes de mexer neste arquivo: são ~4100 linhas com CSS, HTML e todo o JS juntos, e é
 > onde dois agentes colidem. Rode `node testes/rodar.js` antes e depois.
+
+- [ ] **Exibir o clima que escolheu o rosto.** Mostrar discretamente qual clima/emoção o Python
+      selecionou (`zoeira`, `carinho`, `dúvida` etc.) para ficar claro por que a Luna está com
+      aquela cara. Testar duas opções de lugar: no hover do mascote, junto do diagnóstico da
+      ferramenta, ou ao lado do nome “Luna” no balão mais recente. Não exibir a tag crua
+      `[clima:X]` dentro da resposta.
 
 - [ ] **Um evento novo que se resolva por ESPERA.** Os que existem hoje pedem gestos ativos; falta
       um cujo desfecho seja não fazer nada por um tempo. Chegou a ser cogitado, sem fechar o

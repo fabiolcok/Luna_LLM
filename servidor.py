@@ -722,6 +722,10 @@ def atualizar_legenda(texto: str):
     if texto:
         _registrar_turno(_ultima_fala_usuario, texto)
 
+def atualizar_stream_resposta(texto: str):
+    """Mostra uma prévia da persona sem contaminar histórico, avaliação ou última fala."""
+    _broadcast({"tipo": "resposta_stream", "texto": texto or ""})
+
 def atualizar_usuario(texto: str):
     global _ultima_fala_usuario
     _ultima_fala_usuario = texto

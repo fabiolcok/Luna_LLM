@@ -518,7 +518,8 @@ def _ultima_fala_do_historico(historico, prompt_atual) -> str:
     """O que 'anota isso' referencia: a última troca substancial, sem o comando atual."""
     return anotacoes.contexto_anterior(historico, prompt_atual)
 
-def _confirmar_salvamento(res, conteudo, prompt_usuario, historico, max_tokens, responder_completo):
+def _confirmar_salvamento(res, conteudo, prompt_usuario, historico, max_tokens,
+                          responder_completo, ao_fragmento=None):
     """Confirma um save de nota: salvou → a persona confirma COMENTANDO o assunto (rico),
     já sabendo que guardou — não pode mentir, o save já é fato. Falhou → mensagem honesta."""
     if not res.startswith("SISTEMA: Nota salva"):
@@ -527,7 +528,8 @@ def _confirmar_salvamento(res, conteudo, prompt_usuario, historico, max_tokens, 
               "Confirme que guardou, de forma curta e natural, e faça um comentário leve sobre o "
               "ASSUNTO da nota, se couber. Não invente que fez outra coisa além de guardar.")
     return _reescrever_como_luna(conteudo, prompt_usuario, historico, max_tokens,
-                                 tarefa_documento=tarefa, responder_completo=responder_completo)
+                                 tarefa_documento=tarefa, responder_completo=responder_completo,
+                                 ao_fragmento=ao_fragmento)
 
 # FONTE ÚNICA das capacidades reativas (o que ela faz A PEDIDO). Usada em DOIS lugares —
 # a ferramenta listar_capacidades (quando ele pergunta 'o que você faz') e o PROMPT da persona
@@ -771,7 +773,9 @@ import contextvars as _cv
 # ContextVar é thread-safe: voz, Telegram e web (threads diferentes) não se atropelam.
 _presenca_pc = _cv.ContextVar("presenca_pc", default=True)
 
-def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico: list, max_tokens=300, forcar_incluir=False, responder_completo=False, tarefa_documento=None) -> str:
+def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico: list,
+                          max_tokens=300, forcar_incluir=False, responder_completo=False,
+                          tarefa_documento=None, ao_fragmento=None) -> str:
     global _ultima_saudacao_ts, _kaomoji_pendente
     resposta_tecnica = re.sub(r'<think>.*?</think>', '', resposta_tecnica, flags=re.DOTALL).strip()
 
@@ -1355,27 +1359,66 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             msgs.extend(_hist_curto(historico, 8))
         msgs.append({"role": "user", "content": user_msg})
         _t0 = time.time()
-        resposta = _chamar_llm(
-            messages=msgs,
-            temperature=0.8,   # Fase 2 (experimento persona): +variância pra ela ser menos previsível
-            presence_penalty=0.3,
-            frequency_penalty=0.3,
-            max_tokens=_orcamento_persona(max_tokens),
-            extra_body=OPCOES_MODELO,
-        )
+        _parametros_persona = {
+            "messages": msgs,
+            "temperature": 0.8,   # Fase 2: +variância pra ela ser menos previsível
+            "presence_penalty": 0.3,
+            "frequency_penalty": 0.3,
+            "max_tokens": _orcamento_persona(max_tokens),
+            "extra_body": OPCOES_MODELO,
+        }
+        _raciocinio_persona = ""
+        _finish_reason = "?"
+        _tk = 0
+        if ao_fragmento:
+            # Segura poucos caracteres no fim: é ali que chegam [clima:X] e [gif:X]. A prévia
+            # continua fluida, mas o usuário nunca vê metadados que só o Python deve consumir.
+            _partes = []
+            _ultimo_envio = 0.0
+            _ultimo_visivel = ""
+            resposta = _chamar_llm(stream=True, **_parametros_persona)
+            for _pedaco in resposta:
+                _escolhas = getattr(_pedaco, "choices", None) or []
+                if _escolhas:
+                    _delta = getattr(_escolhas[0], "delta", None)
+                    _conteudo = getattr(_delta, "content", None) or ""
+                    if _conteudo:
+                        _partes.append(_conteudo)
+                    _raciocinio_persona += getattr(_delta, "reasoning_content", None) or ""
+                    _finish_reason = getattr(_escolhas[0], "finish_reason", None) or _finish_reason
+                _uso = getattr(_pedaco, "usage", None)
+                if _uso:
+                    _tk = getattr(_uso, "completion_tokens", 0) or _tk
+                _bruto = "".join(_partes)
+                _visivel = _bruto[:-20] if len(_bruto) > 20 else ""
+                _agora = time.monotonic()
+                if (_visivel and _visivel != _ultimo_visivel
+                        and (_agora - _ultimo_envio >= .055 or _visivel.endswith("\n"))):
+                    ao_fragmento(_visivel)
+                    _ultimo_visivel = _visivel
+                    _ultimo_envio = _agora
+            texto_luna = "".join(_partes)
+            if not _tk:
+                _tk = max(1, len(texto_luna.encode("utf-8")) // 4)
+        else:
+            resposta = _chamar_llm(**_parametros_persona)
+            _msg_persona = resposta.choices[0].message
+            texto_luna = _msg_persona.content or ""
+            _raciocinio_persona = getattr(_msg_persona, 'reasoning_content', None) or ""
+            _finish_reason = getattr(resposta.choices[0], 'finish_reason', '?')
+            try:
+                _tk = resposta.usage.completion_tokens
+            except Exception:
+                pass
         _dur = time.time() - _t0
-        _msg_persona = resposta.choices[0].message
-        texto_luna = _msg_persona.content or ""
         # DIAGNÓSTICO: se veio vazio, revela a causa — pensou escondido (reasoning_content)
         # ou foi cortado pelo limite (finish_reason=length).
         if not texto_luna.strip():
-            _rc = getattr(_msg_persona, 'reasoning_content', None) or ""
-            _fr = getattr(resposta.choices[0], 'finish_reason', '?')
-            cor.vermelho(f"[⚠️ Persona VAZIA — finish_reason={_fr} | reasoning_content={len(_rc)} chars]")
-            if _rc:
-                cor.amarelo(f"[🧠 (pensamento escondido): {_rc[:160]}...]")
+            cor.vermelho(f"[⚠️ Persona VAZIA — finish_reason={_finish_reason} | "
+                         f"reasoning_content={len(_raciocinio_persona)} chars]")
+            if _raciocinio_persona:
+                cor.amarelo(f"[🧠 (pensamento escondido): {_raciocinio_persona[:160]}...]")
         try:
-            _tk = resposta.usage.completion_tokens
             if _dur > 0 and _tk:
                 print(f"[🎭 Persona: {_tk} tokens em {_dur:.1f}s = {_tk/_dur:.1f} tok/s]")
                 import servidor as _srv
@@ -1542,7 +1585,9 @@ def _montar_prompt_imagem(pedido_usuario: str, dica: str = "") -> str:
     return ", ".join(partes)
 
 
-def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True, salvar=True, modo_memoria=False, max_tokens=800, responder_completo=False, presenca_pc=True):
+def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True, salvar=True,
+                   modo_memoria=False, max_tokens=800, responder_completo=False,
+                   presenca_pc=True, ao_fragmento=None):
     global _imagem_pendente
     _presenca_pc.set(presenca_pc)   # onde ele está (voz/web = no PC; Telegram = fora) — colore o prompt
     if responder_completo:
@@ -1552,12 +1597,14 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
     if imagem_base64 and not modo_memoria:
         from modulos.habilidades import analisar_imagem_gemini
         resultado_gemini = analisar_imagem_gemini(imagem_base64, prompt_usuario)
-        return _reescrever_como_luna(resultado_gemini, prompt_usuario, historico, max_tokens, forcar_incluir=True)
+        return _reescrever_como_luna(resultado_gemini, prompt_usuario, historico, max_tokens,
+                                     forcar_incluir=True, ao_fragmento=ao_fragmento)
 
     # DESVIO PROATIVO
     if not analisar and not modo_memoria:
         cor.amarelo("[🎭 Passando direto para LLM persona (Modo Proativo)...]")
-        return _reescrever_como_luna(prompt_usuario, "", historico, max_tokens)
+        return _reescrever_como_luna(prompt_usuario, "", historico, max_tokens,
+                                     ao_fragmento=ao_fragmento)
 
     try:
         inicio = time.time()
@@ -1855,7 +1902,10 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                                              origem=_origem_salvamento(responder_completo))
                         if len(_cont) >= 3 else "SISTEMA: Erro")
                 cor.amarelo("[📝 Obsidian: salvo pela rede de segurança (roteador não firou)]")
-                texto_resposta = _confirmar_salvamento(_res, _cont, prompt_usuario, historico, max_tokens, responder_completo)
+                texto_resposta = _confirmar_salvamento(
+                    _res, _cont, prompt_usuario, historico, max_tokens, responder_completo,
+                    ao_fragmento=ao_fragmento,
+                )
                 lembranca_oculta = ""
             elif (not ferramenta_chamada) and _parece_pedido_de_acao(prompt_usuario):
                 # Pedido de ação que o roteador NÃO roteou: resposta honesta determinística,
@@ -1904,6 +1954,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                     texto_resposta = _reescrever_como_luna(
                         resultado_str, prompt_usuario, historico, max_tokens,
                         tarefa_documento=tarefa, responder_completo=responder_completo,
+                        ao_fragmento=ao_fragmento,
                     )
                     lembranca_oculta = ""   # não guarda o texto cru na memória
             elif ferramenta_chamada and nome_funcao == "ler_obsidian" and resultado_str.startswith("SISTEMA: SEM_NOTA_RELEVANTE"):
@@ -1917,13 +1968,17 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 else:
                     cor.amarelo("[📓 Obsidian: sem nota relevante → resposta de conhecimento]")
                     texto_resposta = _reescrever_como_luna("", prompt_usuario, historico, max_tokens,
-                                                           responder_completo=responder_completo)
+                                                           responder_completo=responder_completo,
+                                                           ao_fragmento=ao_fragmento)
                 lembranca_oculta = ""
             elif ferramenta_chamada and nome_funcao == "salvar_obsidian":
                 # O save já aconteceu (determinístico). A persona confirma COMENTANDO o
                 # assunto — rico, mas sem poder mentir (o save é fato, não invenção).
                 _cont_salvo = conteudo_salvo_turno or _conteudo_para_anotar(prompt_usuario)
-                texto_resposta = _confirmar_salvamento(resultado_str, _cont_salvo, prompt_usuario, historico, max_tokens, responder_completo)
+                texto_resposta = _confirmar_salvamento(
+                    resultado_str, _cont_salvo, prompt_usuario, historico, max_tokens,
+                    responder_completo, ao_fragmento=ao_fragmento,
+                )
                 lembranca_oculta = ""
             elif ferramenta_chamada and nome_funcao == "registrar_rotina_jogo":
                 # O registro é fato decidido pelo Python. O 12B já transformou um sucesso real
@@ -1968,6 +2023,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 texto_resposta = _reescrever_como_luna(
                     resultado_str, prompt_usuario, historico, max_tokens,
                     responder_completo=responder_completo,
+                    ao_fragmento=ao_fragmento,
                 )
                 lembranca_oculta = ""
             elif ferramenta_chamada and nome_funcao == "consultar_animes" and not resultado_str.startswith("SISTEMA:"):
@@ -1981,6 +2037,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                         "alegar erro, lista incompleta ou falta de acesso. Seja breve e natural."
                     ),
                     responder_completo=responder_completo,
+                    ao_fragmento=ao_fragmento,
                 )
                 lembranca_oculta = ""
             elif ferramenta_chamada and nome_funcao == "consultar_proprio_codigo":
@@ -2001,6 +2058,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                         "parágrafos curtos, terminando a última frase por completo."
                     ),
                     responder_completo=responder_completo,
+                    ao_fragmento=ao_fragmento,
                 )
                 lembranca_oculta = ""
             elif ferramenta_chamada and nome_funcao == "briefing_diario":
@@ -2020,6 +2078,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                         "recomendação que os dados não sustentem."
                     ),
                     responder_completo=responder_completo,
+                    ao_fragmento=ao_fragmento,
                 )
                 lembranca_oculta = ""
             elif ferramenta_chamada and nome_funcao == "consultar_pendencias":
@@ -2037,6 +2096,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                         "texto e não invente urgência, prazo ou pendência ausente nos dados."
                     ),
                     responder_completo=responder_completo,
+                    ao_fragmento=ao_fragmento,
                 )
                 lembranca_oculta = ""
             elif ferramenta_chamada and nome_funcao == "concluir_tarefa_obsidian":
@@ -2046,7 +2106,11 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 lembranca_oculta = ""
             else:
                 cor.amarelo("[🎭 Passando para LLM persona...]")
-                texto_resposta = _reescrever_como_luna(resultado_str, prompt_usuario, historico, max_tokens, forcar_incluir=eh_ver_tela, responder_completo=responder_completo)
+                texto_resposta = _reescrever_como_luna(
+                    resultado_str, prompt_usuario, historico, max_tokens,
+                    forcar_incluir=eh_ver_tela, responder_completo=responder_completo,
+                    ao_fragmento=ao_fragmento,
+                )
 
                 # Resultados CURTOS (ex: "música pausada"): garante UMA frase da persona.
                 # Resultados LONGOS (agenda, emails): a persona apresenta os dados por completo

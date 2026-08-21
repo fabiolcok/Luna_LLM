@@ -8,6 +8,21 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 21/08/2026
+
+- 💬 ✨ **A conversa Web ficou mais viva e confortável de ler.** A resposta textual da Luna
+  agora aparece em streaming com o antigo efeito de braille, balões suaves ancorados no rodapé
+  e rolagem que respeita quem voltou para ler mensagens anteriores. O texto ganhou cores menos
+  luminosas, Markdown seguro, cópia e controles compactos; o nome técnico da ferramenta ficou
+  disponível apenas no hover do mascote para ajudar no diagnóstico sem poluir a conversa.
+
+## 20/08/2026
+
+- 💬 🔧 **O modo web agora tem uma conversa de verdade.** Os turnos aparecem numa área
+  principal com rolagem, seleção e cópia, sem esconder o papo numa gaveta lateral. Respostas e
+  notas também renderizam parágrafos, listas, links, código e tabelas Markdown de forma segura.
+  O antigo “Pensamento” virou “Detalhes” dentro da fala mais recente e levou as métricas junto.
+
 ## 18/08/2026
 
 - 🧠 🔧 **O thinking agora pertence à persona, não ao roteador.** Quando ativado no

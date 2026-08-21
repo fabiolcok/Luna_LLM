@@ -41,7 +41,7 @@ from modulos.falar import configurar_voz
 from modulos.pensar import configurar_memoria
 from servidor import (
     atualizar_estado_rosto, atualizar_legenda,
-    atualizar_usuario, registrar_callback_interrupcao,
+    atualizar_usuario, atualizar_stream_resposta, registrar_callback_interrupcao,
     iniciar_servidor, registrar_config_handler, sincronizar_config,
     injetar_arquivo_pendente, obter_e_limpar_imagem_anexada, carregar_e_aplicar_config,
     registrar_handler_texto_web, registrar_handler_acompanhamento_web,
@@ -243,8 +243,16 @@ def responder_texto_web(texto: str):
             _log.info(f"[Web texto] Luna [acompanhamento]: {resposta_direta}")
             return
         texto_modelo = injetar_arquivo_pendente(texto)
+        stream_iniciou = False
+        def _mostrar_fragmento(fragmento: str):
+            nonlocal stream_iniciou
+            if not stream_iniciou:
+                stream_iniciou = True
+                atualizar_estado_rosto("digitando")
+            atualizar_stream_resposta(fragmento)
         resposta = gerar_resposta(texto_modelo, _historico_conversa,
-                                  responder_completo=True, presenca_pc=True)
+                                  responder_completo=True, presenca_pc=True,
+                                  ao_fragmento=_mostrar_fragmento)
         resposta = (resposta or "").strip()
         atualizar_estado_rosto("digitando")
         atualizar_legenda(resposta)                    # mostra a resposta + registra o turno (SEM falar)

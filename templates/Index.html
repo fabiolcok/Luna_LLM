@@ -16,7 +16,7 @@
             justify-content: flex-start;   /* topo fixo: centralizado, a página inteira
                                               se reposicionava a cada linha que a Luna escrevia */
             min-height: 100vh;
-            padding: 24px;
+            padding: 18px 14px 24px;
         }
 
         /* Transformar a Luna perto da borda aumenta a área visual do documento e o WebView
@@ -26,7 +26,7 @@
 
         .container {
             width: 100%;
-            max-width: 780px;
+            max-width: 1040px;
             display: flex;
             flex-direction: column;
             gap: 16px;
@@ -680,8 +680,9 @@
         #luna-texto    { font-size: 1.15rem; line-height: 1.55; color: #b4f9f8; white-space: pre-wrap; }
         #usuario-texto { font-size: 1.15rem; font-style: italic; color: #cfc9c2; white-space: pre-wrap; }
         /* Separa visualmente a zona de SAÍDA (Luna, em cima) da zona de ENTRADA (você, embaixo) */
-        .zona-divisor { height: 1px; background: linear-gradient(to right, transparent, #3a3a5a, transparent);
-                        margin: 18px 0 12px; }
+        /* No layout antigo separava a última resposta da entrada. Com a conversa rolável,
+           virou apenas uma linha vazia entre os controles e a caixa de digitação. */
+        .zona-divisor { display: none; }
         #texto-input-bloco { display: flex; gap: 8px; margin: 8px 0 4px; }
         #texto-input { flex: 1; min-height: 42px; max-height: 132px; padding: 10px 12px;
                        border-radius: 10px; border: 1px solid #3a3a5a; resize: none;
@@ -712,17 +713,43 @@
             white-space: nowrap;
             transition: color .3s;
         }
+        /* O nome cru da ferramenta continua disponivel para diagnostico, mas nao compete
+           com a conversa. Ele so aparece sob o mascote quando o usuario procura por ele. */
+        #presenca #status-luna {
+            position: absolute;
+            left: calc(50% + 120px);
+            bottom: 10px;
+            z-index: 6;
+            max-width: min(300px, calc(50% - 130px));
+            padding: 4px 9px;
+            border: 1px solid #292942;
+            border-radius: 999px;
+            background: rgba(13, 13, 20, .9);
+            color: #8383a5;
+            font: 10.5px Consolas, "Courier New", monospace;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(5px);
+            transition: opacity .2s ease, transform .2s ease;
+        }
+        #presenca:hover #status-luna.tem-ferramenta {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        body.widget #status-luna { display: none !important; }
 
         /* Pensamento colapsável — mesmo visual das outras caixas */
         #pensamento-details {
-            border-radius: 10px;
-            background: #11111a;
-            border-left: 4px solid #3a3a5a;
+            margin-top: 10px;
+            border-radius: 8px;
+            background: #0d0d14;
+            border: 1px solid #24243a;
             overflow: hidden;
         }
 
         #pensamento-details summary {
-            padding: 12px 16px;
+            padding: 8px 10px;
             cursor: pointer;
             user-select: none;
             font-size: 0.78rem;
@@ -752,9 +779,9 @@
         #pensamento-details summary:hover { color: #7a7aaa; }
 
         #pensamento-texto {
-            padding: 0 16px;
-            font-size: 1.15rem;
-            color: #4a4a6a;
+            padding: 0 10px;
+            font-size: .78rem;
+            color: #777796;
             white-space: pre-wrap;
             line-height: 1.55;
             border-top: 1px solid #1a1a2e;
@@ -866,8 +893,9 @@
         #metricas-bar {
             display: flex;
             justify-content: center;
-            gap: 28px;
-            font-size: 0.72rem;
+            gap: 18px;
+            padding: 0 10px 9px;
+            font-size: 0.66rem;
             letter-spacing: 0.5px;
             font-variant-numeric: tabular-nums;
             color: #2a2a3a;
@@ -878,8 +906,30 @@
         /* Avaliação 👍/👎 */
         #avaliacao-bar {
             display: flex;
-            justify-content: center;
+            align-items: center;
+            justify-content: flex-start;
             gap: 10px;
+            width: 100%;
+        }
+        #avaliacao-bar .avaliacao-espaco { flex: 1; }
+        #avaliacao-bar #btn-interromper,
+        #avaliacao-bar #btn-toggle-proativo {
+            height: 28px; padding: 0 11px; border-radius: 6px;
+            font-size: .72rem; letter-spacing: .45px; transform: none;
+        }
+        #avaliacao-bar #btn-interromper {
+            background: #11111a; color: #565f89; border: 1px solid #1e1e2e;
+            opacity: .45; transition: opacity .15s, border-color .15s, background .15s;
+        }
+        #avaliacao-bar #btn-interromper:hover {
+            background: #181824; border-color: #565f89; opacity: 1; transform: none;
+        }
+        #avaliacao-bar #btn-toggle-proativo { background: #17281a; color: #9ece6a; border: 1px solid #28462d; }
+        #avaliacao-bar #btn-toggle-proativo:hover { background: #1f3320; transform: none; }
+        #avaliacao-bar #btn-toggle-proativo.inativo { background: #2a1818; color: #f7768e; border-color: #4a2727; }
+        @media (max-width: 620px) {
+            #avaliacao-bar { flex-wrap: wrap; }
+            #avaliacao-bar .avaliacao-espaco { flex-basis: 20px; }
         }
         .btn-aval {
             background: #11111a;
@@ -962,6 +1012,7 @@
         .acomp-btn:hover { background: #17243a; border-color: #7aa2f7; }
         .acomp-btn.secundario { color: #787c99; border-color: #303044; }
         #acompanhamento-feedback {
+            display: none;
             min-height: 18px;
             margin-top: 6px;
             color: #7bf98f;
@@ -970,7 +1021,7 @@
             opacity: 0;
             transition: opacity 0.2s;
         }
-        #acompanhamento-feedback.ativo { opacity: 1; }
+        #acompanhamento-feedback.ativo { display: block; opacity: 1; }
         .acomp-lista-item {
             display: flex;
             align-items: flex-start;
@@ -1105,6 +1156,108 @@
             font-size: 0.78rem;
             color: #2a2a3a;
         }
+
+        /* O histórico deixa de ser uma gaveta e vira a conversa principal. Estes overrides
+           ficam depois do desenho antigo para manter os contratos de IDs sem duplicar estado. */
+        #btn-historico, #historico-overlay, #btn-historico-fechar { display: none !important; }
+        #historico-panel {
+            position: static; inset: auto; width: 100%; height: auto;
+            height: clamp(440px, 58vh, 760px); min-height: 440px; max-height: 760px;
+            transform: none; transition: none; z-index: auto;
+            background: transparent; border: 0; border-radius: 0;
+            overflow: hidden; display: flex; flex-direction: column;
+        }
+        .historico-header { display: none; }
+        #historico-lista {
+            flex: 1; overflow-y: auto; padding: 6px 4px 12px 2px;
+            display: flex; flex-direction: column; min-height: 0;
+            user-select: text; -webkit-user-select: text; scroll-behavior: smooth;
+        }
+        /* O espaço flexível fica ACIMA dos turnos: conversa curta já nasce no rodapé e,
+           quando cresce além da caixa, ele encolhe a zero sem quebrar a rolagem. */
+        #historico-lista::before { content: ''; flex: 1 0 auto; }
+        #config-panel #btn-historico-limpar {
+            width: 100%; padding: 9px 11px; border-radius: 7px;
+            background: #21151a; border: 1px solid #42232d; color: #c87588;
+            text-align: left; font: inherit; font-size: .82rem; cursor: pointer;
+        }
+        #config-panel #btn-historico-limpar:hover { color: #f7768e; background: #2b1820; }
+        #historico-lista.fade-topo {
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 28px, #000 100%);
+            mask-image: linear-gradient(to bottom, transparent 0, #000 28px, #000 100%);
+        }
+        #historico-lista.fade-fundo {
+            -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 28px), transparent 100%);
+            mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 28px), transparent 100%);
+        }
+        #historico-lista.fade-topo.fade-fundo {
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%);
+        }
+        #luna-bloco, #usuario-bloco { display: none; }
+        .turno { display: flex; flex: 0 0 auto; flex-direction: column; gap: 8px; padding: 6px 0 14px; border: 0; }
+        .turno-tempo { color: #41415b; text-align: center; margin: 0; }
+        .turno-usuario {
+            align-self: flex-end; max-width: 82%; margin: 0; padding: 10px 13px;
+            border-radius: 13px 13px 3px 13px; background: #242033; border: 1px solid #352d4a;
+            color: #ddd7e8; font-size: .94rem; font-style: normal; line-height: 1.5;
+            white-space: pre-wrap;
+        }
+        .turno-usuario::before {
+            content: 'Você'; display: block; margin-bottom: 4px; color: #8d70bd;
+            font-size: .65rem; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .turno-luna {
+            position: relative; align-self: flex-start; max-width: 92%;
+            padding: 11px 38px 11px 13px; border-radius: 13px 13px 13px 3px;
+            background: #11111a; border: 1px solid #20243a;
+            /* Ciano puro funciona no mascote, mas em paragrafo longo vira luz demais.
+               O cinza azulado preserva a identidade da Luna sem cansar a leitura. */
+            color: #c1ccd5; font-size: .98rem; line-height: 1.55;
+        }
+        .turno-luna::before {
+            content: 'Luna'; display: block; margin-bottom: 5px; color: #527a87;
+            font-size: .65rem; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .turno-pendente { opacity: .72; }
+        .turno-pendente .turno-tempo::after { content: ' · processando'; }
+        .balao-entrando { animation: balao-entra .46s cubic-bezier(.22,1,.36,1) both; }
+        @keyframes balao-entra {
+            from { opacity: 0; transform: translateY(13px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .balao-entrando { animation: none; }
+        }
+        .mensagem-copiar {
+            position: absolute; top: 8px; right: 8px; border: 0; border-radius: 6px;
+            padding: 4px 6px; color: #565f89; background: transparent; cursor: pointer;
+            opacity: 0; transition: opacity .2s, color .2s, background .2s;
+        }
+        .turno-luna:hover .mensagem-copiar, .mensagem-copiar:focus { opacity: 1; }
+        .mensagem-copiar:hover { color: #b4f9f8; background: #1b2135; }
+        .mensagem-conteudo p + p { margin-top: .75em; }
+        .mensagem-conteudo h1, .mensagem-conteudo h2, .mensagem-conteudo h3 {
+            color: #d5dbe1; line-height: 1.25; margin: .8em 0 .35em; font-size: 1.04em;
+        }
+        .mensagem-conteudo h1:first-child, .mensagem-conteudo h2:first-child,
+        .mensagem-conteudo h3:first-child { margin-top: 0; }
+        .mensagem-conteudo ul, .mensagem-conteudo ol { padding-left: 1.35em; margin: .45em 0; }
+        .mensagem-conteudo li + li { margin-top: .2em; }
+        .mensagem-conteudo a { color: #7aa2f7; text-decoration: underline; overflow-wrap: anywhere; }
+        .mensagem-conteudo code { font-family: Consolas, 'Courier New', monospace; color: #e0af68; background: #09090e; padding: .08em .3em; border-radius: 4px; }
+        .mensagem-conteudo pre { overflow-x: auto; margin: .6em 0; padding: 10px 12px; border-radius: 8px; background: #09090e; border: 1px solid #24243a; color: #c7d0e0; }
+        .mensagem-conteudo pre code { padding: 0; background: transparent; color: inherit; white-space: pre; }
+        .mensagem-conteudo blockquote { margin: .55em 0; padding-left: .75em; border-left: 3px solid #565f89; color: #9aa5ce; }
+        .md-tabela-wrap { overflow-x: auto; margin: .65em 0; border: 1px solid #292942; border-radius: 8px; }
+        .mensagem-conteudo table { width: max-content; min-width: 100%; border-collapse: collapse; color: #c1ccd5; font-size: .9em; }
+        .mensagem-conteudo th, .mensagem-conteudo td { padding: 7px 9px; border-right: 1px solid #292942; border-bottom: 1px solid #292942; text-align: left; vertical-align: top; }
+        .mensagem-conteudo th { color: #d5dbe1; background: #171724; white-space: nowrap; }
+        .mensagem-conteudo tr:last-child td { border-bottom: 0; }
+        .mensagem-conteudo th:last-child, .mensagem-conteudo td:last-child { border-right: 0; }
+        /* Quando não existe feedback de acompanhamento, cancela o gap estrutural entre os
+           botões de avaliação e o status do microfone. */
+        #acompanhamento-feedback:not(.ativo) + .zona-divisor + #status-mic { margin-top: -16px; }
 
         /* Gear button */
         #btn-config {
@@ -1522,7 +1675,6 @@
         <div class="historico-header">
             <span>Histórico</span>
             <div style="display:flex;gap:4px;align-items:center;">
-                <button id="btn-historico-limpar" title="Limpar histórico">🗑 Limpar</button>
                 <button id="btn-historico-fechar">✕</button>
             </div>
         </div>
@@ -1588,6 +1740,12 @@
         <div class="config-header">
             <span>Configurações</span>
             <button id="btn-config-fechar">✕</button>
+        </div>
+
+        <div class="config-secao">
+            <div class="config-secao-titulo">💬 Conversa</div>
+            <button id="btn-historico-limpar" title="Limpar conversa desta sessão">🗑 Limpar conversa</button>
+            <div class="oficina-dica">Remove apenas os turnos exibidos nesta sessão.</div>
         </div>
 
         <!-- Tarefas proativas -->
@@ -1938,19 +2096,21 @@
 
         <!-- Pensamento colapsável (como ela chegou lá — detalhe secundário) -->
         <details id="pensamento-details">
-            <summary>Pensamento</summary>
+            <summary>Detalhes</summary>
             <div id="pensamento-texto">—</div>
+            <div id="metricas-bar">
+                <span id="met-roteador">Roteador —</span>
+                <span id="met-persona">Persona —</span>
+            </div>
         </details>
-
-        <div id="metricas-bar">
-            <span id="met-roteador">Roteador —</span>
-            <span id="met-persona">Persona —</span>
-        </div>
 
         <div id="avaliacao-bar">
             <button class="btn-aval" id="btn-repetir" title="Ouvir de novo">▶️</button>
+            <button id="btn-interromper" title="Parar a fala atual">⏹️</button>
             <button class="btn-aval" data-rating="bom"  title="Resposta boa">👍</button>
             <button class="btn-aval" data-rating="ruim" title="Resposta ruim">👎</button>
+            <span class="avaliacao-espaco"></span>
+            <button id="btn-toggle-proativo" title="Ativar/pausar modo proativo">🟢 Proativo ligado</button>
         </div>
         <div id="aval-motivo">
             <input type="text" id="aval-motivo-input" placeholder="O que não funcionou? (opcional, Enter envia)" maxlength="200">
@@ -1996,11 +2156,6 @@
         <!-- Letreiro de dicas — rotativo, só no ocioso -->
         <div id="dica-ticker"></div>
 
-        <div class="btn-row">
-            <button id="btn-interromper">⬛ Parar fala</button>
-            <button id="btn-toggle-proativo" title="Ativar/pausar modo proativo">🟢 Proativo ligado</button>
-        </div>
-
     </div>
 
     <!-- anime.js v3.2.2 (MIT) — servido LOCAL, de static/. Sem CDN: a Luna roda offline.
@@ -2021,6 +2176,13 @@
         const BRAILE = Array.from({ length: 0x40 }, (_, i) => String.fromCharCode(0x2801 + i));
         const ruido = () => BRAILE[(Math.random() * BRAILE.length) | 0];
 
+        function quadroBraile(texto, resolvidos, bagunca=6) {
+            let saida = texto.slice(0, resolvidos);
+            for (let k = resolvidos; k < Math.min(resolvidos + bagunca, texto.length); k++)
+                saida += /\s/.test(texto[k]) ? texto[k] : ruido();
+            return saida;
+        }
+
         function typewriter(elementId, text, msPerChar, key) {
             if (_tw[key]) clearInterval(_tw[key]);
             const el = document.getElementById(elementId);
@@ -2035,12 +2197,7 @@
                     clearInterval(_tw[key]); _tw[key] = null;
                     return;
                 }
-                let saida = text.slice(0, i);
-                for (let k = i; k < Math.min(i + BAGUNCA, text.length); k++) {
-                    // espaço e quebra ficam intactos: preserva o desenho das palavras
-                    saida += /\s/.test(text[k]) ? text[k] : ruido();
-                }
-                el.textContent = saida;
+                el.textContent = quadroBraile(text, i, BAGUNCA);
                 i++;
             }, msPerChar);
         }
@@ -2050,12 +2207,13 @@
         const summaryEl = detailsEl.querySelector('summary');
         const conteudoEl = document.getElementById('pensamento-texto');
         const statusEl = document.getElementById('status-luna');
+        detailsEl.hidden = true;  // aparece somente quando existir um balão da Luna para recebê-lo
 
         summaryEl.addEventListener('click', (e) => {
             e.preventDefault();
             if (detailsEl.open) {
                 conteudoEl.style.height = conteudoEl.scrollHeight + 'px';
-                conteudoEl.style.padding = '0 16px';
+                conteudoEl.style.padding = '0 10px';
                 requestAnimationFrame(() => {
                     conteudoEl.style.height = '0';
                     conteudoEl.style.opacity = '0';
@@ -2069,7 +2227,7 @@
                 requestAnimationFrame(() => requestAnimationFrame(() => {
                     conteudoEl.style.height = h + 'px';
                     conteudoEl.style.opacity = '1';
-                    conteudoEl.style.padding = '10px 16px 14px';
+                    conteudoEl.style.padding = '9px 10px 10px';
                 }));
                 setTimeout(() => { conteudoEl.style.height = 'auto'; }, 360);
             }
@@ -4295,6 +4453,28 @@
         const historicoOverlay = document.getElementById('historico-overlay');
         const historicoLista   = document.getElementById('historico-lista');
 
+        function atualizarFadeConversa() {
+            const acima = historicoLista.scrollTop > 4;
+            const abaixo = historicoLista.scrollHeight - historicoLista.clientHeight -
+                historicoLista.scrollTop > 4;
+            historicoLista.classList.toggle('fade-topo', acima);
+            historicoLista.classList.toggle('fade-fundo', abaixo);
+        }
+        historicoLista.addEventListener('scroll', atualizarFadeConversa);
+
+        // O painel nasceu fora do container como gaveta lateral. Movê-lo aqui reaproveita o
+        // histórico do backend e evita manter duas conversas que poderiam sair de sincronia.
+        const lunaBloco = document.getElementById('luna-bloco');
+        if (lunaBloco && lunaBloco.parentNode && historicoPanel)
+            lunaBloco.parentNode.insertBefore(historicoPanel, lunaBloco);
+        const cabecalhoHistorico = historicoPanel && historicoPanel.querySelector
+            ? historicoPanel.querySelector('.historico-header > span') : null;
+        if (cabecalhoHistorico) cabecalhoHistorico.textContent = 'Conversa';
+        const statusCabecalho = document.getElementById('status-luna');
+        const presencaStatus = document.getElementById('presenca');
+        if (statusCabecalho && presencaStatus && presencaStatus.appendChild)
+            presencaStatus.appendChild(statusCabecalho);
+
         document.getElementById('btn-historico').onclick = function() {
             historicoPanel.classList.add('aberto');
             historicoOverlay.classList.add('ativo');
@@ -4311,21 +4491,247 @@
                 socket.send(JSON.stringify({ comando: 'limpar_historico' }));
         };
 
-        function criarTurnoEl(turno) {
+        function escaparHtml(texto) {
+            return String(texto || '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[c]);
+        }
+
+        function markdownInline(texto) {
+            let html = escaparHtml(texto);
+            html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+            html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/__([^_\n]+)__/g, '<strong>$1</strong>');
+            html = html.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+            html = html.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g,
+                '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+            return html;
+        }
+
+        function celulasTabela(linha) {
+            let limpa = linha.trim();
+            if (limpa.startsWith('|')) limpa = limpa.slice(1);
+            if (limpa.endsWith('|')) limpa = limpa.slice(0, -1);
+            return limpa.split('|').map(c => c.trim());
+        }
+
+        function ehSeparadorTabela(linha) {
+            const cols = celulasTabela(linha);
+            return cols.length > 1 && cols.every(c => /^:?-{3,}:?$/.test(c));
+        }
+
+        // Subconjunto deliberadamente pequeno: formata o que notas e respostas usam sem
+        // aceitar HTML cru da LLM dentro da WebView.
+        function renderizarMarkdownSeguro(texto) {
+            const linhas = String(texto || '').replace(/\r\n?/g, '\n').split('\n');
+            const blocos = [];
+            let i = 0;
+            while (i < linhas.length) {
+                const linha = linhas[i];
+                if (/^```/.test(linha.trim())) {
+                    const codigo = [];
+                    i++;
+                    while (i < linhas.length && !/^```/.test(linhas[i].trim())) codigo.push(linhas[i++]);
+                    if (i < linhas.length) i++;
+                    blocos.push('<pre><code>' + escaparHtml(codigo.join('\n')) + '</code></pre>');
+                    continue;
+                }
+                if (i + 1 < linhas.length && linha.includes('|') && ehSeparadorTabela(linhas[i + 1])) {
+                    const cab = celulasTabela(linha);
+                    i += 2;
+                    const corpo = [];
+                    while (i < linhas.length && linhas[i].includes('|') && linhas[i].trim()) {
+                        corpo.push(celulasTabela(linhas[i++]));
+                    }
+                    const th = cab.map(c => '<th>' + markdownInline(c) + '</th>').join('');
+                    const trs = corpo.map(cols => '<tr>' + cab.map((_, n) =>
+                        '<td>' + markdownInline(cols[n] || '') + '</td>').join('') + '</tr>').join('');
+                    blocos.push('<div class="md-tabela-wrap"><table><thead><tr>' + th +
+                        '</tr></thead><tbody>' + trs + '</tbody></table></div>');
+                    continue;
+                }
+                const titulo = linha.match(/^(#{1,3})\s+(.+)$/);
+                if (titulo) {
+                    const nivel = titulo[1].length;
+                    blocos.push(`<h${nivel}>${markdownInline(titulo[2])}</h${nivel}>`);
+                    i++;
+                    continue;
+                }
+                if (/^\s*[-*+]\s+/.test(linha) || /^\s*\d+[.)]\s+/.test(linha)) {
+                    const ordenada = /^\s*\d/.test(linha);
+                    const itens = [];
+                    const padrao = ordenada ? /^\s*\d+[.)]\s+(.+)$/ : /^\s*[-*+]\s+(.+)$/;
+                    while (i < linhas.length) {
+                        const item = linhas[i].match(padrao);
+                        if (!item) break;
+                        itens.push('<li>' + markdownInline(item[1]) + '</li>');
+                        i++;
+                    }
+                    const tag = ordenada ? 'ol' : 'ul';
+                    blocos.push(`<${tag}>${itens.join('')}</${tag}>`);
+                    continue;
+                }
+                if (/^>\s?/.test(linha)) {
+                    const citacao = [];
+                    while (i < linhas.length && /^>\s?/.test(linhas[i]))
+                        citacao.push(linhas[i++].replace(/^>\s?/, ''));
+                    blocos.push('<blockquote>' + citacao.map(markdownInline).join('<br>') + '</blockquote>');
+                    continue;
+                }
+                if (!linha.trim()) { i++; continue; }
+                const paragrafo = [linha];
+                i++;
+                while (i < linhas.length && linhas[i].trim() && !/^```|^(#{1,3})\s|^\s*[-*+]\s+|^\s*\d+[.)]\s+|^>\s?/.test(linhas[i])) {
+                    if (linhas[i].includes('|') && i + 1 < linhas.length && ehSeparadorTabela(linhas[i + 1])) break;
+                    paragrafo.push(linhas[i++]);
+                }
+                blocos.push('<p>' + paragrafo.map(markdownInline).join('<br>') + '</p>');
+            }
+            return blocos.join('');
+        }
+
+        function copiarMensagem(texto, botao) {
+            const pronto = () => { botao.textContent = '✓'; setTimeout(() => botao.textContent = '⎘', 1200); };
+            const copiarLegado = () => {
+                const area = document.createElement('textarea');
+                area.value = texto; document.body.appendChild(area); area.select();
+                try { document.execCommand('copy'); pronto(); } finally { area.remove(); }
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(texto).then(pronto).catch(copiarLegado);
+                return;
+            }
+            copiarLegado();
+        }
+
+        function criarTurnoEl(turno, pendente=false) {
             const div = document.createElement('div');
-            div.className = 'turno' + (turno.usuario ? '' : ' turno-proativo');
-            div.innerHTML =
-                `<div class="turno-tempo">${turno.tempo}</div>` +
-                (turno.usuario ? `<div class="turno-usuario">${turno.usuario}</div>` : '') +
-                `<div class="turno-luna">${turno.luna}</div>`;
+            div.className = 'turno' + (turno.usuario ? '' : ' turno-proativo') +
+                (pendente ? ' turno-pendente' : '');
+            const tempo = document.createElement('div');
+            tempo.className = 'turno-tempo';
+            tempo.textContent = turno.tempo || '';
+            div.appendChild(tempo);
+            if (turno.usuario) {
+                const usuario = document.createElement('div');
+                usuario.className = 'turno-usuario';
+                usuario.textContent = turno.usuario;
+                div.appendChild(usuario);
+            }
+            if (turno.luna) {
+                const luna = document.createElement('div');
+                luna.className = 'turno-luna';
+                const conteudo = document.createElement('div');
+                conteudo.className = 'mensagem-conteudo';
+                conteudo.innerHTML = renderizarMarkdownSeguro(turno.luna);
+                const copiar = document.createElement('button');
+                copiar.className = 'mensagem-copiar'; copiar.type = 'button';
+                copiar.title = 'Copiar resposta'; copiar.textContent = '⎘';
+                copiar.onclick = () => copiarMensagem(turno.luna, copiar);
+                luna.append(conteudo, copiar);
+                div.appendChild(luna);
+            }
             return div;
+        }
+
+        function anexarDetalhesAoTurno(turnoEl) {
+            const balao = turnoEl && turnoEl.querySelector ? turnoEl.querySelector('.turno-luna') : null;
+            if (!balao) { detailsEl.hidden = true; return; }
+            detailsEl.removeAttribute('open');
+            conteudoEl.style.height = '0';
+            conteudoEl.style.opacity = '0';
+            conteudoEl.style.padding = '0 10px';
+            detailsEl.hidden = false;
+            balao.appendChild(detailsEl);
         }
 
         function adicionarTurno(turno) {
             const vazio = document.getElementById('historico-vazio');
             if (vazio) vazio.remove();
-            historicoLista.appendChild(criarTurnoEl(turno));
+            const pendente = document.getElementById('turno-pendente');
+            const tinhaPrevia = !!(pendente && pendente.querySelector('.turno-luna'));
+            pararBraileStream();
+            if (pendente) pendente.remove();
+            const estavaNoFim = historicoLista.scrollHeight - historicoLista.scrollTop -
+                historicoLista.clientHeight < 80;
+            const turnoEl = criarTurnoEl(turno);
+            const lunaNova = turnoEl.querySelector('.turno-luna');
+            if (lunaNova && !tinhaPrevia) lunaNova.classList.add('balao-entrando');
+            historicoLista.appendChild(turnoEl);
+            anexarDetalhesAoTurno(turnoEl);
+            if (estavaNoFim) historicoLista.scrollTop = historicoLista.scrollHeight;
+            atualizarFadeConversa();
+        }
+
+        function mostrarUsuarioPendente(texto) {
+            if (!texto || texto === 'Aguardando...') return;
+            pararBraileStream();
+            const anterior = document.getElementById('turno-pendente');
+            if (anterior) anterior.remove();
+            const agora = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+            const el = criarTurnoEl({usuario: texto, luna: '', tempo: agora}, true);
+            el.id = 'turno-pendente';
+            const balaoUsuario = el.querySelector('.turno-usuario');
+            if (balaoUsuario) balaoUsuario.classList.add('balao-entrando');
+            const vazio = document.getElementById('historico-vazio');
+            if (vazio) vazio.remove();
+            historicoLista.appendChild(el);
             historicoLista.scrollTop = historicoLista.scrollHeight;
+        }
+
+        let _braileStreamTimer = null;
+        let _braileStreamAlvo = '';
+        let _braileStreamResolvido = 0;
+        let _braileStreamConteudo = null;
+
+        function pararBraileStream() {
+            if (_braileStreamTimer) clearInterval(_braileStreamTimer);
+            _braileStreamTimer = null;
+            _braileStreamAlvo = '';
+            _braileStreamResolvido = 0;
+            _braileStreamConteudo = null;
+        }
+
+        function animarBraileStream() {
+            if (_braileStreamTimer || !_braileStreamConteudo) return;
+            _braileStreamTimer = setInterval(() => {
+                if (!_braileStreamConteudo) { pararBraileStream(); return; }
+                const faltam = _braileStreamAlvo.length - _braileStreamResolvido;
+                const passo = Math.max(2, Math.ceil(faltam / 5));
+                const pertoDoFim = historicoLista.scrollHeight - historicoLista.scrollTop -
+                    historicoLista.clientHeight < 100;
+                _braileStreamResolvido = Math.min(_braileStreamResolvido + passo, _braileStreamAlvo.length);
+                const quadro = quadroBraile(_braileStreamAlvo, _braileStreamResolvido, 7);
+                _braileStreamConteudo.innerHTML = renderizarMarkdownSeguro(quadro);
+                if (_braileStreamResolvido >= _braileStreamAlvo.length) {
+                    clearInterval(_braileStreamTimer);
+                    _braileStreamTimer = null;
+                }
+                if (pertoDoFim) historicoLista.scrollTop = historicoLista.scrollHeight;
+                atualizarFadeConversa();
+            }, 24);
+        }
+
+        function mostrarRespostaStream(texto) {
+            if (!texto) return;
+            const turno = document.getElementById('turno-pendente');
+            if (!turno) return;
+            turno.classList.remove('turno-pendente');
+            turno.classList.add('turno-stream');
+            let luna = turno.querySelector('.turno-luna');
+            if (!luna) {
+                luna = document.createElement('div');
+                luna.className = 'turno-luna balao-entrando';
+                const conteudo = document.createElement('div');
+                conteudo.className = 'mensagem-conteudo';
+                luna.appendChild(conteudo);
+                turno.appendChild(luna);
+            }
+            const conteudo = luna.querySelector('.mensagem-conteudo');
+            _braileStreamAlvo = texto;
+            _braileStreamConteudo = conteudo;
+            _braileStreamResolvido = Math.min(_braileStreamResolvido, texto.length);
+            animarBraileStream();
         }
 
         // --- Config panel ---
@@ -4582,17 +4988,31 @@
                 return;
             }
             if (dados.tipo === 'historico_completo') {
+                // O painel de detalhes mora dentro do último balão, então precisa ser
+                // destacado antes de reconstruir a lista para não ser destruído pelo innerHTML.
+                if (detailsEl.parentNode && detailsEl.remove) detailsEl.remove();
                 historicoLista.innerHTML = '';
                 if (dados.turnos.length === 0) {
-                    historicoLista.innerHTML = '<div id="historico-vazio">Nenhuma conversa ainda.</div>';
+                    historicoLista.innerHTML = '<div id="historico-vazio">A conversa aparece aqui.</div>';
+                    detailsEl.hidden = true;
                 } else {
-                    dados.turnos.forEach(t => historicoLista.appendChild(criarTurnoEl(t)));
+                    let ultimoTurno = null;
+                    dados.turnos.forEach(t => {
+                        ultimoTurno = criarTurnoEl(t);
+                        historicoLista.appendChild(ultimoTurno);
+                    });
+                    anexarDetalhesAoTurno(ultimoTurno);
                     historicoLista.scrollTop = historicoLista.scrollHeight;
                 }
+                atualizarFadeConversa();
                 return;
             }
             if (dados.tipo === 'historico_novo') {
                 adicionarTurno(dados.turno);
+                return;
+            }
+            if (dados.tipo === 'resposta_stream') {
+                mostrarRespostaStream(dados.texto || '');
                 return;
             }
             if (dados.tipo === 'config_estado') {
@@ -4673,8 +5093,10 @@
                     limparAval();                       // reseta avaliação para a nova resposta
                 }
             }
-            if (dados.usuario !== undefined)
+            if (dados.usuario !== undefined) {
                 typewriter('usuario-texto', dados.usuario || 'Aguardando...', 18, 'voce');
+                mostrarUsuarioPendente(dados.usuario || '');
+            }
             if (dados.jogo !== undefined) modoJogo(dados.jogo);
             if (typeof dados.estado === 'string')      // ouvindo/pensando/falando/dormindo
                 aplicarPresenca(dados.estado);
@@ -4684,6 +5106,7 @@
                 trocarGif(dados.gif_url, dados.gif_termo);
             if (dados.tipo === 'status' && statusEl) {
                 statusEl.textContent = dados.texto || '◗ Por aqui';
+                statusEl.classList.toggle('tem-ferramenta', /usando\s*:/i.test(dados.texto || ''));
                 aplicarFerramenta(dados.texto || '');
                 aplicarAfk(/suspensa/i.test(dados.texto || ''));
             }
