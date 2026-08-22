@@ -888,7 +888,9 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             "curta, viva e com personalidade de sobra. Uma alfinetada AFIADA está liberada quando "
             "nascer da própria ação ou escolha que ele acabou de contar; mire a situação, não o caráter "
             "dele. Curiosidade genuína ou uma pergunta curta também estão liberadas. Não presuma "
-            "que é repetição ('outro/de novo/terceiro'), nem invente "
+            "que é repetição: PROIBIDO 'de novo', 'dessa vez', 'outro', 'mais um', "
+            "'terceiro' e qualquer coisa que sugira que isso já aconteceu antes — você não "
+            "tem esse dado. Não invente "
             "preguiça, impulso, falta de autocontrole, compromisso pendente ou motivo oculto. "
             "Pode brincar com a situação presente, não com um histórico que não foi dado."
         )

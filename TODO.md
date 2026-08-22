@@ -87,15 +87,35 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
       `AUTONOMIA NÃO É BIRRA` ficou em EMOÇÃO, não em LIMITES: por conteúdo é limite, mas é a
       guarda de `TENHA OPINIÃO` e guarda longe não segura neste modelo.
 
-- [ ] **A trava nominal de Steam/backlog saiu do prompt completo.** Ela morava na segunda
-      metade do bullet `CONTRADIÇÃO CONCRETA`, removido em ago/2026 ("não recorra automaticamente
-      a Steam, backlog ou jogos quando eles não fazem parte dos fatos atuais"). O que sobrou é
-      genérico — `NUNCA puxe uma memória sem relação direta` e a REGRA DE EVIDÊNCIA — e nomear o
-      viés costuma segurar melhor do que a regra geral. Não houve queda na bancada, mas nenhum
-      cenário mede isso direito. Se a Luna voltar a puxar backlog do nada em conversa normal, é
-      aqui que se olha primeiro: basta devolver a meia-frase para `NADA DE CARIMBO`.
+- [x] **Trocar o prompt inteiro x trocar só o bloco de emoção.** Testado nos dois extremos da
+      escala, e a resposta é a mesma nos dois: **o modo enxuto fica.**
+  - `momento_sensivel` (o lado compreensivo): 15/15 nos dois, e **0/3 nos dois** no cenário com
+    memória pertinente — dar perfil, memória e ChromaDB NÃO fez ela usar. 8x mais prompt por
+    empate. O mecanismo (`persona(emocao)`) ficou pronto e desligado, ver `prompts.py`.
+  - `aviso_cotidiano` (o lado ácido): prompt completo **piorou** o grounding, 12/12 → 9/12. As
+    falhas foram justamente o que o enxuto previne: "mais um", "dessa vez" e um "backlog
+    infinito que você só olha e não joga" puxado do nada.
+  - Devolver as travas ao prompt completo recuperou só parte (10/12). Uma delas — a proibição
+    LITERAL de "dessa vez" — foi desobedecida mesmo estando escrita, porque no prompt completo
+    ela fica a 10.000 caracteres do começo. **É a quarta medição do mesmo princípio: instrução
+    perto vence instrução longe.**
+  - **O que funcionou** foi o contrário do experimento: copiar para o modo enxuto a UMA regra do
+    prompt completo que ele não herdava. O `ENXUTO_COTIDIANO` não tinha o freio anti-pergunta, e
+    o resultado eram **11 de 12 respostas terminando em "?", 10 delas no molde "vai ser X ou Y?"**.
+    Com 200 caracteres de freio: grounding 11/12, "?" caiu para 6/12 e o molde para 5/12.
 
-- [ ] **Metade da bancada não mede a persona.** Dos 27 cenários, **14 caem num `modo_enxuto`**,
+- [ ] **Auditar o que mais falta nos outros 11 modos enxutos.** O `ENXUTO_COTIDIANO` ganhou muito
+      com UMA regra herdada. Provável que os outros tenham buracos parecidos — cada modo enxuto
+      foi escrito isolado, sem conferir o que o prompt completo já resolvia. Método: rodar o modo,
+      olhar o padrão que se repete nas respostas e procurar a regra correspondente no `prompts.py`.
+
+- [ ] ~~**A trava nominal de Steam/backlog saiu do prompt completo.**~~ RESOLVIDO no mesmo dia: a
+      medição do cotidiano fez ela dizer "descansa desse backlog infinito que você só olha e não
+      joga" com o prompt completo. A meia-frase voltou para `NADA DE CARIMBO`, como estava
+      previsto aqui, e o backlog não apareceu mais nas rodadas seguintes. Prova de que nomear o
+      viés segura melhor que a regra genérica.
+
+- [ ] **Metade da bancada não mede a persona.** Dos 34 cenários, **21 caem num `modo_enxuto`**,
       que SUBSTITUI o prompt inteiro — a persona não entra. Medir uma mudança na persona contra o
       placar total engana: ao reagrupar os prompts, o total caiu de 76/81 para 74/81 e a queda
       inteira estava nesses 14, cujo prompt é byte a byte o mesmo. A bancada já reporta os dois

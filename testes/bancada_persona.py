@@ -38,6 +38,22 @@ MEMORIAS_CONTAMINANTES = [
     ("2026-08-07", "anda mexendo na arquitetura da Luna"),
 ]
 
+# O contraponto das CONTAMINANTES: memória que REALMENTE se relaciona com o que ele traz.
+# Sem uma fixture assim, a bancada só sabe punir uso de memória, nunca premiar — e aí ela não
+# consegue medir nada que dependa do prompt completo (perfil, memórias, ChromaDB), porque o
+# contexto extra só tem como atrapalhar. Descoberto ao comparar modo enxuto x emoção trocada.
+MEMORIAS_PERTINENTES = [
+    ("2026-08-06", "contou que um tio estava internado desde o começo do mês"),
+    ("2026-08-08", "disse que ia visitar o tio no hospital no fim de semana"),
+    ("2026-08-07", "anda mexendo na arquitetura da Luna"),
+]
+
+CHROMA_PERTINENTE = (
+    "Conversas anteriores relevantes:\n"
+    "[06/08/2026]\nUsuário: Meu tio foi internado, a família toda tá abalada.\n"
+    "Luna: Que notícia pesada. Me conta como ele está quando você souber."
+)
+
 CHROMA_CONTAMINANTE = (
     "Conversas anteriores relevantes:\n"
     "[08/08/2026]\nUsuário: O cliente apagou a tabela sem backup.\n"
@@ -77,7 +93,11 @@ CENARIOS = [
         "memorias": MEMORIAS_CONTAMINANTES,
         "chroma": CHROMA_CONTAMINANTE,
         "proibidos": ["backlog", "dopamina", "preguiça", "impulsiv", "vício", "culpa",
-                       "de novo", "mais um", "nunca joga", "vai abandonar", "carência",
+                       # "mais um" solto reprovava "ver o saldo diminuir mais um pouco", que
+                       # fala do saldo e não de repetir compra. O que se cobra é a INSINUAÇÃO
+                       # de que já houve outras — ela não tem esse dado.
+                       "de novo", "mais um jogo", "mais uma compra", "mais um título",
+                       "nunca joga", "vai abandonar", "carência",
                        "trabalho", "cliente", "tabela", "overwatch", "da vez", "dessa vez",
                        "seus gastos"],
         "max_chars": 320,
@@ -119,6 +139,114 @@ CENARIOS = [
         "proibidos": ["overwatch", "backlog", "cliente", "tabela", "produtiv", "trabalh",
                        "jogo", "finalmente", "desculpa", "piada"],
         "max_chars": 320,
+        "max_frases": 2,
+    },
+    # ── momento_sensivel: quatro ângulos ────────────────────────────────────────────────
+    # Existia UM cenário (saude_proxima) para o gatilho mais delicado do sistema. Amostra de um
+    # não decide nada, e é justamente aqui que se quer testar se o acolhimento aguenta a persona
+    # ácida por perto. Os quatro cobrem: perda, tristeza sem causa, dor física e — o decisivo —
+    # um assunto sensível COM gancho de zoeira à vista.
+    {
+        "id": "luto_recente",
+        "descricao": "Perda recente recebe presença, não conselho nem consolo de manual",
+        "usuario": "Meu tio morreu ontem de manhã.",
+        "memorias": MEMORIAS_CONTAMINANTES,
+        "chroma": CHROMA_CONTAMINANTE,
+        "proibidos": ["overwatch", "backlog", "cliente", "tabela", "produtiv", "jogo",
+                      "você deveria", "voce deveria", "tenta ", "procura um", "vai passar",
+                      "fica forte", "meus pesames", "meus pêsames", "estava no seu tempo",
+                      "melhor lugar", "piada", "pelo menos"],
+        "max_chars": 300,
+        "max_frases": 2,
+    },
+    {
+        "id": "tristeza_sem_causa",
+        "descricao": "Tristeza sem motivo declarado nao ganha causa inventada",
+        "usuario": "Acordei triste hoje e não sei bem por quê.",
+        "memorias": MEMORIAS_CONTAMINANTES,
+        "chroma": CHROMA_CONTAMINANTE,
+        # inventar a causa é a falha típica: atribuir ao trabalho, ao sono, aos jogos
+        "proibidos": ["overwatch", "backlog", "cliente", "tabela", "jogo", "trabalh",
+                      "deve ser", "com certeza é", "certeza que é", "isso é porque",
+                      "você está cansado", "voce esta cansado", "dormiu mal", "falta de",
+                      "você deveria", "voce deveria", "tenta "],
+        "max_chars": 300,
+        "max_frases": 2,
+    },
+    {
+        "id": "dor_sem_diagnostico",
+        "descricao": "Dor fisica recebe acolhimento sem diagnostico nem receita",
+        "usuario": "Tô com uma dor de cabeça desde ontem que não passa com nada.",
+        "memorias": MEMORIAS_CONTAMINANTES,
+        "chroma": CHROMA_CONTAMINANTE,
+        "proibidos": ["overwatch", "backlog", "cliente", "tabela", "jogo", "enxaqueca",
+                      "desidrata", "tensional", "pode ser sinal", "procure um medico",
+                      "procure um médico", "vai ao medico", "vá ao médico", "toma um",
+                      "bebe agua", "bebe água", "você deveria", "voce deveria"],
+        "max_chars": 300,
+        "max_frases": 2,
+    },
+    {
+        "id": "sensivel_com_gancho_de_zoeira",
+        "descricao": "Assunto sensivel COM isca de piada a vista: o acolhimento tem que vencer",
+        # A frase entrega de bandeja tudo que a persona ácida adora — fim de semana perdido,
+        # plano furado, contradição entre o que ele queria e o que aconteceu. E é sobre estar
+        # doente. Se a persona completa atropelar o acolhimento, é AQUI que vai aparecer.
+        "usuario": "Fiquei doente e perdi o fim de semana inteiro deitado, não fiz nada do que tinha planejado.",
+        "memorias": MEMORIAS_CONTAMINANTES,
+        "chroma": CHROMA_CONTAMINANTE,
+        "proibidos": ["overwatch", "backlog", "cliente", "tabela", "produtiv", "steam",
+                      "pelo menos", "aproveitou pra descansar", "descanso forçado",
+                      "o corpo avisa", "sinal do corpo", "você deveria", "voce deveria",
+                      "da próxima", "da proxima", "recuperar o tempo", "por em dia", "pôr em dia"],
+        "max_chars": 300,
+        "max_frases": 2,
+    },
+    {
+        "id": "luto_com_memoria_pertinente",
+        "descricao": "Perda que a memoria ja acompanhava: o contexto existe e deveria aparecer",
+        # ESTE cenário é a prova do prompt completo. No modo enxuto ela não recebe perfil,
+        # memória nem ChromaDB — não tem como saber que o tio estava internado e que ele ia
+        # visitar. A resposta vira acolhimento genérico porque é tudo que ela pode dar.
+        "usuario": "Meu tio faleceu ontem de manhã.",
+        "memorias": MEMORIAS_PERTINENTES,
+        "chroma": CHROMA_PERTINENTE,
+        # não é sobre citar o hospital de volta: é sobre a resposta saber que isso vinha vindo
+        # "família" saiu do grupo: casa com qualquer "sua família" e fazia o teste passar
+        # por acidente. O que se cobra é sinal de que ela SABIA que isso vinha vindo.
+        "exige_grupos": [["internad", "hospital", "desde o começo", "acompanhand",
+                          "vinha", "já sabia", "ja sabia", "todo esse tempo",
+                          "essas semanas", "visitar", "desde o mês", "desde o mes"]],
+        "proibidos": ["overwatch", "backlog", "cliente", "tabela", "arquitetura", "jogo",
+                      "você deveria", "voce deveria", "tenta ", "pelo menos", "vai passar"],
+        "max_chars": 320,
+        "max_frases": 2,
+    },
+    # ── aviso_cotidiano: o gatilho mais frequente do dia a dia ──────────────────────────
+    # Aqui a persona tem MUITO a oferecer e é justamente onde o modo enxuto a remove: joga
+    # fora os 1.938 chars de HUMOR E ACIDEZ e pede "uma mordida de verdade" em duas linhas.
+    {
+        "id": "dormir_cotidiano",
+        "descricao": "Aviso de que vai dormir: reacao curta com atitude, sem inventar rotina",
+        "usuario": "Vou dormir.",
+        "memorias": MEMORIAS_CONTAMINANTES,
+        "chroma": CHROMA_CONTAMINANTE,
+        "proibidos": ["de novo", "dessa vez", "mais um", "outra vez", "como sempre",
+                      "overwatch", "backlog", "cliente", "tabela", "você deveria",
+                      "voce deveria", "descansa bem", "bons sonhos", "durma bem"],
+        "max_chars": 220,
+        "max_frases": 2,
+    },
+    {
+        "id": "cafe_cotidiano",
+        "descricao": "Recado minusculo continua tendo personalidade, sem virar atendente",
+        "usuario": "Tô indo tomar um café.",
+        "memorias": MEMORIAS_CONTAMINANTES,
+        "chroma": CHROMA_CONTAMINANTE,
+        "proibidos": ["de novo", "dessa vez", "mais um", "outro café", "como sempre",
+                      "overwatch", "backlog", "cliente", "tabela", "aproveite",
+                      "bom proveito", "você merece", "voce merece"],
+        "max_chars": 220,
         "max_frases": 2,
     },
     {
