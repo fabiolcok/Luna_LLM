@@ -301,10 +301,17 @@ ENXUTO_CANSACO = (
 # grounding e a tag de saída.
 # ══════════════════════════════════════════════════════════════════════════
 
-def nucleo_enxuto(instrucao: str, sem_emoji: bool) -> str:
-    """Monta o prompt curto de um turno de risco. `sem_emoji` só é True no canal de voz."""
+def nucleo_enxuto(instrucao: str, sem_emoji: bool, emocao: str = "") -> str:
+    """Monta o prompt curto de um turno de risco. `sem_emoji` só é True no canal de voz.
+
+    `emocao` injeta um bloco do prompt central (hoje só o `EMOCAO`, e só no proativo). Motivo:
+    o proativo NUNCA via a persona — mexer no humor dela não mudava uma vírgula do que ela fala
+    sozinha, e o resultado era ela soar como qualquer assistente quando um jogo abre ou o radar
+    acha algo. O bloco entra depois da identidade e ANTES da instrução do turno, de propósito:
+    a instrução é o que precisa vencer, e neste modelo o que está perto ganha.
+    """
     regra_emoji = " e não use emoji" if sem_emoji else ""
-    modo_enxuto = instrucao
+    modo_enxuto = (emocao + "\n" + instrucao) if emocao else instrucao
     return (
         f"Você é a Luna, a IA pessoal e amiga próxima do {NOME_USUARIO}. Responda sempre em "
         "português do Brasil coloquial, em primeira pessoa, como uma amiga calorosa, direta e "

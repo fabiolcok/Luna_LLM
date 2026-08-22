@@ -249,6 +249,86 @@ CENARIOS = [
         "max_chars": 220,
         "max_frases": 2,
     },
+    # ── proativo: os quatro casos reais ─────────────────────────────────────────────────
+    # Os proativos que existiam mediam GROUNDING (não inventar). Nenhum media ATITUDE, que é
+    # justamente o que se perde ali: o ENXUTO_PROATIVO não recebe o bloco de humor da persona.
+    # O que se cobra aqui é o oposto do grounding: que ela NÃO soe como qualquer assistente.
+    {
+        "id": "proativo_jogo_aberto",
+        "descricao": "Jogo abrindo: reacao com opiniao propria, nao narracao nem boas-vindas",
+        "usuario": "",
+        "tecnica": (
+            "O usuário acabou de abrir Hollow Knight na Steam.\n"
+            "DADOS DISPONÍVEIS: 42 horas jogadas no total, última sessão há 3 semanas.\n"
+            "Comente a abertura. Use até 2 frases."
+        ),
+        "memorias": [], "chroma": "",
+        "proibidos": [
+            # o registro de atendente: qualquer assistente responderia isto
+            "bom jogo", "divirta-se", "divirta se", "boa sorte", "aproveite", "aproveita bastante",
+            "espero que você", "bons momentos", "boa jogatina", "que comece",
+            # narração pura do que ele acabou de fazer
+            "notei que", "vi que você abriu", "você acabou de abrir", "estou vendo que",
+            # elogio vazio
+            "que legal", "que bacana", "que incrível", "interessante escolha"],
+        "max_chars": 300,
+        "max_frases": 2,
+    },
+    {
+        "id": "proativo_jogo_fechado",
+        "descricao": "Sessao encerrada: comenta os dados sem virar relatorio de recibo",
+        "usuario": "",
+        "tecnica": (
+            "O usuário acabou de fechar Cities: Skylines (Steam).\n"
+            "DADOS DA SESSÃO: 4 horas e 20 minutos jogados, nenhuma conquista nova.\n"
+            "Feche a sessão: comente o tempo jogado. Se NÃO houver conquista nova, "
+            "não toque no assunto conquista. Use até 2 frases."
+        ),
+        "memorias": [], "chroma": "",
+        "proibidos": [
+            "sessão encerrada", "sessao encerrada", "registro da sessão", "total de",
+            "espero que você", "descanse bem", "até a próxima", "ate a proxima",
+            "boa sessão", "aproveite o resto", "parabéns pela dedicação",
+            # o prompt real manda calar sobre conquista quando não houve nenhuma
+            "conquista", "platina", "troféu", "trofeu"],
+        "max_chars": 300,
+        "max_frases": 2,
+    },
+    {
+        "id": "proativo_rss_com_atitude",
+        "descricao": "Noticia do radar: reage com um ponto proprio, nao recita a manchete",
+        "usuario": "",
+        "tecnica": (
+            "O radar encontrou uma notícia nos feeds que o usuário acompanha: um estúdio "
+            "anunciou que seu próximo jogo terá 400 horas de conteúdo principal. "
+            "Comente a novidade em uma ou duas frases."
+        ),
+        "memorias": [], "chroma": "",
+        "exige_grupos": [["400", "quatrocentas"]],
+        "proibidos": [
+            "que incrível", "que interessante", "que legal", "impressionante", "uau",
+            "fique de olho", "vale a pena acompanhar", "vamos aguardar", "só o tempo dirá",
+            "o que você acha disso", "backlog", "steam"],
+        "max_chars": 300,
+        "max_frases": 2,
+    },
+    {
+        "id": "proativo_email_com_atitude",
+        "descricao": "Aviso de email: informa com personalidade, sem virar secretaria",
+        "usuario": "",
+        "tecnica": (
+            "Você tem 3 emails não lidos. Remetentes e assuntos: "
+            "'Nubank — sua fatura fechou', 'Steam — ofertas da semana', "
+            "'Condomínio — convocação de assembleia'. Avise ele em até 2 frases."
+        ),
+        "memorias": [], "chroma": "",
+        "proibidos": [
+            "segue abaixo", "conforme solicitado", "estou à disposição", "a disposição",
+            "espero ter ajudado", "qualquer dúvida", "prezado", "atenciosamente",
+            "vou verificar", "já te trago", "deixa que eu"],
+        "max_chars": 320,
+        "max_frases": 2,
+    },
     {
         "id": "agradecimento_curto",
         "descricao": "Agradecimento encerra curto sem cobrança ou assunto novo",
@@ -355,7 +435,11 @@ CENARIOS = [
         "memorias": [],
         "chroma": "",
         "exige_grupos": [["placa", "vídeo", "600", "watts"]],
-        "proibidos": ["backlog", "steam", "jogo", "trabalho", "cliente", "jantar", "comida",
+        # "jogo" saiu: reprovava "600 watts só pra rodar um jogo", que é o uso natural do dado
+        # e não conexão forçada com o jantar. Eram 9 das 30 falhas históricas deste cenário —
+        # quase um terço do problema "crônico" era o teste, não a Luna. "backlog" e "steam"
+        # ficam, que são a muleta de verdade.
+        "proibidos": ["backlog", "steam", "trabalho", "cliente", "jantar", "comida",
                        "prato", "refeição", "cozinhar", "subestação", "transformador",
                        "tomada", "derreter", "fiação", "derrubar a luz"],
         "max_chars": 300,

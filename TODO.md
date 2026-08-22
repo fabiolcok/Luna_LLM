@@ -104,6 +104,21 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
     o resultado eram **11 de 12 respostas terminando em "?", 10 delas no molde "vai ser X ou Y?"**.
     Com 200 caracteres de freio: grounding 11/12, "?" caiu para 6/12 e o molde para 5/12.
 
+- [x] **O proativo passa a usar o bloco EMOÇÃO da persona.** Era o único turno que NUNCA via a
+      persona: mexer no humor dela não mudava uma vírgula do que ela fala sozinha quando um jogo
+      abre ou o radar acha algo. Agora o `nucleo_enxuto` aceita um bloco do prompt central, e o
+      proativo recebe o `EMOCAO` — 2.208 → 4.147 caracteres, ainda 2,5x menor que o completo.
+      Medido em 5 cenários x3: **14/15 antes, 13/15 depois** (a diferença é 1, dentro do ruído) e
+      o tom mudou de "é uma mistura bem aleatória" para "sua caixa de entrada tá pedindo socorro
+      entre o boleto do Nubank e o convite pra assembleia". Foram criados 4 cenários proativos —
+      os 3 que existiam mediam só GROUNDING, nenhum media se ela tem atitude.
+
+- [ ] **Estender o bloco EMOÇÃO aos modos enxutos ácidos.** O proativo foi o primeiro. Os
+      candidatos naturais são `COTIDIANO`, `ZOEIRA_BACKLOG`, `CONTRADICAO` e `COMPRA_DE_JOGO` —
+      todos pedem acidez e nenhum recebe o bloco que a define. **NÃO estender aos de acolhimento**
+      (`SENSIVEL`, `CANSACO`, `CORRECAO`): lá o bloco ácido briga com a instrução, e já foi medido
+      que o registro compreensivo não ganha nada com prompt maior. Medir um de cada vez.
+
 - [ ] **Auditar o que mais falta nos outros 11 modos enxutos.** JÁ RENDEU DUAS: o freio
       anti-pergunta (no cotidiano) e o freio de abertura (no núcleo, valeu para os 12). O método
       que funcionou não é rodar experimento por modo — é olhar o LOG. `logs/bancada_persona.jsonl`
@@ -122,6 +137,14 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
       joga" com o prompt completo. A meia-frase voltou para `NADA DE CARIMBO`, como estava
       previsto aqui, e o backlog não apareceu mais nas rodadas seguintes. Prova de que nomear o
       viés segura melhor que a regra genérica.
+
+- [ ] **O ruído da bancada é de ±6 pontos em 102 — leia o placar sabendo disso.** Medido sem
+      querer: duas rodadas completas seguidas, com o prompt dos cenários reativos **byte a byte
+      idêntico** (o golden prova), deram 97/102 e 91/102. As 6 falhas de diferença estavam todas
+      em cenários que a mudança não tocava, e cada uma era uma falha isolada em três rodadas.
+      Conclusão prática: diferença de até ~6 pontos no total NÃO é sinal. Para decidir qualquer
+      coisa, olhe **só os cenários que a mudança toca** — foi assim que o experimento do proativo
+      ficou claro (0 falhas proativas antes e depois, enquanto o total "caía" 6).
 
 - [ ] **Metade da bancada não mede a persona.** Dos 34 cenários, **21 caem num `modo_enxuto`**,
       que SUBSTITUI o prompt inteiro — a persona não entra. Medir uma mudança na persona contra o
@@ -157,10 +180,12 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
     pura. O placar caiu 8 pontos. Provar que era ruído custaria mais rodadas do que os 80 chars
     valiam. Nem toda duplicata aparente é duplicata.
 
-- [ ] **`proativo_sem_relacao` inventa consequência técnica.** Falha na bancada desde antes de
-      qualquer mudança recente: dado um número (600W), ela conclui o que o dado não diz — "vai
-      precisar de tomada exclusiva pra não derrubar o disjuntor". É o ponto fraco mais
-      persistente que apareceu.
+- [ ] **`proativo_sem_relacao` inventa consequência técnica.** Dado um número (600W), ela conclui
+      o que o dado não diz — "vai precisar de tomada exclusiva pra não derrubar o disjuntor".
+      Segue sendo o ponto fraco mais persistente. **Mas um terço do problema era o teste:** das 30
+      falhas no log, 9 eram a palavra "jogo" reprovando "600 watts só pra rodar um jogo" — uso
+      natural do dado, não conexão forçada com o jantar. O proibido foi removido; "backlog" e
+      "steam", que são a muleta de verdade, ficaram. O que sobra de real é "tomada" (12 falhas).
 
 - [x] **Muleta de abertura.** RESOLVIDO. A causa não era a persona ser ignorada — era o modo
       enxuto não herdar a regra. Medido em **875 respostas de modo enxuto contra 294 de prompt

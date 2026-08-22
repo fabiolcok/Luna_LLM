@@ -11,9 +11,13 @@ const servidor = fs.readFileSync(path.join(raiz, 'servidor.py'), 'utf8');
 const html = fs.readFileSync(path.join(raiz, 'templates', 'Index.html'), 'utf8');
 
 assert.ok(proativa.includes('class _FalaProativa(str)') &&
-          proativa.includes('return _FalaProativa(resposta, tarefa) if resposta else None') &&
-          proativa.includes('origem_proativa=getattr(texto_resposta, "origem_proativa", "")'),
+          proativa.includes('return _FalaProativa(resposta, tarefa, obter_clima_resposta()) if resposta else None') &&
+          proativa.includes('origem_proativa=getattr(texto_resposta, "origem_proativa", "")') &&
+          proativa.includes('clima=getattr(texto_resposta, "clima", "")'),
           'FALHA: tarefa proativa não acompanha o texto até o servidor');
+assert.ok(proativa.includes('obj.clima = str(clima or "").strip()') &&
+          proativa.includes('_falar_morte_lol(resposta, obter_clima_resposta())'),
+          'FALHA: clima da primeira fala proativa pode se perder antes de chegar ao histórico');
 assert.ok(/def _registrar_turno\([^)]*origem_proativa/s.test(servidor) &&
           servidor.includes('turno["origem_proativa"] = origem_proativa'),
           'FALHA: histórico não preserva a origem daquela fala proativa');

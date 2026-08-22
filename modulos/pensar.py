@@ -982,7 +982,10 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     if modo_enxuto:
         # O prompt completo incentiva ousadia e modelos menores tendem a priorizá-la sobre as
         # exceções de grounding. Turnos de risco usam o mesmo núcleo curto em vez de somar remendos.
-        prompt_sistema = _prompts.nucleo_enxuto(modo_enxuto, sem_emoji=not responder_completo)
+        # O proativo leva o bloco de humor junto: é o único turno que nunca viu a persona.
+        prompt_sistema = _prompts.nucleo_enxuto(
+            modo_enxuto, sem_emoji=not responder_completo,
+            emocao=_prompts.EMOCAO if is_proativo else "")
 
     resultado_longo = len(resposta_tecnica) > 200 and not is_proativo and not forcar_incluir
     resultado_imagem = bool(re.match(r'^\s*imagem gerada\b', resposta_tecnica, re.IGNORECASE))

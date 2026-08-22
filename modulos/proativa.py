@@ -8,7 +8,7 @@ import random
 import requests
 import ctypes
 from modulos.habilidades import checar_emails_nao_lidos, ler_agenda_google, obter_previsao_tempo, obter_janela_em_foco, controlar_firefox_via_extensao, NOME_USUARIO
-from modulos.pensar import gerar_resposta, aquecer_modelo
+from modulos.pensar import gerar_resposta, aquecer_modelo, obter_clima_resposta
 from modulos.falar import falar_texto
 from modulos.memoria import carregar_vistos, salvar_vistos, atualizar_estado_luna
 from modulos import obsidian, animes
@@ -388,10 +388,11 @@ def _limpar_visual_proativo():
 
 
 class _FalaProativa(str):
-    """Texto que carrega sua origem até o histórico sem alterar o que vai para o TTS."""
-    def __new__(cls, texto, origem=""):
+    """Texto que carrega origem e clima até o histórico sem alterar o que vai para o TTS."""
+    def __new__(cls, texto, origem="", clima=""):
         obj = super().__new__(cls, texto)
         obj.origem_proativa = str(origem or "").strip()
+        obj.clima = str(clima or "").strip()
         return obj
 
 
@@ -416,6 +417,7 @@ def _falar_proativamente(texto_resposta) -> bool:
         _srv.atualizar_legenda(
             texto_resposta,
             origem_proativa=getattr(texto_resposta, "origem_proativa", ""),
+            clima=getattr(texto_resposta, "clima", ""),
         )
     except Exception:
         pass
@@ -496,7 +498,7 @@ def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150, variar=True)
                 _falas_recentes.pop(0)
         if not resposta:
             _limpar_visual_proativo()
-        return _FalaProativa(resposta, tarefa) if resposta else None
+        return _FalaProativa(resposta, tarefa, obter_clima_resposta()) if resposta else None
     except Exception as e:
         cor.vermelho(f"[Erro na geração proativa: {e}]")
         _historico_proativo = []
@@ -1482,7 +1484,7 @@ def _tarefa_avisar_animes():
     regra_nome = f" IMPORTANTE: {proibidos}." if proibidos else ""
     prompt = (
         f"SAIU episódio novo de anime que o usuário acompanha: {lista_txt}. "
-        f"Avise ele com empolgação leve. Use EXATAMENTE o nome que eu dei, sem traduzir, "
+        f"Avise ele. Use EXATAMENTE o nome que eu dei, sem traduzir, "
         f"expandir nem trocar pelo título oficial em inglês.{regra_nome} "
         f"Já está no ar pra assistir. {REGRA_PERSONA}"
     )
@@ -1732,7 +1734,7 @@ def _tarefa_detectar_habito():
     if not insight or insight == est.get("habito_ultimo"):   # nada novo pra dizer
         return
     prompt = (f"Observação FACTUAL sobre os hábitos de jogo do usuário (dado REAL da Steam): "
-              f"{insight}. Comente isso de forma leve e natural, como quem reparou — sem soar "
+              f"{insight}. Comente isso como quem reparou — sem soar "
               f"vigilante. NÃO invente nenhum número além do que está aí. {REGRA_PERSONA} 1-2 frases.")
     texto = _gerar_fala_proativa(prompt, "hábito de jogo", max_tokens=120, variar=False)
     if texto and _falar_proativamente(texto):
@@ -1831,7 +1833,7 @@ def _buscar_lol_ao_vivo():
         "tempo_min": tempo_min,
     }
 
-def _falar_morte_lol(texto: str):
+def _falar_morte_lol(texto: str, clima: str = ""):
     """Fala a reação na voz SEM o cooldown geral de proativo (o throttle dessa
     feature é o sim-não-sim + teto de 3). Respeita só o 'luna livre'."""
     if not texto or not str(texto).strip():
@@ -1844,7 +1846,7 @@ def _falar_morte_lol(texto: str):
     try:
         import servidor as _srv
         _srv.atualizar_usuario("")
-        _srv.atualizar_legenda(texto, origem_proativa="lol_mortes")
+        _srv.atualizar_legenda(texto, origem_proativa="lol_mortes", clima=clima)
     except Exception:
         pass
     if _historico_principal is not None:
@@ -1914,7 +1916,7 @@ def _comentar_morte_lol(snap: dict):
         return
     if resposta:
         cor.amarelo(f"[💀 LoL morte {snap['mortes']} → comentário na voz]")
-        _falar_morte_lol(resposta)
+        _falar_morte_lol(resposta, obter_clima_resposta())
 
 def _watcher_mortes_lol():
     """Thread própria enquanto a partida de LoL estiver ativa. Poll na 2999, detecta
@@ -2038,7 +2040,7 @@ def _tarefa_monitorar_jogos():
                 if delta:
                     dados_extras = delta
                     instrucao_especifica = ("Comente como foi a SESSÃO de hoje (não a carreira), com base nesses "
-                                            "números da sessão. 1-2 frases; alfinetada leve cabe, crueldade não.")
+                                            "números da sessão. 1-2 frases.")
                 else:
                     # perfil ainda não atualizou (delay da Blizzard) -> cai num ângulo variado, sem repetir winrate
                     foco, instr = _ow_angulo_abertura(d_ow)
@@ -2056,19 +2058,19 @@ def _tarefa_monitorar_jogos():
                     instrucao_especifica = (
                         "Use os dados como observação factual. "
                         "1 frase com o resultado da partida e o KDA. "
-                        "1 frase de análise de padrão (ex: impacto do KDA no resultado) — precisa; uma alfinetada leve cabe, crueldade não."
+                        "1 frase de análise de padrão (ex: impacto do KDA no resultado) — precisa."
                     )
                 
             elif nome_jogo == "Deadlock":
                 print("[🔎 Buscando estatísticas da conta de Deadlock...]")
                 dados_extras = _buscar_dados_deadlock()
                 if dados_extras.startswith("ERRO"):
-                    instrucao_especifica = "Erro ao buscar dados. Registre o fim da sessão e pode alfinetar de leve que nem a API quis colaborar hoje."
+                    instrucao_especifica = "Erro ao buscar dados. Registre o fim da sessão e pode alfinetar que nem a API quis colaborar hoje."
                 else:
                     instrucao_especifica = (
                         "Use os dados como observação factual. "
                         "1 frase com o resultado da partida e KDA. "
-                        "1 frase sobre winrate ou padrão de desempenho — análise direta; alfinetada leve cabe."
+                        "1 frase sobre winrate ou padrão de desempenho — análise direta."
                     )
 
             # ==========================================
@@ -2149,7 +2151,7 @@ def _dica_recursos_prompt(nome_jogo: str = "") -> str:
     if not hog:
         return ""
     cor.amarelo(f"[🧟 Recursos: {hog} pesado ao abrir o jogo]")
-    return (f" IMPORTANTE: no FIM, dá um toque CURTO e amigável de que o {hog} tá comendo bastante "
+    return (f" IMPORTANTE: no FIM, dá um toque CURTO de que o {hog} tá comendo bastante "
             f"RAM agora, caso ele queira liberar algo pra sobrar memória pro jogo. É SÓ um aviso "
             f"INFORMATIVO — NÃO mande fechar nada nem sugira fechar o navegador (pode ser o trabalho "
             f"de suporte dele, que roda no navegador), não insista, e não ofereça fechar por ele.")
@@ -2247,7 +2249,7 @@ def _tarefa_monitorar_steam():
         prompt = (
             f"O usuário acabou de abrir {nome} na Steam.\n"
             f"DADOS DISPONÍVEIS: {dados}\n"
-            f"{instrucao} Comente a abertura de forma leve e amigável. {REGRA_PERSONA} "
+            f"{instrucao} Comente a abertura. {REGRA_PERSONA} "
             f"Use até 2 frases (+1 somente se precisar caber o aviso de RAM abaixo)."
             f"{_dica_recursos_prompt(nome)}"
         )
@@ -2305,7 +2307,7 @@ def _tarefa_monitorar_steam():
             prompt = (
                 f"O usuário acabou de fechar {nome_antes} (Steam).\n"
                 f"DADOS DA SESSÃO: {dados}\n"
-                f"Feche a sessão de forma leve: comente o tempo jogado e, SE houver, as conquistas "
+                f"Feche a sessão: comente o tempo jogado e, SE houver, as conquistas "
                 f"novas (pode citar os nomes), a platina e o marco de horas. Se NÃO houver conquista "
                 f"nova, não toque no assunto conquista. {REGRA_PERSONA}"
             )
@@ -2360,7 +2362,7 @@ def _tarefa_contexto_navegador():
     if "youtube.com/watch" in url_lower or "youtu.be/" in url_lower:
         prompt = (
             f"O usuário está com um vídeo do YouTube aberto há {int(minutos_na_url)} minutos. "
-            f"Pergunte de forma casual e direta se ele quer que você resuma o vídeo. "
+            f"Pergunte se ele quer que você resuma o vídeo. "
             f"NÃO diga 'você está assistindo' ou descreva o que ele faz. Só a pergunta. "
             f"{REGRA_PERSONA} 1 frase."
         )
