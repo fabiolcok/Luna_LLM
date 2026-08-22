@@ -25,7 +25,11 @@ import unittest
 class TestaGuardrailsPersona(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.fonte = (Path(__file__).parents[1] / "modulos" / "pensar.py").read_text(encoding="utf-8")
+        # Os prompts saíram do pensar.py para o prompts.py (separados por eixo). A trava pode
+        # morar em qualquer um dos dois: o que se cobra aqui é o CONCEITO, não o arquivo.
+        modulos = Path(__file__).parents[1] / "modulos"
+        cls.fonte = "\n".join((modulos / nome).read_text(encoding="utf-8")
+                              for nome in ("pensar.py", "prompts.py"))
         cls.minuscula = cls.fonte.lower()
 
     def exige(self, trava, *grupos):
@@ -97,8 +101,8 @@ class TestaGuardrailsPersona(unittest.TestCase):
 
     def test_deadpan_nao_e_meta_explicita(self):
         # AUSÊNCIA: imune a reescrita por natureza, fica como estava.
-        prompt = self.fonte.split("PROMPT_LUNA_PERSONA = (", 1)[1].split("_ROSTOS =", 1)[0]
-        self.assertNotIn("deadpan", prompt.lower())
+        from modulos import prompts
+        self.assertNotIn("deadpan", prompts.PERSONA.lower())
 
     # ── situações que trocam o prompt ────────────────────────────────────────────────────
     def test_correcao_admite_erro_sem_dobrar_aposta(self):

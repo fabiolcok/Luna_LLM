@@ -71,8 +71,32 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
 
 ### Persona (`modulos/pensar.py`)
 
+- [x] **Separar os prompts por eixo.** Feito: todo o TEXTO saiu do `pensar.py` para o
+      `modulos/prompts.py`, organizado em identidade / emoção / conduta / forma / saída, mais os
+      12 modos enxutos e o núcleo curto. O `pensar.py` ficou só com a LÓGICA (quem escolhe qual
+      prompt, em que ordem testa os gatilhos). **A ORDEM das regras dentro do prompt continua
+      exatamente a de antes** — reagrupar por eixo muda comportamento num 12B e é experimento de
+      bancada, não arrumação. Rede nova: `testes/testa_prompt_montagem.py` monta o prompt de 22
+      ramos e compara byte a byte com um golden.
+
+- [ ] **Reagrupar o prompt por eixo (o passo que sobrou).** Com os nomes prontos, virou uma
+      mudança de uma linha: a ordem do `PERSONA` no `prompts.py`. Hoje os bullets alternam entre
+      eixos (emoção, identidade, emoção, conduta...). Agrupar pode ajudar o modelo a não perder
+      as regras do meio — ou atrapalhar, porque **instrução perto vence instrução longe** e várias
+      guardas hoje estão coladas de propósito na regra que protegem. Medir na bancada, 3 rodadas,
+      antes de decidir.
+
+- [ ] **`zoeira_backlog` é capturado pelo `aviso_cotidiano`.** Achado ao montar o golden: qualquer
+      frase que COMECE com "vou comprar" cai no modo cotidiano, que vem antes na cadeia de `elif`.
+      Ou seja, "vou comprar mais um jogo com o backlog lotado" — a formulação mais natural — nunca
+      chega na zoeira liberada. Só acende quando a frase começa de outro jeito ("quero comprar...",
+      "meu backlog tá lotado e..."). Decidir se troca a ordem dos dois `elif` ou se o cotidiano
+      passa a excluir menção a backlog. Mexer na ordem tem efeito colateral: o `compra_jogo_sem_
+      contexto` também depende dela.
+
 - [ ] **Encolher o prompt da persona, regra por regra.** Hoje: **8.498 caracteres (~2.400
-      tokens), 17 regras, 59 proibições contra 13 permissões** — muito para um 12B, que tende a
+      tokens), 17 regras, 59 proibições contra 13 permissões** — e o prompt MONTADO chega a
+      **10.866 caracteres** com perfil, memórias e ajustes do turno (medido pelo golden) — muito para um 12B, que tende a
       perder as regras do meio. A parte fácil já foi feita: fundir os dois bullets de humor, que
       repetiam as mesmas quatro regras (−923 chars, e o placar da bancada subiu de 92% pra 98%).
       O que sobra é o difícil — **toda regra ali existe porque um comportamento ruim aconteceu**,

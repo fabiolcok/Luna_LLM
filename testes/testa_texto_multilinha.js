@@ -2,7 +2,10 @@ const fs = require('fs');
 const assert = require('assert');
 
 const html = fs.readFileSync('templates/Index.html', 'utf8');
-const pensar = fs.readFileSync('modulos/pensar.py', 'utf8');
+// Os prompts sairam do pensar.py para o modulos/prompts.py (separados por eixo).
+// A regra pode estar em qualquer um dos dois: o teste cobra o CONCEITO, nao o arquivo.
+const pensar = fs.readFileSync('modulos/pensar.py', 'utf8')
+              + fs.readFileSync('modulos/prompts.py', 'utf8');
 
 assert.ok(
     html.includes('<textarea id="texto-input"') &&

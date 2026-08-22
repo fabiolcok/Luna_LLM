@@ -40,6 +40,7 @@ reconstrução.
 | `testa_invasao.js` | invasão: a frota ronda, fecha o cerco, debanda |
 | `testa_desistir.js` | 3 histórias por tempo demais → vira de costas |
 | `testa_cometao.js` | a martelada nunca perde a posição do cometão |
+| `testa_prompt_montagem.py` | o prompt de sistema de cada ramo, byte a byte contra um golden |
 
 ## Escrevendo um teste novo
 
@@ -57,6 +58,24 @@ Cada arquivo carrega o próprio DOM falso, e eles não são iguais — cada um p
 fidelidade diferente. Isso é proposital: já custou falha falsa três vezes o duble ser mais
 pobre que o DOM de verdade (`classList` não-variádico, `className` fora de sincronia com
 `classList`, `querySelector` inventando elemento em vez de devolver `null`).
+
+## Mexendo nos prompts
+
+O texto dos prompts mora em `modulos/prompts.py`, separado por eixo. Toda mudança ali passa pelo
+`testa_prompt_montagem.py`, que monta o prompt de 22 ramos diferentes (cada canal, cada modo
+enxuto) e compara **byte a byte** com `prompt_golden.txt`.
+
+- **Refatorou sem querer mudar nada?** O teste tem que passar sem tocar no golden. Se ele acusar,
+  a refatoração não foi neutra.
+- **Mudou o prompt de propósito?** Regrave o golden e leia o `git diff` dele — é ali que se vê
+  o que realmente entrou e saiu:
+
+```bash
+.\venv\Scripts\python.exe -X utf8 -m testes.testa_prompt_montagem --atualizar
+```
+
+Ele não sobe modelo: o cliente é substituído por um dublê que só grava as mensagens. Comportamento
+continua sendo assunto da bancada abaixo — este teste prova apenas que o TEXTO não mudou.
 
 ## Bancada da persona (modelo real)
 

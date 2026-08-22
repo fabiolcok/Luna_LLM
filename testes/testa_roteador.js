@@ -4,7 +4,10 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 
-const pensar = fs.readFileSync(path.join(__dirname, '..', 'modulos', 'pensar.py'), 'utf8');
+// Os prompts sairam do pensar.py para o modulos/prompts.py (separados por eixo).
+// A regra pode estar em qualquer um dos dois: o teste cobra o CONCEITO, nao o arquivo.
+const leia = (nome) => fs.readFileSync(path.join(__dirname, '..', 'modulos', nome), 'utf8');
+const pensar = leia('pensar.py') + leia('prompts.py');
 
 assert.ok(pensar.includes('responda EXATAMENTE SEM_FERRAMENTA') &&
           pensar.includes('_cru != "SEM_FERRAMENTA"'),

@@ -68,12 +68,32 @@ referências a CDN no projeto — mantenha assim.
 
 ## 3. Contratos que atravessam arquivos
 
+### Texto de prompt mora no `prompts.py`, lógica de prompt mora no `pensar.py`
+Todo o TEXTO dos prompts está em `modulos/prompts.py`, separado por eixo (identidade, emoção,
+conduta, forma, saída) mais os 12 modos enxutos. O `pensar.py` decide QUAL usar e em que ordem
+testa os gatilhos. Não escreva prompt novo dentro do `pensar.py`.
+
+**A ordem das regras dentro do prompt é dado medido, não arrumação.** Num 12B a posição importa —
+três vezes neste projeto uma regra forte foi desobedecida porque a guarda dela estava num bullet
+distante, e colar as duas resolveu. Reordenar é experimento de bancada.
+
+Antes e depois de mexer:
+
+```bash
+.\venv\Scripts\python.exe -X utf8 -m unittest testes.testa_prompt_montagem
+```
+
+Ele monta o prompt de 22 ramos (cada canal, cada modo enxuto) e compara byte a byte com
+`testes/prompt_golden.txt`. Refatoração que não deveria mudar nada tem que passar sem tocar no
+golden. Mudança de propósito: regrave com `-m testes.testa_prompt_montagem --atualizar` e leia o
+`git diff` do golden — é ali que aparece o que realmente entrou e saiu.
+
 ### `[clima:X]` — Python escolhe a palavra, Python escolhe a cara
 O modelo termina a fala com uma tag (`[clima:carinho]`, 12 opções fixas). O `pensar.py` traduz
 num kaomoji do grupo `_ROSTOS` e manda pro front. **O modelo nunca desenha a carinha** — quando
 deixávamos, ele inventava carinha com devanágari e viciava nas 3 do treino.
 
-Se mexer na lista de climas do prompt (`pensar.py`), mexa no `_ROSTOS` junto. `testes/testa_rosto.js`
+Se mexer na lista de climas do prompt (`prompts.py`), mexa no `_ROSTOS` junto. `testes/testa_rosto.js`
 acusa se um clima ficar órfão.
 
 ### Toda cara passa por `pintarRosto()`
