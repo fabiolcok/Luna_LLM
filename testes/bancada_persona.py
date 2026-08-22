@@ -277,7 +277,11 @@ CENARIOS = [
         ),
         "memorias": [],
         "chroma": "",
-        "proibidos": ["faz sentido", "o importante é", "às vezes a gente", "preguiça", "preguiçoso"],
+        "proibidos": ["faz sentido", "o importante é", "às vezes a gente"],
+        # "preguiça" saiu SO daqui: neste cenario ele mesmo argumenta pra nao ter que mexer
+        # o mouse, entao nomear aquilo nao e inventar — e a zoeira que o Fabio pediu.
+        # Nos outros cenarios continua proibido: la ele NAO pos isso na mesa (e em
+        # momento_sensivel ele disse que estava cansado, que e outra coisa).
         "max_chars": 520,
     },
 ]
