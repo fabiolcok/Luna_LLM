@@ -79,12 +79,21 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
       bancada, não arrumação. Rede nova: `testes/testa_prompt_montagem.py` monta o prompt de 22
       ramos e compara byte a byte com um golden.
 
-- [ ] **Reagrupar o prompt por eixo (o passo que sobrou).** Com os nomes prontos, virou uma
-      mudança de uma linha: a ordem do `PERSONA` no `prompts.py`. Hoje os bullets alternam entre
-      eixos (emoção, identidade, emoção, conduta...). Agrupar pode ajudar o modelo a não perder
-      as regras do meio — ou atrapalhar, porque **instrução perto vence instrução longe** e várias
-      guardas hoje estão coladas de propósito na regra que protegem. Medir na bancada, 3 rodadas,
-      antes de decidir.
+- [x] **Reagrupar o prompt por eixo.** Feito e medido. As 18 constantes de bullet viraram 5
+      blocos (identidade, emoção, estrutura, limites, saída) — granularidade por regra era
+      papelada: `NAO_E_NAMORADA` tinha 42 caracteres e ganhava nome próprio e linha na
+      composição. Fundir obrigou a reordenar (a identidade estava espalhada nas posições 1, 2, 4,
+      11 e 12). **Bancada: 37/39 antes, 37/39 depois** nos turnos que usam a persona.
+      `AUTONOMIA NÃO É BIRRA` ficou em EMOÇÃO, não em LIMITES: por conteúdo é limite, mas é a
+      guarda de `TENHA OPINIÃO` e guarda longe não segura neste modelo.
+
+- [ ] **Metade da bancada não mede a persona.** Dos 27 cenários, **14 caem num `modo_enxuto`**,
+      que SUBSTITUI o prompt inteiro — a persona não entra. Medir uma mudança na persona contra o
+      placar total engana: ao reagrupar os prompts, o total caiu de 76/81 para 74/81 e a queda
+      inteira estava nesses 14, cujo prompt é byte a byte o mesmo. A bancada já reporta os dois
+      números separados. Falta o outro lado: **os 14 modos enxutos praticamente não têm cenário
+      próprio bem coberto**, e é neles que moram as falhas antigas (`proativo_sem_relacao`,
+      `mudanca_de_ideia_normal`). Antes de mexer num modo enxuto, conferir a cobertura dele.
 
 - [ ] **`zoeira_backlog` é capturado pelo `aviso_cotidiano`.** Achado ao montar o golden: qualquer
       frase que COMECE com "vou comprar" cai no modo cotidiano, que vem antes na cadeia de `elif`.

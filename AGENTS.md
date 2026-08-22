@@ -73,6 +73,9 @@ Todo o TEXTO dos prompts está em `modulos/prompts.py`, separado por eixo (ident
 conduta, forma, saída) mais os 12 modos enxutos. O `pensar.py` decide QUAL usar e em que ordem
 testa os gatilhos. Não escreva prompt novo dentro do `pensar.py`.
 
+São cinco blocos: IDENTIDADE, EMOÇÃO, ESTRUTURA, LIMITES, SAÍDA. EMOÇÃO é o único pensado para
+ser trocado inteiro um dia (raiva, soberba, compreensiva).
+
 **A ordem das regras dentro do prompt é dado medido, não arrumação.** Num 12B a posição importa —
 três vezes neste projeto uma regra forte foi desobedecida porque a guarda dela estava num bullet
 distante, e colar as duas resolveu. Reordenar é experimento de bancada.
@@ -87,6 +90,10 @@ Ele monta o prompt de 22 ramos (cada canal, cada modo enxuto) e compara byte a b
 `testes/prompt_golden.txt`. Refatoração que não deveria mudar nada tem que passar sem tocar no
 golden. Mudança de propósito: regrave com `-m testes.testa_prompt_montagem --atualizar` e leia o
 `git diff` do golden — é ali que aparece o que realmente entrou e saiu.
+
+E se a mudança for de comportamento, meça na bancada — **lendo o placar segmentado**. Metade dos
+cenários roda em `modo_enxuto`, onde a persona nem entra; variação ali é temperatura, não a sua
+mudança. A bancada imprime os dois números separados justamente por isso.
 
 ### `[clima:X]` — Python escolhe a palavra, Python escolhe a cara
 O modelo termina a fala com uma tag (`[clima:carinho]`, 12 opções fixas). O `pensar.py` traduz

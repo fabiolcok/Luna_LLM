@@ -497,14 +497,36 @@ def avaliar(cenario: dict, resposta: str) -> list:
     return falhas
 
 
-def executar_cenario(pensar, cenario: dict) -> str:
-    """Executa a persona real com todas as fontes pessoais substituídas por fixtures."""
+# Metade dos cenários cai num `modo_enxuto`, que SUBSTITUI o prompt inteiro: a persona não
+# entra. Medir uma mudança na persona contra o placar total engana — as respostas desses
+# cenários variam por temperatura, não pela mudança. Descoberto ao reagrupar os prompts por
+# eixo: o placar caiu de 76/81 para 74/81, e a queda inteira estava nos cenários enxutos, cujo
+# prompt é byte a byte o mesmo. Nos que usam a persona: 37/39 antes e 37/39 depois.
+_MARCA_ENXUTO = "Você é a Luna, a IA pessoal"
+
+
+def executar_cenario(pensar, cenario: dict) -> tuple:
+    """Roda a persona real com as fontes pessoais substituídas.
+
+    Devolve `(resposta, usou_persona)`. O segundo item diz se o turno usou o prompt completo
+    ou caiu num modo enxuto — é o que separa medição de ruído no resumo.
+    """
     memorias = list(cenario.get("memorias", []))
     historico = [dict(m) for m in cenario.get("historico", [])]
     pensar._ultima_saudacao_ts = time.time()  # simula meio de conversa, não o primeiro turno do dia
     pensar._kaomoji_recentes.clear()
     pensar._presenca_pc.set(True)
+    espiado = {}
+    _chamar_real = pensar._chamar_llm
+
+    def _espiao(**parametros):
+        # delega para o cliente de verdade; só anota qual prompt chegou lá
+        espiado.setdefault("persona",
+                           _MARCA_ENXUTO not in parametros["messages"][0]["content"][:200])
+        return _chamar_real(**parametros)
+
     with (
+        patch.object(pensar, "_chamar_llm", _espiao),
         patch.object(pensar.obsidian, "ler_perfil", return_value=PERFIL_NEUTRO),
         patch.object(pensar.obsidian, "listar_memoria_episodica", return_value=memorias),
         patch.object(pensar, "buscar_memoria_relevante", return_value=[]),
@@ -512,12 +534,13 @@ def executar_cenario(pensar, cenario: dict) -> str:
         patch.object(pensar, "ler_estado_luna", return_value={}),
         patch.object(pensar, "obter_janela_em_foco", return_value="bancada de teste"),
     ):
-        return pensar._reescrever_como_luna(
+        resposta = pensar._reescrever_como_luna(
             cenario.get("tecnica", ""), cenario.get("usuario", ""), historico,
             max_tokens=220,
             forcar_incluir=cenario.get("forcar_incluir", False),
             responder_completo=cenario.get("responder_completo", True),
         )
+    return resposta, espiado.get("persona", True)
 
 
 def main() -> int:
@@ -547,7 +570,7 @@ def main() -> int:
     for cenario in cenarios:
         print(f"\n=== {cenario['id']}: {cenario['descricao']} ===")
         for rodada in range(1, args.repeticoes + 1):
-            resposta = executar_cenario(pensar, cenario)
+            resposta, usou_persona = executar_cenario(pensar, cenario)
             falhas = avaliar(cenario, resposta)
             ok = not falhas
             total_ok += int(ok)
@@ -559,6 +582,7 @@ def main() -> int:
                 "tempo": datetime.datetime.now().isoformat(timespec="seconds"),
                 "rotulo": args.rotulo, "cenario": cenario["id"], "rodada": rodada,
                 "ok": ok, "falhas": falhas, "resposta": resposta,
+                "usou_persona": usou_persona,
             })
 
     if not args.nao_salvar:
@@ -571,6 +595,16 @@ def main() -> int:
 
     total = len(resultados)
     print(f"\nRESUMO: {total_ok}/{total} passaram nos checks determinísticos")
+
+    # O número que importa para uma mudança NA PERSONA é o primeiro. O segundo mede turnos
+    # cujo prompt não contém a persona: variação ali é temperatura, não a sua mudança.
+    com = [r for r in resultados if r["usou_persona"]]
+    sem = [r for r in resultados if not r["usou_persona"]]
+    if com and sem:
+        print("   mexeu na persona? olhe este: %d/%d nos turnos que USAM a persona"
+              % (sum(r["ok"] for r in com), len(com)))
+        print("   (os outros %d/%d rodam em modo enxuto — prompt diferente, não medem a persona)"
+              % (sum(r["ok"] for r in sem), len(sem)))
     return 0 if total_ok == total else 1
 
 

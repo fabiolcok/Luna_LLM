@@ -89,6 +89,19 @@ por cenários controlados. As memórias irrelevantes são intencionais: medem se
 pessoal. Checks objetivos rodam automaticamente; as respostas completas ficam em
 `logs/bancada_persona.jsonl` (ignorado pelo Git) para comparar versões.
 
+**Leia o placar certo.** Metade dos cenários (14 de 27) cai num `modo_enxuto`, que substitui o
+prompt inteiro — a persona não entra neles. Por isso o resumo sai em dois números: mexeu na
+persona, olhe só o primeiro. Já aconteceu de o total cair 2 pontos numa mudança cujo efeito real
+foi zero, com a queda toda vinda de cenários cujo prompt não tinha mudado um byte.
+
+## Mexendo num prompt: qual rede usar
+
+| a pergunta | quem responde |
+|---|---|
+| o texto do prompt mudou? | `testa_prompt_montagem.py` (byte a byte, sem modelo) |
+| a regra ainda existe em algum lugar? | `testa_persona_guardrails.py` (grupos de sinônimos) |
+| ela responde melhor ou pior? | `bancada_persona.py` (modelo real, 3 rodadas) |
+
 ## Bancada dos acompanhamentos (modelo real)
 
 ```bash
