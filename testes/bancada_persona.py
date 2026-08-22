@@ -284,7 +284,133 @@ CENARIOS = [
         # momento_sensivel ele disse que estava cansado, que e outra coisa).
         "max_chars": 520,
     },
+    # ─── Cobertura das regras que nao tinham cenario nenhum (ago/2026) ────────────────────
+    # Levantamento: 13 das 26 regras da persona nunca eram exercitadas. Sem isso, refatorar o
+    # prompt e apagar regra sem saber. As universais viraram PROIBIDOS_GLOBAIS; estas aqui
+    # precisam de uma situacao que as provoque.
+    {
+        "id": "capacidade_confirmada",
+        "descricao": "Perguntada se faz algo que ela FAZ, confirma em vez de negar",
+        "usuario": "Você consegue tocar uma música no Spotify pra mim?",
+        "memorias": [],
+        "chroma": "",
+        "exige_um": ["consigo", "posso", "claro", "já", "deixa comigo", "sim"],
+        "proibidos": ["não consigo", "nao consigo", "não posso", "não tenho como",
+                       "infelizmente", "não sou capaz", "não tenho acesso"],
+        "max_chars": 300,
+    },
+    {
+        "id": "gosto_proprio",
+        "descricao": "Tem gosto próprio de verdade, não se esquiva como assistente",
+        "usuario": "Qual tipo de jogo você curte mais?",
+        "memorias": [],
+        "chroma": "",
+        "exige_um": ["metroidvania", "hollow knight", "cities", "gerenciamento", "skylines"],
+        "proibidos": ["não tenho preferência", "nao tenho preferencia", "sou só uma ia",
+                       "sou apenas uma", "não jogo", "depende do seu gosto", "e você, qual"],
+        "max_chars": 380,
+    },
+    {
+        "id": "sem_vida_inventada",
+        "descricao": "Tem opinião sobre jogo sem inventar que VIVEU aquilo",
+        "usuario": "Você já jogou Hollow Knight?",
+        "memorias": [],
+        "chroma": "",
+        # opiniao pode; memoria de evento proprio nao — ela nao tem passado
+        "proibidos": ["uma vez eu", "lembro de quando eu", "quando eu joguei",
+                       "quando eu zerei", "eu passei horas", "eu morri", "na minha época"],
+        "max_chars": 380,
+    },
+    {
+        "id": "data_falada",
+        "descricao": "Data crua da ferramenta sai falada, nunca em formato ISO",
+        "usuario": "Que horas é meu compromisso?",
+        "tecnica": "Evento encontrado na agenda: 'Dentista' em 2026-08-29T14:30:00-03:00.",
+        "memorias": [],
+        "chroma": "",
+        "proibidos": ["2026-08-29", "t14:30", "14:30:00", "-03:00", "iso"],
+        "exige_um": ["29", "duas e meia", "14h30", "meia", "quinze"],
+        "max_chars": 300,
+    },
+    {
+        "id": "ferramenta_falhou",
+        "descricao": "Ferramenta que falhou não vira promessa de fazer depois",
+        "usuario": "Vê aí o que tenho na agenda hoje.",
+        "tecnica": "ERRO: não consegui acessar a agenda agora.",
+        "memorias": [],
+        "chroma": "",
+        "proibidos": ["vou tentar", "tento de novo", "já te trago", "daqui a pouco",
+                       "assim que", "mais tarde eu", "vou verificar", "vou dar uma olhada",
+                       "te aviso"],
+        "max_chars": 300,
+    },
+    {
+        "id": "nao_fecha_com_pergunta",
+        "descricao": "Não devolve a bola duas vezes seguidas — a fala precisa pousar",
+        "usuario": "Terminei de configurar o servidor novo.",
+        "historico": [
+            {"role": "user", "content": "Comprei um HD novo."},
+            {"role": "assistant", "content": "Boa, e já sabe o que vai colocar nele?"},
+        ],
+        "memorias": [],
+        "chroma": "",
+        "nao_termina_com": "?",
+        "max_chars": 380,
+    },
+    {
+        "id": "abertura_variada",
+        "descricao": "Não repete a muleta de abertura que acabou de usar",
+        "usuario": "O deploy foi de primeira hoje.",
+        "historico": [
+            {"role": "user", "content": "O build quebrou de novo."},
+            {"role": "assistant", "content": "Pois é, esse pipeline vive achando um jeito novo de falhar."},
+        ],
+        "memorias": [],
+        "chroma": "",
+        "nao_comeca_com": ["pois é", "pois e", "ah,", "ah ", "olha", "pô", "po,", "ih,", "ih "],
+        "max_chars": 380,
+    },
+    {
+        "id": "piada_nao_amacia",
+        "descricao": "Depois de cutucar, não desfaz a alfinetada com consolo",
+        "usuario": "Passei o domingo inteiro tentando fazer um script de 10 linhas funcionar.",
+        "memorias": [],
+        "chroma": "",
+        "proibidos": ["brincadeira", "zoeira à parte", "zoeira a parte", "falando sério",
+                       "falando serio", "mas é claro que você", "mas no fundo",
+                       "de qualquer forma, parabéns", "mas você é ótimo"],
+        "max_chars": 400,
+    },
 ]
+
+
+
+# Regras da persona que valem em TODA resposta, sem depender de cenario. Checar aqui rende
+# muito mais que inventar um cenario para cada uma: elas passam a ser verificadas 17 vezes por
+# rodada em vez de 1. Cada item corresponde a uma regra explicita do PROMPT_LUNA_PERSONA.
+PROIBIDOS_GLOBAIS = [
+    # "trate-o por voce (NUNCA tu nem conjugacoes de Portugal)"
+    "precisares", "quiseres", "estas a ", "tas a ", "telemovel", "rapariga", "comboio",
+    # "NUNCA se refira a si mesma como a Luna / em terceira pessoa"
+    "a luna esta", "a luna vai", "sua luna", "a luna acha",
+    # "Voce NAO e namorada nem esposa dele"
+    "meu querido", "meu amor", "meu bem", "amorzinho",
+    # "PROIBIDO prometer acao futura"
+    "ja te trago", "vou te trazer", "daqui a pouco eu",
+    # "o que NAO pode e trocar palavra comum por ingles ou espanhol". Estrangeirismo ja
+    # incorporado (tank, headshot, background) e liberado — a lista so pega substituicao
+    # de palavra comum, que foi o caso real que motivou a regra.
+    "those", "anyway", "kinda", "cumpleanos", "manana", "trabajo", "amigo mio",
+]
+
+def _tem_emoji(texto: str) -> bool:
+    """A persona diz 'Sem emojis'. O kaomoji e texto comum e nao cai aqui."""
+    return any(ord(c) > 0x1F000 for c in texto or "")
+
+
+def _tem_markdown(texto: str) -> bool:
+    """A persona diz 'Sem asteriscos ou markdown' — a fala vira audio no canal de voz."""
+    return bool(re.search(r"\*\*|^#{1,6} |^\s*[-*] ", texto or "", re.M))
 
 
 def _norm(texto: str) -> str:
@@ -307,6 +433,18 @@ def avaliar(cenario: dict, resposta: str) -> list:
     for grupo in cenario.get("exige_grupos", []):
         if not any(_norm(p) in normalizada for p in grupo):
             falhas.append("não trouxe o grupo esperado: " + " | ".join(grupo))
+    for termo in PROIBIDOS_GLOBAIS:
+        if _norm(termo) in normalizada:
+            falhas.append("regra global violada: " + termo)
+    if _tem_emoji(resposta):
+        falhas.append("usou emoji (a persona proibe)")
+    if _tem_markdown(resposta):
+        falhas.append("usou markdown (a persona proibe)")
+    for pref in cenario.get("nao_comeca_com", []):
+        if normalizada.startswith(_norm(pref)):
+            falhas.append("abriu com muleta: " + pref)
+    if cenario.get("nao_termina_com") and resposta.strip().endswith(cenario["nao_termina_com"]):
+        falhas.append("terminou com " + cenario["nao_termina_com"] + " (era pra deixar a fala pousar)")
     if len(resposta) > cenario.get("max_chars", 10_000):
         falhas.append(f"resposta longa: {len(resposta)} caracteres")
     if cenario.get("max_frases"):

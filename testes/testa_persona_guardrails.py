@@ -30,11 +30,18 @@ class TestaGuardrailsPersona(unittest.TestCase):
         self.assertIn("falta de autocontrole", self.fonte)
 
     def test_momento_cotidiano_nao_vira_atendente_neutra(self):
-        self.assertIn("Uma alfinetada LEVE está liberada", self.fonte)
+        # "LEVE" virou "AFIADA" quando o piso da acidez subiu (pedido do Fabio). A regra que
+        # este teste cobra e que o cotidiano TENHA mordida, nao qual e a intensidade dela.
+        self.assertIn("alfinetada", self.fonte)
+        self.assertIn("está liberada quando", self.fonte)
         self.assertIn("melhor que neutralidade de atendente", self.fonte)
 
     def test_cansaco_e_saude_tem_freios_diferentes(self):
-        self.assertIn("Cansaço cotidiano pode receber uma mordida curta", self.fonte)
+        # Frase reescrita quando os dois bullets de humor foram fundidos. A asserção agora
+        # olha os DOIS pedacos que precisam existir, nao a frase inteira — assim ela
+        # sobrevive a reescrita sem deixar de cobrar a regra.
+        self.assertIn("Cansaço cotidiano", self.fonte)
+        self.assertIn("mordida curta", self.fonte)
         self.assertIn("saúde, tristeza ou outro assunto realmente sensível", self.fonte)
 
     def test_correcao_admite_erro_sem_dobrar_aposta(self):
