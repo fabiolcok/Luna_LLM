@@ -87,6 +87,14 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
       `AUTONOMIA NÃO É BIRRA` ficou em EMOÇÃO, não em LIMITES: por conteúdo é limite, mas é a
       guarda de `TENHA OPINIÃO` e guarda longe não segura neste modelo.
 
+- [ ] **A trava nominal de Steam/backlog saiu do prompt completo.** Ela morava na segunda
+      metade do bullet `CONTRADIÇÃO CONCRETA`, removido em ago/2026 ("não recorra automaticamente
+      a Steam, backlog ou jogos quando eles não fazem parte dos fatos atuais"). O que sobrou é
+      genérico — `NUNCA puxe uma memória sem relação direta` e a REGRA DE EVIDÊNCIA — e nomear o
+      viés costuma segurar melhor do que a regra geral. Não houve queda na bancada, mas nenhum
+      cenário mede isso direito. Se a Luna voltar a puxar backlog do nada em conversa normal, é
+      aqui que se olha primeiro: basta devolver a meia-frase para `NADA DE CARIMBO`.
+
 - [ ] **Metade da bancada não mede a persona.** Dos 27 cenários, **14 caem num `modo_enxuto`**,
       que SUBSTITUI o prompt inteiro — a persona não entra. Medir uma mudança na persona contra o
       placar total engana: ao reagrupar os prompts, o total caiu de 76/81 para 74/81 e a queda
@@ -103,9 +111,10 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
       passa a excluir menção a backlog. Mexer na ordem tem efeito colateral: o `compra_jogo_sem_
       contexto` também depende dela.
 
-- [ ] **Encolher o prompt da persona, regra por regra.** Hoje: **8.498 caracteres (~2.400
-      tokens), 17 regras, 59 proibições contra 13 permissões** — e o prompt MONTADO chega a
-      **10.866 caracteres** com perfil, memórias e ajustes do turno (medido pelo golden) — muito para um 12B, que tende a
+- [ ] **Encolher o prompt da persona, regra por regra.** Hoje: **8.880 caracteres (~2.400
+      tokens), 16 regras + a abertura**, e o prompt MONTADO chega a ~10.300 caracteres com
+      perfil, memórias e ajustes do turno (medido pelo golden). Já saíram 544 chars com o
+      `CONTRADIÇÃO CONCRETA`, sem custo medido — muito para um 12B, que tende a
       perder as regras do meio. A parte fácil já foi feita: fundir os dois bullets de humor, que
       repetiam as mesmas quatro regras (−923 chars, e o placar da bancada subiu de 92% pra 98%).
       O que sobra é o difícil — **toda regra ali existe porque um comportamento ruim aconteceu**,

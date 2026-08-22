@@ -94,10 +94,13 @@ class TestaGuardrailsPersona(unittest.TestCase):
                    ["carimbo", "eco vazio"],
                    ["parabéns pela dedicação", "parabens pela dedicacao"])
 
-    def test_humor_prioriza_contradicao_concreta_sem_muleta(self):
-        self.exige("contradicao concreta rende humor, sem cair no backlog",
+    def test_contradicao_concreta_rende_humor(self):
+        # O bullet da persona que dizia isso foi REMOVIDO em ago/2026: ele nasceu para melhorar
+        # o proativo, que hoje nem usa o prompt completo, e nenhum cenário da bancada o exercia.
+        # A regra continua viva no modo enxuto, que é onde o gatilho de contradição cai.
+        self.exige("contradicao concreta rende humor",
                    ["contradição concreta", "contradicao concreta"],
-                   ["steam, backlog", "backlog ou jogos"])
+                   ["ironia", "irônica", "ironica"])
 
     def test_deadpan_nao_e_meta_explicita(self):
         # AUSÊNCIA: imune a reescrita por natureza, fica como estava.
