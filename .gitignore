@@ -58,6 +58,9 @@ PyWhatKit_DB.txt
 *.log
 logs/avaliacoes.jsonl
 logs/bancada_persona.jsonl
+# a pasta inteira: sao dados de execucao, mudam a toda hora e sujariam todo diff.
+# uso_ferramentas.jsonl e o resumo estavam escapando das regras especificas acima.
+logs/
 
 # VSCode
 .vscode/
