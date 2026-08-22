@@ -142,8 +142,15 @@ CENARIOS = [
         "usuario": "Você alucinou nessa interação.",
         "memorias": MEMORIAS_CONTAMINANTES,
         "chroma": CHROMA_CONTAMINANTE,
+        "proibidos": ["não errei", "nao errei", "eu estava certa", "você que",
+                       "voce que", "na verdade eu", "mas eu disse"],
         "exige_um": ["alucinei", "errei", "inventei", "confundi", "viajei", "foi erro",
-                     "vacil"],   # "vacilei/dei uma vacilada" admite o erro igual — faltava o sinônimo
+                     "vacil", "branco", "minha cabeça", "meus circuitos", "foi mal",
+                     "me perdi", "misturei", "paralela"],
+        # A regra do prompt e "admita, NUNCA negue, culpe o usuario ou dobre a aposta".
+        # Exigir palavra de lista falha quando ela admite com criatividade — e criatividade
+        # e o que a gente pediu. Por isso o lado NEGATIVO abaixo e o que cobra a regra de
+        # verdade; a lista acima virou so um reforco.
         "proibidos": ["alucinação não", "cliente", "tabela", "colibri", "prêmio", "sobreviveu"],
         "max_chars": 220,
         "max_frases": 1,
@@ -308,7 +315,7 @@ CENARIOS = [
         "exige_um": ["metroidvania", "hollow knight", "cities", "gerenciamento", "skylines"],
         "proibidos": ["não tenho preferência", "nao tenho preferencia", "sou só uma ia",
                        "sou apenas uma", "não jogo", "depende do seu gosto", "e você, qual"],
-        "max_chars": 380,
+        "max_chars": 480,   # ela cita genero + 2 jogos + o que nao curte; 380 cortava resposta boa
     },
     {
         "id": "sem_vida_inventada",
@@ -381,7 +388,33 @@ CENARIOS = [
                        "de qualquer forma, parabéns", "mas você é ótimo"],
         "max_chars": 400,
     },
+    # ─── Canal de VOZ ─────────────────────────────────────────────────────────────────────
+    # Ate agora TODOS os cenarios rodavam com responder_completo=True, ou seja, canal de texto.
+    # A regra de nao usar emoji/Markdown vive no canal_hint DE VOZ (a fala vira audio), entao
+    # sem um cenario de voz ela nao era exercitada em lugar nenhum. Os dois abaixo cobrem isso,
+    # e o pedido escolhido e o que mais tenta o modelo a formatar: uma explicacao com passos.
+    {
+        "id": "voz_sem_formatacao",
+        "descricao": "Pedido de passo a passo na VOZ sai falavel, sem lista nem markdown",
+        "usuario": "Me explica rapidinho como eu configuro o backup automático.",
+        "responder_completo": False,
+        "memorias": [],
+        "chroma": "",
+        "proibidos": ["primeiro:", "segundo:", "passo 1", "1)", "2)"],
+        "max_chars": 460,
+    },
+    {
+        "id": "voz_curta",
+        "descricao": "Na voz a resposta e concisa: frase longa cansa no ouvido",
+        "usuario": "O que você acha de eu trocar o monitor?",
+        "responder_completo": False,
+        "memorias": [],
+        "chroma": "",
+        "max_frases": 3,
+        "max_chars": 420,
+    },
 ]
+
 
 
 
@@ -395,7 +428,7 @@ PROIBIDOS_GLOBAIS = [
     "a luna esta", "a luna vai", "sua luna", "a luna acha",
     # "Voce NAO e namorada nem esposa dele"
     "meu querido", "meu amor", "meu bem", "amorzinho",
-    # "PROIBIDO prometer acao futura"
+    # "PROIBIDO prometer acao futura" — esta na persona, vale nos dois canais
     "ja te trago", "vou te trazer", "daqui a pouco eu",
     # "o que NAO pode e trocar palavra comum por ingles ou espanhol". Estrangeirismo ja
     # incorporado (tank, headshot, background) e liberado — a lista so pega substituicao
@@ -410,7 +443,7 @@ def _tem_emoji(texto: str) -> bool:
 
 def _tem_markdown(texto: str) -> bool:
     """A persona diz 'Sem asteriscos ou markdown' — a fala vira audio no canal de voz."""
-    return bool(re.search(r"\*\*|^#{1,6} |^\s*[-*] ", texto or "", re.M))
+    return bool(re.search(r"\*\*|^#{1,6} |^\s*[-*•·] |[•]", texto or "", re.M))
 
 
 def _norm(texto: str) -> str:
@@ -424,7 +457,13 @@ def avaliar(cenario: dict, resposta: str) -> list:
     normalizada = _norm(resposta)
     if not normalizada:
         falhas.append("resposta vazia")
-    encontrados = [p for p in cenario.get("proibidos", []) if _norm(p) in normalizada]
+    # _norm() joga fora tudo que nao e ASCII, entao um termo so de simbolo ("•") vira string
+    # VAZIA — e string vazia esta contida em qualquer resposta. O cenario reprovava sempre, por
+    # nada. Termos assim sao ignorados aqui e denunciados, em vez de virarem falha fantasma.
+    vazios = [p for p in cenario.get("proibidos", []) if not _norm(p)]
+    if vazios:
+        falhas.append("CENARIO MAL ESCRITO — proibido que normaliza pra vazio: " + ", ".join(vazios))
+    encontrados = [p for p in cenario.get("proibidos", []) if _norm(p) and _norm(p) in normalizada]
     if encontrados:
         falhas.append("conteúdo proibido: " + ", ".join(encontrados))
     exige = cenario.get("exige_um", [])
@@ -436,10 +475,14 @@ def avaliar(cenario: dict, resposta: str) -> list:
     for termo in PROIBIDOS_GLOBAIS:
         if _norm(termo) in normalizada:
             falhas.append("regra global violada: " + termo)
-    if _tem_emoji(resposta):
-        falhas.append("usou emoji (a persona proibe)")
-    if _tem_markdown(resposta):
-        falhas.append("usou markdown (a persona proibe)")
+    # Emoji e Markdown NAO sao proibicao global: a regra vive no canal_hint DE VOZ, porque a
+    # fala vira audio. No texto (web/Telegram) sao permitidos de proposito. Checar isso em
+    # cenario de texto reprovaria comportamento correto.
+    if cenario.get("responder_completo", True) is False:
+        if _tem_emoji(resposta):
+            falhas.append("emoji no canal de VOZ (vira audio, a regra proibe)")
+        if _tem_markdown(resposta):
+            falhas.append("markdown no canal de VOZ (vira audio, a regra proibe)")
     for pref in cenario.get("nao_comeca_com", []):
         if normalizada.startswith(_norm(pref)):
             falhas.append("abriu com muleta: " + pref)
