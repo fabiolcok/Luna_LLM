@@ -32,7 +32,8 @@ from PIL import Image, ImageDraw
 
 _log = logging.getLogger("luna.main")
 from modulos.ouvir import escutar_usuario
-from modulos.pensar import GeracaoInterrompida, gerar_resposta, continuar_apos_acompanhamento
+from modulos.pensar import (GeracaoInterrompida, gerar_resposta, continuar_apos_acompanhamento,
+                            obter_clima_resposta)
 from modulos.falar import FalaEmFluxo, falar_texto
 from modulos.habilidades import ler_agenda_google, capturar_tela_base64, iniciar_servidor_extensao, pausar_spotify, proxima_musica_spotify, alternar_mute, ler_texto_selecionado
 from modulos.proativa import iniciar_modo_proativo, registrar_interacao, registrar_tentativa, MAX_TENTATIVAS, marcar_luna_ocupada, luna_esta_livre, configurar_proativo, configurar_tarefa
@@ -261,7 +262,9 @@ def responder_texto_web(texto: str):
             atualizar_stream_interrompido("falhou")
             return
         atualizar_estado_rosto("digitando")
-        atualizar_legenda(resposta)                    # mostra a resposta + registra o turno (SEM falar)
+        atualizar_legenda(                             # mostra a resposta + registra o turno (SEM falar)
+            resposta, clima=obter_clima_resposta()
+        )
         time.sleep(min(9.0, max(4.0, len(resposta) * 0.03)))
         if resposta:
             _mostrar_resposta_web_no_terminal(resposta)
@@ -299,7 +302,7 @@ def responder_clique_acompanhamento(acao: str, confirmacao: dict, resposta_siste
         ).strip()
         _registrar_turno_direto(_historico_conversa, escolha, resposta)
         atualizar_estado_rosto("digitando")
-        atualizar_legenda(resposta)
+        atualizar_legenda(resposta, clima=obter_clima_resposta())
         time.sleep(min(9.0, max(4.0, len(resposta) * 0.03)))
         _mostrar_resposta_web_no_terminal(resposta)
         _log.info(f"[Web botão acompanhamento] Luna: {resposta[:200]}")
@@ -510,7 +513,7 @@ def loop_voz():
                     continue
                 # Erros anteriores à persona não chamam o finalizador do callback.
                 fala_fluxo.finalizar(resposta_luna)
-                atualizar_legenda(resposta_luna)
+                atualizar_legenda(resposta_luna, clima=obter_clima_resposta())
                 if resposta_luna and resposta_luna.strip():
                     _log.info(f"[PC] Luna: {resposta_luna[:200]}")
 
@@ -724,8 +727,11 @@ def main():
     janela_kwargs = dict(width=geometria.dados["width"], height=geometria.dados["height"])
     if geometria.dados["x"] is not None and geometria.dados["y"] is not None:
         janela_kwargs.update(x=geometria.dados["x"], y=geometria.dados["y"])
+    # A query muda a cada boot sem mudar a origem do localStorage. O WebView2 persistente
+    # não pode reaproveitar um Index.html antigo depois de uma atualização da Luna.
+    url_web = f"http://localhost:5000/?boot={int(time.time())}"
     janela = webview.create_window(
-        "Luna", "http://localhost:5000", js_api=api_interface, **janela_kwargs
+        "Luna", url_web, js_api=api_interface, **janela_kwargs
     )
     api_interface._janela_principal = janela
     janela.events.moved += geometria.mover
@@ -739,7 +745,15 @@ def main():
     janela.events.closing += ao_fechar_janela
 
     # Bandeja inicia junto com o webview
-    webview.start(func=_iniciar_bandeja, args=(janela, api_interface))
+    # O pywebview nasce em modo privado e apaga localStorage ao fechar. A conversa usa esse
+    # armazenamento apenas para preferências visuais por monitor (fonte, painéis recolhidos),
+    # então mantém um perfil local fora do Git em vez de fazer o slider voltar a 100% no boot.
+    webview.start(
+        func=_iniciar_bandeja,
+        args=(janela, api_interface),
+        private_mode=False,
+        storage_path=os.path.join(os.path.dirname(__file__), "modelos", "webview_dados"),
+    )
 
 if __name__ == "__main__":
     main()

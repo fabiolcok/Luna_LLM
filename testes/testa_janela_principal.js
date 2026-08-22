@@ -25,5 +25,12 @@ assert.ok(main.includes('x <= -30000') && main.includes('y <= -30000'),
           'FALHA: posição especial de janela minimizada pode ser restaurada fora da tela');
 assert.ok(ignore.includes('modelos/janela_principal.json'),
           'FALHA: preferência pessoal da janela pode ir para o Git');
+assert.ok(main.includes('private_mode=False') &&
+          main.includes('modelos", "webview_dados"') &&
+          ignore.includes('modelos/webview_dados/'),
+          'FALHA: localStorage do WebView volta a ser descartado ao fechar a Luna');
+assert.ok(main.includes('http://localhost:5000/?boot={int(time.time())}') &&
+          main.includes('"Luna", url_web'),
+          'FALHA: WebView2 persistente pode reabrir um Index.html antigo do cache');
 
 console.log('PASSOU — janela principal restaura posição e tamanho locais');

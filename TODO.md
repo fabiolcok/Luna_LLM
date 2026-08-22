@@ -5,22 +5,6 @@ definitiva. Itens daqui não estão automaticamente aprovados para commit.
 
 ## Em teste
 
-- [ ] **Deixar o streaming de texto Web redondo.**
-  - Implementação local: a chamada da persona transmite para o texto Web e, na conversa por voz,
-    entrega frases completas ao Kokoro. Telegram e roteador continuam aguardando a resposta
-    completa. O balão parcial é provisório e apenas a resposta final limpa entra no histórico.
-  - Validar no TurboLLM real respostas comuns, respostas com ferramenta, Markdown grande,
-    troca de modelo e reaquecimento depois do `idle-unload`.
-  - Implementado localmente: o botão `⏹️` cancela também a geração da persona, mantém o trecho
-    parcial marcado como interrompido e não o salva nem libera sua avaliação. Validar no
-    TurboLLM real se o cancelamento é rápido em respostas curtas e longas.
-  - Implementado localmente: queda do WebSocket e resposta vazia encerram o balão provisório e
-    devolvem o mascote ao repouso. Ainda provocar uma queda real durante o stream para validar.
-  - Implementado localmente: TTS por frases completas, com uma fila sintetizando a próxima
-    enquanto outra toca a anterior. O botão de repetir recompõe a fala inteira e a interrupção
-    encerra geração, síntese pendente e áudio atual. Validar no uso real pausas entre frases,
-    pergunta/exclamação, abreviações, resposta curta e interrupção no meio da segunda frase.
-
 - [ ] **Validar limpeza do `salvar_obsidian`.** Mensagens com `título:`/`conteúdo:` não devem
       guardar introdução nem comando; reação curta como “boa ideia, deixa anotado” deve salvar
       a fala anterior da conversa. A origem precisa distinguir web, Telegram e voz.
@@ -76,12 +60,6 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
 
 > Combine antes de mexer neste arquivo: são ~4100 linhas com CSS, HTML e todo o JS juntos, e é
 > onde dois agentes colidem. Rode `node testes/rodar.js` antes e depois.
-
-- [ ] **Exibir o clima que escolheu o rosto.** Mostrar discretamente qual clima/emoção o Python
-      selecionou (`zoeira`, `carinho`, `dúvida` etc.) para ficar claro por que a Luna está com
-      aquela cara. Testar duas opções de lugar: no hover do mascote, junto do diagnóstico da
-      ferramenta, ou ao lado do nome “Luna” no balão mais recente. Não exibir a tag crua
-      `[clima:X]` dentro da resposta.
 
 - [ ] **Um evento novo que se resolva por ESPERA.** Os que existem hoje pedem gestos ativos; falta
       um cujo desfecho seja não fazer nada por um tempo. Chegou a ser cogitado, sem fechar o

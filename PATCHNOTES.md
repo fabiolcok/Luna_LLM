@@ -8,6 +8,19 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 22/08/2026
+
+- 💬 🔧 **Texto e voz agora respeitam formatos diferentes.** Web e Telegram preservam Markdown
+  e podem usar emojis naturalmente; a voz continua recebendo somente texto limpo para o Kokoro.
+  Pedidos simples de formatação também deixaram de ser confundidos com motivo para uma recusa.
+
+- 🎭 ✨ **Cada resposta explica a própria expressão.** A seção “Detalhes” mostra discretamente
+  o clima escolhido pela persona, como `🎭 zoeira` ou `🎭 carinho`, vinculado ao balão correto.
+
+- 🔎 🐛 **Preferências visuais sobrevivem ao reinício.** O tamanho da fonte e outros ajustes do
+  WebView agora persistem neste PC, enquanto a interface ignora versões antigas guardadas no
+  cache depois de uma atualização.
+
 ## 21/08/2026
 
 - 🗣️ 🔧 **A voz começou a responder sem esperar o texto inteiro.** No modo Web por voz, a

@@ -44,6 +44,16 @@ app  = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 sock = Sock(app)
 
+
+@app.after_request
+def _nao_cachear_interface(resposta):
+    """Preferências persistem no WebView2, mas o HTML precisa refletir cada atualização."""
+    if request.path == "/":
+        resposta.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resposta.headers["Pragma"] = "no-cache"
+        resposta.headers["Expires"] = "0"
+    return resposta
+
 _clientes      = set()
 _clientes_lock = threading.Lock()
 _callback_interrupcao = None
@@ -55,6 +65,7 @@ _ultimo_pensamento   = ""
 _ultimo_status       = "🌚 Por aqui"   # o que a Luna está fazendo agora (linha de status do web)
 _ultimo_estado_rosto = None       # diagnóstico das transições reais enviadas ao mascote
 _ultimo_kaomoji      = None       # nova janela do widget já nasce com a expressão atual
+_clima_turno_pendente = ""        # consumido pelo próximo balão; não confunde com o rosto atual
 _historico_web       = []   # lista de {usuario, luna, tempo}
 _mascote_solto       = False
 _relogio_visual_iniciado = False
@@ -700,9 +711,11 @@ def _registrar_avaliacao(rating: str, motivo: str = "", usuario=None, luna=None,
     except Exception:
         pass
 
-def _registrar_turno(usuario: str, luna: str, origem_proativa: str = ""):
+def _registrar_turno(usuario: str, luna: str, origem_proativa: str = "", clima: str = ""):
+    global _clima_turno_pendente
     import datetime
     if _historico_web and _historico_web[-1].get("luna") == luna:
+        _clima_turno_pendente = ""
         return  # evita duplicação quando atualizar_legenda é chamada duas vezes
     turno = {
         "usuario": usuario,
@@ -711,18 +724,23 @@ def _registrar_turno(usuario: str, luna: str, origem_proativa: str = ""):
     }
     if origem_proativa:
         turno["origem_proativa"] = origem_proativa
+    clima_turno = str(clima or _clima_turno_pendente or "").strip()
+    if clima_turno:
+        turno["clima"] = clima_turno
+        cor.cinza(f"[🎭 Clima do turno Web: {clima_turno}]")
+    _clima_turno_pendente = ""
     _historico_web.append(turno)
     if len(_historico_web) > 40:
         _historico_web.pop(0)
     _broadcast({"tipo": "historico_novo", "turno": turno})
 
-def atualizar_legenda(texto: str, origem_proativa: str = ""):
+def atualizar_legenda(texto: str, origem_proativa: str = "", clima: str = ""):
     global _ultima_fala_luna
     texto = _remover_tags_voz(texto)   # voz fica com os tags; texto exibido não
     _ultima_fala_luna = texto
     _broadcast({'legenda': texto})
     if texto:
-        _registrar_turno(_ultima_fala_usuario, texto, origem_proativa)
+        _registrar_turno(_ultima_fala_usuario, texto, origem_proativa, clima)
 
 def atualizar_stream_resposta(texto: str):
     """Mostra uma prévia da persona sem contaminar histórico, avaliação ou última fala."""
@@ -832,11 +850,12 @@ def atualizar_jogo(nome):
     """Avisa o web que um jogo abriu (nome) ou fechou (None) — a presença entra em modo jogo."""
     _broadcast({"jogo": nome or ""})
 
-def atualizar_kaomoji(k: str):
-    """Manda o kaomoji pro web — ele aparece GRANDE, no lugar onde ficava o GIF."""
-    global _ultimo_kaomoji
+def atualizar_kaomoji(k: str, clima: str = ""):
+    """Manda o rosto ao mascote e vincula o clima à próxima fala exibida no Web."""
+    global _ultimo_kaomoji, _clima_turno_pendente
     _ultimo_kaomoji = k
-    _broadcast({"kaomoji": k})
+    _clima_turno_pendente = str(clima or "").strip()
+    _broadcast({"kaomoji": k, "clima": _clima_turno_pendente})
 
 def atualizar_gif(termo: str):
     """Busca um GIF no Giphy para o termo e faz broadcast — chamada não bloqueia."""

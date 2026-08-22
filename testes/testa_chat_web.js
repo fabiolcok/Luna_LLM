@@ -7,6 +7,10 @@ const path = require('path');
 const vm = require('vm');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'templates', 'Index.html'), 'utf8');
+const servidor = fs.readFileSync(path.join(__dirname, '..', 'servidor.py'), 'utf8');
+
+assert.ok(servidor.includes('Cache-Control') && servidor.includes('no-store, no-cache'),
+          'FALHA: interface persistente pode servir HTML antigo do cache');
 
 assert.ok(/id="cfg-fonte-conversa"[^>]*min="80"[^>]*max="140"/.test(html) &&
           html.includes("localStorage.getItem('luna_fonte_conversa')") &&
@@ -60,6 +64,15 @@ assert.ok(/#acompanhamento-feedback\s*\{[^}]*display:\s*none/s.test(html) &&
           'FALHA: espaço vazio voltou entre avaliação e entrada');
 assert.ok(/<summary>Detalhes<\/summary>[\s\S]*?<div id="metricas-bar">[\s\S]*?<\/details>/.test(html),
           'FALHA: detalhes e métricas deixaram de compartilhar o expansível');
+assert.ok(html.includes('id="clima-resposta"') &&
+          html.includes("luna.dataset.clima = turno.clima") &&
+          html.includes("climaEl.textContent = clima ? '🎭 ' + clima : ''") &&
+          html.includes("if (dados.clima) _climaTurnoPendente = dados.clima") &&
+          html.includes("dados.turno.clima = _climaTurnoPendente"),
+          'FALHA: clima escolhido deixou de acompanhar os detalhes da resposta');
+assert.ok(/#clima-resposta\s*\{[^}]*color:\s*#777796;[^}]*font-size:\s*\.78rem/s.test(html) &&
+          /#clima-resposta:not\(\[hidden\]\) \+ #pensamento-texto\s*\{\s*border-top:\s*0/s.test(html),
+          'FALHA: clima voltou a destoar ou ganhou divisor próprio nos detalhes');
 assert.ok(html.includes('balao.appendChild(detailsEl)') &&
           html.includes('anexarDetalhesAoTurno(turnoEl)'),
           'FALHA: detalhes deixaram de acompanhar a fala mais recente da Luna');

@@ -792,6 +792,17 @@
             font-family: inherit;
         }
 
+        #clima-resposta {
+            padding: 8px 10px 0;
+            color: #777796;
+            font-size: .78rem;
+            line-height: 1.55;
+            border-top: 1px solid #1a1a2e;
+            font-family: inherit;
+        }
+        #clima-resposta[hidden] { display: none; }
+        #clima-resposta:not([hidden]) + #pensamento-texto { border-top: 0; }
+
         /* Botão */
         .btn-row {
             display: flex;
@@ -2118,6 +2129,7 @@
         <!-- Pensamento colapsável (como ela chegou lá — detalhe secundário) -->
         <details id="pensamento-details">
             <summary>Detalhes</summary>
+            <div id="clima-resposta" hidden></div>
             <div id="pensamento-texto">—</div>
             <div id="metricas-bar">
                 <span id="met-roteador">Roteador —</span>
@@ -4659,6 +4671,7 @@
                 luna.className = 'turno-luna';
                 if (turno.origem_proativa)
                     luna.dataset.origemProativa = turno.origem_proativa;
+                if (turno.clima) luna.dataset.clima = turno.clima;
                 const conteudo = document.createElement('div');
                 conteudo.className = 'mensagem-conteudo';
                 conteudo.innerHTML = renderizarMarkdownSeguro(turno.luna);
@@ -4675,6 +4688,12 @@
         function anexarDetalhesAoTurno(turnoEl) {
             const balao = turnoEl && turnoEl.querySelector ? turnoEl.querySelector('.turno-luna') : null;
             if (!balao) { detailsEl.hidden = true; return; }
+            const climaEl = document.getElementById('clima-resposta');
+            const clima = balao.dataset ? (balao.dataset.clima || '') : '';
+            if (climaEl) {
+                climaEl.textContent = clima ? '🎭 ' + clima : '';
+                climaEl.hidden = !clima;
+            }
             detailsEl.removeAttribute('open');
             conteudoEl.style.height = '0';
             conteudoEl.style.opacity = '0';
@@ -5036,6 +5055,7 @@
         }
 
         // --- WebSocket ---
+        let _climaTurnoPendente = '';
         socket.onmessage = function(event) {
             const dados = JSON.parse(event.data);
             if (dados.tipo === 'evento_visual') {
@@ -5073,6 +5093,12 @@
                 return;
             }
             if (dados.tipo === 'historico_novo') {
+                // O clima também viaja com o evento do rosto, que chega antes do balão.
+                // Mantê-lo como fallback evita perder o diagnóstico se outro cliente ou uma
+                // versão antiga do servidor omitir o campo no objeto do histórico.
+                if (!dados.turno.clima && _climaTurnoPendente)
+                    dados.turno.clima = _climaTurnoPendente;
+                _climaTurnoPendente = '';
                 adicionarTurno(dados.turno);
                 return;
             }
@@ -5169,8 +5195,10 @@
             if (dados.jogo !== undefined) modoJogo(dados.jogo);
             if (typeof dados.estado === 'string')      // ouvindo/pensando/falando/dormindo
                 aplicarPresenca(dados.estado);
-            if (dados.kaomoji !== undefined)
+            if (dados.kaomoji !== undefined) {
+                if (dados.clima) _climaTurnoPendente = dados.clima;
                 mostrarKaomoji(dados.kaomoji);
+            }
             if (dados.gif_url !== undefined)
                 trocarGif(dados.gif_url, dados.gif_termo);
             if (dados.tipo === 'status' && statusEl) {

@@ -42,6 +42,7 @@ modelos/acompanhamentos.json
 modelos/tom_baseline.json
 modelos/widget_posicao.json
 modelos/janela_principal.json
+modelos/webview_dados/
 modelos/manifests/
 chroma_db/
 *.db

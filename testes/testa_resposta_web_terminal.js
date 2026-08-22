@@ -18,5 +18,7 @@ assert.strictEqual(chamadas.length, 4,
                    'FALHA: resposta normal, interceptação e cliques de acompanhamento/tarefa precisam aparecer no CMD');
 assert.ok(!trecho.includes('falar_texto('),
           'FALHA: digitar no web passou a tocar áudio sem decisão explícita');
+assert.ok(trecho.includes('resposta, clima=obter_clima_resposta()'),
+          'FALHA: resposta Web deixou de entregar seu clima junto com o balão');
 
 console.log('PASSOU — resposta web volta a aparecer no terminal sem ligar TTS');

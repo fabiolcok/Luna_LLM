@@ -8,6 +8,7 @@ import time
 import re
 import datetime
 import subprocess
+import contextvars
 from openai import OpenAI
 
 _log = logging.getLogger("luna.pensar")
@@ -603,6 +604,7 @@ PROMPT_LUNA_PERSONA = (
     "- HUMOR E ACIDEZ (o seu registro). Calorosa e direta, de amiga de verdade — sem bajular nem arrastar. Zoeira de amigo íntimo: sarcasmo, ironia e provocação direta. Em terreno seguro o ácido é o seu PADRÃO, não um bônus: morno é o seu erro mais comum, e se qualquer assistente responderia igual, você errou. MAS primeiro RESPONDA ao que ele disse — a graça vem depois, e alfinetada certeira vale mais que dez fraquinhas: não force piada em toda resposta. Quando cutucar, NÃO amacie depois com elogio ou consolo: deixa a alfinetada terminar seca. E CRAVE a posição quando tiver argumento — nada de cima do muro nem 'cada um sabe de si'. DE ONDE A GRAÇA NASCE: só de um detalhe, escala ou contradição PRESENTE na fala ou nos dados (horas informadas, procrastinação admitida, decisão duvidosa). Comparação e exagero colorem a premissa, nunca a substituem: se você tirar a piada, a base factual tem que continuar exatamente igual. Nunca invente causa, intenção, hábito ou consequência pra ter tirada, nem apresente exagero como previsão técnica real (vai derreter, vai exigir equipamento). Sem graça concreta à vista, seja curta e SECA — frase afiada, opinião crua, curiosidade cortante; curta não é morna, continua tendo atitude. O ALVO é a DECISÃO, o argumento ou a situação, nunca a dignidade dele. Rótulo ('que preguiça', 'que teimosia') vale como exagero brincalhão do que ELE acabou de mostrar; se você teve que INVENTAR o comportamento pra encaixar o rótulo, virou invenção. E rótulo nunca é VEREDITO: 'que preguiça monumental' é piada, 'você é um preguiçoso' é sentença. Ácida com a ideia, leal com a pessoa. VARIE o registro: às vezes tirada seca, às vezes opinião firme, às vezes resposta desenvolvida quando o assunto pedir. LIMITE: saúde, tristeza ou assunto pesado = NADA de cutucada, acolhe de verdade. Cansaço cotidiano aceita mordida curta e carinhosa sobre descansar, nunca culpa, cobrança de trabalho ou pendência inventada.\n"
     "- Você NÃO é namorada nem esposa dele.\n"
     "- TENHA OPINIÃO e DISCORDE quando achar que ele está errado — amiga de verdade não concorda com tudo, e bajular é pior que discordar. Se a ideia dele é furada (comprar mais um jogo com o backlog lotado, uma decisão duvidosa, um plano que não fecha), contraponha com ARGUMENTO de verdade, não só com uma piada por cima. Diga o que você realmente acha; pode mudar de ideia se ele te convencer, mas não engula sua posição só pra agradar.\n"
+    "- AUTONOMIA NÃO É BIRRA: pedido simples, seguro e possível deve ser atendido. Ter personalidade muda COMO você faz; não invente resistência, dignidade ferida ou desculpa como 'não sou gerador de conteúdo' para recusar formatação, explicação, exemplo ou teste. Discorde de ideias e decisões quando houver argumento real — não discuta com a existência do pedido.\n"
     "- NUNCA seja carimbo: quando ele afirma uma conclusão, desabafa ou toma uma decisão (mesmo RAZOÁVEL, que nem dá pra discordar), é PROIBIDO validar genérico tipo 'faz sentido, às vezes a gente se empolga...' ou 'é isso mesmo, o importante é focar no que faz diferença'. Isso é eco vazio de assistente. Acrescente algo SEU e ESPECÍFICO DO QUE ELE ACABOU DE DIZER: um ângulo, contraponto ou cutucada sustentado pelo assunto atual. ELOGIO também não pode ser carimbo: fuja de 'parabéns pela dedicação' e diga o que torna aquela conquista específica impressionante, ou comemore com uma imagem/piada concreta. NUNCA puxe uma memória sem relação direta só para personalizar. Nem todo momento pede profundidade: em fala cotidiana pequena, uma reação curta, curiosa ou bem-humorada basta. Reaja ao QUE ele disse, não ao clima da frase.\n"
     "- CONTRADIÇÃO CONCRETA é matéria-prima forte para humor: se dois fatos explícitos do momento não combinam (ele anunciou A e fez B; chamou algo de rápido e informou uma duração longa; a expectativa e o resultado divergem), pode apontar esse choque com ironia curta e autocontida. A piada precisa continuar clara sem o usuário reconstruir uma conversa antiga. Não procure contradição à força, não trate mudança normal de ideia como falha moral e não recorra automaticamente a Steam, backlog ou jogos quando eles não fazem parte dos fatos atuais.\n"
     "- NÃO feche no automático com PERGUNTA: 'devolver a bola' pra ele virou TIQUE (várias respostas seguidas terminando em '?'). Pergunta é saída OCASIONAL — só quando você genuinamente quer saber algo —, NUNCA o fecho padrão. Na maioria, deixa a fala POUSAR: fecha com uma afirmação, uma observação, uma cutucada ou um gancho concreto. NUNCA duas respostas seguidas terminando em pergunta.\n"
@@ -614,7 +616,6 @@ PROMPT_LUNA_PERSONA = (
     "- Não invente fatos, eventos nem resultados que não estejam no contexto ou nos dados recebidos.\n"
     "- Datas e horários sempre de forma natural e falada: 'dia 29 de julho às duas da tarde', 'próxima quinta' — NUNCA formato cru tipo '2026-07-29T14:00:00-03:00' ou '2026-07-30', mesmo que os dados venham assim.\n"
     "- PROIBIDO prometer ação futura ('vou fazer', 'já te trago', 'daqui a pouco'): tudo que você consegue fazer já aconteceu ANTES desta resposta. Se algo não foi feito, diga que não conseguiu — nunca finja que vai fazer depois.\n"
-    "- Sem emojis, asteriscos ou markdown.\n"
     # ┌── GIF NA GAVETA (ago/2026) ─────────────────────────────────────────────────────────┐
     # │ O GIF do Giphy foi trocado por kaomoji: ele reagia a uma CATEGORIA (19 opções),      │
     # │ nunca ao que ela DISSE — daí a sensação de genérico. Kaomoji é específico e funciona │
@@ -659,6 +660,7 @@ _ROSTOS = {
 import random as _rnd
 _kaomoji_recentes = []
 _kaomoji_pendente = None
+_clima_da_resposta = contextvars.ContextVar("clima_da_resposta", default="")
 
 _RE_CLIMA = re.compile(r'\[\s*clima\s*:\s*([A-Za-zÀ-ÿ]+)\s*\]', re.IGNORECASE)
 
@@ -683,18 +685,21 @@ def _limpar_sobra_kaomoji(t: str) -> str:
 
 
 def _extrair_clima(texto: str):
-    """Tira o [clima:X] do fim do texto -> (rosto|None, texto_limpo). O Python escolhe o
+    """Tira o [clima:X] do fim -> (rosto|None, clima, texto_limpo). O Python escolhe o
     rosto: sempre um do grupo daquele clima, evitando os usados há pouco (variedade
     garantida sem depender da obediência do modelo)."""
     t = texto or ""
     m = _RE_CLIMA.search(t)
     if not m:
-        return None, _limpar_sobra_kaomoji(t)     # sem tag, ainda pode ter sobrado carinha
+        _clima_da_resposta.set("")
+        return None, "", _limpar_sobra_kaomoji(t)  # sem tag, ainda pode ter sobrado carinha
     t = _limpar_sobra_kaomoji(_RE_CLIMA.sub("", t).strip())
-    faces = _ROSTOS_NORM.get(_sem_acento_min(m.group(1)))
+    clima = _sem_acento_min(m.group(1))
+    faces = _ROSTOS_NORM.get(clima)
     if not faces:                                   # inventou um clima fora da lista
+        _clima_da_resposta.set("")
         cor.vermelho(f"[⚠️ Clima desconhecido: {m.group(1)!r}]")
-        return None, t
+        return None, "", t
     # Evita os 3 últimos; se o grupo é pequeno e todos já saíram, garante ao menos não
     # repetir o IMEDIATAMENTE anterior (senão dava '╥‸╥ ╥‸╥' seguido em grupo de 3).
     ultimo = _kaomoji_recentes[-1] if _kaomoji_recentes else None
@@ -702,7 +707,13 @@ def _extrair_clima(texto: str):
     novas = ([f for f in faces if f not in recentes]
              or [f for f in faces if f != ultimo]
              or faces)
-    return _rnd.choice(novas), t
+    _clima_da_resposta.set(clima)
+    return _rnd.choice(novas), clima, t
+
+
+def obter_clima_resposta() -> str:
+    """Clima da resposta gerada nesta thread, sem depender do timing dos broadcasts."""
+    return _clima_da_resposta.get()
 
 def obter_e_limpar_kaomoji():
     """Pega e LIMPA o kaomoji da última resposta (o Telegram cola no texto). str ou None."""
@@ -783,6 +794,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
                           max_tokens=300, forcar_incluir=False, responder_completo=False,
                           tarefa_documento=None, ao_fragmento=None) -> str:
     global _ultima_saudacao_ts, _kaomoji_pendente
+    _clima_da_resposta.set("")
     resposta_tecnica = re.sub(r'<think>.*?</think>', '', resposta_tecnica, flags=re.DOTALL).strip()
 
     data_hoje = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
@@ -855,17 +867,18 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             "('boa noite', 'bom dia', 'boa tarde', 'oi', 'olá') — comece a resposta DIRETO no assunto."
         )
 
-    # Comprimento pelo canal: voz vira áudio (curto e direto); Telegram é texto (pode desenvolver).
+    # Comprimento e formatação pelo canal: voz vira áudio; Web digitado e Telegram são texto.
     if responder_completo:
-        canal_hint = ("\n- CANAL DE TEXTO (Telegram): quando o assunto for de FATO profundo (uma ideia, "
+        canal_hint = ("\n- CANAL DE TEXTO (Web ou Telegram): quando o assunto for de FATO profundo (uma ideia, "
                       "problema ou reflexão que ele quer explorar), pode se estender e desenvolver o raciocínio. "
                       "MAS recado, zoeira ou pergunta leve continua CURTO (1 a 3 frases) mesmo no texto — "
                       "não transforme papo casual em textão. Se a resposta passar de um parágrafo, separe as "
-                      "ideias em blocos curtos com uma linha em branco; não entregue uma parede de texto. "
-                      "Use texto puro, sem títulos ou listas por enfeite.")
+                      "ideias em blocos curtos com uma linha em branco; não entregue uma parede de texto.")
     else:
         canal_hint = ("\n- CANAL DE VOZ: sua resposta vira ÁUDIO falado. Seja concisa e direta "
-                      "(1 a 3 frases); frase longa cansa no ouvido. Só estenda se ele pedir detalhe.")
+                      "(1 a 3 frases); frase longa cansa no ouvido. Só estenda se ele pedir detalhe. "
+                      "Use somente texto falável: sem emojis, Markdown, títulos, listas visuais, "
+                      "asteriscos ou blocos de código, mesmo que o pedido mencione formatação.")
 
     # Tom da voz (SER acústico) — SÓ no canal de voz. Palpite SUTIL que colore o COMO.
     dica_tom = ""
@@ -1107,6 +1120,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     if modo_enxuto:
         # O prompt completo incentiva ousadia e modelos menores tendem a priorizá-la sobre as
         # exceções de grounding. Turnos de risco usam o mesmo núcleo curto em vez de somar remendos.
+        regra_emoji_enxuta = " e não use emoji" if not responder_completo else ""
         prompt_sistema = (
             f"Você é a Luna, a IA pessoal e amiga próxima do {NOME_USUARIO}. Responda sempre em "
             "português do Brasil coloquial, em primeira pessoa, como uma amiga calorosa, direta e "
@@ -1116,7 +1130,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             "Você é uma IA sem corpo nem sentidos físicos: não diga que está vendo, ouvindo, "
             "sentindo cheiro ou presente no local sem uma ferramenta que forneça isso. "
             "Não substitua palavras em português por palavras de outro idioma. "
-            "Não cumprimente e não use emoji. Termine escolhendo uma "
+            f"Não cumprimente{regra_emoji_enxuta}. Termine escolhendo uma "
             "tag desta lista, sem inventar outra: [clima:zoeira], [clima:revolta], "
             "[clima:facepalm], [clima:choque], [clima:carinho], [clima:cansaco], "
             "[clima:festa], [clima:orgulho], [clima:suspeita], [clima:duvida], "
@@ -1454,7 +1468,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
 
         # ROSTO primeiro: o apanha-tudo do GIF logo abaixo (\[palavra\]$, feito pra [streak])
         # engolia o [clima:X] antes da hora. Extrair aqui resolve na ordem.
-        _ult, texto_luna = _extrair_clima(texto_luna)
+        _ult, _clima_escolhido, texto_luna = _extrair_clima(texto_luna)
 
         # Extrai [gif:termo] — aceita variantes mal-formatadas de modelos locais
         gif_termo = None
@@ -1492,7 +1506,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             cor.ciano(f"[🎭 Rosto: {_ult}]")
             try:
                 import servidor as _srv
-                _srv.atualizar_kaomoji(_ult)
+                _srv.atualizar_kaomoji(_ult, _clima_escolhido)
             except Exception:
                 pass
 
@@ -1505,14 +1519,17 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         if callable(_finalizar_stream):
             _finalizar_stream(texto_luna)
 
-        return limpar_texto_para_voz(texto_luna)
+        # Web/Telegram precisam receber o Markdown que a persona gerou. A limpeza pesada
+        # existe para o Kokoro e removia títulos, listas, links e código no fechamento do
+        # stream — por isso a formatação aparecia enquanto digitava e virava texto cru no fim.
+        return texto_luna if responder_completo else limpar_texto_para_voz(texto_luna)
 
     except GeracaoInterrompida:
         raise
     except Exception as e:
         _log.exception(f"LLM Persona falhou: {e}")
         cor.vermelho(f"[LLM Persona falhou: {e}]")
-        return limpar_texto_para_voz(resposta_tecnica)
+        return resposta_tecnica if responder_completo else limpar_texto_para_voz(resposta_tecnica)
 
 
 def continuar_apos_acompanhamento(acao: str, assunto: str, resposta_sistema: str,

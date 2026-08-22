@@ -5,6 +5,7 @@ const fs = require('fs');
 const RAIZ = require('path').join(__dirname, '..');
 const html = fs.readFileSync(require('path').join(RAIZ, 'templates', 'Index.html'), 'utf8');
 const py   = fs.readFileSync(require('path').join(RAIZ, 'modulos', 'pensar.py'), 'utf8');
+const servidor = fs.readFileSync(require('path').join(RAIZ, 'servidor.py'), 'utf8');
 const src  = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]).join('\n;\n');
 
 function El(tag) {
@@ -89,6 +90,11 @@ diz(html.includes("ROSTO_MEDO = '°ᯅ°'"), 'a cara de medo é o °ᯅ° (o ᯅ
 diz(html.includes("ROSTO_JOGO = 'ᓀ‸ᓂ'"), 'modo jogo usa a cara concentrada ᓀ‸ᓂ');
 diz(html.includes("ROSTO_RADAR_PROATIVO = '⇀‸↼'"), 'sonar proativo usa a cara fixa ⇀‸↼');
 diz(html.includes("pensando: '◐_◑'"), 'pensando usa a cara ◐_◑');
+diz(py.includes('_ult, _clima_escolhido, texto_luna = _extrair_clima(texto_luna)') &&
+    py.includes('_srv.atualizar_kaomoji(_ult, _clima_escolhido)') &&
+    py.includes('def obter_clima_resposta()') &&
+    servidor.includes('turno["clima"] = clima_turno'),
+    'o clima escolhido fica vinculado ao turno da resposta web');
 diz(html.includes('⌐■_■ combina com um futuro eclipse'), 'a cara candidata ao eclipse ficou anotada');
 
 // ---- 4) a lista de quem pisca continua valendo ----
