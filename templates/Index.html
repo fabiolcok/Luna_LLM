@@ -1229,6 +1229,12 @@
         }
         .turno-pendente { opacity: .72; }
         .turno-pendente .turno-tempo::after { content: ' · processando'; }
+        .turno-incompleto { opacity: .78; }
+        .turno-incompleto .turno-tempo::after {
+            content: ' · ' attr(data-interrupcao); color: #c87588;
+        }
+        .turno-incompleto .turno-luna { border-style: dashed; }
+        .btn-aval:disabled { opacity: .25; cursor: default; pointer-events: none; }
         .balao-entrando { animation: balao-entra .46s cubic-bezier(.22,1,.36,1) both; }
         @keyframes balao-entra {
             from { opacity: 0; transform: translateY(13px); }
@@ -4687,6 +4693,7 @@
             const estavaNoFim = historicoLista.scrollHeight - historicoLista.scrollTop -
                 historicoLista.clientHeight < 80;
             const turnoEl = criarTurnoEl(turno);
+            document.querySelectorAll('.btn-aval[data-rating]').forEach(b => b.disabled = false);
             const lunaNova = turnoEl.querySelector('.turno-luna');
             if (lunaNova && !tinhaPrevia) lunaNova.classList.add('balao-entrando');
             historicoLista.appendChild(turnoEl);
@@ -4702,6 +4709,7 @@
             if (anterior) anterior.remove();
             const agora = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
             const el = criarTurnoEl({usuario: texto, luna: '', tempo: agora}, true);
+            document.querySelectorAll('.btn-aval[data-rating]').forEach(b => b.disabled = true);
             el.id = 'turno-pendente';
             const balaoUsuario = el.querySelector('.turno-usuario');
             if (balaoUsuario) balaoUsuario.classList.add('balao-entrando');
@@ -4764,6 +4772,31 @@
             _braileStreamConteudo = conteudo;
             _braileStreamResolvido = Math.min(_braileStreamResolvido, texto.length);
             animarBraileStream();
+        }
+
+        function finalizarRespostaStreamInterrompida(motivo='interrompida') {
+            const turno = document.getElementById('turno-pendente');
+            if (!turno) return;
+            const parcial = _braileStreamAlvo;
+            pararBraileStream();
+            turno.removeAttribute('id');
+            turno.classList.remove('turno-pendente', 'turno-stream');
+            turno.classList.add('turno-incompleto');
+            let luna = turno.querySelector('.turno-luna');
+            if (!luna) {
+                luna = document.createElement('div');
+                luna.className = 'turno-luna';
+                const conteudo = document.createElement('div');
+                conteudo.className = 'mensagem-conteudo';
+                luna.appendChild(conteudo);
+                turno.appendChild(luna);
+            }
+            const conteudo = luna.querySelector('.mensagem-conteudo');
+            conteudo.innerHTML = renderizarMarkdownSeguro(parcial || '—');
+            turno.dataset.interrupcao = motivo;
+            const tempo = turno.querySelector('.turno-tempo');
+            if (tempo) tempo.dataset.interrupcao = motivo;
+            atualizarFadeConversa();
         }
 
         // --- Config panel ---
@@ -5047,6 +5080,10 @@
                 mostrarRespostaStream(dados.texto || '');
                 return;
             }
+            if (dados.tipo === 'resposta_stream_interrompida') {
+                finalizarRespostaStreamInterrompida(dados.motivo || 'interrompida');
+                return;
+            }
             if (dados.tipo === 'config_estado') {
                 aplicarEstadoConfig(dados.estado);
                 return;
@@ -5147,6 +5184,16 @@
                 if (detailsEl.open) conteudoEl.style.height = 'auto';
             }
         };
+
+        // Sem isso, uma queda durante a geração deixava o balão e o mascote presos em processamento.
+        socket.addEventListener('error', function() {
+            finalizarRespostaStreamInterrompida('conexão perdida');
+            aplicarPresenca('dormindo');
+        });
+        socket.addEventListener('close', function() {
+            finalizarRespostaStreamInterrompida('conexão encerrada');
+            aplicarPresenca('dormindo');
+        });
 
         // ── Oficina: teste de fala, dicionário de pronúncia, atalhos, chaves ──
         socket.addEventListener('open', function() {

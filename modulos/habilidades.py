@@ -565,13 +565,12 @@ def _nucleo_jogo(nome: str) -> str:
         palavras.pop()
     return " ".join(palavras)
 
-def duvida_do_jogo(pergunta: str) -> str:
-    """Responde uma dúvida sobre o JOGO que o usuário está jogando AGORA, pesquisando na
-    web escopado no jogo (ex: 'como aumento a população?' vira '<jogo> como aumentar
-    população'). GUARD: se os resultados não citarem o próprio jogo pelo nome, é honesta e
-    NÃO chuta (evita dar dica de um jogo parecido quando o jogo é obscuro/sem wiki)."""
+def duvida_do_jogo(pergunta: str, nome_jogo: str = "") -> str:
+    """Pesquisa uma dúvida de gameplay usando o jogo vindo da conversa ou detectado no PC.
+    O guard dos resultados continua impedindo dica de outro título com nome parecido."""
     from modulos.memoria import ler_estado_luna
-    jogo = (ler_estado_luna().get("jogo_ativo") or "").strip()
+    # O contexto pode saber o jogo mesmo depois de ele ser fechado; o detector fica como fallback.
+    jogo = (nome_jogo or ler_estado_luna().get("jogo_ativo") or "").strip()
     if not jogo:
         return "SISTEMA: Nenhum jogo ativo agora — não sei de qual jogo é a dúvida. Peça pra citar o jogo."
     resultado = pesquisar_na_web(f"{jogo} {pergunta}")
@@ -1302,11 +1301,15 @@ ferramentas_disponiveis = [
         "type": "function",
         "function": {
             "name": "duvida_do_jogo",
-            "description": "Responde uma DÚVIDA/PERGUNTA sobre o jogo que o usuário está JOGANDO agora — como fazer algo, onde achar, dicas, mecânicas ('como aumento a população?', 'onde acho tal item?', 'como derroto esse chefe?'). A pergunta pode ser vaga ('como faço isso?') — o jogo atual é resolvido sozinho. Diferente de 'consultar_jogo_steam' (que é preço/gênero/lançamento): esta é pra DÚVIDA de gameplay do jogo em andamento.",
+            "description": "Responde uma DÚVIDA/PERGUNTA EXPLÍCITA de gameplay — como fazer algo, onde achar, dicas ou mecânicas. Comentário de progresso/opinião ('estou no chefe', 'parei um pouco', 'estou gostando') NÃO é pedido de ajuda. O jogo pode vir da mensagem, da conversa recente ou do título aberto agora. Diferente de 'consultar_jogo_steam' (preço/gênero/lançamento).",
             "parameters": {
                 "type": "object",
-                "properties": {"pergunta": {"type": "string", "description": "A dúvida do usuário sobre o jogo, com as palavras dele."}},
-                "required": ["pergunta"]
+                "properties": {
+                    "pergunta": {"type": "string", "description": "A dúvida real do usuário, com as palavras dele. Não transforme comentário em pergunta."},
+                    "trecho_pedido": {"type": "string", "description": "Trecho copiado LITERALMENTE da mensagem atual que prova que o usuário pediu ajuda ou informação. Não parafraseie nem use texto do histórico."},
+                    "nome_jogo": {"type": "string", "description": "Nome citado pelo usuário ou identificado na conversa recente. Omita somente quando depender do jogo aberto agora."}
+                },
+                "required": ["pergunta", "trecho_pedido"]
             }
         }
     },

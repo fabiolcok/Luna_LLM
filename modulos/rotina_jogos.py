@@ -236,7 +236,7 @@ def registrar_declaracao(nome: str, estado_jogo: str = "", opiniao: str = "",
     return f"SISTEMA: rotina de {nome} atualizada ({', '.join(fatos)})."
 
 
-def detectar_declaracao(texto: str) -> dict | None:
+def detectar_declaracao(texto: str, nome_contexto: str = "") -> dict | None:
     """Rede de segurança para fatos explícitos sobre jogos que já existem na rotina."""
     original = str(texto or "").strip()
     normalizado = _nome_normalizado(original)
@@ -257,7 +257,12 @@ def detectar_declaracao(texto: str) -> dict | None:
         platina = False
     elif re.search(r'\b(platinei|platinado)\b', original, re.IGNORECASE):
         platina = True
-    if not estado_jogo and platina is None:
+    tem_opiniao = bool(re.search(
+        r'\b(gostei|curti|(?:estou|t[oô])\s+gostando|gostando|'
+        r'n[aã]o\s+(?:estou\s+)?gostando|n[aã]o\s+gostei|n[aã]o\s+curti|achei)\b',
+        original, re.IGNORECASE,
+    ))
+    if not estado_jogo and platina is None and not tem_opiniao:
         return None
 
     dados = _carregar()
@@ -267,6 +272,8 @@ def detectar_declaracao(texto: str) -> dict | None:
         nome_norm = _nome_normalizado(nome)
         if nome_norm and re.search(rf'(^| ){re.escape(nome_norm)}($| )', normalizado):
             candidatos.append(nome)
+    if not candidatos and str(nome_contexto or "").strip():
+        candidatos = [str(nome_contexto).strip()]
     if not candidatos:
         ativos = [str(j.get("nome") or "").strip() for j in dados.get("jogos", {}).values()
                   if j.get("em_andamento") and j.get("nome")]
@@ -275,10 +282,6 @@ def detectar_declaracao(texto: str) -> dict | None:
             return None
         candidatos = ativos
     nome = max(candidatos, key=len)
-    tem_opiniao = bool(re.search(
-        r'\b(gostei|curti|n[aã]o\s+gostei|n[aã]o\s+curti|achei)\b',
-        original, re.IGNORECASE,
-    ))
     return {"nome_jogo": nome, "estado_jogo": estado_jogo,
             "platinado": platina, "opiniao": original if tem_opiniao else ""}
 

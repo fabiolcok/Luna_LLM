@@ -6,18 +6,20 @@ definitiva. Itens daqui não estão automaticamente aprovados para commit.
 ## Em teste
 
 - [ ] **Deixar o streaming de texto Web redondo.**
-  - Implementação atual: somente a chamada da persona no texto Web usa streaming; roteador,
-    Telegram e voz continuam aguardando a resposta completa. O balão parcial é provisório e
-    apenas a resposta final limpa entra no histórico e pode ser avaliada.
+  - Implementação local: a chamada da persona transmite para o texto Web e, na conversa por voz,
+    entrega frases completas ao Kokoro. Telegram e roteador continuam aguardando a resposta
+    completa. O balão parcial é provisório e apenas a resposta final limpa entra no histórico.
   - Validar no TurboLLM real respostas comuns, respostas com ferramenta, Markdown grande,
     troca de modelo e reaquecimento depois do `idle-unload`.
-  - Fazer o botão `⏹️` cancelar também a geração da persona, não apenas o TTS. Ao interromper,
-    manter o trecho parcial visível, marcá-lo como interrompido e não salvar no histórico nem
-    liberar avaliação de uma frase incompleta.
-  - Tratar queda do WebSocket ou erro durante o stream sem deixar balão provisório ou animação
-    `digitando` presos na tela.
-  - Se o texto ficar estável no uso real, avaliar uma fase separada de voz por frases completas;
-    nunca mandar token cru ao TTS, porque isso quebra entonação e ordem das frases.
+  - Implementado localmente: o botão `⏹️` cancela também a geração da persona, mantém o trecho
+    parcial marcado como interrompido e não o salva nem libera sua avaliação. Validar no
+    TurboLLM real se o cancelamento é rápido em respostas curtas e longas.
+  - Implementado localmente: queda do WebSocket e resposta vazia encerram o balão provisório e
+    devolvem o mascote ao repouso. Ainda provocar uma queda real durante o stream para validar.
+  - Implementado localmente: TTS por frases completas, com uma fila sintetizando a próxima
+    enquanto outra toca a anterior. O botão de repetir recompõe a fala inteira e a interrupção
+    encerra geração, síntese pendente e áudio atual. Validar no uso real pausas entre frases,
+    pergunta/exclamação, abreviações, resposta curta e interrupção no meio da segunda frase.
 
 - [ ] **Validar limpeza do `salvar_obsidian`.** Mensagens com `título:`/`conteúdo:` não devem
       guardar introdução nem comando; reação curta como “boa ideia, deixa anotado” deve salvar
@@ -53,6 +55,12 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
 
 - [ ] **Barge-in.** Interromper a fala dela falando por cima, em vez de esperar terminar.
 - [ ] **Radar de encomendas.** Mesma ideia do radar de promoções, para rastreio de pedidos.
+- [ ] **Luz ambiente da Luna.** Testar a integração com uma lâmpada RGB Positivo em um bocal ou
+      abajur atrás da mesa, usando luz indireta na parede como extensão discreta do mascote.
+      Primeiro reaproveitar temporariamente uma das duas lâmpadas existentes; só montar algo
+      definitivo se a automação for agradável no uso real. Começar com comandos explícitos de
+      ligar, desligar, brilho e cor. Depois avaliar estados curtos como ouvindo, pensando, radar
+      e alerta, sem transformar cada interação em espetáculo nem depender da Alexa como ponte.
 - [ ] **Modo de datas comemorativas.** Em aniversário do usuário, Natal, Ano-Novo e outras
       datas selecionadas, adaptar por tempo limitado o jeito de falar e a aparência/animação do
       mascote. O aniversário deve vir de configuração pessoal (`.env` ou painel Web), nunca ficar

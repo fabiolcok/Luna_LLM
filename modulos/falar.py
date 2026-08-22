@@ -3,9 +3,12 @@ import logging
 import os
 import re
 import datetime
+import queue
+import threading
 import numpy as np
 import sounddevice as sd
 import modelos.cores as cor
+from modulos.stream_voz import SegmentadorFrases
 
 _log = logging.getLogger("luna.falar")
 
@@ -175,6 +178,113 @@ def _corrigir_pronuncia(texto):
 # ==========================================
 # Função Principal
 # ==========================================
+def _sintetizar_wav(texto, voz, velocidade):
+    """Sintetiza sem tocar; compartilhado pela fala inteira e pelo pipeline em frases."""
+    texto_limpo = limpar_texto_para_voz(texto)
+    if not texto_limpo.strip() or _pipe is None:
+        return None
+    texto_falar = _corrigir_pronuncia(texto_limpo)
+    partes = [a for _, _, a in _pipe(texto_falar, voice=voz, speed=velocidade)]
+    if not partes:
+        return None
+    wav = np.concatenate([a if hasattr(a, 'shape') else a.numpy() for a in partes])
+    return np.squeeze(wav)
+
+
+class FalaEmFluxo:
+    """Sintetiza frases futuras enquanto a anterior já está tocando, sempre na ordem."""
+
+    def __init__(self, interromper=None, voz=None, velocidade=None,
+                 ao_iniciar=None, ao_terminar=None):
+        self._interromper = interromper
+        self._voz = voz if voz in _VOZES_VALIDAS else _voz_padrao
+        self._velocidade = velocidade if velocidade is not None else _velocidade_padrao
+        self._ao_iniciar = ao_iniciar
+        self._ao_terminar = ao_terminar
+        self._segmentador = SegmentadorFrases()
+        self._textos = queue.Queue()
+        self._audios = queue.Queue()
+        self._wavs = []
+        self._encerrado = False
+        self._cancelado = False
+        self._terminou = threading.Event()
+        self._sintese = threading.Thread(target=self._rodar_sintese, daemon=True)
+        self._audio = threading.Thread(target=self._rodar_audio, daemon=True)
+        self._sintese.start()
+        self._audio.start()
+
+    def receber(self, texto_acumulado: str):
+        if self._encerrado or self._foi_interrompida():
+            return
+        for frase in self._segmentador.receber(texto_acumulado):
+            self._textos.put(frase)
+
+    def finalizar(self, texto_final: str):
+        """Entrega o resto do texto sem esperar o áudio; a geração pode concluir primeiro."""
+        if self._encerrado:
+            return
+        texto_log = limpar_texto_para_voz(texto_final)
+        if texto_log:
+            print("===================================")
+            cor.ciano(f"[🌚💬 Luna falando ] '{texto_log}'")
+            print("===================================")
+        for frase in self._segmentador.finalizar(texto_final):
+            self._textos.put(frase)
+        self._encerrado = True
+        self._textos.put(None)
+
+    def cancelar(self):
+        self._cancelado = True
+        if not self._encerrado:
+            self._encerrado = True
+            self._textos.put(None)
+        sd.stop()
+
+    def aguardar(self, timeout=None):
+        self._terminou.wait(timeout)
+
+    def _foi_interrompida(self):
+        return self._cancelado or bool(self._interromper and self._interromper.is_set())
+
+    def _rodar_sintese(self):
+        try:
+            while True:
+                frase = self._textos.get()
+                if frase is None or self._foi_interrompida():
+                    break
+                wav = _sintetizar_wav(frase, self._voz, self._velocidade)
+                if wav is not None and not self._foi_interrompida():
+                    self._wavs.append(wav)
+                    self._audios.put(wav)
+        except Exception as e:
+            _log.exception(f"Erro ao sintetizar fala em fluxo: {e}")
+        finally:
+            self._audios.put(None)
+
+    def _rodar_audio(self):
+        iniciou = False
+        try:
+            while True:
+                wav = self._audios.get()
+                if wav is None or self._foi_interrompida():
+                    break
+                if not iniciou:
+                    iniciou = True
+                    if self._ao_iniciar:
+                        self._ao_iniciar()
+                sd.play(wav, SAMPLE_RATE)
+                sd.wait()
+        except Exception as e:
+            _log.exception(f"Erro ao tocar fala em fluxo: {e}")
+        finally:
+            global _ultima_fala_wav
+            if self._wavs and not self._foi_interrompida():
+                _ultima_fala_wav = np.concatenate(self._wavs)
+            if iniciou and self._ao_terminar:
+                self._ao_terminar()
+            self._terminou.set()
+
+
 def falar_texto(texto, voz=None, velocidade=None, ao_iniciar=None, ao_terminar=None):
     if not texto or not texto.strip():
         return
@@ -199,15 +309,11 @@ def falar_texto(texto, voz=None, velocidade=None, ao_iniciar=None, ao_terminar=N
         print("===================================")
 
         # Correção de pronúncia SÓ no áudio (o texto exibido/log fica original).
-        texto_falar = _corrigir_pronuncia(texto_limpo)
-
-        partes = [a for _, _, a in _pipe(texto_falar, voice=voz_usada, speed=velocidade_usada)]
-        if not partes:
+        wav_achatado = _sintetizar_wav(texto_limpo, voz_usada, velocidade_usada)
+        if wav_achatado is None:
             if ao_terminar:
                 ao_terminar()
             return
-        wav = np.concatenate([a if hasattr(a, 'shape') else a.numpy() for a in partes])
-        wav_achatado = np.squeeze(wav)
 
         global _ultima_fala_wav
         _ultima_fala_wav = wav_achatado   # guarda pro botão "repetir" do web

@@ -10,6 +10,15 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ## 21/08/2026
 
+- 🗣️ 🔧 **A voz começou a responder sem esperar o texto inteiro.** No modo Web por voz, a
+  persona entrega frases completas ao sintetizador enquanto continua gerando a resposta. O botão
+  de parar também interrompe a geração e mantém no chat o trecho já recebido, marcado como
+  interrompido.
+
+- 🎮 🐛 **Comentários sobre um jogo não viram mais pedidos de tutorial.** A consulta de gameplay
+  agora exige uma prova literal na mensagem atual; o histórico ajuda a identificar o jogo e
+  sustenta continuações curtas, mas não transforma progresso ou opinião em pergunta inventada.
+
 - 💬 ✨ **A conversa Web ficou mais viva e confortável de ler.** A resposta textual da Luna
   agora aparece em streaming com o antigo efeito de braille, balões suaves ancorados no rodapé
   e rolagem que respeita quem voltou para ler mensagens anteriores. O texto ganhou cores menos

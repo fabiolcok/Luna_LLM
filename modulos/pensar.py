@@ -27,6 +27,7 @@ from modulos.memoria import (
     buscar_memoria_relevante
 )
 from modulos.falar import limpar_texto_para_voz, periodo_atual
+from modulos.intencao_gameplay import contexto_gameplay_anterior, validar_pedido_gameplay
 from modulos import (obsidian, config_env, animes, briefing, pendencias,
                      conclusao_tarefas, anotacoes, autoconhecimento)
 from modulos.turbollm_api import (
@@ -146,6 +147,10 @@ def configurar_memoria(ativo: bool):
 
 
 cliente = OpenAI(base_url=BASE_LOCAL, api_key="turbollm")
+
+
+class GeracaoInterrompida(Exception):
+    """Controle de fluxo: o usuário cancelou uma resposta Web ainda em streaming."""
 
 
 def _recarregar_modelo_esfriado() -> bool:
@@ -490,7 +495,8 @@ _RE_REF_NOTA_PESSOAL = re.compile(
     r'que\s+eu\s+(salvei|anotei|guardei)|nas\s+minhas\s+anota\w*)\b', re.IGNORECASE)
 _RE_DECLARACAO_JOGO = re.compile(
     r'\b(zerei|terminei|finalizei|platin\w*|desisti|abandonei|estou\s+jogando|comecei\s+a\s+jogar|'
-    r'gostei|curti|n[aã]o\s+gostei|n[aã]o\s+curti|achei)\b', re.IGNORECASE)
+    r'gostei|curti|(?:estou|t[oô])\s+gostando|gostando|n[aã]o\s+(?:estou\s+)?gostando|'
+    r'n[aã]o\s+gostei|n[aã]o\s+curti|achei)\b', re.IGNORECASE)
 _RE_AUTOCONHECIMENTO = re.compile(
     r'\b(luna|voc(?:ê|e)|seu|sua|teu|tua|próprio\s+código|proprio\s+codigo|por\s+dentro)\b',
     re.IGNORECASE,
@@ -1378,6 +1384,13 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             _ultimo_visivel = ""
             resposta = _chamar_llm(stream=True, **_parametros_persona)
             for _pedaco in resposta:
+                _cancelado = getattr(ao_fragmento, "cancelado", None)
+                if callable(_cancelado) and _cancelado():
+                    try:
+                        resposta.close()
+                    except Exception:
+                        pass
+                    raise GeracaoInterrompida()
                 _escolhas = getattr(_pedaco, "choices", None) or []
                 if _escolhas:
                     _delta = getattr(_escolhas[0], "delta", None)
@@ -1485,8 +1498,14 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         if _RE_SAUDACAO.search(texto_luna):
             _ultima_saudacao_ts = time.time()
 
+        _finalizar_stream = getattr(ao_fragmento, "finalizar", None)
+        if callable(_finalizar_stream):
+            _finalizar_stream(texto_luna)
+
         return limpar_texto_para_voz(texto_luna)
 
+    except GeracaoInterrompida:
+        raise
     except Exception as e:
         _log.exception(f"LLM Persona falhou: {e}")
         cor.vermelho(f"[LLM Persona falhou: {e}]")
@@ -1658,6 +1677,12 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                     "gameplay/how-to que faça sentido nesse jogo (como fazer algo, onde achar, como "
                     "passar de uma parte), MESMO sem citar o jogo, use 'duvida_do_jogo' com a pergunta dele."
                 )
+            prompt_ferramenta += (
+                "\nPara 'duvida_do_jogo', copie em 'trecho_pedido' o trecho LITERAL da mensagem "
+                "ATUAL que pede ajuda ou informação. O histórico pode identificar qual é o jogo, "
+                "mas nunca transforma comentário, progresso ou opinião em pergunta. Sem essa prova "
+                "literal, retorne SEM_FERRAMENTA."
+            )
 
         if prompt_usuario.startswith('[Arquivo:'):
             prompt_ferramenta += (
@@ -1708,6 +1733,8 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
 
         _tool_calls = getattr(mensagem_modelo, 'tool_calls', None)
         conteudo_salvo_turno = ""
+        _jogo_contexto_guard = ""
+        _contexto_gameplay = contexto_gameplay_anterior(historico) or {}
         # Guard anti-salvamento indevido: se o roteador firou salvar_obsidian num comentário
         # casual (sem intenção explícita de anotar), ignora a ferramenta e responde normal.
         if (_tool_calls and _tool_calls[0].function.name == "salvar_obsidian"
@@ -1722,6 +1749,18 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 and not _RE_AUTOCONHECIMENTO.search(prompt_usuario or "")):
             cor.vermelho("[⚠️ introspecção sem referência à própria Luna — ignorada]")
             _tool_calls = None
+        if _tool_calls and _tool_calls[0].function.name == "duvida_do_jogo":
+            try:
+                _args_guard = json.loads(_tool_calls[0].function.arguments or "{}")
+            except (json.JSONDecodeError, TypeError):
+                _args_guard = _args_do_json_torto(_tool_calls[0].function.arguments or "")
+            _jogo_contexto_guard = str(
+                _args_guard.get("nome_jogo") or _contexto_gameplay.get("nome_jogo") or ""
+            ).strip()
+            if not validar_pedido_gameplay(
+                    prompt_usuario, _args_guard.get("trecho_pedido", ""), historico):
+                cor.vermelho("[⚠️ dúvida de jogo sem evidência literal de pedido — ignorada]")
+                _tool_calls = None
         if _tool_calls and _tool_calls[0].function.name == "propor_acompanhamento":
             from modulos import acompanhamentos as _acomp
             if not _acomp.pode_propor(prompt_usuario or ""):
@@ -1760,6 +1799,13 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                         argumentos_dit["parametro"] = argumentos_dit.pop("texto")
                     if "query" in argumentos_dit and "parametro" not in argumentos_dit:
                         argumentos_dit["parametro"] = argumentos_dit.pop("query")
+
+                if nome_funcao == "duvida_do_jogo":
+                    # O histórico resolve apenas QUAL jogo. A intenção já foi provada por
+                    # trecho literal da mensagem atual no guard acima.
+                    argumentos_dit.pop("trecho_pedido", None)
+                    if not argumentos_dit.get("nome_jogo") and _contexto_gameplay.get("nome_jogo"):
+                        argumentos_dit["nome_jogo"] = _contexto_gameplay["nome_jogo"]
 
                 if nome_funcao == "ver_tela":
                     imagem_b64 = FUNCOES_DISPONIVEIS["ver_tela"]()
@@ -1835,7 +1881,8 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             resultado_ferramenta = (mensagem_modelo.content or "") if modo_memoria else ""
             if not modo_memoria:
                 from modulos import rotina_jogos as _rotina_jogos
-                _declaracao = _rotina_jogos.detectar_declaracao(prompt_usuario)
+                _declaracao = _rotina_jogos.detectar_declaracao(
+                    prompt_usuario, nome_contexto=_jogo_contexto_guard)
                 if _declaracao:
                     ferramenta_chamada = True
                     inicio_ferramenta = time.time()
@@ -2123,7 +2170,14 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
         texto_para_memoria = texto_resposta + lembranca_oculta
 
         historico.append({"role": "user", "content": prompt_usuario})
-        historico.append({"role": "assistant", "content": texto_resposta})
+        _turno_assistente = {"role": "assistant", "content": texto_resposta}
+        if (ferramenta_chamada and nome_funcao == "duvida_do_jogo"
+                and str(resultado_ferramenta).startswith("SISTEMA: Resultado da pesquisa")):
+            # Metadado local: autoriza um follow-up curto somente após uma consulta que
+            # realmente funcionou. _hist_curto não envia essas chaves extras ao modelo.
+            _turno_assistente["_ferramenta"] = "duvida_do_jogo"
+            _turno_assistente["_jogo"] = str(argumentos_dit.get("nome_jogo") or "").strip()
+        historico.append(_turno_assistente)
 
         if len(historico) > 12:
             del historico[:-12]   # corta in-place — reatribuir não cortaria a lista do chamador
@@ -2154,6 +2208,8 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
 
         return texto_resposta
 
+    except GeracaoInterrompida:
+        raise
     except Exception as e:
         _msg = str(e).lower()
         if any(s in _msg for s in ("context size", "context_size", "exceeds the available context",

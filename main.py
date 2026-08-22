@@ -32,8 +32,8 @@ from PIL import Image, ImageDraw
 
 _log = logging.getLogger("luna.main")
 from modulos.ouvir import escutar_usuario
-from modulos.pensar import gerar_resposta, continuar_apos_acompanhamento
-from modulos.falar import falar_texto
+from modulos.pensar import GeracaoInterrompida, gerar_resposta, continuar_apos_acompanhamento
+from modulos.falar import FalaEmFluxo, falar_texto
 from modulos.habilidades import ler_agenda_google, capturar_tela_base64, iniciar_servidor_extensao, pausar_spotify, proxima_musica_spotify, alternar_mute, ler_texto_selecionado
 from modulos.proativa import iniciar_modo_proativo, registrar_interacao, registrar_tentativa, MAX_TENTATIVAS, marcar_luna_ocupada, luna_esta_livre, configurar_proativo, configurar_tarefa
 from modulos.telegram_bot import iniciar_bot_telegram
@@ -41,7 +41,8 @@ from modulos.falar import configurar_voz
 from modulos.pensar import configurar_memoria
 from servidor import (
     atualizar_estado_rosto, atualizar_legenda,
-    atualizar_usuario, atualizar_stream_resposta, registrar_callback_interrupcao,
+    atualizar_usuario, atualizar_stream_resposta, atualizar_stream_interrompido,
+    registrar_callback_interrupcao,
     iniciar_servidor, registrar_config_handler, sincronizar_config,
     injetar_arquivo_pendente, obter_e_limpar_imagem_anexada, carregar_e_aplicar_config,
     registrar_handler_texto_web, registrar_handler_acompanhamento_web,
@@ -226,6 +227,7 @@ def responder_texto_web(texto: str):
         time.sleep(0.3)
     registrar_interacao()          # usuário ativo -> reseta suspensão do proativo
     marcar_luna_ocupada(True)
+    _interromper.clear()           # um clique antigo não pode cancelar a próxima resposta
     try:
         cor.azul(f"[⌨️ Web] Você: {texto}")
         _log.info(f"[Web texto] Usuário: {texto}")
@@ -250,16 +252,23 @@ def responder_texto_web(texto: str):
                 stream_iniciou = True
                 atualizar_estado_rosto("digitando")
             atualizar_stream_resposta(fragmento)
+        _mostrar_fragmento.cancelado = _interromper.is_set
         resposta = gerar_resposta(texto_modelo, _historico_conversa,
                                   responder_completo=True, presenca_pc=True,
                                   ao_fragmento=_mostrar_fragmento)
         resposta = (resposta or "").strip()
+        if stream_iniciou and not resposta:
+            atualizar_stream_interrompido("falhou")
+            return
         atualizar_estado_rosto("digitando")
         atualizar_legenda(resposta)                    # mostra a resposta + registra o turno (SEM falar)
         time.sleep(min(9.0, max(4.0, len(resposta) * 0.03)))
         if resposta:
             _mostrar_resposta_web_no_terminal(resposta)
             _log.info(f"[Web texto] Luna: {resposta[:200]}")
+    except GeracaoInterrompida:
+        cor.amarelo("[⏹️ Geração Web interrompida pelo usuário]")
+        atualizar_stream_interrompido()
     except Exception as e:
         _log.exception(f"Erro no texto web: {e}")
         atualizar_legenda("Deu um erro aqui, tenta de novo.")
@@ -475,30 +484,52 @@ def loop_voz():
                 atualizar_estado_rosto("pensando")
                 atualizar_legenda("")
 
-                resposta_luna = gerar_resposta(texto_usuario, historico, imagem_base64=imagem_tela)
+                fala_fluxo = FalaEmFluxo(
+                    interromper=_interromper,
+                    ao_iniciar=lambda: atualizar_estado_rosto("falando"),
+                    ao_terminar=lambda: atualizar_estado_rosto("dormindo"),
+                )
+                stream_voz_iniciou = False
+                def _enfileirar_fala(fragmento: str):
+                    nonlocal stream_voz_iniciou
+                    stream_voz_iniciou = True
+                    fala_fluxo.receber(fragmento)
+                    atualizar_stream_resposta(fragmento)
+                _enfileirar_fala.cancelado = _interromper.is_set
+                _enfileirar_fala.finalizar = fala_fluxo.finalizar
+                try:
+                    resposta_luna = gerar_resposta(
+                        texto_usuario, historico, imagem_base64=imagem_tela,
+                        ao_fragmento=_enfileirar_fala,
+                    )
+                except GeracaoInterrompida:
+                    fala_fluxo.cancelar()
+                    fala_fluxo.aguardar(2)
+                    atualizar_stream_interrompido()
+                    atualizar_estado_rosto("dormindo")
+                    continue
+                # Erros anteriores à persona não chamam o finalizador do callback.
+                fala_fluxo.finalizar(resposta_luna)
                 atualizar_legenda(resposta_luna)
                 if resposta_luna and resposta_luna.strip():
                     _log.info(f"[PC] Luna: {resposta_luna[:200]}")
 
-                if "Contexto cheio" in resposta_luna:
-                    falar_texto(resposta_luna)
-                    atualizar_estado_rosto("dormindo")
-                    continue
-
                 if not resposta_luna or not resposta_luna.strip():
+                    fala_fluxo.aguardar(2)
+                    if stream_voz_iniciou:
+                        atualizar_stream_interrompido("falhou")
                     atualizar_estado_rosto("dormindo")
                     continue
 
                 if _interromper.is_set():
+                    fala_fluxo.cancelar()
+                    fala_fluxo.aguardar(2)
                     atualizar_estado_rosto("dormindo")
                     continue
 
-                # 4. FALAR
-                falar_texto(
-                    resposta_luna,
-                    ao_iniciar  = lambda: atualizar_estado_rosto("falando"),
-                    ao_terminar = lambda: atualizar_estado_rosto("dormindo"),
-                )
+                # A síntese e a reprodução começaram ainda durante a geração; aqui só esperamos
+                # o fim para não liberar outro turno enquanto a Luna continua falando.
+                fala_fluxo.aguardar()
 
             finally:
                 marcar_luna_ocupada(False)

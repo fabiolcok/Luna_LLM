@@ -728,6 +728,10 @@ def atualizar_stream_resposta(texto: str):
     """Mostra uma prévia da persona sem contaminar histórico, avaliação ou última fala."""
     _broadcast({"tipo": "resposta_stream", "texto": texto or ""})
 
+def atualizar_stream_interrompido(motivo: str = "interrompida"):
+    """Fecha só a prévia visual; uma resposta incompleta nunca vira turno nem avaliação."""
+    _broadcast({"tipo": "resposta_stream_interrompida", "motivo": motivo})
+
 def atualizar_usuario(texto: str):
     global _ultima_fala_usuario
     _ultima_fala_usuario = texto
