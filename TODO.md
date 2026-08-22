@@ -91,6 +91,40 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
       resolveria sem reabrir a discussão da boca.
 ---
 
+### Persona (`modulos/pensar.py`)
+
+- [ ] **Encolher o prompt da persona, regra por regra.** Hoje: **8.498 caracteres (~2.400
+      tokens), 17 regras, 59 proibições contra 13 permissões** — muito para um 12B, que tende a
+      perder as regras do meio. A parte fácil já foi feita: fundir os dois bullets de humor, que
+      repetiam as mesmas quatro regras (−923 chars, e o placar da bancada subiu de 92% pra 98%).
+      O que sobra é o difícil — **toda regra ali existe porque um comportamento ruim aconteceu**,
+      então cortar no olho reabre bug antigo. Método: remover UMA e medir 3 rodadas.
+  - **Pré-requisito:** ampliar a bancada antes. Várias regras não têm cenário nenhum cobrindo
+    (não falar como português, não prometer ação futura, não usar markdown). Sem cobertura,
+    cortar é aposta, não medição.
+  - Aprendizado que vale carregar: **instrução perto vence instrução longe**. Três vezes a mesma
+    história — regra forte no topo, proteção dela num bullet distante, o modelo obedecendo só a
+    de perto. Colar a guarda junto da instrução resolveu nas três.
+  - Contraexemplo útil: tentei remover o bullet "não invente fatos" achando que era repetição
+    pura. O placar caiu 8 pontos. Provar que era ruído custaria mais rodadas do que os 80 chars
+    valiam. Nem toda duplicata aparente é duplicata.
+
+- [ ] **`proativo_sem_relacao` inventa consequência técnica.** Falha na bancada desde antes de
+      qualquer mudança recente: dado um número (600W), ela conclui o que o dado não diz — "vai
+      precisar de tomada exclusiva pra não derrubar o disjuntor". É o ponto fraco mais
+      persistente que apareceu.
+
+- [ ] **Muleta de abertura.** ~20% das respostas abrem com "Pois é", "Nossa", "Eita", "Putz". A
+      persona manda cortar o "Pois é" explicitamente e ele aparece assim mesmo, em todas as
+      rodadas medidas. A bancada não mede isso — um cenário que reprove abertura-muleta
+      resolveria.
+
+- [ ] **`mudanca_de_ideia_normal` parece ter falso positivo.** O cenário reprova a palavra
+      "drama", mas ela está descrevendo o *gênero* do jogo abandonado, não inventando drama sobre
+      o usuário. Falhou por isso em várias rodadas. Confirmar antes de mexer.
+
+---
+
 ## Decidido NÃO fazer
 
 Está aqui pra ninguém propor de novo. Se quiser reabrir algum, pergunte antes — cada um foi
