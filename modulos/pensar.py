@@ -993,14 +993,19 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
                             resposta_tecnica, re.IGNORECASE))
 
     ultima_resp = next((m["content"] for m in reversed(historico) if m["role"] == "assistant"), "")
-    anti_rep = "" if is_proativo else " [varie a abertura — nada de 'Pois é', 'Ah', 'Olha', 'Pô', 'Ih']"
+    # A lista parava em 'Ih' — logo antes das que mais aparecem. Medido em 875 respostas de modo
+    # enxuto: 22% abriam com poxa/nossa/putz/eita/puxa, nenhuma delas coberta aqui.
+    anti_rep = "" if is_proativo else (
+        " [varie a abertura — nada de 'Pois é', 'Ah', 'Olha', 'Pô', 'Ih', 'Nossa', "
+        "'Poxa', 'Puxa', 'Putz', 'Eita']")
     if ultima_resp and not is_proativo:
         primeira = re.split(r'[.\n]', ultima_resp)[0].strip()
         if len(primeira) > 15:
             anti_rep += f" [não repita: '{primeira[:80]}']"
         # Muleta de abertura da última fala: proíbe explicitamente repetir (o 'Pois é' vive
         # voltando; a instrução estática sozinha não segura o viés do modelo).
-        m_mul = re.match(r"\s*(pois é|pois e|ah|olha|pô|po|ih|hmm|nossa|então|entao|eita|opa|vish)\b",
+        m_mul = re.match(r"\s*(pois é|pois e|ah|olha|pô|po|ih|hmm|nossa|então|entao|eita|opa|vish"
+                         r"|poxa|puxa|putz)\b",
                          ultima_resp, re.IGNORECASE)
         if m_mul:
             anti_rep += f" [NÃO abra com '{m_mul.group(1)}' de novo — varie]"

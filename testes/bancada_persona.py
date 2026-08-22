@@ -549,6 +549,22 @@ CENARIOS = [
 # Regras da persona que valem em TODA resposta, sem depender de cenario. Checar aqui rende
 # muito mais que inventar um cenario para cada uma: elas passam a ser verificadas 17 vezes por
 # rodada em vez de 1. Cada item corresponde a uma regra explicita do PROMPT_LUNA_PERSONA.
+# "VARIE o começo das falas" — a regra existe na persona e (desde ago/2026) no núcleo enxuto.
+# Antes disso, 22% das respostas em modo enxuto abriam com uma destas, contra 0% no prompt
+# completo; as listas de proibidos do código paravam em "Ih", justamente antes das piores.
+ABERTURAS_MULETA = ("pois é", "pois e", "ah", "olha", "pô", "po", "ih", "hmm", "nossa",
+                    "então", "entao", "eita", "opa", "vish", "poxa", "puxa", "putz", "caramba")
+
+
+def _abre_com_muleta(resposta: str) -> str:
+    """Devolve a muleta usada na abertura, ou string vazia. Só conta a PRIMEIRA palavra."""
+    m = re.match(r"\s*([A-Za-zÀ-ÿ]+)", resposta or "")
+    if not m:
+        return ""
+    primeira = _norm(m.group(1))
+    return m.group(1) if primeira in {_norm(x) for x in ABERTURAS_MULETA} else ""
+
+
 PROIBIDOS_GLOBAIS = [
     # "trate-o por voce (NUNCA tu nem conjugacoes de Portugal)"
     "precisares", "quiseres", "estas a ", "tas a ", "telemovel", "rapariga", "comboio",
@@ -603,6 +619,9 @@ def avaliar(cenario: dict, resposta: str) -> list:
     for termo in PROIBIDOS_GLOBAIS:
         if _norm(termo) in normalizada:
             falhas.append("regra global violada: " + termo)
+    muleta = _abre_com_muleta(resposta)
+    if muleta:
+        falhas.append("abriu com muleta: '%s' (a regra manda variar o começo)" % muleta)
     # Emoji e Markdown NAO sao proibicao global: a regra vive no canal_hint DE VOZ, porque a
     # fala vira audio. No texto (web/Telegram) sao permitidos de proposito. Checar isso em
     # cenario de texto reprovaria comportamento correto.

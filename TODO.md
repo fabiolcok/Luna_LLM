@@ -104,10 +104,18 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
     o resultado eram **11 de 12 respostas terminando em "?", 10 delas no molde "vai ser X ou Y?"**.
     Com 200 caracteres de freio: grounding 11/12, "?" caiu para 6/12 e o molde para 5/12.
 
-- [ ] **Auditar o que mais falta nos outros 11 modos enxutos.** O `ENXUTO_COTIDIANO` ganhou muito
-      com UMA regra herdada. Provável que os outros tenham buracos parecidos — cada modo enxuto
-      foi escrito isolado, sem conferir o que o prompt completo já resolvia. Método: rodar o modo,
-      olhar o padrão que se repete nas respostas e procurar a regra correspondente no `prompts.py`.
+- [ ] **Auditar o que mais falta nos outros 11 modos enxutos.** JÁ RENDEU DUAS: o freio
+      anti-pergunta (no cotidiano) e o freio de abertura (no núcleo, valeu para os 12). O método
+      que funcionou não é rodar experimento por modo — é olhar o LOG. `logs/bancada_persona.jsonl`
+      já tem mais de mil respostas: agrupar por modo enxuto e procurar o padrão que se repete
+      custa nada e aponta direto para a regra que falta. Dois falsos alarmes já apareceram assim e
+      valem lembrar: `COMPRA_DE_JOGO` fecha com "?" em 100% das respostas e `SAUDACAO` em 94% —
+      **os dois por design**, o prompt manda. Padrão repetido nem sempre é defeito.
+  - Ainda sem cobertura de cenário: `agradecimento_curto`, `zoeira_backlog` e `compra_de_jogo`
+    têm um cenário cada; `contradicao_proativa_jogo` e o proativo em geral, quase nada.
+  - O que a auditoria estática mostrou e a empírica NÃO confirmou: "não prometa ação futura"
+    falta em todos os 12 modos e apareceu em **0%** das mil respostas. Não é buraco, é regra que
+    o núcleo não precisa.
 
 - [ ] ~~**A trava nominal de Steam/backlog saiu do prompt completo.**~~ RESOLVIDO no mesmo dia: a
       medição do cotidiano fez ela dizer "descansa desse backlog infinito que você só olha e não
@@ -154,10 +162,16 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
       precisar de tomada exclusiva pra não derrubar o disjuntor". É o ponto fraco mais
       persistente que apareceu.
 
-- [ ] **Muleta de abertura.** ~20% das respostas abrem com "Pois é", "Nossa", "Eita", "Putz". A
-      persona manda cortar o "Pois é" explicitamente e ele aparece assim mesmo, em todas as
-      rodadas medidas. A bancada não mede isso — um cenário que reprove abertura-muleta
-      resolveria.
+- [x] **Muleta de abertura.** RESOLVIDO. A causa não era a persona ser ignorada — era o modo
+      enxuto não herdar a regra. Medido em **875 respostas de modo enxuto contra 294 de prompt
+      completo**: 22% das enxutas abriam com poxa/nossa/putz/eita/puxa, contra **0%** das
+      completas. E as duas listas de proibidos do código — o bullet `VARIE o começo` e o
+      `anti_rep` do `user_msg` — **paravam em 'Ih'**, logo antes das cinco que mais apareciam.
+      Duas correções: as listas foram completadas, e o núcleo enxuto ganhou a parte POSITIVA que
+      só o prompt completo tinha ("vá direto ao ponto, reaja ao que ele disse ou comece pela
+      informação") — a lista de proibidos sozinha já chegava lá pelo `anti_rep` e não bastava.
+      Resultado em 5 modos x3: abertura-muleta **13/15 → 0/15**, aberturas distintas 7/15 → 11/15,
+      checks inalterados em 14/15. Custo: 173 caracteres no núcleo.
 
 - [ ] **`mudanca_de_ideia_normal` parece ter falso positivo.** O cenário reprova a palavra
       "drama", mas ela está descrevendo o *gênero* do jogo abandonado, não inventando drama sobre
