@@ -628,7 +628,7 @@ _kaomoji_recentes = []
 _kaomoji_pendente = None
 _clima_da_resposta = contextvars.ContextVar("clima_da_resposta", default="")
 
-_RE_CLIMA = re.compile(r'\[\s*clima\s*:\s*([A-Za-zÀ-ÿ]+)\s*\]', re.IGNORECASE)
+_RE_CLIMA = re.compile(r'\[\s*clima\s*:\s*([A-Za-zÀ-ÿ]+)[^\]]{0,12}\]', re.IGNORECASE)   # o [^\]] final tolera pontuação: sem ele, '[clima:zoeira!]' perdia o rosto E virava GIF
 
 def _sem_acento_min(s: str) -> str:
     import unicodedata
@@ -1000,8 +1000,10 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     _caminho = (_prompts.nome_do_bloco(modo_enxuto, "ENXUTO_") if modo_enxuto
                 else "PROMPT_COMPLETO")
     _canal = "texto" if responder_completo else "voz"
-    cor.cinza(f"[🧩 Prompt: {_caminho} + {_emocao_usada} · {_canal} · "
-              f"{len(prompt_sistema)}c≈{len(prompt_sistema)//4}tok]")
+    _diag_prompt = (f"[🧩 Prompt: {_caminho} + {_emocao_usada} · {_canal} · "
+                    f"{len(prompt_sistema)}c≈{len(prompt_sistema)//4}tok]")
+    cor.cinza(_diag_prompt)      # terminal
+    _log.info(_diag_prompt)      # e o luna.log, pra dar pra revisar depois
 
     resultado_longo = len(resposta_tecnica) > 200 and not is_proativo and not forcar_incluir
     resultado_imagem = bool(re.match(r'^\s*imagem gerada\b', resposta_tecnica, re.IGNORECASE))
@@ -1352,11 +1354,14 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             if m:
                 gif_termo = m.group(1).strip().rstrip('<').strip()
                 texto_luna = re.sub(r'<gif:[^>]*>?', '', texto_luna)
-            else:
-                m = re.search(r'\[([a-zA-Z][^\]]{1,35})\]\s*$', texto_luna)  # [streak], [thinking emoji]
-                if m:
-                    gif_termo = m.group(1).strip()
-                    texto_luna = re.sub(r'\[[^\]]{1,37}\]\s*$', '', texto_luna)
+            # NÃO volte a pôr aqui um fallback que aceite QUALQUER [coisa] no fim do texto.
+            # Existiu um (`[streak]`, `[thinking emoji]`) para pegar variantes mal-formadas na
+            # época em que o prompt PEDIA gif. Com o GIF na gaveta, o prompt nunca pede — e o
+            # fallback virou só uma armadilha: disparava em `[Fonte: Wikipedia]` no fim de uma
+            # resposta de pesquisa, em `[continua]`, e em `[clima:zoeira!]` (com pontuação o
+            # _RE_CLIMA não casa, o clima não é removido e o colchete sobra). O resultado era
+            # um GIF aleatório aparecendo embaixo do mascote. Os dois padrões acima são
+            # explícitos e só disparam se o prompt voltar a pedir — que é o combinado.
         texto_luna = texto_luna.strip()
         if gif_termo:
             cor.ciano(f"[🎞️ GIF: {gif_termo}]")
