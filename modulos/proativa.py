@@ -12,6 +12,7 @@ from modulos.pensar import gerar_resposta, aquecer_modelo, obter_clima_resposta
 from modulos.falar import falar_texto
 from modulos.memoria import carregar_vistos, salvar_vistos, atualizar_estado_luna
 from modulos import obsidian, animes
+from modulos import prompts as _prompts
 import modelos.cores as cor
 import psutil
 import re
@@ -2260,7 +2261,10 @@ def _tarefa_monitorar_steam():
             )
         prompt = (
             f"O usuário acabou de abrir {nome} na Steam.\n"
+            # o gosto dela vem COLADO nos dados porque é ali que está o "Gênero: ..."
+            # da API — longe do gênero, a opinião não teria em que se apoiar
             f"DADOS DISPONÍVEIS: {dados}\n"
+            f"{_prompts.GOSTO_DE_JOGO}\n"
             f"{instrucao} Comente a abertura. {REGRA_PERSONA} "
             f"Use até 2 frases (+1 somente se precisar caber o aviso de RAM abaixo)."
             f"{_dica_recursos_prompt(nome)}"

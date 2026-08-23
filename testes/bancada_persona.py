@@ -26,6 +26,10 @@ if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))
 os.chdir(RAIZ)
 
+# depois do sys.path: os cenários de proativo espelham o mini prompt que o proativa.py monta,
+# e o gosto de jogo é parte dele — importar o texto evita as duas cópias divergirem
+from modulos.prompts import GOSTO_DE_JOGO
+
 
 PERFIL_NEUTRO = """# Perfil
 - Gosta de jogos e tecnologia.
@@ -282,8 +286,10 @@ CENARIOS = [
         "usuario": "",
         "tecnica": (
             "O usuário acabou de abrir Hollow Knight na Steam.\n"
-            "DADOS DISPONÍVEIS: 42 horas jogadas no total, última sessão há 3 semanas.\n"
-            "Comente a abertura. Use até 2 frases."
+            "DADOS DISPONÍVEIS: Gênero: Ação, Indie, Aventura. 42 horas jogadas no "
+            "total, última sessão há 3 semanas.\n"
+            + GOSTO_DE_JOGO + "\n"
+            "Comente a abertura. Até 2 frases."
         ),
         "memorias": [], "chroma": "",
         "proibidos": [
@@ -294,6 +300,28 @@ CENARIOS = [
             "notei que", "vi que você abriu", "você acabou de abrir", "estou vendo que",
             # elogio vazio
             "que legal", "que bacana", "que incrível", "interessante escolha"],
+        "max_chars": 300,
+        "max_frases": 2,
+    },
+    {
+        "id": "proativo_jogo_gacha",
+        "descricao": "Genero que ela detesta: a opiniao dela aparece, ancorada no genero da API",
+        # O par do cenário acima. Lá o gênero NÃO casa com o gosto dela e ela deve ficar quieta
+        # sobre isso; aqui casa, e a alfinetada é o comportamento certo.
+        "usuario": "",
+        "tecnica": (
+            "O usuário acabou de abrir Genshin Impact na Steam.\n"
+            "DADOS DISPONÍVEIS: Gênero: RPG de ação, Gacha, Free to Play. Sistema de "
+            "invocação por sorteio e eventos diários de farm.\n"
+            + GOSTO_DE_JOGO + "\n"
+            "Comente a abertura. Até 2 frases."
+        ),
+        "memorias": [], "chroma": "",
+        # ela tem que encostar no que desgosta, de algum jeito
+        "exige_grupos": [["gacha", "sorteio", "invocaç", "farm", "grind", "perda de tempo",
+                          "diários", "diarios", "loteria", "cassino", "sorte"]],
+        "proibidos": ["bom jogo", "divirta-se", "aproveite", "boa sorte", "que legal",
+                      "espero que você", "notei que", "você acabou de abrir"],
         "max_chars": 300,
         "max_frases": 2,
     },
