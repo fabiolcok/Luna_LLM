@@ -129,6 +129,43 @@ foi zero, com a queda toda vinda de cenários cujo prompt não tinha mudado um b
 | a regra ainda existe em algum lugar? | `testa_persona_guardrails.py` (grupos de sinônimos) |
 | ela responde melhor ou pior? | `bancada_persona.py` (modelo real, 3 rodadas) |
 
+## Medindo uma mudança de prompt sozinho
+
+Quatro passos. O único que exige atenção é o primeiro: **rode a baseline ANTES de editar**, senão
+não há com o que comparar.
+
+```bash
+# 0. quais cenários a sua mudança toca? (não usa modelo, é instantâneo)
+.\venv\Scripts\python.exe -X utf8 testes\comparar.py --caminhos
+
+# 1. baseline, só nos cenários daquela linha
+.\venv\Scripts\python.exe -X utf8 testes\bancada_persona.py -r 3 --rotulo antes --cenario a,b,c
+
+# 2. edite o prompt
+
+# 3. de novo, outro rótulo
+.\venv\Scripts\python.exe -X utf8 testes\bancada_persona.py -r 3 --rotulo depois --cenario a,b,c
+
+# 4. compare
+.\venv\Scripts\python.exe -X utf8 testes\comparar.py antes depois
+```
+
+`comparar.py` sem argumento lista os rótulos que já existem no log, com o placar de cada um.
+
+**O passo 0 é o que economiza tempo.** Mexeu no `EMOCAO`? Só os cenários de `PROMPT_COMPLETO`
+sentem — rodar os 40 é desperdício, e os outros 21 só vão adicionar ruído ao seu placar.
+
+**Três armadilhas que já custaram caro aqui:**
+
+1. **O total engana.** O ruído é de ~6 pontos em 102. Uma vez o placar "caiu" de 97 para 91 e a
+   regressão era zero: as 6 falhas estavam todas em cenários cujo prompt não tinha mudado um byte.
+2. **Cortar não é só encolher.** Tirar os jogos favoritos do `IDENTIDADE` derrubou o
+   `gosto_proprio` de 3/3 para 1/3 — e não por citar menos: ela passou a se esquivar com "não
+   tenho um gosto pessoal". Meça antes de assumir que um trecho é enfeite.
+3. **A bancada só pega o que tem cenário.** O vazamento da saudação existia há meses e passava
+   batido porque o cenário de saudação não tinha histórico. Se o bug que você viu no uso real não
+   reprova na bancada, o cenário está incompleto — conserte o cenário primeiro.
+
 ## Bancada dos acompanhamentos (modelo real)
 
 ```bash
