@@ -175,9 +175,21 @@ DESCONTO_MINIMO  = 50
 # ============================================================
 # REGRAS DE PERSONA (Injetado nos prompts proativos)
 # ============================================================
-# Só o que é ESPECÍFICO do proativo: falar em 2ª pessoa e ser breve.
-# Idioma, personalidade, sarcasmo e "amiga-não-esposa" já vêm do PROMPT_LUNA_PERSONA
-# (pensar.py), aplicado como sistema em toda chamada — repetir aqui só duplicava/conflitava.
+# Só o que é ESPECÍFICO do proativo: falar em 2ª pessoa e ser breve. NÃO fala de TOM.
+#
+# ATENÇÃO ao que já esteve escrito aqui: "personalidade e sarcasmo já vêm do
+# PROMPT_LUNA_PERSONA, aplicado como sistema em toda chamada". Isso era verdade quando foi
+# escrito e virou MENTIRA quando o modo enxuto nasceu — o proativo passou a receber um núcleo
+# curto, sem persona nenhuma. Ficou assim por meses: mexer no humor da Luna não mudava uma
+# vírgula do que ela fala sozinha.
+#
+# Desde ago/2026 o núcleo do proativo recebe o bloco `EMOCAO` do modulos/prompts.py. O que
+# chega no modelo, quando uma tarefa daqui dispara:
+#
+#   system  = núcleo enxuto + EMOCAO (o humor) + ENXUTO_PROATIVO (a regra do modo)
+#   user    = "MODO AUTÔNOMO..." + o mini prompt DESTA tarefa + REGRA_PERSONA + regras críticas
+#
+# Ou seja: o tom vem do EMOCAO, no system. O mini prompt daqui diz O QUE comentar, não COMO.
 REGRA_PERSONA = (
     f"Fale DIRETAMENTE com o {NOME_USUARIO}, em SEGUNDA pessoa (você, seu, te). Mesmo que a instrução "
     "mencione 'o usuário' ou 'dele' (é só o contexto te informando), NUNCA fale dele em terceira "
