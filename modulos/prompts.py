@@ -301,6 +301,23 @@ ENXUTO_CANSACO = (
 # grounding e a tag de saída.
 # ══════════════════════════════════════════════════════════════════════════
 
+def nome_do_bloco(texto: str, prefixo: str = "") -> str:
+    """Descobre por qual constante deste módulo um texto passou. Só para diagnóstico.
+
+    Compara por IDENTIDADE (`is`), não por conteúdo: o `pensar.py` atribui a própria constante,
+    então o objeto é o mesmo. Existe para o terminal poder dizer QUAL caminho de prompt montou
+    a fala — sem isso, ver "ela está mansa" não distingue prompt errado de modelo mole.
+    """
+    for nome, valor in globals().items():
+        if nome.startswith("_") or not isinstance(valor, str):
+            continue
+        if prefixo and not nome.startswith(prefixo):
+            continue
+        if valor is texto:
+            return nome
+    return "?"
+
+
 def nucleo_enxuto(instrucao: str, sem_emoji: bool, emocao: str = "") -> str:
     """Monta o prompt curto de um turno de risco. `sem_emoji` só é True no canal de voz.
 

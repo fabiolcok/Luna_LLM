@@ -59,6 +59,20 @@ fidelidade diferente. Isso é proposital: já custou falha falsa três vezes o d
 pobre que o DOM de verdade (`classList` não-variádico, `className` fora de sincronia com
 `classList`, `querySelector` inventando elemento em vez de devolver `null`).
 
+## Vendo qual prompt montou uma fala
+
+Cada turno imprime uma linha no terminal:
+
+```
+[🧩 Prompt: ENXUTO_COTIDIANO + sem humor · voz · 1959c≈489tok]
+[🧩 Prompt: ENXUTO_PROATIVO + EMOCAO · texto · 4147c≈1036tok]
+[🧩 Prompt: PROMPT_COMPLETO + EMOCAO · texto · 10536c≈2634tok]
+```
+
+Serve para uma pergunta específica: quando ela sai mansa, foi o **caminho** ou o **modelo**?
+`sem humor` significa que aquele turno caiu num modo enxuto que não recebe o bloco `EMOCAO` — aí
+o problema é de arquitetura, não de prompt, e mexer no `HUMOR E ACIDEZ` não vai adiantar nada.
+
 ## Mexendo nos prompts
 
 O texto dos prompts mora em `modulos/prompts.py`, separado por eixo. Toda mudança ali passa pelo

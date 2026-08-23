@@ -940,6 +940,10 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         )
     )
 
+    # Qual registro este turno usa. "" = o padrão (EMOCAO, ácido). É o gancho para um
+    # `prompt_emocao` alternativo — trocar aqui muda o tom sem tocar em mais nada.
+    emocao_do_turno = ""
+
     prompt_sistema = _prompts.sistema_completo(
         agora=f"Hoje é {data_hoje}. {periodo_atual()[1]}",
         contexto=contexto_situacional,
@@ -950,6 +954,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         # avisos que valem só neste turno, na ordem em que entram depois da persona
         ajustes=[aviso_saudacao, canal_hint, dica_tom, presenca_hint,
                  aviso_kaomoji, aviso_referencia, aviso_cotidiano],
+        emocao=emocao_do_turno,
     )
 
     is_proativo = (prompt_usuario == "")
@@ -986,6 +991,17 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         prompt_sistema = _prompts.nucleo_enxuto(
             modo_enxuto, sem_emoji=not responder_completo,
             emocao=_prompts.EMOCAO if is_proativo else "")
+
+    # DIAGNÓSTICO: por qual caminho de prompt esta fala passou. Sem isto, ver a Luna mansa não
+    # distingue "caiu num modo enxuto sem o bloco de humor" de "o modelo amoleceu" — e as duas
+    # coisas se resolvem em lugares diferentes. Uma linha por turno, no terminal.
+    _bloco_emocao = (emocao_do_turno or _prompts.EMOCAO) if (is_proativo or not modo_enxuto) else ""
+    _emocao_usada = _prompts.nome_do_bloco(_bloco_emocao, "EMOCAO") if _bloco_emocao else "sem humor"
+    _caminho = (_prompts.nome_do_bloco(modo_enxuto, "ENXUTO_") if modo_enxuto
+                else "PROMPT_COMPLETO")
+    _canal = "texto" if responder_completo else "voz"
+    cor.cinza(f"[🧩 Prompt: {_caminho} + {_emocao_usada} · {_canal} · "
+              f"{len(prompt_sistema)}c≈{len(prompt_sistema)//4}tok]")
 
     resultado_longo = len(resposta_tecnica) > 200 and not is_proativo and not forcar_incluir
     resultado_imagem = bool(re.match(r'^\s*imagem gerada\b', resposta_tecnica, re.IGNORECASE))
