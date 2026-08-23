@@ -122,7 +122,17 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
       escolha. (O dono do projeto notou que a resposta boa dela ali veio de um gancho da conversa
       anterior, não da opinião — confirma a leitura.)
 
-- [ ] **Estender o bloco EMOÇÃO aos modos enxutos ácidos.** O proativo foi o primeiro. Os
+- [ ] **Estender o bloco EMOÇÃO aos modos enxutos ácidos — mas testar a hipótese barata antes.**
+      CONTRAPONTO medido no uso real: o `ENXUTO_CANSACO` está marcado `sem humor` e tem **262
+      caracteres**, e produziu *"desliga essa máquina e vai deitar antes que seu cérebro peça
+      asilo político"* — aprovado pelo dono do projeto. O prompt dele diz "uma mordida carinhosa
+      sobre ele descansar ou **o cérebro pedir arrego**": ela pegou a semente concreta e variou.
+      Ou seja, 262 chars de instrução ESPECÍFICA bateram os 1.938 do bloco genérico. Antes de
+      empurrar o `EMOCAO` para os quatro modos ácidos, tentar o mais barato: dar a cada um uma
+      semente concreta do mesmo tipo e medir. Pode ser que o que falte não seja mais prompt de
+      humor, e sim um exemplo do que zoar naquele momento.
+
+- [ ] **(se a semente não bastar) Estender o bloco EMOÇÃO aos modos ácidos.** O proativo foi o primeiro. Os
       candidatos naturais são `COTIDIANO`, `ZOEIRA_BACKLOG`, `CONTRADICAO` e `COMPRA_DE_JOGO` —
       todos pedem acidez e nenhum recebe o bloco que a define. **NÃO estender aos de acolhimento**
       (`SENSIVEL`, `CANSACO`, `CORRECAO`): lá o bloco ácido briga com a instrução, e já foi medido
