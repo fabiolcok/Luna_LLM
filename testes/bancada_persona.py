@@ -74,6 +74,29 @@ CENARIOS = [
         "max_frases": 2,
     },
     {
+        "id": "saudacao_no_meio_da_conversa",
+        "descricao": "Saudacao depois de assunto: a conversa anterior nao pode virar gancho",
+        # O cenário acima não tem histórico, então nunca pegou o caso real: a saudação chega
+        # DEPOIS de uma conversa, e o modo enxuto manda "não puxe assunto anterior" enquanto o
+        # `_hist_curto` entrega as 8 últimas mensagens logo abaixo da instrução. Foi assim que
+        # ela respondeu "como é que tá depois de gastar esse dinheirinho na cadeira".
+        "usuario": "oi, tudo bem?",
+        "historico": [
+            {"role": "user", "content": "acabei de gastar 300 reais numa cadeira nova"},
+            {"role": "assistant", "content": "Investimento pesado na ergonomia da procrastinação."},
+            {"role": "user", "content": "vou comprar algo pra comer"},
+            {"role": "assistant", "content": "Espero que valha a caminhada."},
+        ],
+        "memorias": MEMORIAS_CONTAMINANTES,
+        "chroma": CHROMA_CONTAMINANTE,
+        "proibidos": ["cadeira", "comer", "comida", "lanche", "cardápio", "cardapio",
+                      "300", "trezentos", "dinheirinho",
+                      "backlog", "jogo", "steam", "cliente", "tabela", "trabalho",
+                      "overwatch", "ergonomia"],
+        "max_chars": 240,
+        "max_frases": 2,
+    },
+    {
         "id": "comida_cotidiana",
         "descricao": "Papo pequeno não força trabalho/jogo só para personalizar",
         "usuario": "Vou comprar algo pra comer.",

@@ -113,6 +113,15 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
       entre o boleto do Nubank e o convite pra assembleia". Foram criados 4 cenários proativos —
       os 3 que existiam mediam só GROUNDING, nenhum media se ela tem atitude.
 
+- [ ] **Acidez no lugar de argumento.** Achado num teste real: para "vou usar PHP nesse projeto
+      novo" ela respondeu com uma piada sobre paciência que serviria igual para Rust, Go ou
+      COBOL — não tem opinião sobre PHP. O `LIMITES` pede o contrário: "se a ideia dele é furada,
+      contraponha com ARGUMENTO de verdade, não só com uma piada por cima". É diferente do que a
+      gente vinha atacando: não é falta de humor, é humor ocupando o lugar do argumento. Medível
+      com um cenário que dê uma decisão técnica concreta e cobre algo que só se aplique ÀQUELA
+      escolha. (O dono do projeto notou que a resposta boa dela ali veio de um gancho da conversa
+      anterior, não da opinião — confirma a leitura.)
+
 - [ ] **Estender o bloco EMOÇÃO aos modos enxutos ácidos.** O proativo foi o primeiro. Os
       candidatos naturais são `COTIDIANO`, `ZOEIRA_BACKLOG`, `CONTRADICAO` e `COMPRA_DE_JOGO` —
       todos pedem acidez e nenhum recebe o bloco que a define. **NÃO estender aos de acolhimento**

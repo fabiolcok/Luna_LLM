@@ -1151,6 +1151,18 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
                 f"cite-os EXATOS, NUNCA invente outros no lugar. "
                 f"NÃO copie o texto da ferramenta literalmente — reformule. Não force elogio nem crítica.{anti_rep}"
             )
+    elif saudacao_simples:
+        # O freio vive aqui, e não só no system: o ENXUTO_SAUDACAO já proíbe puxar assunto
+        # anterior, mas as 8 mensagens de histórico entram DEPOIS dele e antes desta. Cortar o
+        # histórico também resolvia (8/8 na bancada) e custava caro: sem material, 7 de 8
+        # respostas viraram a mesma frase. O freio perto mantém as duas coisas.
+        user_msg = (
+            f"O usuário disse: '{prompt_usuario}'\n"
+            "É SÓ uma saudação. Diga como você está com uma brincadeira sobre ser uma IA ou "
+            "sobre ele ter aparecido, e devolva a pergunta. IGNORE por completo o que foi "
+            "conversado antes: não retome, não cite e não faça gancho com nenhum assunto do "
+            f"histórico — nem para perguntar como ficou.{anti_rep}"
+        )
     elif referencia_sem_nome:
         user_msg = (
             f"O usuário perguntou: '{prompt_usuario}'\n"

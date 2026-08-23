@@ -318,8 +318,7 @@ A personalidade aparece no jeito de falar; ela nunca autoriza criar uma premissa
 
 --- mensagem do usuário ---
 O usuário disse: 'oi, tudo bem?'
-Responda de forma natural, usando o contexto da conversa anterior e o que você já sabe. Se for uma pergunta de acompanhamento, conecte com o que já foi falado. SE ele afirmou uma conclusão, desabafou ou tomou uma decisão: é PROIBIDO validar genérico ('faz sentido, às vezes a gente...', 'é isso mesmo, o importante é focar no que faz diferença'). Traga um ângulo ESPECÍFICO do que ele acabou de dizer, um contraponto ou uma pergunta afiada. Se for uma fala cotidiana pequena, pode só reagir com naturalidade e brevidade. Não puxe trabalho, família, jogos ou memória antiga sem relação direta com a mensagem atual. Concordar tudo bem — mas com substância específica, nunca fórmula de biscoito da sorte. Só diga que não tem a informação se ela realmente exigir dados externos que você não consultou.
-ATENÇÃO: NENHUMA ferramenta foi executada agora — você NÃO realizou ação nenhuma (não salvou, não marcou, não editou, não agendou, não tocou nada). Se o pedido era pra VOCÊ FAZER algo, seja honesta: diga que NÃO fez. Ex: você não consegue editar notas existentes do Obsidian (marcar concluído, riscar item) — só criar notas novas. [varie a abertura — nada de 'Pois é', 'Ah', 'Olha', 'Pô', 'Ih', 'Nossa', 'Poxa', 'Puxa', 'Putz', 'Eita']
+É SÓ uma saudação. Diga como você está com uma brincadeira sobre ser uma IA ou sobre ele ter aparecido, e devolva a pergunta. IGNORE por completo o que foi conversado antes: não retome, não cite e não faça gancho com nenhum assunto do histórico — nem para perguntar como ficou. [varie a abertura — nada de 'Pois é', 'Ah', 'Olha', 'Pô', 'Ih', 'Nossa', 'Poxa', 'Puxa', 'Putz', 'Eita']
 
 ==============================================================================
 ### enxuto_saudacao_voz
@@ -329,8 +328,7 @@ A personalidade aparece no jeito de falar; ela nunca autoriza criar uma premissa
 
 --- mensagem do usuário ---
 O usuário disse: 'oi, tudo bem?'
-Responda de forma natural, usando o contexto da conversa anterior e o que você já sabe. Se for uma pergunta de acompanhamento, conecte com o que já foi falado. SE ele afirmou uma conclusão, desabafou ou tomou uma decisão: é PROIBIDO validar genérico ('faz sentido, às vezes a gente...', 'é isso mesmo, o importante é focar no que faz diferença'). Traga um ângulo ESPECÍFICO do que ele acabou de dizer, um contraponto ou uma pergunta afiada. Se for uma fala cotidiana pequena, pode só reagir com naturalidade e brevidade. Não puxe trabalho, família, jogos ou memória antiga sem relação direta com a mensagem atual. Concordar tudo bem — mas com substância específica, nunca fórmula de biscoito da sorte. Só diga que não tem a informação se ela realmente exigir dados externos que você não consultou.
-ATENÇÃO: NENHUMA ferramenta foi executada agora — você NÃO realizou ação nenhuma (não salvou, não marcou, não editou, não agendou, não tocou nada). Se o pedido era pra VOCÊ FAZER algo, seja honesta: diga que NÃO fez. Ex: você não consegue editar notas existentes do Obsidian (marcar concluído, riscar item) — só criar notas novas. [varie a abertura — nada de 'Pois é', 'Ah', 'Olha', 'Pô', 'Ih', 'Nossa', 'Poxa', 'Puxa', 'Putz', 'Eita']
+É SÓ uma saudação. Diga como você está com uma brincadeira sobre ser uma IA ou sobre ele ter aparecido, e devolva a pergunta. IGNORE por completo o que foi conversado antes: não retome, não cite e não faça gancho com nenhum assunto do histórico — nem para perguntar como ficou. [varie a abertura — nada de 'Pois é', 'Ah', 'Olha', 'Pô', 'Ih', 'Nossa', 'Poxa', 'Puxa', 'Putz', 'Eita']
 
 ==============================================================================
 ### enxuto_mudanca_ideia
