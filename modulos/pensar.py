@@ -1001,8 +1001,14 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
                 else "PROMPT_COMPLETO")
     _canal = "texto" if responder_completo else "voz"
     # O modelo NÃO entra aqui: já sai no boot e na troca, e repetir em todo turno só polui.
+    # A fatia de MEMÓRIA entra: no prompt completo ela é a parte que cresce sozinha (perfil,
+    # recentes, relacionada e ChromaDB), e saber quanto ela pesa é a pergunta do dia a dia.
+    # O detalhe bloco a bloco continua no [📏], sob o flag — é o que serve pra decidir o que cortar.
+    _mem = sum(len(t) for t in (memoria_permanente, memoria_episodica,
+                                memoria_relacionada, contexto_db or "")) if not modo_enxuto else 0
+    _diag_mem = f" · memória {_mem}c" if _mem else ""
     _diag_prompt = (f"[🧩 Prompt: {_caminho} + {_emocao_usada} · {_canal} · "
-                    f"{len(prompt_sistema)}c≈{len(prompt_sistema)//4}tok]")
+                    f"{len(prompt_sistema)}c≈{len(prompt_sistema)//4}tok{_diag_mem}]")
     cor.cinza(_diag_prompt)      # terminal
     _log.info(_diag_prompt)      # e o luna.log, pra dar pra revisar depois
 

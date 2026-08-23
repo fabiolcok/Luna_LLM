@@ -66,14 +66,17 @@ Cada turno imprime uma linha no terminal:
 ```
 [🧩 Prompt: ENXUTO_COTIDIANO + sem humor · voz · 1959c≈489tok]
 [🧩 Prompt: ENXUTO_PROATIVO + EMOCAO · texto · 4147c≈1036tok]
-[🧩 Prompt: PROMPT_COMPLETO + EMOCAO · texto · 10536c≈2634tok]
+[🧩 Prompt: PROMPT_COMPLETO + EMOCAO · texto · 10536c≈2634tok · memória 1351c]
 ```
 
 Sai no terminal e no `logs/luna.log`. Três informações, cada uma para uma pergunta:
 
 - **o caminho** — `sem humor` significa que aquele turno caiu num modo enxuto que não recebe o
   bloco `EMOCAO`; aí mexer no `HUMOR E ACIDEZ` não vai adiantar nada, o problema é de arquitetura.
-- **o tamanho** — para ver na hora se o prompt inchou.
+- **o tamanho** — para ver na hora se o prompt inchou, e quanto disso é MEMÓRIA (perfil,
+  recentes, relacionada e ChromaDB), que é a parte que cresce sozinha. O detalhe bloco a
+  bloco sai no `[📏]`, que só liga com `LUNA_DIAG_PROMPT=1` ou o arquivo
+  `modelos/diag_prompt.flag` — é o que serve pra decidir o que cortar.
 O modelo não entra na linha — ele já sai no boot e na troca. Mas fique de olho nele por outro
 motivo: o seletor do painel só grava a escolha quando a troca dá certo. Se o TurboLLM não
 carregar, o `config_luna.json` mantém o modelo anterior e a Luna sobe com ele no próximo
