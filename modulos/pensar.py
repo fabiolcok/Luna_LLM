@@ -1380,7 +1380,6 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             _kaomoji_recentes.append(_ult)
             if len(_kaomoji_recentes) > 6:
                 _kaomoji_recentes.pop(0)
-            cor.ciano(f"[🎭 Rosto: {_ult}]")
             try:
                 import servidor as _srv
                 _srv.atualizar_kaomoji(_ult, _clima_escolhido)
