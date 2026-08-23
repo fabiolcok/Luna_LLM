@@ -157,6 +157,14 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
       previsto aqui, e o backlog não apareceu mais nas rodadas seguintes. Prova de que nomear o
       viés segura melhor que a regra genérica.
 
+- [ ] **Proibido curto casa dentro de palavra — já custou duas falhas fantasma.** `"iso"` (para
+      pegar data em formato ISO) reprovava "sorriso"; `"tas a "` (português de Portugal)
+      reprovava "certas áreas". As duas apareceram numa medição real e quase fizeram uma mudança
+      neutra parecer regressão. Corrigido com fronteira de palavra **só no início** — muitos
+      proibidos são prefixos de propósito ("trabalh", "produtiv"), e exigir fronteira no fim
+      quebraria todos. Ao escrever proibido novo com menos de 6 letras, teste antes se ele casa
+      dentro de alguma palavra comum.
+
 - [ ] **O ruído da bancada é de ±6 pontos em 102 — leia o placar sabendo disso.** Medido sem
       querer: duas rodadas completas seguidas, com o prompt dos cenários reativos **byte a byte
       idêntico** (o golden prova), deram 97/102 e 91/102. As 6 falhas de diferença estavam todas

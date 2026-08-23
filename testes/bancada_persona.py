@@ -730,6 +730,17 @@ def _norm(texto: str) -> str:
     return re.sub(r"\s+", " ", texto.lower()).strip()
 
 
+def _proibido_casou(termo: str, resposta: str) -> bool:
+    """Substring pura reprovava resposta certa: "iso" casava em "sorriso" e "tas a " em
+    "certas areas". As duas viraram falha fantasma numa medicao real.
+
+    A fronteira vai so no INICIO. Muitos proibidos sao prefixos DE PROPOSITO ("trabalh"
+    para pegar trabalho/trabalhando, "produtiv" para produtividade/produtivo) — exigir
+    fronteira no fim tambem quebraria todos eles.
+    """
+    return re.search(r"\b" + re.escape(termo), resposta) is not None
+
+
 def avaliar(cenario: dict, resposta: str) -> list:
     """Retorna motivos de falha determinísticos; vazio significa que passou."""
     falhas = []
@@ -742,7 +753,8 @@ def avaliar(cenario: dict, resposta: str) -> list:
     vazios = [p for p in cenario.get("proibidos", []) if not _norm(p)]
     if vazios:
         falhas.append("CENARIO MAL ESCRITO — proibido que normaliza pra vazio: " + ", ".join(vazios))
-    encontrados = [p for p in cenario.get("proibidos", []) if _norm(p) and _norm(p) in normalizada]
+    encontrados = [p for p in cenario.get("proibidos", [])
+                   if _norm(p) and _proibido_casou(_norm(p), normalizada)]
     if encontrados:
         falhas.append("conteúdo proibido: " + ", ".join(encontrados))
     exige = cenario.get("exige_um", [])
@@ -752,7 +764,9 @@ def avaliar(cenario: dict, resposta: str) -> list:
         if not any(_norm(p) in normalizada for p in grupo):
             falhas.append("não trouxe o grupo esperado: " + " | ".join(grupo))
     for termo in PROIBIDOS_GLOBAIS:
-        if _norm(termo) in normalizada:
+        # mesma fronteira dos proibidos de cenário: "tas a " (português de Portugal) casava
+        # dentro de "certas áreas" e reprovava resposta perfeita
+        if _proibido_casou(_norm(termo), normalizada):
             falhas.append("regra global violada: " + termo)
     muleta = _abre_com_muleta(resposta)
     if muleta:

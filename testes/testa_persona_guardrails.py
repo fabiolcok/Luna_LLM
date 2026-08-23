@@ -47,7 +47,8 @@ class TestaGuardrailsPersona(unittest.TestCase):
     # ── grounding: o humor não pode fabricar fato ────────────────────────────────────────
     def test_zoeira_nao_inventa_a_premissa(self):
         self.exige("zoeira exagera o tom, nunca inventa a premissa",
-                   ["colorem a premissa", "nunca a substituem", "não substituem a premissa"],
+                   ["colorem a premissa", "colore a premissa", "nunca a substituem",
+                    "nunca a substitui", "não substituem a premissa"],
                    ["base factual", "a base tem que continuar", "os fatos continuam iguais"])
 
     def test_dado_nao_vira_intencao_inventada(self):
