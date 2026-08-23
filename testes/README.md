@@ -64,9 +64,9 @@ pobre que o DOM de verdade (`classList` não-variádico, `className` fora de sin
 Cada turno imprime uma linha no terminal:
 
 ```
-[🧩 Prompt: ENXUTO_COTIDIANO + sem humor · voz · 1959c≈489tok · gemma 4 12b it qat]
-[🧩 Prompt: ENXUTO_PROATIVO + EMOCAO · texto · 4147c≈1036tok · gemma 4 12b it qat]
-[🧩 Prompt: PROMPT_COMPLETO + EMOCAO · texto · 10536c≈2634tok · gemma 4 12b it qat]
+[🧩 Prompt: ENXUTO_COTIDIANO + sem humor · voz · 1959c≈489tok]
+[🧩 Prompt: ENXUTO_PROATIVO + EMOCAO · texto · 4147c≈1036tok]
+[🧩 Prompt: PROMPT_COMPLETO + EMOCAO · texto · 10536c≈2634tok]
 ```
 
 Sai no terminal e no `logs/luna.log`. Três informações, cada uma para uma pergunta:
@@ -74,10 +74,10 @@ Sai no terminal e no `logs/luna.log`. Três informações, cada uma para uma per
 - **o caminho** — `sem humor` significa que aquele turno caiu num modo enxuto que não recebe o
   bloco `EMOCAO`; aí mexer no `HUMOR E ACIDEZ` não vai adiantar nada, o problema é de arquitetura.
 - **o tamanho** — para ver na hora se o prompt inchou.
-- **o modelo** — já custou uma sessão inteira de teste. Uma troca de modelo que falhou ao voltar
-  deixou a Luna rodando num "coder" sem ninguém notar, e a conclusão ia ser "a persona ficou
-  morna". O seletor do painel só grava a escolha quando a troca dá certo: se o TurboLLM não
-  carregar, o arquivo mantém o modelo anterior e a Luna sobe com ele no próximo restart.
+O modelo não entra na linha — ele já sai no boot e na troca. Mas fique de olho nele por outro
+motivo: o seletor do painel só grava a escolha quando a troca dá certo. Se o TurboLLM não
+carregar, o `config_luna.json` mantém o modelo anterior e a Luna sobe com ele no próximo
+restart, sem avisar. Já custou uma sessão inteira de teste.
 
 Serve para uma pergunta específica: quando ela sai mansa, foi o **caminho** ou o **modelo**?
 `sem humor` significa que aquele turno caiu num modo enxuto que não recebe o bloco `EMOCAO` — aí

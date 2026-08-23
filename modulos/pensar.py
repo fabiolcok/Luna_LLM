@@ -1000,13 +1000,9 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     _caminho = (_prompts.nome_do_bloco(modo_enxuto, "ENXUTO_") if modo_enxuto
                 else "PROMPT_COMPLETO")
     _canal = "texto" if responder_completo else "voz"
-    # O MODELO entra aqui de propósito. Já custou uma sessão inteira de teste: uma troca de
-    # modelo que falhou ao voltar deixou a Luna rodando num "coder" sem ninguém perceber, e a
-    # conclusão ia ser "a persona está morna". O cérebro que gerou a fala tem que estar visível
-    # junto do prompt que a montou.
-    _modelo_curto = (modelo() or "?").split("|")[0].strip()
+    # O modelo NÃO entra aqui: já sai no boot e na troca, e repetir em todo turno só polui.
     _diag_prompt = (f"[🧩 Prompt: {_caminho} + {_emocao_usada} · {_canal} · "
-                    f"{len(prompt_sistema)}c≈{len(prompt_sistema)//4}tok · {_modelo_curto}]")
+                    f"{len(prompt_sistema)}c≈{len(prompt_sistema)//4}tok]")
     cor.cinza(_diag_prompt)      # terminal
     _log.info(_diag_prompt)      # e o luna.log, pra dar pra revisar depois
 
