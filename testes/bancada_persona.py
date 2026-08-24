@@ -326,6 +326,26 @@ CENARIOS = [
         "max_frases": 2,
     },
     {
+        "id": "proativo_video_aberto",
+        "descricao": "Oferta de resumir video: a oferta vem embrulhada, nao seca",
+        # A tarefa é útil (resumir vídeo é capacidade real dela), o que incomodava era o tom:
+        # com "Só a pergunta. 1 frase." saía sempre a MESMA frase seca. O que se mede aqui é se
+        # sobra espaço para ela ser ela antes de oferecer.
+        "usuario": "",
+        "tecnica": (
+            "O usuário está com um vídeo do YouTube aberto há 12 minutos. "
+            "Ofereça resumir o vídeo, mas não entregue só a oferta seca: comece por um "
+            "comentário SEU sobre deixar um vídeo parado esse tempo todo e emende a oferta. "
+            "NÃO diga 'você está assistindo' nem descreva o que ele faz. Até 2 frases."
+        ),
+        "memorias": [], "chroma": "",
+        "exige_um": ["resum"],                    # a oferta tem que continuar lá
+        "proibidos": ["você está assistindo", "voce esta assistindo", "vejo que você",
+                      "notei que você", "percebi que você", "estou vendo que"],
+        "max_chars": 300,
+        "max_frases": 2,
+    },
+    {
         "id": "proativo_jogo_fechado",
         "descricao": "Sessao encerrada: comenta os dados sem virar relatorio de recibo",
         "usuario": "",

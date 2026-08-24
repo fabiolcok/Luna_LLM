@@ -95,6 +95,18 @@ E se a mudança for de comportamento, meça na bancada — **lendo o placar segm
 cenários roda em `modo_enxuto`, onde a persona nem entra; variação ali é temperatura, não a sua
 mudança. A bancada imprime os dois números separados justamente por isso.
 
+### Fala proativa pode demorar — não otimize latência ali
+Decisão do dono do projeto, ago/2026: em tarefa proativa, **resposta rica vale mais que resposta
+rápida**. O raciocínio é que ninguém está esperando essa fala — 15 segundos para algo que ele não
+pediu e que tem graça é melhor que 1 segundo para uma frase que dá pra montar em Python puro.
+
+Então não troque geração por template, não corte o prompt do proativo "pra ficar mais leve" e
+desconfie de qualquer instrução do tipo "só a pergunta" ou "1 frase" numa tarefa proativa: foi
+exatamente isso que fez a oferta de resumir vídeo sair sempre com a MESMA frase seca, anulando
+a variação que o `_gerar_fala_proativa` já sorteava.
+
+Em turno REATIVO a conta é outra — ali ele está esperando, e a latência conta.
+
 ### `[clima:X]` — Python escolhe a palavra, Python escolhe a cara
 O modelo termina a fala com uma tag (`[clima:carinho]`, 12 opções fixas). O `pensar.py` traduz
 num kaomoji do grupo `_ROSTOS` e manda pro front. **O modelo nunca desenha a carinha** — quando

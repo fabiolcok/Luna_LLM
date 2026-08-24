@@ -2378,9 +2378,13 @@ def _tarefa_contexto_navegador():
     if "youtube.com/watch" in url_lower or "youtu.be/" in url_lower:
         prompt = (
             f"O usuário está com um vídeo do YouTube aberto há {int(minutos_na_url)} minutos. "
-            f"Pergunte se ele quer que você resuma o vídeo. "
-            f"NÃO diga 'você está assistindo' ou descreva o que ele faz. Só a pergunta. "
-            f"{REGRA_PERSONA} 1 frase."
+            # "Só a pergunta. 1 frase." fazia sair sempre a MESMA frase seca — a variação
+            # que o _gerar_fala_proativa sorteia não tinha onde caber. A oferta é útil; o
+            # que faltava era espaço pra ela ser ela antes de oferecer.
+            f"Ofereça resumir o vídeo, mas não entregue só a oferta seca: comece por um "
+            f"comentário SEU sobre deixar um vídeo parado esse tempo todo e emende a oferta. "
+            f"NÃO diga 'você está assistindo' nem descreva o que ele faz. "
+            f"{REGRA_PERSONA} Até 2 frases."
         )
     # Outros sites de conteúdo (artigo, doc, notícia)
     else:
