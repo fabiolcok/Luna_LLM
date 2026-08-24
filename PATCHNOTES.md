@@ -8,6 +8,42 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 23/08/2026
+
+- 🌘 🔧 **As falas espontâneas ganharam o humor que só existia na conversa.** O bloco de
+  personalidade que define a acidez dela nunca chegava nas falas iniciadas por ela mesma: mexer
+  no humor não mudava uma vírgula do que ela dizia quando um jogo abria ou o radar achava algo.
+  Agora chega. Um aviso de e-mail que saía como “tem três e-mails te esperando” virou “sua caixa
+  de entrada tá pedindo socorro entre o boleto e o convite pra assembleia do condomínio”.
+
+- 💬 🔧 **Ela parou de começar tudo com “Poxa”, “Nossa” e “Putz”.** Em recados curtos, uma em cada
+  cinco respostas abria com a mesma meia dúzia de interjeições. As listas que proibiam essa
+  muleta existiam, mas paravam justamente antes das palavras que ela mais usava.
+
+- 💬 🔧 **Recado do dia a dia deixou de terminar sempre em pergunta.** “Vou comprar comida” e “vou
+  dormir” recebiam quase sempre um “vai ser isso ou aquilo?” no fim. Agora a resposta pousa numa
+  observação com muito mais frequência.
+
+- 🎮 ✨ **Ela opina sobre o gênero do jogo que você abre.** Se for gacha, farm infinito ou live
+  service do tipo, ela comenta o que acha disso — usando o gênero que a própria Steam informa,
+  não chute. Se o jogo não for nada disso, ela não força opinião.
+
+- 🌘 🔧 **A oferta de resumir vídeo parou de ser sempre a mesma frase.** Ela agora comenta o vídeo
+  parado antes de oferecer, em vez de repetir a pergunta seca de cor.
+
+- 🐛 **Um GIF aleatório aparecia embaixo do mascote.** Bastava a resposta terminar com algo entre
+  colchetes — a fonte de uma pesquisa, por exemplo — para virar busca de GIF sem querer.
+
+- 🐛 **“Oi, tudo bem?” parou de virar gancho da conversa anterior.** A saudação vinha com um
+  “e aí, como ficou aquilo?” pendurado, puxando o assunto que estava justamente proibido de puxar.
+
+- 🐛 **A expressão dela deixou de sumir por causa de pontuação.** Quando a tag de clima vinha com
+  um ponto de exclamação no fim, a carinha era descartada e a resposta ficava sem rosto.
+
+- 🔎 ✨ **O terminal agora diz qual caminho de prompt montou cada resposta.** Uma linha por turno,
+  com o tipo de prompt usado, o canal e o tamanho — serve para saber, na hora, se uma resposta
+  morna veio do texto da personalidade ou do caminho que aquele tipo de mensagem toma.
+
 ## 22/08/2026
 
 - 💬 🔧 **Texto e voz agora respeitam formatos diferentes.** Web e Telegram preservam Markdown
