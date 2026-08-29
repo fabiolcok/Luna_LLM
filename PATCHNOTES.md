@@ -8,6 +8,13 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 29/08/2026
+
+- 🧠 🔧 **A curadoria de memória agora mostra de onde tirou cada lembrança.** A extração usa
+  somente as falas do usuário e exige uma evidência literal antes de propor algo para o
+  `Memoria.md`. O cartão de revisão também identifica o tipo e exibe o trecho de origem, evitando
+  que uma interpretação inventada pela própria Luna volte depois disfarçada de fato.
+
 ## 23/08/2026
 
 - 🌘 🔧 **As falas espontâneas ganharam o humor que só existia na conversa.** O bloco de
