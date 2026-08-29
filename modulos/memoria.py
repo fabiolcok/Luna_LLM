@@ -327,6 +327,70 @@ def _mem_norm(txt: str) -> str:
     return " ".join(re.sub(r"[^a-z0-9]+", " ", txt).split())
 
 
+_TIPOS_MEMORIA = {"fato", "preferencia", "evento", "projeto"}
+_DURACOES_MEMORIA = {"duravel", "em_andamento"}
+
+
+def extrair_falas_usuario(documentos: list) -> list:
+    """Recorta somente o lado do usuário dos pares salvos no ChromaDB.
+
+    A resposta da Luna fica deliberadamente fora: uma interpretação inventada por ela não
+    pode reaparecer na próxima extração fantasiada de declaração do usuário.
+    """
+    falas = []
+    for documento in documentos or []:
+        texto = str(documento or "")
+        lado_usuario, separador, _ = texto.partition("\nLuna:")
+        if not separador:
+            continue
+        # O nome é configurável; remover o primeiro prefixo "Nome: " preserva falas multilinha.
+        lado_usuario = re.sub(r"^[^:\n]{1,80}:\s*", "", lado_usuario, count=1).strip()
+        if lado_usuario:
+            falas.append(lado_usuario)
+    return falas
+
+
+def _norm_evidencia(texto: str) -> str:
+    texto = unicodedata.normalize("NFKC", str(texto or "")).casefold()
+    return " ".join(texto.split())
+
+
+def validar_candidatos_memoria(candidatos: list, falas_usuario: list) -> list:
+    """Aceita só candidatos estruturados que apontem para uma fala real do usuário.
+
+    O 12B interpreta o significado; o Python verifica a procedência. A revisão humana segue
+    decidindo se a interpretação é boa antes de qualquer escrita no Memoria.md.
+    """
+    fontes = [_norm_evidencia(fala) for fala in falas_usuario if str(fala or "").strip()]
+    validados = []
+    vistos = set()
+    for candidato in candidatos or []:
+        if not isinstance(candidato, dict):
+            continue
+        fato = str(candidato.get("fato", "")).strip()
+        tipo = str(candidato.get("tipo", "")).strip().lower()
+        duracao = str(candidato.get("duracao", "")).strip().lower()
+        evidencia = str(candidato.get("evidencia", "")).strip().strip('"“”')
+        evidencia_norm = _norm_evidencia(evidencia)
+        if (not 5 <= len(fato) <= 300
+                or tipo not in _TIPOS_MEMORIA
+                or duracao not in _DURACOES_MEMORIA
+                or len(evidencia_norm) < 8
+                or not any(evidencia_norm in fonte for fonte in fontes)):
+            continue
+        norm = _mem_norm(fato)
+        if not norm or norm in vistos:
+            continue
+        vistos.add(norm)
+        validados.append({
+            "fato": fato,
+            "tipo": tipo,
+            "duracao": duracao,
+            "evidencia": evidencia[:300],
+        })
+    return validados
+
+
 def _memorias_episodicas_confirmadas() -> list:
     """Fatos confirmados ativos + frios, sem alterar a temperatura de nenhum deles."""
     from modulos import obsidian
@@ -455,8 +519,9 @@ def mem_adicionar_candidatos(fatos: list) -> int:
     d = carregar_mem_pendente()
     ja = {_mem_norm(p["fato"]) for p in d["pendentes"]} | {_mem_norm(r) for r in d["recusados"]}
     novos = 0
-    for fato in fatos:
-        fato = (fato or "").strip()
+    for candidato in fatos:
+        meta = candidato if isinstance(candidato, dict) else {}
+        fato = (meta.get("fato", "") if meta else candidato or "").strip()
         # Enquanto existe acompanhamento explícito, não oferece a mesma situação também
         # como memória: eram dois cartões/fluxos competindo pelo mesmo assunto em aberto.
         try:
@@ -468,11 +533,15 @@ def mem_adicionar_candidatos(fatos: list) -> int:
         n = _mem_norm(fato)
         if not n or n in ja:
             continue
-        d["pendentes"].append({
+        item = {
             "id": datetime.datetime.now().strftime("%Y%m%d%H%M%S") + "_" + str(uuid.uuid4())[:6],
             "fato": fato,
             "data": datetime.datetime.now().strftime("%Y-%m-%d"),
-        })
+        }
+        for campo in ("tipo", "duracao", "evidencia"):
+            if meta.get(campo):
+                item[campo] = str(meta[campo])
+        d["pendentes"].append(item)
         ja.add(n)
         novos += 1
     if novos:

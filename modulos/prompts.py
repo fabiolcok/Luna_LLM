@@ -377,6 +377,37 @@ def persona(emocao: str = "") -> str:
 
 PERSONA = persona()   # o registro padrão: ácido
 
+# Prompt interno da curadoria episódica. A Luna não responde ao usuário aqui: ela propõe
+# lembranças para revisão humana. A citação literal permite ao Python provar que a lembrança
+# nasceu de uma fala do usuário, e não de uma interpretação que a própria Luna inventou.
+PROMPT_EXTRAIR_MEMORIA = (
+    "Você é um classificador estrito de memória de longo prazo. Receberá SOMENTE falas "
+    "do usuário, numeradas. Proponha apenas informações novas que realmente ajudem a dar "
+    "continuidade em conversas futuras.\n\n"
+    "FALAS DO USUÁRIO:\n{falas}\n\n"
+    "REGRAS:\n"
+    "- Cada candidato precisa trazer uma EVIDÊNCIA copiada literalmente e sem reescrever de "
+    "uma das falas. Sem trecho literal suficiente, não extraia.\n"
+    "- Separe declaração de interpretação. Não deduza profissão a partir de hobby, emoção a "
+    "partir do contexto, preferência a partir de uma ação isolada, nem hábito a partir de um caso.\n"
+    "- Extraia fatos duráveis, preferências declaradas, eventos relevantes e projetos ou decisões "
+    "ainda em andamento. Ignore comandos, perguntas factuais, saudações, trivia técnica solta e "
+    "coisas efêmeras como banho, fome ou o programa aberto agora.\n"
+    "- Plano incerto ('talvez', 'estou pensando') não vira decisão confirmada. Se ainda for útil "
+    "lembrar, descreva como possibilidade, sem remover a incerteza.\n"
+    "- O campo fato é uma frase curta e natural, sem começar com 'O usuário'.\n"
+    "- tipo deve ser um de: fato, preferencia, evento, projeto.\n"
+    "- duracao deve ser duravel ou em_andamento. Se for temporária, não crie candidato.\n"
+    "- Nada seguro para lembrar? Retorne a lista vazia.\n\n"
+    "Responda somente JSON, sem markdown:\n"
+    '{"candidatos": [{"fato": "...", "tipo": "projeto", '
+    '"duracao": "em_andamento", "evidencia": "trecho literal da fala"}]}'
+)
+
+
+def prompt_extrair_memoria(falas: str) -> str:
+    return PROMPT_EXTRAIR_MEMORIA.replace("{falas}", falas)
+
 # ══════════════════════════════════════════════════════════════════════════
 # O PROMPT DE SISTEMA COMPLETO — a montagem de um turno normal.
 #

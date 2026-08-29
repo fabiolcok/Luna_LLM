@@ -2433,35 +2433,29 @@ def _tarefa_extrair_memoria(forcar=False):
     novas = memoria.conversas_desde(memoria.mem_marcador())
     if not novas:
         return
-    blocos = "\n---\n".join(doc for _, doc in novas)[:6000]
-    prompt = (
-        "Você extrai FATOS DURÁVEIS e NOVOS sobre o usuário destas conversas, pra uma "
-        "memória de longo prazo que ajuda a lembrar dele e dar continuidade depois.\n\n"
-        f"CONVERSAS:\n\"\"\"\n{blocos}\n\"\"\"\n\n"
-        "REGRAS:\n"
-        "- Extraia SÓ o que vale lembrar pra PUXAR ASSUNTO depois: planos, decisões, compras, "
-        "eventos marcantes, mudanças de vida, gostos, e estado que persiste (ex: 'anda estressado "
-        "com o plantão', 'o pai está doente', 'quer terminar o Silksong').\n"
-        "- IGNORE: comandos ('toca música'), perguntas factuais, saudações, coisa efêmera, e "
-        "TRIVIA TÉCNICA solta (specs de hardware, números) — a não ser que seja uma compra/decisão.\n"
-        "- Cada fato: UMA frase curta e NATURAL, sem começar com 'O usuário' (ex: 'comprou um "
-        "Steam Deck', 'tem uma filha', 'joga Hollow Knight').\n"
-        "- Nada que valha lembrar? Retorne lista vazia.\n"
-        'FORMATO (só JSON, nada mais): {"fatos": ["...", "..."]}'
-    )
+    falas_usuario = memoria.extrair_falas_usuario([doc for _, doc in novas])
+    if not falas_usuario:
+        memoria.mem_set_marcador(novas[-1][0])
+        return
+    blocos = "\n\n".join(
+        f"FALA {i}:\n\"\"\"{fala}\"\"\"" for i, fala in enumerate(falas_usuario, 1)
+    )[:6000]
+    prompt = _prompts.prompt_extrair_memoria(blocos)
     cor.cinza("[🧠 Memória: extraindo fatos das conversas novas...]")
     try:
         bruto = gerar_resposta(prompt, [], analisar=False, salvar=False, modo_memoria=True)
         m = re.search(r'\{.*\}', bruto or "", re.DOTALL)
-        fatos = json.loads(m.group()).get("fatos", []) if m else []
-        fatos = [f.strip() for f in fatos if isinstance(f, str) and len(f.strip()) >= 5][:8]
-        fatos = memoria.mem_filtrar_candidatos(fatos, gerar_resposta)
+        candidatos_brutos = json.loads(m.group()).get("candidatos", []) if m else []
+        candidatos = memoria.validar_candidatos_memoria(candidatos_brutos, falas_usuario)[:8]
+        fatos_aceitos = memoria.mem_filtrar_candidatos(
+            [c["fato"] for c in candidatos], gerar_resposta)
+        candidatos = [c for c in candidatos if c["fato"] in fatos_aceitos]
     except Exception as e:
         cor.vermelho(f"[🧠 Extração de memória falhou: {e}]")
         return
     memoria.mem_set_marcador(novas[-1][0])          # marca até onde processou (não relê)
-    if fatos:
-        n = memoria.mem_adicionar_candidatos(fatos)
+    if candidatos:
+        n = memoria.mem_adicionar_candidatos(candidatos)
         if n:
             cor.amarelo(f"[🧠 Memória: {n} lembrança(s) nova(s) pra você revisar no web]")
             try:

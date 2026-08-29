@@ -1378,6 +1378,12 @@
             font-size: 0.86rem; font-family: inherit; resize: vertical; min-height: 2.4em; line-height: 1.4;
         }
         .mem-item textarea:focus { outline: none; }
+        .mem-meta { display: flex; flex-direction: column; gap: 3px; margin-top: 5px; }
+        .mem-tipo {
+            color: #bb9af7; font-size: 0.68rem; font-weight: 700;
+            letter-spacing: 0.08em; text-transform: uppercase;
+        }
+        .mem-evidencia { color: #737aa2; font-size: 0.73rem; line-height: 1.35; }
         .mem-acoes { display: flex; gap: 6px; margin-top: 6px; }
         .mem-acoes button {
             flex: 1; border: none; border-radius: 6px; padding: 5px; cursor: pointer;
@@ -5321,6 +5327,20 @@
                 const ta = document.createElement('textarea');
                 ta.value = p.fato;
                 ta.rows = 1;
+                const meta = document.createElement('div');
+                meta.className = 'mem-meta';
+                if (p.tipo) {
+                    const tipo = document.createElement('span');
+                    tipo.className = 'mem-tipo';
+                    tipo.textContent = p.tipo.replace('_', ' ');
+                    meta.appendChild(tipo);
+                }
+                if (p.evidencia) {
+                    const evidencia = document.createElement('span');
+                    evidencia.className = 'mem-evidencia';
+                    evidencia.textContent = `Evidência: “${p.evidencia}”`;
+                    meta.appendChild(evidencia);
+                }
                 const acoes = document.createElement('div');
                 acoes.className = 'mem-acoes';
                 const g = document.createElement('button');
@@ -5330,7 +5350,9 @@
                 d.className = 'mem-descartar'; d.textContent = '✗ descartar';
                 d.onclick = () => socket.send(JSON.stringify({ comando: 'memoria_descartar', id: p.id }));
                 acoes.appendChild(g); acoes.appendChild(d);
-                div.appendChild(ta); div.appendChild(acoes);
+                div.appendChild(ta);
+                if (meta.childNodes.length) div.appendChild(meta);
+                div.appendChild(acoes);
                 lista.appendChild(div);
             }
 
