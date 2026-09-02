@@ -1621,8 +1621,9 @@ def _tarefa_retomar_assunto():
         return
     # NÃO bater no 12B a TODA volta do loop (~30s/1min) só pra perguntar "tem pendência?":
     # quando não há pendência em aberto, n=0 não conta cota, então sem isto ela ficava
-    # re-chamando o modelo a cada ciclo pra sempre (mantendo ele aceso à toa). Re-checa a cada 20min.
-    if not _passou_intervalo("retomar_check", 20):
+    # re-chamando o modelo a cada ciclo pra sempre (mantendo ele aceso à toa). Uma checagem por
+    # hora basta: assunto pendente não precisa manter o modelo quente sem necessidade.
+    if not _passou_intervalo("retomar_check", 60):
         return
     # passo 1: o 12B ESCOLHE um fato que seja pendência em aberto (ou 0 = nenhum)
     lista = "\n".join(f"{i+1}. {f}" for i, f in enumerate(fatos[:12]))
