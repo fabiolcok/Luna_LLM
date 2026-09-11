@@ -8,6 +8,34 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 11/09/2026
+
+- 💬 🔧 **Conversa mais confortável na janela Web.** Controles e textos auxiliares ficaram
+  mais legíveis, a rolagem da caixa de digitação acompanha o tema escuro e o histórico se adapta
+  à altura da janela. O espaço da conversa é o mesmo vazio ou preenchido, evitando que a entrada
+  pule na primeira mensagem. Os botões de avaliação agora indicam “Última resposta”.
+
+- 🐛 **Contar uma dificuldade deixou de parecer um comando.** Frases como “não consigo abrir
+  porta ainda” não disparam mais a resposta pronta de ação não executada. Um pedido junto do
+  relato, como “pesquisa uma alternativa”, continua sendo reconhecido.
+
+- 🧵 🐛 **Atualizações de acompanhamento continuam a conversa.** Ao responder sobre o mesmo
+  assunto com “não consigo… ainda”, a Luna mantém o acompanhamento em andamento e preserva a
+  próxima data prevista. Essa atualização não vira outra proposta de acompanhamento.
+
+- 🎬 🐛 **Página aberta não significa vídeo parado.** A oferta de resumo do YouTube deixou de
+  receber uma instrução que tratava o vídeo como pausado. Ela mantém o humor, mas agora sabe que
+  o tempo na página não revela se você deu play ou está assistindo.
+
+- 🎮 🐛 **Conferência de horas antes de falar sobre jogos.** Nos comentários de hábitos e de
+  abertura Steam, quantidades de horas incompatíveis com os dados recebidos fazem a fala ser
+  descartada — inclusive números por extenso, como 16 virando “oitenta”. A conferência ainda não
+  distingue horas totais de recentes quando os dois valores estão no contexto.
+
+- 🖥️ 🐛 **O aviso de RAM reconhece melhor o próprio jogo.** A exclusão considera também a
+  pasta de instalação e o executável abreviado do FF7 Remake, evitando apontá-lo como outro
+  programa consumindo memória enquanto você joga.
+
 ## 29/08/2026
 
 - 🧠 🔧 **A curadoria de memória agora mostra de onde tirou cada lembrança.** A extração usa
