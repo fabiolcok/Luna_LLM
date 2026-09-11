@@ -686,7 +686,8 @@
         #texto-input-bloco { display: flex; gap: 8px; margin: 8px 0 4px; }
         #texto-input { flex: 1; min-height: 42px; max-height: 132px; padding: 10px 12px;
                        border-radius: 10px; border: 1px solid #3a3a5a; resize: none;
-                       overflow-y: auto; font-family: inherit; line-height: 1.4;
+                       overflow-y: auto; scrollbar-width: thin; scrollbar-color: #565f89 #16161e;
+                       color-scheme: dark; min-width: 0; font-family: inherit; line-height: 1.4;
                        background: #16161e; color: #cfc9c2; font-size: 1rem; outline: none; }
         #texto-input:focus { border-color: #bb9af7; }
         #texto-enviar { padding: 0 16px; border-radius: 10px; border: none; background: #bb9af7;
@@ -930,7 +931,7 @@
         }
         #avaliacao-bar #btn-interromper {
             background: #11111a; color: #565f89; border: 1px solid #1e1e2e;
-            opacity: .45; transition: opacity .15s, border-color .15s, background .15s;
+            opacity: .9; transition: opacity .15s, border-color .15s, background .15s;
         }
         #avaliacao-bar #btn-interromper:hover {
             background: #181824; border-color: #565f89; opacity: 1; transform: none;
@@ -944,14 +945,14 @@
         }
         .btn-aval {
             background: #11111a;
-            border: 1px solid #1e1e2e;
-            color: #565f89;
+            border: 1px solid #41415b;
+            color: #b6bdd4;
             width: 40px;
             height: 28px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 0.9rem;
-            opacity: 0.45;
+            opacity: 0.9;
             transition: opacity 0.15s, border-color 0.15s, transform 0.1s;
         }
         .btn-aval:hover  { opacity: 1; border-color: #565f89; }
@@ -1173,12 +1174,23 @@
         #btn-historico, #historico-overlay, #btn-historico-fechar { display: none !important; }
         #historico-panel {
             position: static; inset: auto; width: 100%; height: auto;
-            height: clamp(440px, 58vh, 760px); min-height: 440px; max-height: 760px;
+            height: clamp(180px, calc(100dvh - 520px), 760px); min-height: 180px; max-height: 760px;
             transform: none; transition: none; z-index: auto;
             background: transparent; border: 0; border-radius: 0;
             overflow: hidden; display: flex; flex-direction: column;
         }
         .historico-header { display: none; }
+        /* A altura é a mesma com ou sem mensagens: compactar o vazio fazia a
+           caixa de digitação saltar assim que o primeiro turno aparecia. */
+        #historico-vazio { color: #9494af; }
+        #avaliacao-resposta { display: flex; align-items: center; gap: 8px; }
+        #avaliacao-resposta-label { color: #aaaac2; font-size: .75rem; }
+        body:not(.widget):not(:has(.turno-luna)) #avaliacao-resposta { display: none; }
+        #status-mic.aguardando { color: #9494af; }
+        #texto-input::placeholder { color: #9999ad; opacity: 1; }
+        #avaliacao-bar button:focus-visible, #texto-enviar:focus-visible {
+            outline: 2px solid #bb9af7; outline-offset: 3px;
+        }
         #historico-lista {
             flex: 1; overflow-y: auto; padding: 6px 4px 12px 2px;
             display: flex; flex-direction: column; min-height: 0;
@@ -2146,8 +2158,11 @@
         <div id="avaliacao-bar">
             <button class="btn-aval" id="btn-repetir" title="Ouvir de novo">▶️</button>
             <button id="btn-interromper" title="Parar a fala atual">⏹️</button>
-            <button class="btn-aval" data-rating="bom"  title="Resposta boa">👍</button>
-            <button class="btn-aval" data-rating="ruim" title="Resposta ruim">👎</button>
+            <div id="avaliacao-resposta" role="group" aria-labelledby="avaliacao-resposta-label">
+                <span id="avaliacao-resposta-label">Última resposta</span>
+                <button class="btn-aval" data-rating="bom" title="Última resposta boa" aria-label="Avaliar última resposta como boa">👍</button>
+                <button class="btn-aval" data-rating="ruim" title="Última resposta ruim" aria-label="Avaliar última resposta como ruim">👎</button>
+            </div>
             <span class="avaliacao-espaco"></span>
             <button id="btn-toggle-proativo" title="Ativar/pausar modo proativo">🟢 Proativo ligado</button>
         </div>

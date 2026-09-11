@@ -55,8 +55,10 @@ assert.ok(html.includes('#historico-lista.fade-topo.fade-fundo') &&
           html.includes("classList.toggle('fade-fundo', abaixo)"),
           'FALHA: conversa perdeu o fade ligado à posição da rolagem');
 assert.ok(/max-width:\s*1040px/.test(html) &&
-          /#historico-panel\s*\{[^}]*height:\s*clamp\(440px,\s*58vh,\s*760px\)/s.test(html),
-          'FALHA: conversa principal voltou ao tamanho compacto');
+          /#historico-panel\s*\{[^}]*height:\s*clamp\(180px,\s*calc\(100dvh - 520px\),\s*760px\)/s.test(html),
+          'FALHA: conversa deve reservar espaço para entrada em janelas baixas e crescer nas altas');
+assert.ok(!/#historico-panel:not\(:has\(\.turno\)\)\s*\{[^}]*height:/s.test(html),
+          'FALHA: compactar histórico vazio faz a entrada saltar na primeira mensagem');
 assert.ok(/\.zona-divisor\s*\{\s*display:\s*none;\s*\}/.test(html),
           'FALHA: divisor antigo voltou a ocupar espaço');
 assert.ok(/#acompanhamento-feedback\s*\{[^}]*display:\s*none/s.test(html) &&
@@ -78,9 +80,10 @@ assert.ok(html.includes('balao.appendChild(detailsEl)') &&
           'FALHA: detalhes deixaram de acompanhar a fala mais recente da Luna');
 assert.ok(/<div id="avaliacao-bar">[\s\S]*?id="btn-repetir"[\s\S]*?id="btn-interromper"[\s\S]*?data-rating="bom"[\s\S]*?data-rating="ruim"[\s\S]*?class="avaliacao-espaco"[\s\S]*?id="btn-toggle-proativo"[\s\S]*?<\/div>/.test(html),
           'FALHA: controles de fala, avaliação e proativo deixaram a barra compacta');
-assert.ok(/#avaliacao-bar #btn-interromper\s*\{[^}]*opacity:\s*\.45/s.test(html) &&
+assert.ok(/#avaliacao-bar #btn-interromper\s*\{[^}]*opacity:\s*\.9/s.test(html) &&
+          /\.btn-aval\s*\{[^}]*opacity:\s*0\.9/s.test(html) &&
           /#avaliacao-bar #btn-interromper:hover\s*\{[^}]*opacity:\s*1/s.test(html),
-          'FALHA: parar fala voltou a ter destaque maior que os controles vizinhos');
+          'FALHA: controles devem manter contraste legível e destaque equivalente');
 assert.ok(html.includes("conteudo.innerHTML = renderizarMarkdownSeguro(turno.luna)"),
           'FALHA: resposta não passa pelo renderizador seguro');
 assert.ok(html.includes("if (dados.tipo === 'resposta_stream')") &&
