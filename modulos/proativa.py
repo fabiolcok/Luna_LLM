@@ -473,6 +473,7 @@ def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150, variar=True)
     except Exception:
         pass
 
+    dados_originais = prompt_sistema
     if len(prompt_sistema) > 1500:
         prompt_sistema = prompt_sistema[:1500] + "... [texto cortado]"
 
@@ -497,6 +498,12 @@ def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150, variar=True)
             max_tokens=max_tokens
         )
         _historico_proativo = []
+        if tarefa == "hábito de jogo" or tarefa.startswith("steam_abriu_"):
+            from modulos.validacao_horas import horas_conferem
+            if resposta and not horas_conferem(dados_originais, resposta):
+                cor.vermelho("[⚠️ Horas divergentes dos dados Steam — fala descartada]")
+                _limpar_visual_proativo()
+                return None
         # Detector de ECO: às vezes o 12B repete a INSTRUÇÃO em vez de executá-la (ela
         # "falou o prompt" — avaliação 👎). A instrução fala do usuário em 3ª pessoa
         # ('o usuário acompanha', 'anotou na nota dele'), coisa que a Luna NUNCA diz
@@ -2138,7 +2145,7 @@ def _ram_hog_nao_essencial(nome_jogo: str = ""):
         return None
     alvo = (nome_jogo or "").lower()
     total = collections.defaultdict(float)   # SOMA por nome: navegador espalha em vários processos
-    for p in psutil.process_iter(['name', 'memory_info']):
+    for p in psutil.process_iter(['name', 'memory_info', 'exe']):
         try:
             nome = p.info['name'] or ""
             low = nome.lower()
@@ -2146,6 +2153,16 @@ def _ram_hog_nao_essencial(nome_jogo: str = ""):
                 continue
             base = low[:-4] if low.endswith(".exe") else low
             if alvo and (base in alvo or alvo[:6] in low):     # ignora o próprio jogo
+                continue
+            # O executável pode ser abreviado (ff7remake_), mas a pasta de instalação
+            # costuma manter o título comercial. Não usar partes curtas como "final".
+            compacto = lambda s: re.sub(r'[^a-z0-9]', '', s.lower())
+            caminho = p.info.get('exe') or ''
+            if alvo and any(len(compacto(parte)) >= 8 and
+                            (compacto(parte) in compacto(alvo) or compacto(alvo) in compacto(parte))
+                            for parte in re.split(r'[\\/]', caminho)[:-1]):
+                continue
+            if 'final fantasy vii remake' in alvo and base.startswith('ff7remake'):
                 continue
             total[nome] += p.info['memory_info'].rss / (1024 * 1024)
         except Exception:
@@ -2383,8 +2400,11 @@ def _tarefa_contexto_navegador():
             # que o _gerar_fala_proativa sorteia não tinha onde caber. A oferta é útil; o
             # que faltava era espaço pra ela ser ela antes de oferecer.
             f"Ofereça resumir o vídeo, mas não entregue só a oferta seca: comece por um "
-            f"comentário SEU sobre deixar um vídeo parado esse tempo todo e emende a oferta. "
-            f"NÃO diga 'você está assistindo' nem descreva o que ele faz. "
+            f"comentário SEU sobre a possibilidade de um resumo e emende a oferta. "
+            # Tempo na URL não informa o estado do player: o vídeo pode estar rodando.
+            f"Só sabemos há quanto tempo a página está aberta. Não sabemos se o vídeo está "
+            f"tocando ou pausado, nem se ele está assistindo. NÃO afirme que o vídeo está parado, "
+            f"que ele não deu play, esqueceu o vídeo ou está procrastinando. "
             f"{REGRA_PERSONA} Até 2 frases."
         )
     # Outros sites de conteúdo (artigo, doc, notícia)

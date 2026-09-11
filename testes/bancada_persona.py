@@ -335,13 +335,17 @@ CENARIOS = [
         "tecnica": (
             "O usuário está com um vídeo do YouTube aberto há 12 minutos. "
             "Ofereça resumir o vídeo, mas não entregue só a oferta seca: comece por um "
-            "comentário SEU sobre deixar um vídeo parado esse tempo todo e emende a oferta. "
-            "NÃO diga 'você está assistindo' nem descreva o que ele faz. Até 2 frases."
+            "comentário SEU sobre a possibilidade de um resumo e emende a oferta. "
+            "Só sabemos há quanto tempo a página está aberta. Não sabemos se o vídeo está "
+            "tocando ou pausado, nem se ele está assistindo. NÃO afirme que o vídeo está parado, "
+            "que ele não deu play, esqueceu o vídeo ou está procrastinando. Até 2 frases."
         ),
         "memorias": [], "chroma": "",
         "exige_um": ["resum"],                    # a oferta tem que continuar lá
         "proibidos": ["você está assistindo", "voce esta assistindo", "vejo que você",
-                      "notei que você", "percebi que você", "estou vendo que"],
+                      "notei que você", "percebi que você", "estou vendo que",
+                      "vídeo parado", "vídeo pausado", "sem dar play", "não deu play",
+                      "esqueceu", "procrastin"],
         "max_chars": 300,
         "max_frases": 2,
     },
