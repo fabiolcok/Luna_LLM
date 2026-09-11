@@ -58,6 +58,11 @@ def _norm(texto: str) -> str:
 def pode_propor(texto: str) -> bool:
     """Última trava contra transformar agenda ou conversa cotidiana em acompanhamento."""
     normalizado = _norm(texto)
+    # O interceptador deixa atualizações longas seguirem para a persona. O mesmo
+    # turno não pode voltar do roteador como uma proposta duplicada.
+    with _LOCK:
+        if any(i.get('ultima_atualizacao') == normalizado for i in _carregar()['ativos']):
+            return False
     return bool(normalizado and not _RE_AGENDA_OU_LEMBRETE.search(normalizado)
                 and not _RE_COTIDIANO_SEM_DESFECHO.search(normalizado))
 
@@ -325,6 +330,12 @@ def resolver(acao: str, identificador: str = "", quando_texto: str = "") -> str 
             elif acao in ("esquecer", "descartar", "cancelar"):
                 _arquivar(estado, item, "esquecido", agora)
                 resposta = "Beleza, não acompanho mais isso."
+            elif acao == "em_andamento":
+                # A pergunta já reservou uma próxima tentativa. Uma atualização
+                # sem data não autoriza inventar outro prazo nem encerrar o assunto.
+                item['status'] = 'pendente'
+                item['ultima_atualizacao'] = _norm(quando_texto)
+                resposta = "Entendi, ainda está em andamento."
             elif acao in ("amanha", "adiar", "ainda_nao", "semana_que_vem"):
                 texto_data = quando_texto or ("semana que vem" if acao == "semana_que_vem" else "amanhã")
                 item["perguntar_em"] = interpretar_quando(texto_data, agora) or _quando_padrao(agora)
@@ -356,6 +367,12 @@ def interceptar_resposta(texto: str) -> str | None:
         if tem_data or re.match(r"^(sim|pode|acompanha|acompanhe|fechado|quero)\b", normalizado):
             return resolver("confirmar", conf["id"], texto if tem_data else "")
     else:
+        assunto_palavras = re.findall(r'\b\w{5,}\b', _norm(conf.get('assunto', '')))
+        mesmo_assunto = any(re.search(r'\b' + re.escape(p[:5]), normalizado)
+                            for p in assunto_palavras)
+        if mesmo_assunto and re.search(r'\bnao consigo\b[^.!?;]*\bainda\b', normalizado):
+            resolver('em_andamento', conf['id'], texto)
+            return None
         desfecho = re.search(
             r"\b(resolveu|resolvido|resolvida|deu certo|nao deu certo|consegui|nao consegui|"
             r"feito|concluido|concluida)\b", normalizado)

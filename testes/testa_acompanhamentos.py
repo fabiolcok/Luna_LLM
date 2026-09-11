@@ -34,6 +34,25 @@ class TestaAcompanhamentos(unittest.TestCase):
     def _estado_cru(self):
         return json.loads(acompanhamentos.CAMINHO_ESTADO.read_text(encoding="utf-8"))
 
+    def test_atualizacao_cgnat_preserva_acompanhamento_e_conversa(self):
+        acompanhamentos.propor('abertura de portas do modem pela internet')
+        acompanhamentos.interceptar_resposta('sim')
+        item = acompanhamentos.estado_interface()['ativos'][0]
+        acompanhamentos.registrar_pergunta(item['id'], self.agora)
+        antes = self._estado_cru()['ativos'][0]['perguntar_em']
+        self.assertIsNone(acompanhamentos.interceptar_resposta('Não consigo dormir ainda.'))
+        self.assertIsNotNone(self._estado_cru()['confirmacao'])
+        texto = ('meu modem usa a net CGNAT... nao consigo abrir porta ainda... '
+                 'estou falando com o pessoal do provedor.')
+        self.assertIsNone(acompanhamentos.interceptar_resposta(texto))
+        estado = self._estado_cru()
+        self.assertIsNone(estado['confirmacao'])
+        self.assertEqual(1, len(estado['ativos']))
+        self.assertEqual('pendente', estado['ativos'][0]['status'])
+        self.assertEqual(antes, estado['ativos'][0]['perguntar_em'])
+        self.assertFalse(acompanhamentos.pode_propor(texto))
+        self.assertTrue(acompanhamentos.pode_propor('Amanhã vou levar o PC à assistência.'))
+
     def test_proposta_nao_salva_antes_da_confirmacao(self):
         retorno = acompanhamentos.propor("saber como ficou o PC na assistência")
         estado = acompanhamentos.estado_interface()

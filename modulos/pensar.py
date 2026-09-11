@@ -1484,7 +1484,14 @@ _PADRAO_ACAO = re.compile(
 )
 
 def _parece_pedido_de_acao(texto: str) -> bool:
-    return bool(_PADRAO_ACAO.search(texto or ""))
+    # Relatar uma dificuldade não é pedir execução. Remover só o verbo desse
+    # relato preserva pedidos na mesma frase: "não consigo abrir, pesquisa isso".
+    restante = re.sub(
+        r'\b(?:n[aã]o\s+consigo|n[aã]o\s+consegui|estou\s+tentando|t[oô]\s+tentando)\s+'
+        r'(?:ainda\s+)?(?:abrir|pesquisar|buscar|procurar|tocar|consultar|resumir|transcrever|desenhar)\b',
+        '', texto or '', flags=re.IGNORECASE,
+    )
+    return bool(_PADRAO_ACAO.search(restante))
 
 
 def _carregar_perfil_desenho():
