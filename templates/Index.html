@@ -1234,6 +1234,10 @@
             content: 'Você'; display: block; margin-bottom: 4px; color: #8d70bd;
             font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
         }
+        .link-novidade { display: block; width: fit-content; margin: 8px 0;
+            color: #a6c7ff; font-size: .85rem; text-decoration: underline; text-underline-offset: 3px; }
+        .link-novidade:hover { color: #d5e5ff; }
+        .link-novidade:focus-visible { outline: 2px solid #bb9af7; outline-offset: 3px; }
         .turno-luna {
             position: relative; align-self: flex-start; max-width: 92%;
             padding: 11px 38px 11px 13px; border-radius: 13px 13px 13px 3px;
@@ -1915,6 +1919,11 @@
             <div class="config-slider-linha">
                 <input type="range" id="cfg-velocidade" min="0.7" max="1.5" step="0.1" value="0.9">
                 <span class="config-velocidade-valor" id="cfg-velocidade-valor">0.9×</span>
+            </div>
+            <div class="config-slider-linha">
+                <label for="cfg-volume">Volume da Luna</label>
+                <input type="range" id="cfg-volume" min="0" max="100" step="1" value="100">
+                <span class="config-velocidade-valor" id="cfg-volume-valor">100%</span>
             </div>
 
             <!-- Dicionário de pronúncia (sanfona interna da Voz) -->
@@ -4673,6 +4682,18 @@
             copiarLegado();
         }
 
+        function linkNovidade(url, nota=false, rotulo='') {
+            if (typeof url !== 'string') return null;
+            // Links do feed só podem abrir páginas; o protocolo local fica restrito à nota.
+            if (!(nota ? /^obsidian:\/\/open\?/.test(url) : /^https?:\/\//i.test(url))) return null;
+            const link = document.createElement('a');
+            link.href = url;
+            link.textContent = rotulo || (nota ? 'Ver todas as novidades no Obsidian ↗' : 'Ler esta notícia ↗');
+            link.className = 'link-novidade';
+            if (!nota) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
+            return link;
+        }
+
         function criarTurnoEl(turno, pendente=false) {
             const div = document.createElement('div');
             div.className = 'turno' + (turno.usuario ? '' : ' turno-proativo') +
@@ -4700,7 +4721,16 @@
                 copiar.className = 'mensagem-copiar'; copiar.type = 'button';
                 copiar.title = 'Copiar resposta'; copiar.textContent = '⎘';
                 copiar.onclick = () => copiarMensagem(turno.luna, copiar);
+                const links = turno.links_novidades || {};
+                const noticia = linkNovidade(links.noticia);
+                const nota = linkNovidade(links.nota, true, links.rotulo_nota);
+                if (noticia) luna.appendChild(noticia);
+                for (const oferta of (Array.isArray(links.ofertas) ? links.ofertas : [])) {
+                    const link = linkNovidade(oferta.url, false, oferta.rotulo);
+                    if (link) luna.appendChild(link);
+                }
                 luna.append(conteudo, copiar);
+                if (nota) luna.appendChild(nota);
                 div.appendChild(luna);
             }
             return div;
@@ -4881,6 +4911,11 @@
                 btn.classList.toggle('ativo', btn.dataset.voz === estado.voz);
             });
 
+            if (estado.volume !== undefined) {
+                const volume = Math.round(Number(estado.volume) * 100);
+                document.getElementById('cfg-volume').value = volume;
+                document.getElementById('cfg-volume-valor').textContent = volume + '%';
+            }
             if (estado.velocidade !== undefined) {
                 const sl = document.getElementById('cfg-velocidade');
                 const vl = document.getElementById('cfg-velocidade-valor');
@@ -5012,6 +5047,15 @@
             this.style.opacity = '1';
             setTimeout(() => { this.style.opacity = ''; }, 200);
         };
+
+        const volumeSlider = document.getElementById('cfg-volume');
+        volumeSlider.addEventListener('input', function() {
+            document.getElementById('cfg-volume-valor').textContent = this.value + '%';
+            enviarConfig({ config: 'volume', valor: Number(this.value) / 100, previa: true });
+        });
+        volumeSlider.addEventListener('change', function() {
+            enviarConfig({ config: 'volume', valor: Number(this.value) / 100 });
+        });
 
         // Speed slider
         const velSlider = document.getElementById('cfg-velocidade');

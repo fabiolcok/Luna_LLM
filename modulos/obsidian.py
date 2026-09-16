@@ -594,6 +594,22 @@ def ler_lista_animes() -> list:
 
 
 # ── RADAR (feeds RSS configurados pelo usuário no Obsidian) ──
+def link_novidades() -> str:
+    return _link_nota_radar("Novidades.md")
+
+
+def link_promocoes() -> str:
+    return _link_nota_radar("Promocoes.md")
+
+
+def _link_nota_radar(nome: str) -> str:
+    """Abre a nota certa mesmo quando o vault tem espaços no caminho."""
+    from urllib.parse import urlencode
+    if not _VAULT:
+        return ""
+    return "obsidian://open?" + urlencode({"path": os.path.abspath(os.path.join(_VAULT, nome))})
+
+
 def ler_feeds_radar() -> list:
     """Lê as URLs de RSS dos BULLETS da nota Luna/radar_rss.md. Só linhas que
     começam com '-' ou '*' contam — assim a dica com link de exemplo é ignorada."""

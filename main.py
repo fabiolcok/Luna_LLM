@@ -706,6 +706,7 @@ def main():
     registrar_config_handler("memoria", configurar_memoria)
     registrar_config_handler("voz", lambda v: configurar_voz(voz=v))
     registrar_config_handler("velocidade", lambda v: configurar_voz(velocidade=float(v)))
+    registrar_config_handler("volume", lambda v: configurar_voz(volume=v))
     registrar_config_handler("tarefa", configurar_tarefa)
     registrar_config_handler("tecla", configurar_tecla)
     carregar_e_aplicar_config()   # aplica voz/velocidade/proativo/tarefas/teclas salvos

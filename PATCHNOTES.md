@@ -8,6 +8,20 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 15/09/2026
+
+- 🔊 ✨ **Volume da Luna ao vivo.** Em Configurações → Voz, o slider ajusta só a voz dela,
+  inclusive enquanto está falando e ao ouvir uma resposta de novo. Vai de 0% a 100% e salva
+  sua escolha ao soltar, mantendo o volume no próximo início.
+
+- 📰 ✨ **Novidades com caminho direto para a matéria.** O balão do radar traz o link da
+  notícia destacada acima do comentário e o acesso à nota Novidades do Obsidian abaixo.
+
+- 🏷️ ✨ **Promoções também ganharam links.** Na Steam, cada jogo da lista tem seu link e
+  desconto. Nas ofertas do Telegram, o balão aponta para a mensagem destacada quando existe
+  um link público e para a nota Promoções do Obsidian, quando o vault está configurado.
+  Os links ficam no histórico da sessão e não são lidos pela voz.
+
 ## 11/09/2026
 
 - 💬 🔧 **Conversa mais confortável na janela Web.** Controles e textos auxiliares ficaram

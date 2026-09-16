@@ -63,6 +63,21 @@ _VOZ_FALLBACK  = "jf_alpha"
 
 _voz_padrao = "jf_alpha"
 _velocidade_padrao = 0.9
+_volume_padrao = 1.0
+_audio_volume_lock = threading.RLock()
+_audio_volume_atual = None
+
+
+def _tocar_com_volume(wav):
+    global _audio_volume_atual
+    # sounddevice lê este buffer a cada bloco. Atualizá-lo muda a fala em curso
+    # sem reiniciar o áudio nem alterar o WAV original usado por "ouvir de novo".
+    original = np.asarray(wav, dtype=np.float32)
+    with _audio_volume_lock:
+        buffer = original * _volume_padrao
+        _audio_volume_atual = (original, buffer)
+        sd.play(buffer, SAMPLE_RATE)
+
 _ultima_fala_wav = None   # último áudio gerado — pro botão "repetir" do web
 
 
@@ -88,10 +103,19 @@ except Exception as e:
     _pipe = None
 
 
-def configurar_voz(voz=None, velocidade=None):
+def configurar_voz(voz=None, velocidade=None, volume=None):
     """Troca voz/velocidade padrão. Voz inválida (ex: config antiga do Supertonic
     'F1'/'M1') cai no fallback jf_alpha, pra não quebrar."""
-    global _voz_padrao, _velocidade_padrao
+    global _voz_padrao, _velocidade_padrao, _volume_padrao
+    if volume is not None:
+        valor = float(volume)
+        if not np.isfinite(valor):
+            raise ValueError('Volume deve ser finito')
+        with _audio_volume_lock:
+            _volume_padrao = max(0.0, min(1.0, valor))
+            if _audio_volume_atual is not None:
+                original, buffer = _audio_volume_atual
+                np.multiply(original, _volume_padrao, out=buffer)
     if voz is not None:
         v = str(voz)
         if v not in _VOZES_VALIDAS:
@@ -272,7 +296,7 @@ class FalaEmFluxo:
                     iniciou = True
                     if self._ao_iniciar:
                         self._ao_iniciar()
-                sd.play(wav, SAMPLE_RATE)
+                _tocar_com_volume(wav)
                 sd.wait()
         except Exception as e:
             _log.exception(f"Erro ao tocar fala em fluxo: {e}")
@@ -321,7 +345,7 @@ def falar_texto(texto, voz=None, velocidade=None, ao_iniciar=None, ao_terminar=N
         if ao_iniciar:
             ao_iniciar()
 
-        sd.play(wav_achatado, SAMPLE_RATE)
+        _tocar_com_volume(wav_achatado)
         sd.wait()
 
         if ao_terminar:
@@ -341,7 +365,8 @@ def repetir_ultima_fala():
         return False
     try:
         sd.stop()                                      # corta o que estiver tocando
-        sd.play(_ultima_fala_wav, SAMPLE_RATE)
+        # O cache guarda o áudio original: repetir não acumula atenuação.
+        _tocar_com_volume(_ultima_fala_wav)
         return True
     except Exception as e:
         _log.exception(f"Erro ao repetir a fala: {e}")

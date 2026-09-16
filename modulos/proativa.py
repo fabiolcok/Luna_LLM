@@ -1230,7 +1230,14 @@ def _tarefa_steam_wishlist():
     if promocoes:
         lista = ", ".join(f"{j['nome']} ({j['desconto']}%)" for j in promocoes)
         prompt = f"Tem promoção na wishlist da Steam: {lista}. Avise o usuário para gastar dinheiro. {REGRA_PERSONA}"
-        falou = _falar_proativamente(_gerar_fala_proativa(prompt, "steam_wishlist"))
+        fala = _gerar_fala_proativa(prompt, "steam_wishlist")
+        if fala:
+            fala.links_novidades = {"ofertas": [
+                {"url": f"https://store.steampowered.com/app/{j['appid']}/",
+                 "rotulo": f"{j['nome']} — {j['desconto']}% de desconto ↗"}
+                for j in promocoes if str(j.get('appid', '')).isdigit()
+            ]}
+        falou = _falar_proativamente(fala)
         # Só carimba 'avisado' se a fala SAIU de verdade — senão tenta de novo na
         # próxima rodada (bug antigo: carimbava antes de falar e o aviso sumia).
         if falou:
@@ -1356,7 +1363,11 @@ def _tarefa_radar_rss():
             f"diga que tem mais {n - 1} esperando na nota Novidades. {REGRA_PERSONA}"
         )
     # ATÔMICO: card + visto só depois que a fala sai; senão re-tenta no próximo ciclo (não perde nada).
-    if _falar_proativamente(_gerar_fala_proativa(prompt, "radar_rss", max_tokens=220)):
+    fala = _gerar_fala_proativa(prompt, "radar_rss", max_tokens=220)
+    if fala:
+        # Os endereços pertencem ao item sorteado, nunca ao texto inventado pelo modelo.
+        fala.links_novidades = {"noticia": destaque[1], "nota": obsidian.link_novidades()}
+    if _falar_proativamente(fala):
         obsidian.adicionar_novidades(novos)
         cor.amarelo(f"[📡 Radar: {n} novidade(s) → Novidades.md]")
         _persistir()
@@ -1448,7 +1459,14 @@ def _tarefa_radar_promocoes():
         )
     # ATÔMICO: escreve o card + marca avisado SÓ DEPOIS que a fala sai de verdade — senão o card
     # ficava na nota mas a voz era engolida no boot. Não falou = não comita e re-tenta no próximo ciclo.
-    if _falar_proativamente(_gerar_fala_proativa(prompt, "radar_promocoes", max_tokens=200)):
+    fala = _gerar_fala_proativa(prompt, "radar_promocoes", max_tokens=200)
+    if fala:
+        fala.links_novidades = {
+            "ofertas": [{"url": destaque[1], "rotulo": "Ver esta promoção no Telegram ↗"}],
+            "nota": obsidian.link_promocoes(),
+            "rotulo_nota": "Ver todas as promoções no Obsidian ↗",
+        }
+    if _falar_proativamente(fala):
         obsidian.adicionar_promocoes(novos)
         cor.amarelo(f"[🏷️ Promoções: {n} achado(s) → Promocoes.md]")
         _persistir()

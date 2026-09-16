@@ -105,6 +105,7 @@ _estado_config = {
                 "radar_promocoes": True, "acompanhamentos": True},
     "voz": "jf_alpha",
     "velocidade": 0.9,
+    "volume": 1.0,
     "modelo_local": "",
     "modelo_thinking": "desligado",
     "teclas": {"ptt": "ctrl+alt+f8", "interromper": "ctrl+f9", "suspenso": "ctrl+f7"},
@@ -137,7 +138,7 @@ def carregar_e_aplicar_config():
             pass
 
     # Aplica os valores carregados nos módulos reais
-    for chave in ("proativo", "memoria", "voz", "velocidade"):
+    for chave in ("proativo", "memoria", "voz", "velocidade", "volume"):
         fn = _config_handlers.get(chave)
         if fn and chave in _estado_config:
             try: fn(_estado_config[chave])
@@ -207,12 +208,21 @@ def _aplicar_config(dados: dict):
         # combo inválido: não salva — o broadcast devolve o valor antigo pro painel
     else:
         valor = dados.get('valor')
+        if chave == 'volume':
+            try:
+                valor = float(valor)
+                if not 0.0 <= valor <= 1.0:
+                    return
+            except (TypeError, ValueError):
+                return
         fn = _config_handlers.get(chave)
         if fn:
             try: fn(valor)
             except Exception: pass
         _estado_config[chave] = valor
-    _salvar_config()
+    # Arrastar ajusta o áudio ao vivo; só soltar grava a preferência no disco.
+    if not (chave == 'volume' and dados.get('previa') is True):
+        _salvar_config()
     _broadcast({"tipo": "config_estado", "estado": _estado_config.copy()})
 
 
@@ -711,7 +721,7 @@ def _registrar_avaliacao(rating: str, motivo: str = "", usuario=None, luna=None,
     except Exception:
         pass
 
-def _registrar_turno(usuario: str, luna: str, origem_proativa: str = "", clima: str = ""):
+def _registrar_turno(usuario: str, luna: str, origem_proativa: str = "", clima: str = "", links_novidades=None):
     global _clima_turno_pendente
     import datetime
     if _historico_web and _historico_web[-1].get("luna") == luna:
@@ -724,6 +734,8 @@ def _registrar_turno(usuario: str, luna: str, origem_proativa: str = "", clima: 
     }
     if origem_proativa:
         turno["origem_proativa"] = origem_proativa
+    if links_novidades:
+        turno["links_novidades"] = dict(links_novidades)
     clima_turno = str(clima or _clima_turno_pendente or "").strip()
     if clima_turno:
         turno["clima"] = clima_turno
@@ -736,11 +748,12 @@ def _registrar_turno(usuario: str, luna: str, origem_proativa: str = "", clima: 
 
 def atualizar_legenda(texto: str, origem_proativa: str = "", clima: str = ""):
     global _ultima_fala_luna
+    links_novidades = getattr(texto, "links_novidades", None)
     texto = _remover_tags_voz(texto)   # voz fica com os tags; texto exibido não
     _ultima_fala_luna = texto
     _broadcast({'legenda': texto})
     if texto:
-        _registrar_turno(_ultima_fala_usuario, texto, origem_proativa, clima)
+        _registrar_turno(_ultima_fala_usuario, texto, origem_proativa, clima, links_novidades)
 
 def atualizar_stream_resposta(texto: str):
     """Mostra uma prévia da persona sem contaminar histórico, avaliação ou última fala."""
