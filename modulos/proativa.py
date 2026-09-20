@@ -413,6 +413,8 @@ def _falar_proativamente(texto_resposta) -> bool:
     """Fala o texto quando a Luna ficar livre. Retorna True SE falou de verdade —
     quem depende do aviso (ex: dedup da wishlist) só deve marcar 'avisado' com True."""
     global _ultima_fala_proativa_ts, _cd_proativo_atual
+    if not _execucoes.valida(_execucoes.contexto.get()):
+        return False
     if not texto_resposta or not str(texto_resposta).strip():
         _limpar_visual_proativo()
         return False
@@ -446,6 +448,8 @@ def _falar_proativamente(texto_resposta) -> bool:
         ao_iniciar=_iniciar_visual_fala_proativa,
         ao_terminar=_terminar_visual_fala_proativa,
     )
+    if not _execucoes.valida(_execucoes.contexto.get()):
+        return False
     # Arma o cooldown a partir do FIM da fala, com o próximo intervalo sorteado
     _ultima_fala_proativa_ts = time.time()
     _cd_proativo_atual = random.uniform(_CD_PROATIVO_MIN, _CD_PROATIVO_MAX)
@@ -463,6 +467,7 @@ _falas_recentes = []
 
 def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150, variar=True):
     global _historico_proativo
+    _execucoes.verificar()
 
     if not _pode_falar_proativo():   # em cooldown: nem gera (economiza o 12B), tenta no próximo ciclo
         return None
@@ -490,13 +495,20 @@ def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150, variar=True)
                            + " / ".join(_falas_recentes[-3:]))
 
     try:
+        # Receber em stream permite abandonar o radar entre tokens sem publicar
+        # fragmentos dele no chat. Fechar a conexão não garante cancelamento remoto.
+        def receber_proativo(_texto):
+            _execucoes.verificar()
+        receber_proativo.cancelado = lambda: not _execucoes.valida(_execucoes.contexto.get())
         resposta = gerar_resposta(
             prompt_sistema,
             _historico_proativo,
             analisar=False,
             salvar=False,
-            max_tokens=max_tokens
+            max_tokens=max_tokens,
+            ao_fragmento=receber_proativo if _execucoes.contexto.get() else None,
         )
+        _execucoes.verificar()
         _historico_proativo = []
         if tarefa == "hábito de jogo" or tarefa.startswith("steam_abriu_"):
             from modulos.validacao_horas import horas_conferem
@@ -2615,3 +2627,45 @@ def iniciar_modo_proativo():
 def parar_modo_proativo():
     global _thread_rodando
     _thread_rodando = False
+
+
+# Reserva cobre coleta, geracao e entrega, sem lacunas entre etapas.
+from functools import wraps as _wraps
+from modulos.execucoes import controle as _execucoes, ExecucaoCancelada
+
+
+def _execucao_proativa(fn):
+    @_wraps(fn)
+    def executar(*args, **kwargs):
+        try:
+            with _execucoes.executar(proativa=True) as turno:
+                intervalos = _ultima_execucao.copy()
+                try:
+                    return fn(*args, **kwargs)
+                finally:
+                    if turno.cancelada.is_set():
+                        # Interrupção não conta como entrega. O próximo ciclo consulta
+                        # os dados atuais em vez de reproduzir uma resposta velha.
+                        _ultima_execucao.clear()
+                        _ultima_execucao.update(intervalos)
+        except ExecucaoCancelada:
+            return None
+    return executar
+
+_tarefa_checar_emails = _execucao_proativa(_tarefa_checar_emails)
+_tarefa_checar_agenda = _execucao_proativa(_tarefa_checar_agenda)
+_tarefa_lembrete_pausa = _execucao_proativa(_tarefa_lembrete_pausa)
+_tarefa_monitorar_clima = _execucao_proativa(_tarefa_monitorar_clima)
+_tarefa_steam_wishlist = _execucao_proativa(_tarefa_steam_wishlist)
+_tarefa_radar_rss = _execucao_proativa(_tarefa_radar_rss)
+_tarefa_radar_promocoes = _execucao_proativa(_tarefa_radar_promocoes)
+_tarefa_avisar_animes = _execucao_proativa(_tarefa_avisar_animes)
+_tarefa_bom_dia = _execucao_proativa(_tarefa_bom_dia)
+_tarefa_acompanhamentos = _execucao_proativa(_tarefa_acompanhamentos)
+_tarefa_retomar_assunto = _execucao_proativa(_tarefa_retomar_assunto)
+_tarefa_detectar_habito = _execucao_proativa(_tarefa_detectar_habito)
+_comentar_morte_lol = _execucao_proativa(_comentar_morte_lol)
+_tarefa_monitorar_jogos = _execucao_proativa(_tarefa_monitorar_jogos)
+_tarefa_monitorar_steam = _execucao_proativa(_tarefa_monitorar_steam)
+_tarefa_contexto_navegador = _execucao_proativa(_tarefa_contexto_navegador)
+_tarefa_extrair_memoria = _execucao_proativa(_tarefa_extrair_memoria)

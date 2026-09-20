@@ -25,6 +25,7 @@ import logging
 import subprocess
 import time
 import threading
+from modulos.execucoes import controle, conversa
 import webview
 import sounddevice as sd
 import pystray
@@ -41,7 +42,7 @@ from modulos.telegram_bot import iniciar_bot_telegram
 from modulos.falar import configurar_voz
 from modulos.pensar import configurar_memoria
 from servidor import (
-    atualizar_estado_rosto, atualizar_legenda,
+    atualizar_estado_rosto, atualizar_legenda, atualizar_status,
     atualizar_usuario, atualizar_stream_resposta, atualizar_stream_interrompido,
     registrar_callback_interrupcao,
     iniciar_servidor, registrar_config_handler, sincronizar_config,
@@ -181,6 +182,7 @@ def ao_interromper():
     """Chamado pelo browser quando o usuário clica em interromper."""
     cor.vermelho("[🛑 Interrupção de Fala solicitada]")
     _interromper.set()
+    controle.avisar_usuario()
     sd.stop()  # para o áudio imediatamente
 
 # Histórico da conversa — MÓDULO-level pra ser compartilhado entre a voz e a caixa de
@@ -216,16 +218,14 @@ def _mostrar_resposta_web_no_terminal(texto: str):
     print("===================================")
 
 
+@conversa
 def responder_texto_web(texto: str):
     """Mensagem DIGITADA na caixa do web: mesmas regras do Telegram (desenvolve, SEM TTS),
     mas presença = no PC. Compartilha o histórico com a voz."""
     texto = (texto or "").strip()
     if not texto:
         return
-    from modulos.proativa import luna_esta_livre
-    _fim = time.time() + 120
-    while not luna_esta_livre() and time.time() < _fim:   # espera a Luna ficar livre (voz/proativo)
-        time.sleep(0.3)
+    atualizar_status("◗ Por aqui")
     registrar_interacao()          # usuário ativo -> reseta suspensão do proativo
     marcar_luna_ocupada(True)
     _interromper.clear()           # um clique antigo não pode cancelar a próxima resposta
@@ -280,6 +280,7 @@ def responder_texto_web(texto: str):
         marcar_luna_ocupada(False)
 
 
+@conversa
 def responder_clique_acompanhamento(acao: str, confirmacao: dict, resposta_sistema: str):
     """Transforma o botão em turno real; o estado já foi resolvido antes de chegar aqui."""
     assunto = str(confirmacao.get("assunto", "")).strip()
@@ -314,6 +315,7 @@ def responder_clique_acompanhamento(acao: str, confirmacao: dict, resposta_siste
         marcar_luna_ocupada(False)
 
 
+@conversa
 def responder_clique_conclusao(acao: str, confirmacao: dict, resposta: str):
     """Botão da tarefa vira o mesmo turno que um 'sim' digitado ou falado."""
     confirmou = acao in ("confirmar", "sim")
@@ -350,192 +352,193 @@ def loop_voz():
     atualizar_estado_rosto("dormindo")
 
     while True:
-        _interromper.clear()
-
         try:
             # 1. OUVIR
             # O estado "ouvindo" nasce no on_press real do PTT. Marcá-lo aqui fazia a
             # mascote passar todo o tempo de espera atenta, sem nunca repousar entre falas.
             texto_usuario = escutar_usuario()
-            atualizar_usuario(texto_usuario)
 
             if not texto_usuario.strip():
                 atualizar_estado_rosto("dormindo")
                 continue
 
-            registrar_interacao()
-            marcar_luna_ocupada(True)
+            with controle.executar():
+                _interromper.clear()
+                atualizar_status("Conversa")
+                atualizar_usuario(texto_usuario)
+                registrar_interacao()
+                marcar_luna_ocupada(True)
 
-            try:
-                cor.azul(f"Você: {texto_usuario}\n")
-                _log.info(f"[PC] Usuário: {texto_usuario}")
+                try:
+                    cor.azul(f"Você: {texto_usuario}\n")
+                    _log.info(f"[PC] Usuário: {texto_usuario}")
 
-                # Confirmação de acompanhamento é igual por botão, texto e STT. Resolve antes
-                # do roteador para um simples "sim" não virar conversa ou evento de agenda.
-                from modulos import acompanhamentos, conclusao_tarefas
-                resposta_direta = (conclusao_tarefas.interceptar_resposta(texto_usuario)
-                                    or acompanhamentos.interceptar_resposta(texto_usuario))
-                if resposta_direta:
-                    _registrar_turno_direto(historico, texto_usuario, resposta_direta)
-                    atualizar_legenda(resposta_direta)
-                    _log.info(f"[PC] Luna [confirmação]: {resposta_direta}")
-                    falar_texto(
-                        resposta_direta,
+                    # Confirmação de acompanhamento é igual por botão, texto e STT. Resolve antes
+                    # do roteador para um simples "sim" não virar conversa ou evento de agenda.
+                    from modulos import acompanhamentos, conclusao_tarefas
+                    resposta_direta = (conclusao_tarefas.interceptar_resposta(texto_usuario)
+                                        or acompanhamentos.interceptar_resposta(texto_usuario))
+                    if resposta_direta:
+                        _registrar_turno_direto(historico, texto_usuario, resposta_direta)
+                        atualizar_legenda(resposta_direta)
+                        _log.info(f"[PC] Luna [confirmação]: {resposta_direta}")
+                        falar_texto(
+                            resposta_direta,
+                            ao_iniciar=lambda: atualizar_estado_rosto("falando"),
+                            ao_terminar=lambda: atualizar_estado_rosto("dormindo"),
+                        )
+                        continue
+
+                    # 2. INTERCEPTADOR DE HABILIDADES POR PALAVRAS DE ATIVAÇÃO
+                    texto_lower = texto_usuario.lower()
+                    imagem_tela = None
+
+                    if any(p in texto_lower for p in ATIVAR_MODO_AGENDA):
+                        cor.amarelo("📅 Consultando Google Agenda...")
+                        dados_agenda = ler_agenda_google()
+                        pergunta_original = texto_usuario
+                        texto_usuario = f"""O usuário perguntou: "{pergunta_original}"
+                                            Dados da agenda:
+                                            {dados_agenda}
+                                            Responda diretamente, apenas o período pedido, de forma natural."""
+
+                    elif any(p in texto_lower for p in ATIVAR_VER_TELA):
+                        cor.amarelo("📷 Luna está vendo a sua tela...")
+                        imagem_tela = capturar_tela_base64()
+
+                    elif any(p in texto_lower for p in ATIVAR_MODO_JOGO):
+                        for _ in range(MAX_TENTATIVAS):
+                            registrar_tentativa()
+                        _falar_atalho("Modo jogo ativado. Pode jogar em paz, bot.")
+                        continue
+
+                    elif any(p in texto_lower for p in ATIVAR_SPOTIFY_PAUSA):
+                        cor.amarelo("⏸️ Pausando Spotify (Ativado por palavra)...")
+                        pausar_spotify()
+                        _falar_atalho("Pausado.")
+                        continue
+
+                    elif any(p in texto_lower for p in ATIVAR_SPOTIFY_PROXIMA):
+                        cor.amarelo("⏭️ Pulando música (Ativado por palavra)...")
+                        proxima_musica_spotify()
+                        _falar_atalho("Pulando.")
+                        continue
+
+                    elif any(p in texto_lower for p in ATIVAR_TRADUCAO):
+                        cor.amarelo("🌐 Traduzindo texto selecionado...")
+                        texto_selecionado = ler_texto_selecionado()
+                        if "Erro:" in texto_selecionado or not texto_selecionado.strip():
+                            _falar_atalho("Nenhum texto selecionado para traduzir.")
+                            continue
+                        texto_usuario = f"Traduza para português do Brasil o seguinte texto:\n\n{texto_selecionado}"
+
+                    elif any(p in texto_lower for p in ATIVAR_MUTE_DESMUTAR) or \
+                         any(p in texto_lower for p in ATIVAR_MUTE_PALAVRAS):
+                        cor.amarelo("🔇 Alternando mute (Ativado por palavra)...")
+                        vai_desmutar = any(p in texto_lower for p in ATIVAR_MUTE_DESMUTAR)
+                        if not vai_desmutar:
+                            _falar_atalho("Mutando.")
+                        resultado = alternar_mute()
+                        cor.amarelo(f"[🔇 {resultado}]")
+                        if vai_desmutar:
+                            _falar_atalho("Som ativado.")
+                        continue
+
+                    # 3. PENSAR
+                    # Imagem anexada no web → arquiva direto no Obsidian (Caminho A, sem visão).
+                    # A fala vira a legenda; tiramos o comando ("salva isso com o assunto") do começo.
+                    imagem_anexada = obter_e_limpar_imagem_anexada()
+                    if imagem_anexada:
+                        import re as _re, random as _rnd
+                        from modulos import obsidian
+                        legenda = texto_usuario.strip()
+                        legenda = _re.sub(r'^\s*(salva|guarda|anota|registra|arquiva)\w*', '', legenda, flags=_re.I)
+                        legenda = _re.sub(r'^\s*(isso|a[íi]|essa imagem|essa foto|esse print|a imagem|o print)', '', legenda, flags=_re.I)
+                        legenda = _re.sub(r'^\s*(com\s+o?\s*assunto|sobre|como|de)\b', '', legenda, flags=_re.I)
+                        legenda = _re.sub(r'^[\s:,\.-]+', '', legenda).strip()
+                        cor.ciano(f"[📎🖼️ Imagem anexada: {imagem_anexada['nome']} → legenda: '{legenda or '(sem)'}']")
+                        res = obsidian.salvar_foto(imagem_anexada["dados"], legenda,
+                                                   origem="web", ext=imagem_anexada.get("ext", "jpg"))
+                        if res.startswith("SISTEMA: Foto salva"):
+                            m = _re.search(r"Inbox\): '(.+)'", res)
+                            t = (m.group(1) if m else (legenda or "a imagem")).strip()
+                            # Confirmação com a voz da persona; frases prontas só como fallback.
+                            from modulos.pensar import frase_confirmacao
+                            resposta_luna = frase_confirmacao(
+                                f"Você acabou de arquivar no Inbox do Obsidian do usuário uma imagem que ele "
+                                f"te mandou, com o título '{t}'. Confirme pra ele em 1 frase curta, do seu "
+                                f"jeito, citando o título."
+                            ) or _rnd.choice([
+                                f'Salvei a imagem no seu Inbox: "{t}".',
+                                f'Prontinho, guardei "{t}" nas suas notas.',
+                                f'Imagem arquivada no seu Obsidian: "{t}".',
+                            ])
+                        else:
+                            resposta_luna = "Não consegui salvar a imagem agora, tenta de novo?"
+                        atualizar_legenda(resposta_luna)
+                        _log.info(f"[PC] Luna [imagem web]: {resposta_luna}")
+                        falar_texto(
+                            resposta_luna,
+                            ao_iniciar  = lambda: atualizar_estado_rosto("falando"),
+                            ao_terminar = lambda: atualizar_estado_rosto("dormindo"),
+                        )
+                        continue
+
+                    texto_usuario = injetar_arquivo_pendente(texto_usuario)
+
+                    cor.magenta("[🌚💭 Luna pensando...]")
+                    atualizar_estado_rosto("pensando")
+                    atualizar_legenda("")
+
+                    fala_fluxo = FalaEmFluxo(
+                        interromper=_interromper,
                         ao_iniciar=lambda: atualizar_estado_rosto("falando"),
                         ao_terminar=lambda: atualizar_estado_rosto("dormindo"),
                     )
-                    continue
-
-                # 2. INTERCEPTADOR DE HABILIDADES POR PALAVRAS DE ATIVAÇÃO
-                texto_lower = texto_usuario.lower()
-                imagem_tela = None
-
-                if any(p in texto_lower for p in ATIVAR_MODO_AGENDA):
-                    cor.amarelo("📅 Consultando Google Agenda...")
-                    dados_agenda = ler_agenda_google()
-                    pergunta_original = texto_usuario
-                    texto_usuario = f"""O usuário perguntou: "{pergunta_original}"
-                                        Dados da agenda:
-                                        {dados_agenda}
-                                        Responda diretamente, apenas o período pedido, de forma natural."""
-
-                elif any(p in texto_lower for p in ATIVAR_VER_TELA):
-                    cor.amarelo("📷 Luna está vendo a sua tela...")
-                    imagem_tela = capturar_tela_base64()
-
-                elif any(p in texto_lower for p in ATIVAR_MODO_JOGO):
-                    for _ in range(MAX_TENTATIVAS):
-                        registrar_tentativa()
-                    _falar_atalho("Modo jogo ativado. Pode jogar em paz, bot.")
-                    continue
-
-                elif any(p in texto_lower for p in ATIVAR_SPOTIFY_PAUSA):
-                    cor.amarelo("⏸️ Pausando Spotify (Ativado por palavra)...")
-                    pausar_spotify()
-                    _falar_atalho("Pausado.")
-                    continue
-
-                elif any(p in texto_lower for p in ATIVAR_SPOTIFY_PROXIMA):
-                    cor.amarelo("⏭️ Pulando música (Ativado por palavra)...")
-                    proxima_musica_spotify()
-                    _falar_atalho("Pulando.")
-                    continue
-
-                elif any(p in texto_lower for p in ATIVAR_TRADUCAO):
-                    cor.amarelo("🌐 Traduzindo texto selecionado...")
-                    texto_selecionado = ler_texto_selecionado()
-                    if "Erro:" in texto_selecionado or not texto_selecionado.strip():
-                        _falar_atalho("Nenhum texto selecionado para traduzir.")
+                    stream_voz_iniciou = False
+                    def _enfileirar_fala(fragmento: str):
+                        nonlocal stream_voz_iniciou
+                        stream_voz_iniciou = True
+                        fala_fluxo.receber(fragmento)
+                        atualizar_stream_resposta(fragmento)
+                    _enfileirar_fala.cancelado = _interromper.is_set
+                    _enfileirar_fala.finalizar = fala_fluxo.finalizar
+                    try:
+                        resposta_luna = gerar_resposta(
+                            texto_usuario, historico, imagem_base64=imagem_tela,
+                            ao_fragmento=_enfileirar_fala,
+                        )
+                    except GeracaoInterrompida:
+                        fala_fluxo.cancelar()
+                        fala_fluxo.aguardar(2)
+                        atualizar_stream_interrompido()
+                        atualizar_estado_rosto("dormindo")
                         continue
-                    texto_usuario = f"Traduza para português do Brasil o seguinte texto:\n\n{texto_selecionado}"
+                    # Erros anteriores à persona não chamam o finalizador do callback.
+                    fala_fluxo.finalizar(resposta_luna)
+                    atualizar_legenda(resposta_luna, clima=obter_clima_resposta())
+                    if resposta_luna and resposta_luna.strip():
+                        _log.info(f"[PC] Luna: {resposta_luna[:200]}")
 
-                elif any(p in texto_lower for p in ATIVAR_MUTE_DESMUTAR) or \
-                     any(p in texto_lower for p in ATIVAR_MUTE_PALAVRAS):
-                    cor.amarelo("🔇 Alternando mute (Ativado por palavra)...")
-                    vai_desmutar = any(p in texto_lower for p in ATIVAR_MUTE_DESMUTAR)
-                    if not vai_desmutar:
-                        _falar_atalho("Mutando.")
-                    resultado = alternar_mute()
-                    cor.amarelo(f"[🔇 {resultado}]")
-                    if vai_desmutar:
-                        _falar_atalho("Som ativado.")
-                    continue
+                    if not resposta_luna or not resposta_luna.strip():
+                        fala_fluxo.aguardar(2)
+                        if stream_voz_iniciou:
+                            atualizar_stream_interrompido("falhou")
+                        atualizar_estado_rosto("dormindo")
+                        continue
 
-                # 3. PENSAR
-                # Imagem anexada no web → arquiva direto no Obsidian (Caminho A, sem visão).
-                # A fala vira a legenda; tiramos o comando ("salva isso com o assunto") do começo.
-                imagem_anexada = obter_e_limpar_imagem_anexada()
-                if imagem_anexada:
-                    import re as _re, random as _rnd
-                    from modulos import obsidian
-                    legenda = texto_usuario.strip()
-                    legenda = _re.sub(r'^\s*(salva|guarda|anota|registra|arquiva)\w*', '', legenda, flags=_re.I)
-                    legenda = _re.sub(r'^\s*(isso|a[íi]|essa imagem|essa foto|esse print|a imagem|o print)', '', legenda, flags=_re.I)
-                    legenda = _re.sub(r'^\s*(com\s+o?\s*assunto|sobre|como|de)\b', '', legenda, flags=_re.I)
-                    legenda = _re.sub(r'^[\s:,\.-]+', '', legenda).strip()
-                    cor.ciano(f"[📎🖼️ Imagem anexada: {imagem_anexada['nome']} → legenda: '{legenda or '(sem)'}']")
-                    res = obsidian.salvar_foto(imagem_anexada["dados"], legenda,
-                                               origem="web", ext=imagem_anexada.get("ext", "jpg"))
-                    if res.startswith("SISTEMA: Foto salva"):
-                        m = _re.search(r"Inbox\): '(.+)'", res)
-                        t = (m.group(1) if m else (legenda or "a imagem")).strip()
-                        # Confirmação com a voz da persona; frases prontas só como fallback.
-                        from modulos.pensar import frase_confirmacao
-                        resposta_luna = frase_confirmacao(
-                            f"Você acabou de arquivar no Inbox do Obsidian do usuário uma imagem que ele "
-                            f"te mandou, com o título '{t}'. Confirme pra ele em 1 frase curta, do seu "
-                            f"jeito, citando o título."
-                        ) or _rnd.choice([
-                            f'Salvei a imagem no seu Inbox: "{t}".',
-                            f'Prontinho, guardei "{t}" nas suas notas.',
-                            f'Imagem arquivada no seu Obsidian: "{t}".',
-                        ])
-                    else:
-                        resposta_luna = "Não consegui salvar a imagem agora, tenta de novo?"
-                    atualizar_legenda(resposta_luna)
-                    _log.info(f"[PC] Luna [imagem web]: {resposta_luna}")
-                    falar_texto(
-                        resposta_luna,
-                        ao_iniciar  = lambda: atualizar_estado_rosto("falando"),
-                        ao_terminar = lambda: atualizar_estado_rosto("dormindo"),
-                    )
-                    continue
+                    if _interromper.is_set():
+                        fala_fluxo.cancelar()
+                        fala_fluxo.aguardar(2)
+                        atualizar_estado_rosto("dormindo")
+                        continue
 
-                texto_usuario = injetar_arquivo_pendente(texto_usuario)
+                    # A síntese e a reprodução começaram ainda durante a geração; aqui só esperamos
+                    # o fim para não liberar outro turno enquanto a Luna continua falando.
+                    fala_fluxo.aguardar()
 
-                cor.magenta("[🌚💭 Luna pensando...]")
-                atualizar_estado_rosto("pensando")
-                atualizar_legenda("")
-
-                fala_fluxo = FalaEmFluxo(
-                    interromper=_interromper,
-                    ao_iniciar=lambda: atualizar_estado_rosto("falando"),
-                    ao_terminar=lambda: atualizar_estado_rosto("dormindo"),
-                )
-                stream_voz_iniciou = False
-                def _enfileirar_fala(fragmento: str):
-                    nonlocal stream_voz_iniciou
-                    stream_voz_iniciou = True
-                    fala_fluxo.receber(fragmento)
-                    atualizar_stream_resposta(fragmento)
-                _enfileirar_fala.cancelado = _interromper.is_set
-                _enfileirar_fala.finalizar = fala_fluxo.finalizar
-                try:
-                    resposta_luna = gerar_resposta(
-                        texto_usuario, historico, imagem_base64=imagem_tela,
-                        ao_fragmento=_enfileirar_fala,
-                    )
-                except GeracaoInterrompida:
-                    fala_fluxo.cancelar()
-                    fala_fluxo.aguardar(2)
-                    atualizar_stream_interrompido()
-                    atualizar_estado_rosto("dormindo")
-                    continue
-                # Erros anteriores à persona não chamam o finalizador do callback.
-                fala_fluxo.finalizar(resposta_luna)
-                atualizar_legenda(resposta_luna, clima=obter_clima_resposta())
-                if resposta_luna and resposta_luna.strip():
-                    _log.info(f"[PC] Luna: {resposta_luna[:200]}")
-
-                if not resposta_luna or not resposta_luna.strip():
-                    fala_fluxo.aguardar(2)
-                    if stream_voz_iniciou:
-                        atualizar_stream_interrompido("falhou")
-                    atualizar_estado_rosto("dormindo")
-                    continue
-
-                if _interromper.is_set():
-                    fala_fluxo.cancelar()
-                    fala_fluxo.aguardar(2)
-                    atualizar_estado_rosto("dormindo")
-                    continue
-
-                # A síntese e a reprodução começaram ainda durante a geração; aqui só esperamos
-                # o fim para não liberar outro turno enquanto a Luna continua falando.
-                fala_fluxo.aguardar()
-
-            finally:
-                marcar_luna_ocupada(False)
+                finally:
+                    marcar_luna_ocupada(False)
 
         except KeyboardInterrupt:
             break

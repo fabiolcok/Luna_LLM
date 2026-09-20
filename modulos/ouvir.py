@@ -128,6 +128,8 @@ def escutar_usuario():
         _teclas_pressionadas.add(key)
         if TECLA_PTT.issubset(_teclas_pressionadas) and not segurando:
             segurando = True
+            from modulos.execucoes import controle
+            controle.avisar_usuario()
             gravando = True
             cor.verde("\n[🎙️ Gravando... Solte para ENVIAR]")
             try:

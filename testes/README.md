@@ -175,3 +175,21 @@ sentem — rodar os 40 é desperdício, e os outros 21 só vão adicionar ruído
 Confere se o roteador oferece acompanhamento para um desfecho concreto sem confundir agenda,
 lembrete e conversa cotidiana. As ferramentas são substituídas por versões locais: não cria evento,
 nota ou acompanhamento real e não sobe voz, web ou Telegram.
+
+## Avaliações V2
+
+```powershell
+.\venv\Scripts\python.exe -X utf8 -m unittest testes.testa_avaliacoes
+.\venv\Scripts\python.exe -X utf8 testes\resumo_avaliacoes.py
+```
+
+O teste isolado verifica alvo por ID, contexto por execução, revisões, compatibilidade com
+registros antigos e expiração. `testa_avaliacoes.js`, incluído em `rodar.js`, executa o painel
+Web e simula uma fala nova enquanto o motivo está sendo escrito, a seleção múltipla e a troca
+entre motivos positivos e negativos. O teste Python também confere se todos os motivos
+oferecidos pela interface são aceitos e salvos.
+
+O relatório lê `logs/avaliacoes.jsonl` sem modificar o arquivo. Em V2, `avaliacao_id` agrupa
+revisões do mesmo voto; contar linhas como votos duplicaria os complementos. Categorias são
+múltiplas e não somam necessariamente o total. Os registros V1 não tinham identidade suficiente
+para uma consolidação segura, então permanecem separados.

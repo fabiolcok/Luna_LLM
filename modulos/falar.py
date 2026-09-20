@@ -9,6 +9,9 @@ import numpy as np
 import sounddevice as sd
 import modelos.cores as cor
 from modulos.stream_voz import SegmentadorFrases
+from modulos.execucoes import controle, vincular
+
+controle.parar_audio = sd.stop
 
 _log = logging.getLogger("luna.falar")
 
@@ -232,8 +235,8 @@ class FalaEmFluxo:
         self._encerrado = False
         self._cancelado = False
         self._terminou = threading.Event()
-        self._sintese = threading.Thread(target=self._rodar_sintese, daemon=True)
-        self._audio = threading.Thread(target=self._rodar_audio, daemon=True)
+        self._sintese = threading.Thread(target=vincular(self._rodar_sintese), daemon=True)
+        self._audio = threading.Thread(target=vincular(self._rodar_audio), daemon=True)
         self._sintese.start()
         self._audio.start()
 
@@ -268,7 +271,8 @@ class FalaEmFluxo:
         self._terminou.wait(timeout)
 
     def _foi_interrompida(self):
-        return self._cancelado or bool(self._interromper and self._interromper.is_set())
+        return (not controle.valida(controle.contexto.get()) or self._cancelado
+                or bool(self._interromper and self._interromper.is_set()))
 
     def _rodar_sintese(self):
         try:
@@ -310,6 +314,8 @@ class FalaEmFluxo:
 
 
 def falar_texto(texto, voz=None, velocidade=None, ao_iniciar=None, ao_terminar=None):
+    if not controle.valida(controle.contexto.get()):
+        return
     if not texto or not texto.strip():
         return
     if _pipe is None:
@@ -334,6 +340,8 @@ def falar_texto(texto, voz=None, velocidade=None, ao_iniciar=None, ao_terminar=N
 
         # Correção de pronúncia SÓ no áudio (o texto exibido/log fica original).
         wav_achatado = _sintetizar_wav(texto_limpo, voz_usada, velocidade_usada)
+        if not controle.valida(controle.contexto.get()):
+            return
         if wav_achatado is None:
             if ao_terminar:
                 ao_terminar()
@@ -460,3 +468,6 @@ def limpar_texto_para_voz(texto):
     texto = texto.strip()
 
     return texto
+
+
+_tocar_com_volume = controle.efeito(_tocar_com_volume)

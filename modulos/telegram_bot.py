@@ -1,3 +1,4 @@
+from modulos.execucoes import conversa
 # modulos/telegram_bot.py
 
 import os
@@ -22,6 +23,7 @@ _historico_telegram = []
 
 # Avaliação 👍/👎: guarda exchanges recentes e o reply pendente de motivo
 _avaliacoes = {}        # aid -> (usuario, luna)
+_aval_ids = {}          # mesmo snapshot imutável usado pela avaliação Web
 _aval_seq = 0
 _motivo_por_msg = {}    # message_id do pedido de motivo -> aid
 
@@ -40,8 +42,12 @@ def _registrar_exchange(usuario: str, luna: str) -> str:
     _aval_seq += 1
     aid = str(_aval_seq)
     _avaliacoes[aid] = (usuario, luna)
+    from modulos import avaliacoes
+    _aval_ids[aid] = avaliacoes.capturar_turno({"usuario": usuario, "luna": luna}, canal="telegram")
     if len(_avaliacoes) > 40:
-        _avaliacoes.pop(next(iter(_avaliacoes)))
+        antigo = next(iter(_avaliacoes))
+        _avaliacoes.pop(antigo)
+        _aval_ids.pop(antigo, None)
     return aid
 
 
@@ -61,6 +67,7 @@ def iniciar_bot_telegram():
 
     bot = telebot.TeleBot(TELEGRAM_TOKEN, parse_mode=None)
 
+    @conversa
     def _responder_como_luna(texto: str):
         """Fluxo comum de resposta (texto digitado OU áudio transcrito):
         gera a resposta da Luna e envia, com foto e botões de avaliação."""
@@ -149,8 +156,10 @@ def iniciar_bot_telegram():
         if reply and reply.message_id in _motivo_por_msg:
             aid = _motivo_por_msg.pop(reply.message_id)
             u, l = _avaliacoes.get(aid, ("", ""))
-            _srv._registrar_avaliacao("ruim", texto, u, l, canal="telegram")
-            bot.send_message(TELEGRAM_CHAT_ID, "Anotado, valeu! 🙏")
+            salvo = _srv._registrar_avaliacao("ruim", texto, u, l, canal="telegram",
+                                             turno_id=_aval_ids.get(aid, "expirado"))
+            bot.send_message(TELEGRAM_CHAT_ID, "Anotado, valeu! 🙏" if salvo else
+                             "Não consegui guardar o motivo; essa resposta pode ter expirado.")
             return
 
         cor.azul(f"[📱 Telegram] {texto}")
@@ -234,14 +243,19 @@ def iniciar_bot_telegram():
     @bot.callback_query_handler(func=lambda c: (c.data or "").startswith("av|"))
     def handle_aval(c):
         import servidor as _srv
+        if c.from_user.id != TELEGRAM_CHAT_ID:
+            return
         try:
             _, rating, aid = c.data.split("|", 2)
             u, l = _avaliacoes.get(aid, ("", ""))
+            salvo = _srv._registrar_avaliacao(rating, "", u, l, canal="telegram",
+                                             turno_id=_aval_ids.get(aid, "expirado"))
+            if not salvo:
+                bot.answer_callback_query(c.id, "Não consegui salvar; essa resposta pode ter expirado.")
+                return
             if rating == "bom":
-                _srv._registrar_avaliacao("bom", "", u, l, canal="telegram")
                 bot.answer_callback_query(c.id, "👍 valeu!")
             else:
-                _srv._registrar_avaliacao("ruim", "", u, l, canal="telegram")  # registra já; motivo é opcional
                 bot.answer_callback_query(c.id, "👎 anotado")
                 msg = bot.send_message(TELEGRAM_CHAT_ID, "O que não funcionou? Responda ESTA mensagem (ou ignore).")
                 _motivo_por_msg[msg.message_id] = aid

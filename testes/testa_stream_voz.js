@@ -14,8 +14,8 @@ const telegram = fs.readFileSync(path.join(raiz, 'modulos', 'telegram_bot.py'), 
 assert.ok(falar.includes('class FalaEmFluxo:') &&
           falar.includes('self._textos = queue.Queue()') &&
           falar.includes('self._audios = queue.Queue()') &&
-          falar.includes('target=self._rodar_sintese') &&
-          falar.includes('target=self._rodar_audio'),
+          falar.includes('target=vincular(self._rodar_sintese)') &&
+          falar.includes('target=vincular(self._rodar_audio)'),
           'FALHA: TTS deixou de sintetizar a próxima frase enquanto toca a anterior');
 assert.ok(main.includes('fala_fluxo = FalaEmFluxo(') &&
           main.includes('_enfileirar_fala.finalizar = fala_fluxo.finalizar') &&

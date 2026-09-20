@@ -5,6 +5,12 @@ definitiva. Itens daqui não estão automaticamente aprovados para commit.
 
 ## Em teste
 
+- [ ] **Avaliações V2 no uso real.** Web permite categorias e comentário opcional nos dois votos.
+      O alvo fica preso à resposta, mesmo se o radar falar enquanto o motivo é escrito. Registros
+      novos incluem trechos de contexto, caminho de prompt, modelo e origem; o relatório
+      `testes/resumo_avaliacoes.py` consolida as revisões sem duplicar o voto. Categorias servem
+      para escolher casos de regressão e comparar mudanças; não alteram a personalidade sozinhas.
+
 - [ ] **Validar limpeza do `salvar_obsidian`.** Mensagens com `título:`/`conteúdo:` não devem
       guardar introdução nem comando; reação curta como “boa ideia, deixa anotado” deve salvar
       a fala anterior da conversa. A origem precisa distinguir web, Telegram e voz.

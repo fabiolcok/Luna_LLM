@@ -8,6 +8,33 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 20/09/2026
+
+- 👍 👎 🔧 **Motivos de avaliação conforme o voto.** O 👍 mostra acertos, como “Entendeu o
+  contexto” e “Boa iniciativa”; o 👎 mostra problemas, como “Não ajudou” e “Tom inadequado”.
+  Dá para marcar vários e comentar. Trocar o voto limpa as categorias e mantém o comentário.
+
+## 19/09/2026
+
+- 👍 ✨ **Avaliações com mais contexto.** No modo Web, o voto continua sendo um clique.
+  Se quiser, marque motivos como “Perdeu o assunto”, “Inventou informação” ou “Humor bom”
+  e acrescente um comentário, tanto no 👍 quanto no 👎.
+- 🐛 **O motivo acompanha a resposta escolhida.** Se outra fala chegar enquanto você escreve,
+  a avaliação continua ligada à resposta original. Os registros novos guardam um trecho da
+  conversa e o diagnóstico do prompt para investigar as falhas. Os votos antigos foram preservados.
+- 🔧 **Complementar não duplica o voto.** Avaliações Web e Telegram usam revisões do mesmo
+  registro; o relatório local considera a versão mais recente de cada avaliação nova.
+
+## 18/09/2026
+
+- 💬 🔧 **Sua conversa tem prioridade.** Mensagens Web aguardam sua vez sem disputar a
+  geração com o radar. Ao chegar uma conversa, a preparação proativa é cancelada; resultados
+  atrasados não podem trocar o rosto nem iniciar áudio. As tarefas voltam a ser avaliadas
+  após uma pausa de 30 segundos ao final da conversa.
+- 🛠️ 🐛 **Espera da engine mais controlada.** Chamadas dos turnos coordenados usam timeout
+  de 120 segundos de inatividade e não fazem retentativas automáticas do cliente. Uma chamada
+  já bloqueada ainda pode precisar retornar antes de a próxima começar.
+
 ## 15/09/2026
 
 - 🔊 ✨ **Volume da Luna ao vivo.** Em Configurações → Voz, o slider ajusta só a voz dela,

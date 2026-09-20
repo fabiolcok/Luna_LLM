@@ -10,6 +10,7 @@ import datetime
 import subprocess
 import contextvars
 from openai import OpenAI
+from modulos.execucoes import controle, ExecucaoCancelada
 
 _log = logging.getLogger("luna.pensar")
 import modelos.cores as cor
@@ -183,7 +184,21 @@ def _chamar_llm(**parametros):
     ciclo_antes = _ciclo_modelo
 
     def chamar():
-        return cliente.chat.completions.create(model=modelo(), **parametros)
+        controle.verificar()
+        from modulos import avaliacoes
+        avaliacoes.registrar_chamada(modelo(), parametros)
+        # Sem retries invisíveis de dez minutos enquanto a conversa espera o radar.
+        alvo = cliente.with_options(timeout=120.0, max_retries=0) if controle.contexto.get() else cliente
+        resposta = alvo.chat.completions.create(model=modelo(), **parametros)
+        try:
+            controle.verificar()
+        except ExecucaoCancelada:
+            if parametros.get("stream"):
+                resposta.close()
+            raise
+        if parametros.get("stream") and controle.contexto.get():
+            return controle.vigiar_stream(resposta)
+        return resposta
 
     try:
         return chamar()
@@ -1011,6 +1026,13 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
                     f"{len(prompt_sistema)}c≈{len(prompt_sistema)//4}tok{_diag_mem}]")
     cor.cinza(_diag_prompt)      # terminal
     _log.info(_diag_prompt)      # e o luna.log, pra dar pra revisar depois
+    from modulos import avaliacoes
+    avaliacoes.registrar_contexto(
+        caminho_prompt=_caminho, emocao=_emocao_usada, canal_resposta=_canal,
+        memoria_chars=_mem, historico_modelo=avaliacoes.historico_curto(historico),
+        dados_origem=str(resposta_tecnica or "")[:1800],
+        situacao=contexto_situacional,
+    )
 
     resultado_longo = len(resposta_tecnica) > 200 and not is_proativo and not forcar_incluir
     resultado_imagem = bool(re.match(r'^\s*imagem gerada\b', resposta_tecnica, re.IGNORECASE))
@@ -1418,7 +1440,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         # stream — por isso a formatação aparecia enquanto digitava e virava texto cru no fim.
         return texto_luna if responder_completo else limpar_texto_para_voz(texto_luna)
 
-    except GeracaoInterrompida:
+    except (GeracaoInterrompida, ExecucaoCancelada):
         raise
     except Exception as e:
         _log.exception(f"LLM Persona falhou: {e}")
@@ -2129,7 +2151,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
 
         return texto_resposta
 
-    except GeracaoInterrompida:
+    except (GeracaoInterrompida, ExecucaoCancelada):
         raise
     except Exception as e:
         _msg = str(e).lower()

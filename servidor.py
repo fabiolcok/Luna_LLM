@@ -22,6 +22,7 @@ WebSocket (/ws): recebe {'comando': 'interromper'} do frontend para acionar sd.s
 
 from flask import Flask, render_template, request
 from flask_sock import Sock
+from modulos.execucoes import controle, vincular
 import threading
 import json
 import os
@@ -452,7 +453,11 @@ def websocket(ws):
                     _historico_web.clear()
                     _broadcast({"tipo": "historico_completo", "turnos": []})
                 elif dados.get('comando') == 'avaliar':
-                    _registrar_avaliacao(dados.get('rating', ''), dados.get('motivo', ''))
+                    resultado = _registrar_avaliacao(
+                        dados.get('rating', ''), dados.get('motivo', ''),
+                        turno_id=dados.get('turno_id'), categorias=dados.get('categorias', []))
+                    ws.send(json.dumps({"tipo": "avaliacao_salva", "ok": bool(resultado),
+                                        "turno_id": dados.get('turno_id')}))
                 elif dados.get('comando') == 'repetir_fala':
                     try:
                         from modulos import falar
@@ -465,7 +470,15 @@ def websocket(ws):
                     _txt = (dados.get('texto') or '').strip()
                     if _txt and _handler_texto_web:
                         import threading as _th
-                        _th.Thread(target=_handler_texto_web, args=(_txt,), daemon=True).start()
+                        preparar = getattr(_handler_texto_web, "preparar", None)
+                        if preparar:
+                            trabalho = preparar(_txt)
+                            with controle.condicao:
+                                if controle.atual and controle.atual.proativa:
+                                    atualizar_status("◗ Aguardando a engine liberar sua conversa...")
+                            _th.Thread(target=trabalho, daemon=True).start()
+                        else:
+                            _th.Thread(target=_handler_texto_web, args=(_txt,), daemon=True).start()
                 elif dados.get('comando') == 'laboratorio_visual':
                     acao = str(dados.get('acao', ''))
                     if acao in _ACOES_LAB_VISUAL:
@@ -691,40 +704,55 @@ def obter_e_limpar_imagem_anexada():
 
 # --- FUNÇÕES PARA VOCÊ USAR NO MAIN.PY ---
 
-def _registrar_avaliacao(rating: str, motivo: str = "", usuario=None, luna=None, canal="web"):
+def _registrar_avaliacao(rating: str, motivo: str = "", usuario=None, luna=None, canal="web",
+                        turno_id=None, categorias=None):
     """Grava a avaliação (👍/👎) de uma resposta para análise posterior.
-    usuario/luna: se None, usa a última fala (web). canal: 'web' | 'telegram'."""
+    O ID fixa o alvo; chamadas antigas sem ID usam o último turno completo."""
     if rating not in ("bom", "ruim"):
         return
-    import datetime
+    from modulos import avaliacoes
     try:
-        os.makedirs("logs", exist_ok=True)
-        usuario_real = usuario if usuario is not None else _ultima_fala_usuario
-        luna_real = luna if luna is not None else _ultima_fala_luna
+        if not turno_id and canal == "web" and usuario is None and luna is None and _historico_web:
+            turno_id = _historico_web[-1].get("id")
+        snapshot = avaliacoes.obter_turno(turno_id) if turno_id else None
+        if turno_id and (not snapshot or snapshot["canal"] != canal):
+            return None  # ID expirado nunca pode avaliar outra resposta silenciosamente.
+        usuario_real = snapshot["usuario"] if snapshot else (usuario or "")
+        luna_real = snapshot["luna"] if snapshot else (luna or "")
+        if not luna_real:
+            return None
         from modulos import metricas_ferramentas
         ferramenta = metricas_ferramentas.vincular_avaliacao(
             rating, usuario_real, luna_real, canal
         )
-        registro = {
-            "tempo": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+        registro = dict(snapshot or {})
+        registro.update({
             "canal": canal,
             "rating": rating,
-            "motivo": (motivo or "").strip(),
+            "motivo": str(motivo or "").strip()[:1000],
+            "categorias": list(dict.fromkeys(c for c in (categorias or [])
+                               if isinstance(c, str) and c in avaliacoes.CATEGORIAS))[:8]
+                               if isinstance(categorias, list) else [],
             "usuario": usuario_real,
             "luna": luna_real,
-        }
+        })
         if ferramenta:
             registro["ferramenta"] = ferramenta
-        with open("logs/avaliacoes.jsonl", "a", encoding="utf-8") as f:
-            f.write(json.dumps(registro, ensure_ascii=False) + "\n")
+        salvo = avaliacoes.salvar(registro)
         print(f"[{'👍' if rating == 'bom' else '👎'} Avaliação ({canal}): {rating}]")
+        return salvo["avaliacao_id"]
     except Exception:
         pass
 
 def _registrar_turno(usuario: str, luna: str, origem_proativa: str = "", clima: str = "", links_novidades=None):
     global _clima_turno_pendente
     import datetime
-    if _historico_web and _historico_web[-1].get("luna") == luna:
+    from modulos import avaliacoes
+    execucao = avaliacoes.controle.contexto.get()
+    anterior = avaliacoes.obter_turno(_historico_web[-1].get("id")) if _historico_web else None
+    if (_historico_web and _historico_web[-1].get("luna") == luna
+            and _historico_web[-1].get("usuario") == usuario
+            and (execucao is None or (anterior and anterior.get("execucao_id") == execucao.numero))):
         _clima_turno_pendente = ""
         return  # evita duplicação quando atualizar_legenda é chamada duas vezes
     turno = {
@@ -741,6 +769,7 @@ def _registrar_turno(usuario: str, luna: str, origem_proativa: str = "", clima: 
         turno["clima"] = clima_turno
         cor.cinza(f"[🎭 Clima do turno Web: {clima_turno}]")
     _clima_turno_pendente = ""
+    turno["id"] = avaliacoes.capturar_turno(turno, _historico_web)
     _historico_web.append(turno)
     if len(_historico_web) > 40:
         _historico_web.pop(0)
@@ -875,8 +904,8 @@ def atualizar_gif(termo: str):
     def _worker():
         url = _buscar_gif(termo)
         if url:
-            _broadcast({"gif_url": url, "gif_termo": termo})
-    threading.Thread(target=_worker, daemon=True).start()
+            controle.efeito(_broadcast)({"gif_url": url, "gif_termo": termo})
+    threading.Thread(target=vincular(_worker), daemon=True).start()
 
 #------------------------------
 
@@ -888,3 +917,16 @@ def iniciar_servidor():
         daemon=True
     ).start()
     print("[🌐 Servidor da Luna: Rodando em http://localhost:5000]")
+
+
+# Protege estado e broadcast juntos, inclusive callbacks atrasados.
+atualizar_legenda = controle.efeito(atualizar_legenda)
+atualizar_stream_resposta = controle.efeito(atualizar_stream_resposta)
+atualizar_stream_interrompido = controle.efeito(atualizar_stream_interrompido)
+atualizar_usuario = controle.efeito(atualizar_usuario)
+atualizar_estado_rosto = controle.efeito(atualizar_estado_rosto)
+atualizar_metricas = controle.efeito(atualizar_metricas)
+atualizar_pensamento = controle.efeito(atualizar_pensamento)
+atualizar_status = controle.efeito(atualizar_status)
+atualizar_kaomoji = controle.efeito(atualizar_kaomoji)
+atualizar_gif = controle.efeito(atualizar_gif)

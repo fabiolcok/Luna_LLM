@@ -960,13 +960,22 @@
         .btn-aval.bom    { opacity: 1; border-color: #9ece6a; }
         .btn-aval.ruim   { opacity: 1; border-color: #f7768e; }
 
-        /* Caixa do motivo do 👎 */
+        /* O motivo é opcional tanto para acertos quanto para falhas. */
         #aval-motivo {
             display: none;
             gap: 6px;
             justify-content: center;
             margin-top: 8px;
+            flex-wrap: wrap;
         }
+        #aval-alvo, #aval-categorias { flex-basis: 100%; }
+        #aval-alvo { color: #aaaac2; font-size: .78rem; }
+        #aval-categorias { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+        #aval-categorias button, #aval-motivo-fechar {
+            background: #171722; color: #cfc9c2; border: 1px solid #44445e;
+            border-radius: 6px; padding: 5px 8px; cursor: pointer; font: inherit; font-size: .78rem;
+        }
+        #aval-categorias button[aria-pressed="true"] { border-color: #bb9af7; color: #d9c5ff; }
         #aval-motivo.ativo { display: flex; }
         #aval-motivo-input {
             flex: 1;
@@ -2176,8 +2185,24 @@
             <button id="btn-toggle-proativo" title="Ativar/pausar modo proativo">🟢 Proativo ligado</button>
         </div>
         <div id="aval-motivo">
-            <input type="text" id="aval-motivo-input" placeholder="O que não funcionou? (opcional, Enter envia)" maxlength="200">
+            <span id="aval-alvo"></span>
+            <div id="aval-categorias" role="group" aria-label="Motivos da avaliação">
+                <button type="button" data-categoria="humor_bom" data-voto="bom" aria-pressed="false" hidden>Humor bom</button>
+                <button type="button" data-categoria="resposta_util" data-voto="bom" aria-pressed="false" hidden>Resposta útil</button>
+                <button type="button" data-categoria="tom_bom" data-voto="bom" aria-pressed="false" hidden>Gostei do jeito</button>
+                <button type="button" data-categoria="entendeu_contexto" data-voto="bom" aria-pressed="false" hidden>Entendeu o contexto</button>
+                <button type="button" data-categoria="boa_iniciativa" data-voto="bom" aria-pressed="false" hidden>Boa iniciativa</button>
+                <button type="button" data-categoria="humor_ruim" data-voto="ruim" aria-pressed="false" hidden>Humor não funcionou</button>
+                <button type="button" data-categoria="nao_ajudou" data-voto="ruim" aria-pressed="false" hidden>Não ajudou</button>
+                <button type="button" data-categoria="tom_inadequado" data-voto="ruim" aria-pressed="false" hidden>Tom inadequado</button>
+                <button type="button" data-categoria="perdeu_assunto" data-voto="ruim" aria-pressed="false" hidden>Perdeu o assunto</button>
+                <button type="button" data-categoria="hora_ruim" data-voto="ruim" aria-pressed="false" hidden>Hora ruim</button>
+                <button type="button" data-categoria="inventou_informacao" data-voto="ruim" aria-pressed="false" hidden>Inventou informação</button>
+                <button type="button" data-categoria="repetitiva" data-voto="ruim" aria-pressed="false" hidden>Repetitiva</button>
+            </div>
+            <input type="text" id="aval-motivo-input" placeholder="Quer acrescentar algo? (opcional, Enter envia)" maxlength="1000">
             <button id="aval-motivo-enviar">Enviar</button>
+            <button id="aval-motivo-fechar" type="button">Fechar</button>
         </div>
 
         <div id="acompanhamento-card">
@@ -4754,6 +4779,7 @@
         }
 
         function adicionarTurno(turno) {
+            definirAlvoAvaliacao(turno);
             const vazio = document.getElementById('historico-vazio');
             if (vazio) vazio.remove();
             const pendente = document.getElementById('turno-pendente');
@@ -5014,29 +5040,73 @@
         const botoesAval = document.querySelectorAll('.btn-aval[data-rating]');
         const avalMotivo = document.getElementById('aval-motivo');
         const avalMotivoInput = document.getElementById('aval-motivo-input');
+        let ultimoAlvoAval = null;
+        let avaliacaoPendente = null;
+        let ultimoEnvioAval = null;
+        function definirAlvoAvaliacao(turno) {
+            ultimoAlvoAval = turno && turno.id ? {id: turno.id, luna: turno.luna} : null;
+            limparAval();
+        }
         function limparAval() {
             botoesAval.forEach(b => b.classList.remove('bom', 'ruim'));
-            avalMotivo.classList.remove('ativo');
-            avalMotivoInput.value = '';
+            // Uma nova resposta não rouba o motivo que ainda está sendo escrito.
+            if (!avaliacaoPendente) {
+                avalMotivo.classList.remove('ativo');
+                avalMotivoInput.value = '';
+            }
+        }
+        function salvarAvaliacaoPendente() {
+            if (!avaliacaoPendente) return;
+            ultimoEnvioAval = avaliacaoPendente.id;
+            socket.send(JSON.stringify({ comando: 'avaliar',
+                turno_id: avaliacaoPendente.id, rating: avaliacaoPendente.rating,
+                categorias: [...avaliacaoPendente.categorias], motivo: avalMotivoInput.value }));
         }
         function enviarMotivo() {
-            socket.send(JSON.stringify({ comando: 'avaliar', rating: 'ruim', motivo: avalMotivoInput.value }));
+            salvarAvaliacaoPendente();
+            fecharMotivo();
+        }
+        function fecharMotivo() {
+            avaliacaoPendente = null;
             avalMotivo.classList.remove('ativo');
             avalMotivoInput.value = '';
         }
         botoesAval.forEach(btn => {
             btn.addEventListener('click', function() {
+                if (!ultimoAlvoAval) return;
+                const comentario = avaliacaoPendente && avaliacaoPendente.id === ultimoAlvoAval.id
+                    ? avalMotivoInput.value : '';
+                // Guarda o rascunho anterior antes de trocar o alvo por outro voto.
+                if (avaliacaoPendente) salvarAvaliacaoPendente();
+                fecharMotivo();
                 const r = this.dataset.rating;
                 limparAval();
                 this.classList.add(r);
-                if (r === 'bom') {
-                    socket.send(JSON.stringify({ comando: 'avaliar', rating: 'bom' }));
-                } else {
-                    avalMotivo.classList.add('ativo');   // 👎 abre a caixa do motivo
-                    avalMotivoInput.focus();
-                }
+                avaliacaoPendente = {...ultimoAlvoAval, rating: r, categorias: new Set()};
+                document.querySelectorAll('[data-categoria]').forEach(b => {
+                    b.hidden = b.dataset.voto !== r;
+                    b.setAttribute('aria-pressed', 'false');
+                });
+                document.getElementById('aval-categorias').setAttribute('aria-label',
+                    r === 'bom' ? 'O que funcionou?' : 'O que não funcionou?');
+                avalMotivoInput.value = comentario;
+                document.getElementById('aval-alvo').textContent = 'Sobre: ' + ultimoAlvoAval.luna.slice(0, 110);
+                salvarAvaliacaoPendente(); // O voto já vale; explicar é opcional nos dois casos.
+                avalMotivo.classList.add('ativo');
             });
         });
+        document.querySelectorAll('[data-categoria]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (!avaliacaoPendente || this.dataset.voto !== avaliacaoPendente.rating) return;
+                const categoria = this.dataset.categoria;
+                const selecionadas = avaliacaoPendente.categorias;
+                if (selecionadas.has(categoria)) selecionadas.delete(categoria);
+                else selecionadas.add(categoria);
+                this.setAttribute('aria-pressed', String(selecionadas.has(categoria)));
+                salvarAvaliacaoPendente();
+            });
+        });
+        document.getElementById('aval-motivo-fechar').onclick = enviarMotivo;
         document.getElementById('aval-motivo-enviar').onclick = enviarMotivo;
         avalMotivoInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') { e.preventDefault(); enviarMotivo(); }
@@ -5138,6 +5208,7 @@
                 return;
             }
             if (dados.tipo === 'historico_completo') {
+                definirAlvoAvaliacao(dados.turnos[dados.turnos.length - 1]);
                 // O painel de detalhes mora dentro do último balão, então precisa ser
                 // destacado antes de reconstruir a lista para não ser destruído pelo innerHTML.
                 if (detailsEl.parentNode && detailsEl.remove) detailsEl.remove();
@@ -5165,6 +5236,13 @@
                     dados.turno.clima = _climaTurnoPendente;
                 _climaTurnoPendente = '';
                 adicionarTurno(dados.turno);
+                return;
+            }
+            if (dados.tipo === 'avaliacao_salva') {
+                if (!dados.ok && dados.turno_id === ultimoEnvioAval) {
+                    document.getElementById('aval-alvo').textContent = 'Não foi possível salvar: a resposta pode ter expirado. Recarregue a página.';
+                    avalMotivo.classList.add('ativo');
+                }
                 return;
             }
             if (dados.tipo === 'resposta_stream') {

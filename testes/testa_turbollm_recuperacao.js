@@ -27,7 +27,7 @@ for (const chamada of ['r = _chamar_llm(', 'resposta = _chamar_llm(',
 // Quatro chamadas diretas são seleção/warm-up (incluindo validar uma troca pelo painel);
 // a quinta vive dentro do próprio wrapper.
 // Se aparecer outra, alguma rota provavelmente voltou a ignorar a recuperação.
-const diretas = pensar.match(/cliente\.chat\.completions\.create\(/g) || [];
+const diretas = pensar.match(/(?:cliente|alvo)\.chat\.completions\.create\(/g) || [];
 assert.strictEqual(diretas.length, 5,
                    'FALHA: surgiu chamada direta ao TurboLLM fora do contrato esperado');
 
