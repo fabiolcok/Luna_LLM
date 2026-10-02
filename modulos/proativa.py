@@ -409,43 +409,70 @@ class _FalaProativa(str):
         return obj
 
 
-def _falar_proativamente(texto_resposta) -> bool:
-    """Fala o texto quando a Luna ficar livre. Retorna True SE falou de verdade —
-    quem depende do aviso (ex: dedup da wishlist) só deve marcar 'avisado' com True."""
+def _falar_proativamente(texto_resposta, ao_apresentar=None) -> bool:
+    """Retorna True se chegou ao fim sem cancelamento.
+
+    `ao_apresentar` confirma uma única vez a legenda publicada ou o início da voz,
+    para avisos que não devem reaparecer depois de o usuário cortar o áudio.
+    """
     global _ultima_fala_proativa_ts, _cd_proativo_atual
     if not _execucoes.valida(_execucoes.contexto.get()):
         return False
     if not texto_resposta or not str(texto_resposta).strip():
         _limpar_visual_proativo()
         return False
-    if not _pode_falar_proativo():   # cooldown (rede de segurança p/ falas sem _gerar_fala_proativa)
+    if not _pode_falar_proativo():
         return False
     timeout = time.time() + 300
     while not luna_esta_livre():
+        if not _execucoes.valida(_execucoes.contexto.get()):
+            return False
         if time.time() > timeout:
             _limpar_visual_proativo()
             return False
         time.sleep(3)
-    try:
-        import servidor as _srv
-        _srv.atualizar_usuario("")
-        _srv.atualizar_legenda(
-            texto_resposta,
-            origem_proativa=getattr(texto_resposta, "origem_proativa", ""),
-            clima=getattr(texto_resposta, "clima", ""),
-        )
-    except Exception:
-        pass
-    # Registra a fala na conversa principal pra follow-ups terem contexto
-    if _historico_principal is not None:
-        _historico_principal.append({
-            "role": "assistant", "content": texto_resposta, "origem": "proativo",
-        })
-        if len(_historico_principal) > 12:
-            del _historico_principal[:-12]
+    confirmado = False
+    def confirmar_apresentacao():
+        nonlocal confirmado
+        if not confirmado and ao_apresentar:
+            ao_apresentar()
+            confirmado = True
+
+    exibido = False
+    # Publicação e cancelamento disputam a mesma trava; não confirme uma legenda descartada.
+    with _execucoes.condicao:
+        if not _execucoes.valida(_execucoes.contexto.get()):
+            return False
+        try:
+            import servidor as _srv
+            _srv.atualizar_usuario("")
+            _srv.atualizar_legenda(
+                texto_resposta,
+                origem_proativa=getattr(texto_resposta, "origem_proativa", ""),
+                clima=getattr(texto_resposta, "clima", ""),
+            )
+            exibido = True
+        except Exception:
+            pass
+        if _historico_principal is not None:
+            _historico_principal.append({
+                "role": "assistant", "content": texto_resposta, "origem": "proativo",
+            })
+            if len(_historico_principal) > 12:
+                del _historico_principal[:-12]
+    # Persistir fora da trava evita bloquear o botão de interrupção durante escrita em disco.
+    if exibido:
+        confirmar_apresentacao()
+
+    def iniciar_fala():
+        if not _execucoes.valida(_execucoes.contexto.get()):
+            return
+        confirmar_apresentacao()
+        _iniciar_visual_fala_proativa()
+
     falar_texto(
         texto_resposta,
-        ao_iniciar=_iniciar_visual_fala_proativa,
+        ao_iniciar=iniciar_fala,
         ao_terminar=_terminar_visual_fala_proativa,
     )
     if not _execucoes.valida(_execucoes.contexto.get()):
@@ -1374,18 +1401,26 @@ def _tarefa_radar_rss():
             f"Avise-o resumindo SÓ essa principal em 1-2 frases (sem copiar o texto acima) e, no fim, "
             f"diga que tem mais {n - 1} esperando na nota Novidades. {REGRA_PERSONA}"
         )
-    # ATÔMICO: card + visto só depois que a fala sai; senão re-tenta no próximo ciclo (não perde nada).
     fala = _gerar_fala_proativa(prompt, "radar_rss", max_tokens=220)
     if fala:
         # Os endereços pertencem ao item sorteado, nunca ao texto inventado pelo modelo.
         fala.links_novidades = {"noticia": destaque[1], "nota": obsidian.link_novidades()}
-    if _falar_proativamente(fala):
+    apresentado = False
+    def registrar_apresentacao():
+        nonlocal apresentado
         obsidian.adicionar_novidades(novos)
-        cor.amarelo(f"[📡 Radar: {n} novidade(s) → Novidades.md]")
         _persistir()
+        apresentado = True
+        turno = _execucoes.contexto.get()
+        if turno is not None:
+            turno.intervalos_confirmados["radar_rss"] = _ultima_execucao["radar_rss"]
         registrar_tentativa()
-    else:
-        _ultima_execucao["radar_rss"] = 0   # fala starved -> re-tenta já
+        cor.amarelo(f"[📡 Radar: {n} novidade(s) → Novidades.md]")
+
+    # Interromper um aviso já mostrado não o transforma em novidade outra vez.
+    _falar_proativamente(fala, ao_apresentar=registrar_apresentacao)
+    if not apresentado:
+        _ultima_execucao["radar_rss"] = 0   # nada foi apresentado: tenta depois
 
 def _sem_acento(s: str) -> str:
     import unicodedata
@@ -2644,10 +2679,10 @@ def _execucao_proativa(fn):
                     return fn(*args, **kwargs)
                 finally:
                     if turno.cancelada.is_set():
-                        # Interrupção não conta como entrega. O próximo ciclo consulta
-                        # os dados atuais em vez de reproduzir uma resposta velha.
+                        # Só devolve à fila o que ainda não foi apresentado ao usuário.
                         _ultima_execucao.clear()
                         _ultima_execucao.update(intervalos)
+                        _ultima_execucao.update(turno.intervalos_confirmados)
         except ExecucaoCancelada:
             return None
     return executar

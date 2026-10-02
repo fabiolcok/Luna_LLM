@@ -18,6 +18,8 @@ class Execucao:
     numero: int
     proativa: bool
     cancelada: threading.Event = field(default_factory=threading.Event)
+    # Avisos já apresentados não voltam à fila quando o usuário corta o áudio.
+    intervalos_confirmados: dict = field(default_factory=dict)
 
 
 class Coordenador:

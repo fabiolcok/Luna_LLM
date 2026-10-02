@@ -8,6 +8,13 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 01/10/2026
+
+- 🐛 **Interromper uma notícia não faz o radar repeti-la.** Quando o aviso já apareceu
+  no chat ou começou a tocar, a notícia fica registrada no Obsidian e no controle do radar.
+  Cancelar o áudio preserva esse registro e o intervalo da consulta. Se a interrupção
+  acontecer antes da apresentação, a notícia continua pendente para outra oportunidade.
+
 ## 20/09/2026
 
 - 👍 👎 🔧 **Motivos de avaliação conforme o voto.** O 👍 mostra acertos, como “Entendeu o

@@ -16,6 +16,15 @@ Esse segundo comando roda primeiro a suíte rápida acima e depois todos os `tes
 módulos. Ele procura o Python do `venv` e tem fallback para o launcher do sistema. As bancadas
 que usam modelo real ficam de fora de propósito.
 
+Regressão do radar RSS após interrupção de fala (sem rede, voz ou LLM):
+
+```powershell
+.\venv\Scripts\python.exe -X utf8 -m unittest testes.testa_radar_interrupcao testes.testa_execucoes
+```
+
+Cobre interrupção antes da apresentação, durante a síntese e durante o áudio,
+preservação do intervalo e ausência de repetição ou duplicação da nota.
+
 ## Por que existem
 
 O `templates/Index.html` tem ~4100 linhas com CSS, HTML e todo o JS da interface num arquivo só.
