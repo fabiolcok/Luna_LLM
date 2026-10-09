@@ -1,5 +1,6 @@
 """Recuperação do modelo descarregado pela API de gerenciamento do TurboLLM."""
 
+import json
 import time
 import unicodedata
 
@@ -31,6 +32,42 @@ def erro_modelo_descarregado(erro: Exception) -> bool:
         "no model loaded",
         "no model matching",
     ))
+
+
+def erro_alternancia_papeis(erro: Exception) -> bool:
+    return (getattr(erro, "status_code", None) == 400
+            and "conversation roles must alternate" in str(erro).lower())
+
+
+def adaptar_mensagens_alternadas(mensagens: list, contexto_inicial: str) -> list:
+    """Preserva contexto textual sem inventar pedidos para justificar falas proativas."""
+    if not mensagens or any(
+        not isinstance(m, dict) or set(m) - {"role", "content"}
+        or m.get("role") not in {"system", "user", "assistant"}
+        or not isinstance(m.get("content"), str) for m in mensagens
+    ):
+        # Tool calls e conteúdo multimodal têm contratos próprios; não os achata em texto.
+        return mensagens
+    inicio = int(mensagens[0]["role"] == "system")
+    if any(m["role"] == "system" for m in mensagens[inicio:]):
+        return mensagens
+    conversa = [dict(m) for m in mensagens[inicio:]]
+    primeiro_usuario = next((i for i, m in enumerate(conversa) if m["role"] == "user"), None)
+    if primeiro_usuario is None:
+        return mensagens
+    if primeiro_usuario:
+        anteriores = [m["content"] for m in conversa[:primeiro_usuario]]
+        conversa = conversa[primeiro_usuario:]
+        conversa[0]["content"] = contexto_inicial.format(
+            falas=json.dumps(anteriores, ensure_ascii=False), mensagem=conversa[0]["content"])
+    saida = [dict(m) for m in mensagens[:inicio]]
+    for mensagem in conversa:
+        if saida and saida[-1]["role"] == mensagem["role"]:
+            # O recorte pode conter vários proativos ou mensagens interrompidas do usuário.
+            saida[-1]["content"] += "\n\n" + mensagem["content"]
+        else:
+            saida.append(mensagem)
+    return saida
 
 
 def selecionar_chave_modelo(modelos: list, configurado: str = "",
