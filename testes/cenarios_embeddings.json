@@ -1,0 +1,835 @@
+{
+  "versao": 1,
+  "descricao": "Fixture sintética em PT-BR inspirada nos fluxos da Luna; não lê memórias reais, histórico privado ou índices do aplicativo.",
+  "metrica": "Relevante = conteúdo que aborda diretamente o fato pessoal ou episódio perguntado. Pedidos externos e fatos ausentes têm lista vazia.",
+  "suites": {
+    "episodica": {
+      "documentos": [
+        {
+          "id": "modem",
+          "texto": "O modem está atrás de CGNAT. A abertura de portas depende de conversar com o provedor."
+        },
+        {
+          "id": "ddns",
+          "texto": "O endereço público do servidor muda, e um serviço de DDNS atualiza o registro DNS no Cloudflare."
+        },
+        {
+          "id": "jellyfin",
+          "texto": "O servidor doméstico usa Jellyfin para organizar filmes e séries e assistir pela TV e pelo celular."
+        },
+        {
+          "id": "backup",
+          "texto": "O próximo passo do servidor doméstico é configurar um backup automático dos arquivos."
+        },
+        {
+          "id": "fps",
+          "texto": "Overwatch perde desempenho quando o LLM ocupa recursos durante a partida."
+        },
+        {
+          "id": "cities",
+          "texto": "Cities: Skylines II será testado primeiro com conversa por voz, antes de construir uma integração."
+        },
+        {
+          "id": "ds_mortes",
+          "texto": "A integração do Dark Souls Remastered comenta mortes, mas não deve falar o total de mortes."
+        },
+        {
+          "id": "ds_chefes",
+          "texto": "A integração do Dark Souls Remastered detecta chefes derrotados, incluindo o Demônio Touro."
+        },
+        {
+          "id": "lol",
+          "texto": "O piloto de League of Legends pode comentar mortes usando informações locais da partida."
+        },
+        {
+          "id": "deadlock",
+          "texto": "A integração de Deadlock está adiada até existir uma API oficial apropriada para dados ao vivo."
+        },
+        {
+          "id": "kokoro",
+          "texto": "Kokoro continua sendo a voz preferida para a Luna em português brasileiro."
+        },
+        {
+          "id": "sopro",
+          "texto": "A voz e a respiração do Sopro agradaram, mas o sotaque português europeu incomodou."
+        },
+        {
+          "id": "kitten",
+          "texto": "O teste do KittenTTS não superou a Kokoro na preferência de voz."
+        },
+        {
+          "id": "volume",
+          "texto": "O slider da web ajusta o volume da fala da Luna enquanto o áudio está tocando."
+        },
+        {
+          "id": "humor",
+          "texto": "A personalidade da Luna deve preservar exageros teatrais, com piadas ligadas a fatos reais."
+        },
+        {
+          "id": "repeticao",
+          "texto": "Comentários de morte em Dark Souls precisam variar os começos para evitar efeito de disco furado."
+        },
+        {
+          "id": "proativo",
+          "texto": "A conversa do usuário tem prioridade sobre atividades proativas que podem ser adiadas."
+        },
+        {
+          "id": "interface",
+          "texto": "A caixa de escrever da web deve manter a posição ao passar do estado vazio para a primeira mensagem."
+        },
+        {
+          "id": "rss",
+          "texto": "O feed RSS do Não Intendo pode ser acompanhado pelo radar de novidades da Luna."
+        },
+        {
+          "id": "links",
+          "texto": "As novidades mostradas na web devem incluir um link da notícia e outro para a nota completa."
+        },
+        {
+          "id": "steam_promos",
+          "texto": "A Luna pode acompanhar promoções dos jogos da lista de desejos na Steam."
+        },
+        {
+          "id": "telegram_promos",
+          "texto": "Um radar separado acompanha ofertas publicadas em canais do Telegram."
+        },
+        {
+          "id": "avaliacao",
+          "texto": "A avaliação da resposta na web só deve ser salva depois de clicar em Enviar."
+        },
+        {
+          "id": "vram",
+          "texto": "Whisper e os modelos de embeddings rodam na CPU para reservar a VRAM ao LLM."
+        },
+        {
+          "id": "modelo",
+          "texto": "Gemma continua sendo o modelo de conversa preferido após comparar outros modelos locais."
+        },
+        {
+          "id": "ptbr",
+          "texto": "O idioma desejado para conversar com a Luna e ouvir sua voz é português brasileiro."
+        },
+        {
+          "id": "obsidian",
+          "texto": "As lembranças confirmadas são organizadas em notas locais do Obsidian."
+        },
+        {
+          "id": "pendencias",
+          "texto": "A lista de assuntos em andamento ajuda a Luna a lembrar onde projetos e conversas pararam."
+        },
+        {
+          "id": "atalho",
+          "texto": "Para falar com a Luna por voz, o atalho padrão é segurar Ctrl+Alt+F8."
+        },
+        {
+          "id": "widget",
+          "texto": "A Luna pode ficar como um mascote solto na área de trabalho."
+        }
+      ],
+      "consultas": [
+        {
+          "id": "episodica-cal-pos-1",
+          "split": "calibracao",
+          "texto": "O que estava impedindo o acesso ao meu servidor de fora da rede?",
+          "relevantes": [
+            "modem"
+          ]
+        },
+        {
+          "id": "episodica-cal-pos-2",
+          "split": "calibracao",
+          "texto": "Como o domínio acompanha a troca do endereço público?",
+          "relevantes": [
+            "ddns"
+          ]
+        },
+        {
+          "id": "episodica-cal-pos-3",
+          "split": "calibracao",
+          "texto": "Qual aplicativo escolhemos para organizar minha biblioteca de filmes?",
+          "relevantes": [
+            "jellyfin"
+          ]
+        },
+        {
+          "id": "episodica-cal-pos-4",
+          "split": "calibracao",
+          "texto": "Qual etapa ainda falta para proteger os arquivos do servidor?",
+          "relevantes": [
+            "backup"
+          ]
+        },
+        {
+          "id": "episodica-cal-pos-5",
+          "split": "calibracao",
+          "texto": "Qual era o problema de desempenho enquanto eu jogava Overwatch?",
+          "relevantes": [
+            "fps"
+          ]
+        },
+        {
+          "id": "episodica-cal-pos-6",
+          "split": "calibracao",
+          "texto": "Como combinamos começar o teste com a cidade antes da integração?",
+          "relevantes": [
+            "cities"
+          ]
+        },
+        {
+          "id": "episodica-cal-pos-7",
+          "split": "calibracao",
+          "texto": "Qual detalhe da contagem eu não queria nas falas de Dark Souls?",
+          "relevantes": [
+            "ds_mortes"
+          ]
+        },
+        {
+          "id": "episodica-cal-pos-8",
+          "split": "calibracao",
+          "texto": "Que evento do Demônio Touro a Luna deveria comemorar?",
+          "relevantes": [
+            "ds_chefes"
+          ]
+        },
+        {
+          "id": "episodica-cal-pos-9",
+          "split": "calibracao",
+          "texto": "De onde virão as informações da partida para comentar as mortes no LoL?",
+          "relevantes": [
+            "lol"
+          ]
+        },
+        {
+          "id": "episodica-cal-pos-10",
+          "split": "calibracao",
+          "texto": "Por que deixamos a integração do Deadlock para mais tarde?",
+          "relevantes": [
+            "deadlock"
+          ]
+        },
+        {
+          "id": "episodica-cal-pos-11",
+          "split": "calibracao",
+          "texto": "Qual voz continuo preferindo para a Luna?",
+          "relevantes": [
+            "kokoro"
+          ]
+        },
+        {
+          "id": "episodica-cal-pos-12",
+          "split": "calibracao",
+          "texto": "O que gostei e o que me incomodou no teste do Sopro?",
+          "relevantes": [
+            "sopro"
+          ]
+        },
+        {
+          "id": "episodica-cal-neg-1",
+          "split": "calibracao",
+          "texto": "Qual é o aniversário da minha irmã?",
+          "relevantes": []
+        },
+        {
+          "id": "episodica-cal-neg-2",
+          "split": "calibracao",
+          "texto": "Qual foi a nota da minha última prova?",
+          "relevantes": []
+        },
+        {
+          "id": "episodica-cal-neg-3",
+          "split": "calibracao",
+          "texto": "Como faço um bolo de cenoura sem ovos?",
+          "relevantes": []
+        },
+        {
+          "id": "episodica-cal-neg-4",
+          "split": "calibracao",
+          "texto": "Qual é a previsão de chuva para amanhã em Recife?",
+          "relevantes": []
+        },
+        {
+          "id": "episodica-cal-neg-5",
+          "split": "calibracao",
+          "texto": "Qual campeão venceu o último mundial de League of Legends?",
+          "relevantes": []
+        },
+        {
+          "id": "episodica-cal-neg-6",
+          "split": "calibracao",
+          "texto": "O modelo do meu modem possui uma porta USB?",
+          "relevantes": []
+        },
+        {
+          "id": "episodica-cal-neg-7",
+          "split": "calibracao",
+          "texto": "Qual foi o valor da mensalidade do meu provedor?",
+          "relevantes": []
+        },
+        {
+          "id": "episodica-cal-neg-8",
+          "split": "calibracao",
+          "texto": "Qual é o telefone da minha dentista?",
+          "relevantes": []
+        },
+        {
+          "id": "episodica-test-pos-1",
+          "split": "teste",
+          "texto": "Como ficou a comparação do Kitten com a voz que já usávamos?",
+          "relevantes": [
+            "kitten"
+          ]
+        },
+        {
+          "id": "episodica-test-pos-2",
+          "split": "teste",
+          "texto": "O som tem que mudar durante a reprodução quando eu arrasto o controle?",
+          "relevantes": [
+            "volume"
+          ]
+        },
+        {
+          "id": "episodica-test-pos-3",
+          "split": "teste",
+          "texto": "Qual parte do jeito exagerado da Luna eu queria preservar?",
+          "relevantes": [
+            "humor"
+          ]
+        },
+        {
+          "id": "episodica-test-pos-4",
+          "split": "teste",
+          "texto": "Por que as reações às mortes estavam parecendo um disco furado?",
+          "relevantes": [
+            "repeticao"
+          ]
+        },
+        {
+          "id": "episodica-test-pos-5",
+          "split": "teste",
+          "texto": "Se eu começo a conversar enquanto ela faz algo sozinha, quem tem prioridade?",
+          "relevantes": [
+            "proativo"
+          ]
+        },
+        {
+          "id": "episodica-test-pos-6",
+          "split": "teste",
+          "texto": "O que não deve acontecer com o campo de digitação ao mandar a primeira mensagem?",
+          "relevantes": [
+            "interface"
+          ]
+        },
+        {
+          "id": "episodica-test-pos-7",
+          "split": "teste",
+          "texto": "Qual site de humor combinamos acompanhar por um feed?",
+          "relevantes": [
+            "rss"
+          ]
+        },
+        {
+          "id": "episodica-test-pos-8",
+          "split": "teste",
+          "texto": "Quais links quero ver junto da novidade que ela comentou?",
+          "relevantes": [
+            "links"
+          ]
+        },
+        {
+          "id": "episodica-test-pos-9",
+          "split": "teste",
+          "texto": "Como quero saber de descontos nos jogos que desejo comprar?",
+          "relevantes": [
+            "steam_promos"
+          ]
+        },
+        {
+          "id": "episodica-test-pos-10",
+          "split": "teste",
+          "texto": "Onde estão publicados os anúncios do outro radar de ofertas?",
+          "relevantes": [
+            "telegram_promos"
+          ]
+        },
+        {
+          "id": "episodica-test-pos-11",
+          "split": "teste",
+          "texto": "Em qual momento a avaliação deve ser gravada?",
+          "relevantes": [
+            "avaliacao"
+          ]
+        },
+        {
+          "id": "episodica-test-pos-12",
+          "split": "teste",
+          "texto": "Por que não estamos usando a placa de vídeo para embeddings e reconhecimento de voz?",
+          "relevantes": [
+            "vram"
+          ]
+        },
+        {
+          "id": "episodica-test-neg-1",
+          "split": "teste",
+          "texto": "Qual foi o placar do jogo de futebol de ontem?",
+          "relevantes": []
+        },
+        {
+          "id": "episodica-test-neg-2",
+          "split": "teste",
+          "texto": "O que minha médica disse no último exame?",
+          "relevantes": []
+        },
+        {
+          "id": "episodica-test-neg-3",
+          "split": "teste",
+          "texto": "Quanto paguei na minha última conta de energia?",
+          "relevantes": []
+        },
+        {
+          "id": "episodica-test-neg-4",
+          "split": "teste",
+          "texto": "Qual é a senha da rede Wi-Fi da minha mãe?",
+          "relevantes": []
+        },
+        {
+          "id": "episodica-test-neg-5",
+          "split": "teste",
+          "texto": "Qual build de personagem recomendas para enfrentar o Artorias?",
+          "relevantes": []
+        },
+        {
+          "id": "episodica-test-neg-6",
+          "split": "teste",
+          "texto": "Qual é a data de lançamento oficial da próxima atualização do Deadlock?",
+          "relevantes": []
+        },
+        {
+          "id": "episodica-test-neg-7",
+          "split": "teste",
+          "texto": "Quantos graus fará hoje em Salvador?",
+          "relevantes": []
+        },
+        {
+          "id": "episodica-test-neg-8",
+          "split": "teste",
+          "texto": "Quais são os ingredientes do meu almoço de ontem?",
+          "relevantes": []
+        }
+      ]
+    },
+    "historico": {
+      "documentos": [
+        {
+          "id": "modem",
+          "texto": "Você: Meu modem está em CGNAT e ainda não consigo abrir portas. Estou conversando com o suporte do provedor.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "ddns",
+          "texto": "Você: Configurei um serviço que atualiza o DNS no Cloudflare quando o IP público muda.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "jellyfin",
+          "texto": "Você: Instalei Jellyfin no servidor doméstico para assistir aos filmes na TV e no celular.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "backup",
+          "texto": "Você: O servidor já funciona. Ainda falta configurar cópias de segurança automáticas dos arquivos.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "fps",
+          "texto": "Você: Quando jogo Overwatch com o modelo local carregado, noto quedas de FPS.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "cities",
+          "texto": "Você: Quero baixar Cities: Skylines II e conversar com a Luna enquanto jogo, antes de integrar dados do jogo.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "ds_mortes",
+          "texto": "Você: Pode comentar quando eu morrer em Dark Souls, mas não quero que fale um contador.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "ds_chefes",
+          "texto": "Você: Matei o Demônio Touro. Quero que a Luna comemore quando o chefe for derrotado.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "lol",
+          "texto": "Você: Quando eu jogar LoL, podemos usar os dados locais da partida para comentar as mortes.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "deadlock",
+          "texto": "Você: É melhor esperar uma API oficial ao vivo do Deadlock antes de criar comentários de partida.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "kokoro",
+          "texto": "Você: Nos testes de voz ainda gostei mais da Kokoro para a Luna.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "sopro",
+          "texto": "Você: Gostei do Sopro, principalmente da respiração natural, mas o sotaque PT-PT não ficou bom para mim.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "kitten",
+          "texto": "Você: Ouvi as amostras do KittenTTS e prefiro continuar com a Kokoro.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "volume",
+          "texto": "Você: Prefiro que o volume da Luna mude ao vivo conforme movo o slider.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "humor",
+          "texto": "Você: Gosto dos exageros dela. O problema é quando inventa a premissa da piada.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "repeticao",
+          "texto": "Você: Ela começa várias falas de morte com a mesma frase. Quero evitar essa repetição.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "proativo",
+          "texto": "Você: Se eu estiver falando com a Luna, minha conversa deve ter prioridade sobre uma fala automática.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "interface",
+          "texto": "Você: Quando escrevo a primeira mensagem a entrada pula para baixo. Prefiro que fique no mesmo lugar.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "rss",
+          "texto": "Você: Quero acompanhar o Não Intendo pelo endereço RSS no FeedBurner.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "links",
+          "texto": "Você: Quero clicar na notícia que ela comentou e abrir a nota com todas as novidades.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "steam_promos",
+          "texto": "Você: Avise quando aparecer desconto em um jogo da minha lista de desejos da Steam.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "telegram_promos",
+          "texto": "Você: As ofertas dos canais de promoção no Telegram também devem aparecer no radar.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "avaliacao",
+          "texto": "Você: Clicar em bom ou ruim deve apenas abrir a avaliação. Só salve quando eu enviar.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "vram",
+          "texto": "Você: Deixe reconhecimento de fala e embeddings na CPU, para sobrar memória de vídeo para o modelo.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "modelo",
+          "texto": "Você: Comparei modelos locais e por enquanto prefiro continuar com a Gemma na conversa.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "ptbr",
+          "texto": "Você: Quero conversar com a Luna e ouvir as respostas em português do Brasil.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "obsidian",
+          "texto": "Você: Guarde as lembranças que eu confirmar nas notas do Obsidian.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "pendencias",
+          "texto": "Você: Quero que a Luna lembre o estado atual dos projetos que ainda estão em andamento.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "atalho",
+          "texto": "Você: O atalho para falar é segurar Ctrl+Alt+F8.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        },
+        {
+          "id": "widget",
+          "texto": "Você: Quero soltar a Luna em uma janelinha transparente na área de trabalho.\nLuna: Entendi. Vou considerar isso nas próximas conversas."
+        }
+      ],
+      "consultas": [
+        {
+          "id": "historico-cal-pos-1",
+          "split": "calibracao",
+          "texto": "Lembra por que eu estava falando com o provedor?",
+          "relevantes": [
+            "modem"
+          ]
+        },
+        {
+          "id": "historico-cal-pos-2",
+          "split": "calibracao",
+          "texto": "A gente já fez algo para atualizar o DNS quando o IP muda?",
+          "relevantes": [
+            "ddns"
+          ]
+        },
+        {
+          "id": "historico-cal-pos-3",
+          "split": "calibracao",
+          "texto": "Qual foi o programa que instalei para assistir aos filmes no celular?",
+          "relevantes": [
+            "jellyfin"
+          ]
+        },
+        {
+          "id": "historico-cal-pos-4",
+          "split": "calibracao",
+          "texto": "O que eu tinha deixado pendente no servidor depois que ele passou a funcionar?",
+          "relevantes": [
+            "backup"
+          ]
+        },
+        {
+          "id": "historico-cal-pos-5",
+          "split": "calibracao",
+          "texto": "Em qual jogo eu disse que caía o FPS com o modelo carregado?",
+          "relevantes": [
+            "fps"
+          ]
+        },
+        {
+          "id": "historico-cal-pos-6",
+          "split": "calibracao",
+          "texto": "O que eu ia fazer primeiro quando baixasse o Cities 2?",
+          "relevantes": [
+            "cities"
+          ]
+        },
+        {
+          "id": "historico-cal-pos-7",
+          "split": "calibracao",
+          "texto": "Eu pedi alguma mudança sobre a contagem quando o personagem morre?",
+          "relevantes": [
+            "ds_mortes"
+          ]
+        },
+        {
+          "id": "historico-cal-pos-8",
+          "split": "calibracao",
+          "texto": "Qual chefe de Dark Souls eu disse que matei?",
+          "relevantes": [
+            "ds_chefes"
+          ]
+        },
+        {
+          "id": "historico-cal-pos-9",
+          "split": "calibracao",
+          "texto": "Falamos de usar alguma informação da própria partida de League of Legends?",
+          "relevantes": [
+            "lol"
+          ]
+        },
+        {
+          "id": "historico-cal-pos-10",
+          "split": "calibracao",
+          "texto": "Qual integração resolvemos esperar por uma API oficial?",
+          "relevantes": [
+            "deadlock"
+          ]
+        },
+        {
+          "id": "historico-cal-pos-11",
+          "split": "calibracao",
+          "texto": "Nas comparações de voz, qual eu disse que preferia?",
+          "relevantes": [
+            "kokoro"
+          ]
+        },
+        {
+          "id": "historico-cal-pos-12",
+          "split": "calibracao",
+          "texto": "Qual era minha reclamação sobre o sotaque do novo TTS?",
+          "relevantes": [
+            "sopro"
+          ]
+        },
+        {
+          "id": "historico-cal-neg-1",
+          "split": "calibracao",
+          "texto": "Qual é o aniversário da minha irmã?",
+          "relevantes": []
+        },
+        {
+          "id": "historico-cal-neg-2",
+          "split": "calibracao",
+          "texto": "Qual foi a nota da minha última prova?",
+          "relevantes": []
+        },
+        {
+          "id": "historico-cal-neg-3",
+          "split": "calibracao",
+          "texto": "Como faço um bolo de cenoura sem ovos?",
+          "relevantes": []
+        },
+        {
+          "id": "historico-cal-neg-4",
+          "split": "calibracao",
+          "texto": "Qual é a previsão de chuva para amanhã em Recife?",
+          "relevantes": []
+        },
+        {
+          "id": "historico-cal-neg-5",
+          "split": "calibracao",
+          "texto": "Qual campeão venceu o último mundial de League of Legends?",
+          "relevantes": []
+        },
+        {
+          "id": "historico-cal-neg-6",
+          "split": "calibracao",
+          "texto": "O modelo do meu modem possui uma porta USB?",
+          "relevantes": []
+        },
+        {
+          "id": "historico-cal-neg-7",
+          "split": "calibracao",
+          "texto": "Qual foi o valor da mensalidade do meu provedor?",
+          "relevantes": []
+        },
+        {
+          "id": "historico-cal-neg-8",
+          "split": "calibracao",
+          "texto": "Qual é o telefone da minha dentista?",
+          "relevantes": []
+        },
+        {
+          "id": "historico-test-pos-1",
+          "split": "teste",
+          "texto": "Eu tinha gostado mais do KittenTTS ou da Kokoro?",
+          "relevantes": [
+            "kitten"
+          ]
+        },
+        {
+          "id": "historico-test-pos-2",
+          "split": "teste",
+          "texto": "Como eu pedi que o slider da voz funcionasse?",
+          "relevantes": [
+            "volume"
+          ]
+        },
+        {
+          "id": "historico-test-pos-3",
+          "split": "teste",
+          "texto": "Eu queria acabar com os exageros ou só com a piada inventada?",
+          "relevantes": [
+            "humor"
+          ]
+        },
+        {
+          "id": "historico-test-pos-4",
+          "split": "teste",
+          "texto": "O que eu disse que estava repetindo nas falas de Dark Souls?",
+          "relevantes": [
+            "repeticao"
+          ]
+        },
+        {
+          "id": "historico-test-pos-5",
+          "split": "teste",
+          "texto": "O que combinamos quando eu falar durante uma tarefa automática?",
+          "relevantes": [
+            "proativo"
+          ]
+        },
+        {
+          "id": "historico-test-pos-6",
+          "split": "teste",
+          "texto": "Eu reclamei que a caixa de escrever pulava depois da primeira mensagem?",
+          "relevantes": [
+            "interface"
+          ]
+        },
+        {
+          "id": "historico-test-pos-7",
+          "split": "teste",
+          "texto": "Qual feed de humor eu tinha mandado para o radar?",
+          "relevantes": [
+            "rss"
+          ]
+        },
+        {
+          "id": "historico-test-pos-8",
+          "split": "teste",
+          "texto": "O que pedi para poder abrir junto da fala de uma novidade?",
+          "relevantes": [
+            "links"
+          ]
+        },
+        {
+          "id": "historico-test-pos-9",
+          "split": "teste",
+          "texto": "Eu queria acompanhar promoções de quais jogos na loja?",
+          "relevantes": [
+            "steam_promos"
+          ]
+        },
+        {
+          "id": "historico-test-pos-10",
+          "split": "teste",
+          "texto": "De onde vinham as ofertas do outro radar?",
+          "relevantes": [
+            "telegram_promos"
+          ]
+        },
+        {
+          "id": "historico-test-pos-11",
+          "split": "teste",
+          "texto": "Qual era o problema do botão de avaliação que eu tinha relatado?",
+          "relevantes": [
+            "avaliacao"
+          ]
+        },
+        {
+          "id": "historico-test-pos-12",
+          "split": "teste",
+          "texto": "O que eu pedi para deixar na CPU e por quê?",
+          "relevantes": [
+            "vram"
+          ]
+        },
+        {
+          "id": "historico-test-neg-1",
+          "split": "teste",
+          "texto": "Qual foi o placar do jogo de futebol de ontem?",
+          "relevantes": []
+        },
+        {
+          "id": "historico-test-neg-2",
+          "split": "teste",
+          "texto": "O que minha médica disse no último exame?",
+          "relevantes": []
+        },
+        {
+          "id": "historico-test-neg-3",
+          "split": "teste",
+          "texto": "Quanto paguei na minha última conta de energia?",
+          "relevantes": []
+        },
+        {
+          "id": "historico-test-neg-4",
+          "split": "teste",
+          "texto": "Qual é a senha da rede Wi-Fi da minha mãe?",
+          "relevantes": []
+        },
+        {
+          "id": "historico-test-neg-5",
+          "split": "teste",
+          "texto": "Qual build de personagem recomendas para enfrentar o Artorias?",
+          "relevantes": []
+        },
+        {
+          "id": "historico-test-neg-6",
+          "split": "teste",
+          "texto": "Qual é a data de lançamento oficial da próxima atualização do Deadlock?",
+          "relevantes": []
+        },
+        {
+          "id": "historico-test-neg-7",
+          "split": "teste",
+          "texto": "Quantos graus fará hoje em Salvador?",
+          "relevantes": []
+        },
+        {
+          "id": "historico-test-neg-8",
+          "split": "teste",
+          "texto": "Quais são os ingredientes do meu almoço de ontem?",
+          "relevantes": []
+        }
+      ]
+    }
+  }
+}

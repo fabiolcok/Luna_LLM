@@ -1,0 +1,9 @@
+# Ambiente separado da Luna, usado somente pela bancada_kitten2.py.
+# Instale torch/torchaudio CPU primeiro com o indice oficial do PyTorch.
+kittenml==0.9.3
+transformers==4.57.6
+torch==2.6.0+cpu
+torchaudio==2.6.0+cpu
+numpy==2.2.6
+librosa==0.11.0
+diffusers==0.36.0

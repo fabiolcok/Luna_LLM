@@ -1,0 +1,9 @@
+# Ambiente separado; nenhum pacote e instalado no venv principal da Luna.
+transformers==5.19.0
+sentence-transformers[image]==6.1.0
+torch==2.14.1
+numpy==2.4.4
+psutil==7.2.2
+huggingface-hub==1.33.0
+torchvision==0.29.1
+pillow==12.3.0

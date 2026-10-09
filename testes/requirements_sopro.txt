@@ -1,0 +1,6 @@
+# Ambiente opcional de bancada; instale PyTorch CPU primeiro.
+sopro==2.2.0
+torch==2.6.0
+torchaudio==2.6.0
+numpy==2.2.6
+soundfile==0.13.1
