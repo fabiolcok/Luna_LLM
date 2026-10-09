@@ -8,6 +8,76 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 09/10/2026
+
+- ✨ **Novidades com cartões e imagens na conversa.** A notícia destacada mostra
+  título, fonte e a mesma imagem do feed usada no Obsidian. A matéria abre pelo
+  cartão, e o acesso à nota completa continua depois da fala. Se a imagem não
+  carregar, o texto e os links continuam disponíveis.
+- 🔧 **Acompanhamentos mostram onde pararam.** Os retornos combinados e as novidades
+  das fontes mostram assunto, situação e próximo passo junto da conversa. Você pode
+  abrir o painel pelo cartão e pausar ou retomar fontes e Sopro. Os controles seguem
+  o estado atual, inclusive em mensagens antigas, e aguardam a reconexão quando preciso.
+- 🔧 **A apresentação usa os dados que a Luna já tem.** Os cartões não acrescentam
+  chamadas ao modelo nem texto ao prompt, e seus títulos e botões não são lidos pela voz.
+- 🐛 **Avaliação Web só é gravada ao enviar.** Escolher 👍/👎 e marcar motivos prepara
+  um rascunho, sem salvar a cada clique. Enviar ou Enter registra os campos juntos;
+  Cancelar descarta, e cliques repetidos não duplicam o envio.
+
+## 08/10/2026
+
+- 🔧 **Respostas mais legíveis no modo Web.** Títulos, negrito, listas, citações,
+  tabelas e blocos de código ajudam quando a resposta pede estrutura. Conteúdo largo
+  rola dentro da mensagem, e copiar preserva a formatação original.
+- 🐛 **Conexão Web se recupera depois de cair.** A interface reconecta e só confirma
+  o envio quando a Luna aceita a mensagem. Se falhar, o texto pode ser recuperado;
+  manter a conexão aberta não impede o resfriamento do modelo por inatividade.
+- 🐛 **Comentário sobre jogo deixou de parecer pedido de pesquisa.** Frases como
+  “a extração conta como skill” seguem como conversa. Quando houver uma dúvida,
+  a Luna distingue o que conseguiu conferir, falta de informação e falha de acesso,
+  podendo apresentar a consulta como uma iniciativa sua. Isso não resolve sozinho
+  todas as extrapolações do modelo.
+- 🔧 **Revisão de memória com espaço para ler.** A caixa do candidato cresce conforme
+  o texto, inclusive ao abrir a aba, sem precisar expandir manualmente.
+
+## 07/10/2026
+
+- ✨ **Acompanhar atualizações de outros projetos.** No painel de Acompanhamentos, você
+  cadastra assunto, o que interessa e links para RSS, releases ou páginas. A primeira
+  leitura cria uma referência; depois a Luna consulta a cada seis horas enquanto está
+  aberta e avisa sobre mudanças ligadas ao interesse, com a fonte para conferir.
+- 🔧 **Controle no mesmo painel.** Dá para corrigir a situação, editar fontes, pausar,
+  retomar ou encerrar. Os avisos esperam uma janela fora do jogo e da sua conversa;
+  planos futuros não são tratados como recursos já disponíveis.
+
+## 06/10/2026
+
+- 🔧 **Busca de memória com EmbeddingGemma 2.** Lembranças e histórico passam a usar
+  o mesmo modelo textual na CPU, com filtros ajustados na bancada. O histórico é
+  copiado para um índice novo, preservando a coleção antiga e um backup local.
+  A revisão de fatos continua distinguindo repetição de atualização, e comparar
+  candidatos não traz memórias frias de volta ao ativo.
+- 🐛 **Perguntas de lembrança respondidas como conversa.** Quando o roteador confunde
+  “você lembra?” com ler ou salvar uma nota, a Luna ignora essa ação e consulta o
+  contexto da conversa. Pedidos explícitos para ler ou guardar notas continuam funcionando.
+
+## 05/10/2026
+
+- ✨ **Piloto de acompanhamento do Sopro sobre PT-BR.** A Luna consulta as fontes
+  oficiais e pode avisar sobre uma menção nova ligada ao teste anterior. O painel
+  permite corrigir a situação, consultar, pausar, retomar ou encerrar. Um plano não
+  vira recurso disponível, e uma menção não comprova que o sotaque melhorou.
+- 🔧 **Configurações organizadas por assunto.** Uso, Proatividade, Memória e Avançado
+  agrupam os ajustes. A gaveta de Acompanhamentos reúne retornos combinados, fontes
+  e assuntos em andamento, deixando a conversa principal mais livre.
+
+## 02/10/2026
+
+- 🐛 **Menos “disco furado” nas mortes do Dark Souls.** A Luna compara o novo comentário
+  com cinco falas de morte recentes. Se copiar demais, tenta outra reação uma vez;
+  se continuar repetindo, descarta aquele comentário. Os exageros continuam, e a
+  nova tentativa respeita interrupções e o prazo do acontecimento.
+
 ## 01/10/2026
 
 - 🐛 **Interromper uma notícia não faz o radar repeti-la.** Quando o aviso já apareceu
@@ -15,11 +85,54 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
   Cancelar o áudio preserva esse registro e o intervalo da consulta. Se a interrupção
   acontecer antes da apresentação, a notícia continua pendente para outra oportunidade.
 
+## 29/09/2026
+
+- 🎮 🔧 **Reações próprias para o Dark Souls.** Os comentários de morte, chefes derrotados
+  e fogueiras agora usam a variante escolhida na bancada: mantém os exageros e abre espaço
+  para uma reação simples quando não surgir uma boa piada. O ajuste vale só para esses
+  eventos; a avaliação durante a jogatina continua.
+
+## 26/09/2026
+
+- 🎮 🔧 **Comentários de morte sem contagem.** A Luna continua reagindo às mortes
+  no Dark Souls Remastered, mas o proativo recebe só o acontecimento e a orientação
+  de não numerar mortes ou tentativas. O contador interno continua detectando os eventos.
+- 🐛 **Conversa com modelos que exigem alternância.** Alguns Mistral NeMo recusavam
+  mensagens depois de avisos espontâneos da Luna. Quando o modelo rejeita esse formato,
+  a Luna agora adapta o histórico, preserva as falas anteriores como contexto e tenta
+  novamente uma vez. O modelo escolhido e as ferramentas continuam os mesmos.
+
+## 24/09/2026
+
+- 🎮 ✨ **Controle do piloto no modo Web.** Em Configurações → Tarefas proativas →
+  Jogos, dá para ligar e desligar o piloto do Dark Souls Remastered. O painel confirma
+  se a preferência foi salva e explica quando os comentários estão pausados.
+- 🔧 **Preferências proativas continuam visíveis quando desligadas.** É possível
+  encontrar e ajustar os monitores mesmo com as falas automáticas pausadas.
+- 🔧 **Diagnóstico dos comentários de Dark Souls.** O log distingue chefe derrotado
+  de entrega da fala e registra motivos de descarte para investigar comentários ausentes.
+
+## 23/09/2026
+
+- 🎮 ✨ **Piloto de companhia no Dark Souls Remastered.** A Luna pode reagir a mortes,
+  chefes derrotados e fogueiras liberadas, com intervalos e prioridade para sua conversa.
+  Os acontecimentos recentes também ajudam a dar contexto às respostas. A primeira leitura
+  reconhece o progresso anterior sem comentar tudo de uma vez. Ativação e limites em
+  [Piloto Dark Souls](integracoes/dark_souls/README.md); qualidade das falas e impacto no jogo
+  ainda precisam de validação durante uma sessão.
+
 ## 20/09/2026
 
 - 👍 👎 🔧 **Motivos de avaliação conforme o voto.** O 👍 mostra acertos, como “Entendeu o
   contexto” e “Boa iniciativa”; o 👎 mostra problemas, como “Não ajudou” e “Tom inadequado”.
   Dá para marcar vários e comentar. Trocar o voto limpa as categorias e mantém o comentário.
+- 🧭 ✨ **Contexto do momento.** A Luna recebe um retrato curto da janela em foco, dos jogos
+  detectados e da última fala recente, distinguindo observação do sistema de relato seu.
+  As informações vencem com o tempo e o Telegram não recebe o ambiente do PC.
+- 🐛 **Janela antiga não ganha da atual.** O título é consultado no início do turno e a mesma
+  observação acompanha o roteador e a resposta. O contexto também fica nas avaliações V2.
+- 🔧 **Falha na Steam não significa jogo fechado.** Uma consulta indisponível deixa a
+  observação anterior envelhecer, sem inventar um encerramento de sessão.
 
 ## 19/09/2026
 
@@ -85,6 +198,10 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
   programa consumindo memória enquanto você joga.
 
 ## 29/08/2026
+
+- 🧵 ✨ **Projetos agora lembram onde a conversa parou.** Quando você confirma um projeto na
+  curadoria, ele ganha um estado próprio separado de memória, agenda e acompanhamento. Esse fio
+  só volta ao prompt quando o assunto reaparece e nunca dispara cobrança ou fala proativa sozinho.
 
 - 🧠 🔧 **A curadoria de memória agora mostra de onde tirou cada lembrança.** A extração usa
   somente as falas do usuário e exige uma evidência literal antes de propor algo para o

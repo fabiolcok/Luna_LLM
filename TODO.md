@@ -5,11 +5,66 @@ definitiva. Itens daqui não estão automaticamente aprovados para commit.
 
 ## Em teste
 
+- [ ] **Acompanhamentos com fontes cadastradas.** Implementado em 07/10: assunto, interesse,
+      situação opcional e até três links no painel Web. Primeira leitura silenciosa, consulta
+      a cada 6h, análise de conteúdo novo com evidência literal e avisos respeitando conversa
+      e jogos. RSS/Atom, HTML e texto; pause/retome/edite e confira as fontes no painel.
+      Validar relevância, fontes escolhidas e naturalidade no uso real. A memória e o
+      contexto de todos os turnos não recebem a lista de cadastros. Guia e bancada em
+      [resultado_acompanhamento_fontes.md](testes/resultado_acompanhamento_fontes.md).
+
+- [ ] **Piloto de acompanhamento Sopro/PT-BR.** Implementado em 05/10: painel Web com situação
+      editável, pausa, encerramento, consulta manual e adiamento de convites. Consulta documentação,
+      releases do GitHub e card do modelo no Hugging Face a cada 6h enquanto a Luna está aberta.
+      Primeira leitura silenciosa; versões e PT-PT sozinhos não geram convite. Menção nova vira
+      evidência com link, sem concluir que o sotaque foi resolvido. Usa o proativo existente,
+      com prioridade da conversa e silêncio durante jogos. Validar utilidade e naturalidade
+      no uso real; manter Kokoro até aprovação por escuta. Guia e limites em
+      [resultado_acompanhamento_sopro.md](testes/resultado_acompanhamento_sopro.md).
+
+- [ ] **Piloto no Dark Souls Remastered.** Mortes, chefes e fogueiras integrados em 23/09.
+      Leitura real validada; transições, expiração, troca de save e prioridade cobertas por
+      testes. Na primeira sessão, a fala de morte saiu; a vitória sobre Taurus Demon
+      foi detectada e gerou 69 tokens em 12,3 s, mas não foi falada. O usuário permaneceu
+      no jogo; o log antigo não informa a causa. Diagnóstico de descarte e controle Web
+      adicionados em 24/09. Validar a próxima vitória com esses registros e continuar
+      avaliando humor, frequência, latência e FPS/engasgos.
+      Comparação de thinking em 24/09: 16 gerações; ligado manteve a repetição, teve
+      mediana de 58,7 s e 3/8 respostas vazias por limite de tokens. Desligado: 2,9 s,
+      8/8 falas, com dois erros de contagem. Produção mantida sem thinking. Resultado
+      e limites em `testes/resultado_dark_souls_thinking.md`.
+      Guia em `integracoes/dark_souls/README.md`.
+      DS1 PTDE, DS2 e DS3 ainda não estão integrados ao piloto.
+
+- [ ] **Contexto do momento (item 1).** Implementado em 20/09: janela atual, jogos com fonte
+      e validade, última fala recente e isolamento do Telegram. Reaproveita os monitores,
+      sem nova chamada LLM ou captura de tela. Teto de 800 caracteres; +146 caracteres no
+      cenário neutro do prompt completo. Validar no uso real após abrir/fechar jogos, alternar
+      janelas e retomar conversa depois de uma pausa. A detecção não revela placar ou ações
+      dentro do jogo. Bancada e limites em `testes/resultado_momento.md`.
+
 - [ ] **Avaliações V2 no uso real.** Web permite categorias e comentário opcional nos dois votos.
       O alvo fica preso à resposta, mesmo se o radar falar enquanto o motivo é escrito. Registros
       novos incluem trechos de contexto, caminho de prompt, modelo e origem; o relatório
       `testes/resumo_avaliacoes.py` consolida as revisões sem duplicar o voto. Categorias servem
       para escolher casos de regressão e comparar mudanças; não alteram a personalidade sozinhas.
+  - Bancada de continuidade de 19/09: 20 respostas, sem ganho nos checks ao acrescentar um
+    lembrete de referência ou retirar a conversa da notícia. Com título presente, ela ainda
+    inventou anos; com ano fornecido, acertou o ano, mas uma resposta inventou o gênero.
+    Prompts preservados. Resultado e limites em `testes/resultado_continuidade.md`.
+
+- [ ] **Retomar Pocket TTS somente quando houver uma boa voz feminina PT-BR.** A bancada
+      `testes/bancada_tts.py` confirmou streaming muito rápido, mas ainda não justifica trocar o
+      Kokoro. O `portuguese_24l` soa melhor que o modelo leve, porém roda perto ou abaixo de tempo
+      real e varia volume, duração e encerramento entre gerações; temperatura `0.5` foi a menos
+      problemática. A amostra da Keila manteve sotaque brasileiro, mas saiu muito baixa; vozes
+      estrangeiras do catálogo Kyutai tiveram volume melhor e sotaque ruim em português. Próximo
+      teste: procurar uma referência feminina brasileira, conversacional, limpa, com 15–30 segundos
+      e licença CC0 ou CC BY; comparar no 24l/t0.5 com normalização, sem integrar antes da aprovação.
+
+- [ ] **Validar assuntos em andamento.** Projetos confirmados na curadoria ficam em estado local,
+      separados de memória e acompanhamento. Confirmar no uso real se a Luna retoma o ponto certo
+      quando o tema volta, atualiza o mesmo fio e não transforma assunto em tarefa ou cobrança.
 
 - [ ] **Validar limpeza do `salvar_obsidian`.** Mensagens com `título:`/`conteúdo:` não devem
       guardar introdução nem comando; reação curta como “boa ideia, deixa anotado” deve salvar
@@ -17,7 +72,7 @@ definitiva. Itens daqui não estão automaticamente aprovados para commit.
 
 - [ ] **Validar contexto recente nas falas proativas.**
   - Implementação atual: o proativo recebe as duas últimas mensagens reais
-    (`usuário → Luna`), limitadas a 350 caracteres cada.
+    (`usuário → Luna`), limitadas a 350 caracteres cada e, desde 20/09, com até 15 minutos.
   - Confirmar se isso melhora continuidade e sensibilidade sem fazer o 12B abandonar a tarefa,
     ressuscitar assunto encerrado ou forçar referência pessoal.
   - Primeiro teste real: o usuário anunciou que jogaria The Last of Us Parte II Remastered e
@@ -42,6 +97,18 @@ Nada aqui está aprovado pra sair fazendo — são conversas que chegaram a um d
 esperam a vez. Confirme com o usuário antes de pegar uma.
 
 ### Luna (Python)
+
+- [ ] **Companhia no Cities: Skylines II (Steam).** Combinado em 16/09/2026: o usuário ainda
+      vai baixar o jogo e testar a Luna apenas por conversa/voz, sem integração. Primeiro
+      observar FPS, engasgos e conforto enquanto ela gera e fala; já houve queda no Overwatch.
+      Depois avaliar um mod que exporte eventos para um arquivo local lido pela Luna, dando
+      contexto real às respostas e a comentários ocasionais, sem narrar tudo nem inventar fatos.
+      Candidato pesquisado: https://github.com/iRecycled/CS2_Events — o autor documenta eventos
+      de construção, impostos, orçamento e empréstimos; compatibilidade com a versão instalada
+      ainda não foi validada. Não foi encontrada API HTTP/webhook oficial pronta para isso.
+      Possível primeiro protótipo: construção de edifício, mudança de imposto e empréstimo;
+      medir coleta com geração desligada antes de ativar falas. Coleta leve não elimina o custo
+      do LLM na GPU. Retomar após o teste manual; nenhuma integração implementada nesta etapa.
 
 - [ ] **Barge-in.** Interromper a fala dela falando por cima, em vez de esperar terminar.
 - [ ] **Radar de encomendas.** Mesma ideia do radar de promoções, para rastreio de pedidos.
@@ -255,6 +322,13 @@ testado ou discutido até dar num "não".
 - **Cara de esforço enquanto o TurboLLM carrega o modelo.** Avaliado e adiado — "não por agora".
 - **Qwen3-TTS.** Avaliado a fundo contra o Kokoro. Voz boa e clonagem funcionando, mas o pico de
   8GB de VRAM e a ausência de streaming mataram. Kokoro fica.
+
+- **KittenTTS 2 como substituto do Kokoro.** Testado em CPU em 03/10/2026, com seis
+  amostras em português, duas com emoção. Após ouvir, o usuário preferiu o Kokoro
+  (“kokoro tá melhor ainda”). A versão Python levou 55–68 s por frase, contra 3–5 s
+  do Kokoro. Manter a voz atual; a versão C++ não foi medida.
+  [Relatório e avaliação](testes/resultado_kitten2.md).
+
 
 ---
 

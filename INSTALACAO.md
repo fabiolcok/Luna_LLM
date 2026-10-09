@@ -36,8 +36,28 @@ venv\Scripts\activate            # Windows  (Linux/Mac: source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-> A 1ª execução ainda baixa sozinha alguns modelos leves de CPU (Whisper `small`, Kokoro TTS,
-> e os embeddings de memória) — some MB, automático, só uma vez.
+> A 1ª execução baixa modelos locais de CPU (Whisper `small`, Kokoro TTS e
+> EmbeddingGemma 2). O checkpoint do embedding tem ~1,5 GB; a Luna carrega apenas
+> sua parte textual, uma única vez para memória e histórico.
+
+Para atualizar uma instalação existente, feche a Luna e atualize as dependências:
+
+```powershell
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+Na próxima abertura, o histórico é reindexado automaticamente em uma coleção nova.
+IDs, textos e datas são preservados; a coleção antiga continua intacta. Também é
+possível preparar a migração antes de abrir o aplicativo:
+
+```powershell
+.\venv\Scripts\python.exe -X utf8 -m ferramentas.migrar_embeddings
+```
+
+A ferramenta não inicia a Luna. Ela confere a origem, cria um backup textual
+privado em `modelos/backups_embeddings/` e registra o resultado em `logs/`.
+Caso a operação seja interrompida, a próxima execução retoma a cópia sem duplicar
+conversas. Reinicie a Luna depois da atualização.
 
 ---
 
@@ -100,7 +120,7 @@ No painel do TurboLLM, adicione um modelo apontando pro `.gguf` do Gemma, com **
 >   ligue o drafter. Assim, se faltar memória, você sabe exatamente o que causou.
 >
 > O resto do projeto **não disputa a GPU**: o Whisper e os embeddings de memória rodam em CPU
-> de propósito (`device="cpu"` em `ouvir.py` e `memoria.py`), então a placa fica só pro LLM.
+> de propósito (`device="cpu"` em `ouvir.py` e `embeddings.py`), então a placa fica só pro LLM.
 
 ### 3.4 (Opcional) Ligar o drafter MTP — mais velocidade
 

@@ -110,9 +110,8 @@ A memória tem **3 camadas com papéis distintos** (pra não confundir o modelo)
   próprio 12B) e o usuário **confirma** numa caixa no web antes de salvar (o gate de
   confirmação é o anti-alucinação). Entram no prompt em **2 fatias**: os **~15 mais
   recentes** (continuidade; recência resolve conflito, o novo vence o velho) **+ lembranças
-  antigas que casam com o assunto da conversa** (recall semântico — embedding multilíngue
-  `paraphrase-multilingual-MiniLM-L12-v2` no CPU, ~470MB baixado na 1ª vez; piso alto pra só
-  puxar quando o tema casa de verdade). **Curadoria esfria/esquenta**: evento com mais de ~45
+  antigas que casam com o assunto da conversa** (recall semântico — EmbeddingGemma 2
+  textual na CPU, com piso de similaridade próprio para esse modelo). **Curadoria esfria/esquenta**: evento com mais de ~45
   dias sem uso *esfria* e sai dos recentes (vai pro `Luna/Memoria_arquivo.md`, mantendo o
   `Memoria.md` enxuto), mas continua no recall — se o assunto volta à tona, *esquenta* e
   retorna pro ativo. **Retomada proativa**: a Luna puxa sozinha um assunto em aberto ("e aí,
@@ -123,7 +122,14 @@ A memória tem **3 camadas com papéis distintos** (pra não confundir o modelo)
   real, nunca inventado; discreto (no máx 1x/dia). Fila de pendentes + lixo em
   `modelos/memoria_pendente.json`.
 - **Conversas** (ChromaDB local) — **recall literal** das últimas 30 conversas, por busca
-  semântica. Embedding all-MiniLM-L6-v2 (CPU, ~80MB), `LIMIAR_DISTANCIA=1.3`.
+  semântica com o mesmo EmbeddingGemma 2, usando vetores de 768 dimensões e distância
+  de cosseno. A troca cria um índice novo e preserva a coleção anterior e seus dados.
+
+As duas buscas compartilham **uma única instância textual do EmbeddingGemma 2**, na CPU.
+O download do checkpoint é de ~1,5 GB; visão e áudio não são carregados. Na bancada,
+o processo teve pico de ~1,8 GiB de RAM. O cache fica em `modelos/embeddings/`, e
+os backups textuais da migração em `modelos/backups_embeddings/` — ambos privados.
+Comparação e validação da adoção em [resultado_embeddings.md](testes/resultado_embeddings.md).
 
 ---
 
@@ -382,6 +388,16 @@ Thread separada, loop a cada 30s.
 | `retomar_assunto`    | ≤2x/dia (puxa pendência em aberto; não repete o mesmo assunto por 21 dias) | — |
 | `acompanhamentos`    | pergunta no horário combinado apenas assuntos confirmados (máx. 3 tentativas) | — |
 | `contexto_navegador` | Firefox em foco na mesma URL há 10+ min (YouTube → oferece resumo; artigo → comenta o tema) | — |
+
+**Acompanhamentos com fontes:** abra **↪ Acompanhamentos → Novidades nas fontes → Novo
+acompanhamento** e cadastre assunto, mudança de interesse, situação opcional e até três links
+públicos. Prefira RSS, releases ou patch notes. A primeira leitura cria uma referência
+silenciosa; depois a Luna consulta a cada seis horas enquanto está aberta, com Proativo e
+Acompanhamentos ligados. Conteúdo novo só vira aviso quando corresponde ao interesse, com
+evidência e link para conferir. Planos continuam sendo planos; um anúncio não garante
+qualidade testada. Consulta, pausa, edição e novidades ficam nesse painel. O cadastro não
+aumenta o contexto de toda conversa. Guia e limites em
+[resultado_acompanhamento_fontes.md](testes/resultado_acompanhamento_fontes.md).
 
 **Carência de boot (120s):** nos primeiros minutos o modelo ainda esquenta e várias tarefas
 querem falar juntas — a fala ficava *starved* (ela detectava e até escrevia a nota, mas a voz
