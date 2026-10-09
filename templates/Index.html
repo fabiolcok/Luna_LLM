@@ -693,6 +693,8 @@
         #texto-enviar { padding: 0 16px; border-radius: 10px; border: none; background: #bb9af7;
                         color: #16161e; font-size: 1.1rem; cursor: pointer; }
         #texto-enviar:hover { background: #c8abf9; }
+        #texto-enviar:disabled { opacity: .55; cursor: wait; }
+        #texto-envio-aviso { margin: 6px 2px; color: #e0af68; font-size: .78rem; line-height: 1.4; }
 
         /* Linha de status — o que a Luna está fazendo agora */
         /* Cabeçalho da caixa da Luna: rótulo à esquerda, status dela à direita */
@@ -1145,6 +1147,30 @@
         #historico-lista::-webkit-scrollbar { width: 4px; }
         #historico-lista::-webkit-scrollbar-thumb { background: #1e1e2e; border-radius: 2px; }
 
+
+        #sopro-painel { border: 1px solid #29283d; border-radius: 9px; padding: 8px 12px; color: #a6a8bf; font-size: .8rem; }
+        #sopro-painel summary { cursor: pointer; color: #b5c3cc; }
+        #sopro-conteudo { max-height: 290px; overflow-y: auto; padding-top: 10px; }
+        #sopro-conteudo p { margin: 5px 0 9px; line-height: 1.5; }
+        #sopro-situacao { width: 100%; box-sizing: border-box; padding: 8px; background: #14141e; border: 1px solid #34334c; color: #c1ccd5; border-radius: 6px; font: inherit; resize: vertical; }
+        #sopro-acoes { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+        #sopro-novidades > div { border-top: 1px solid #29283d; padding-top: 8px; margin-top: 8px; }
+        #sopro-fontes a { margin-right: 12px; font-size: .75rem; }
+        #sopro-resultado { white-space: pre-line; }
+        body.widget #sopro-painel { display: none !important; }
+
+        .fonte-card { border: 1px solid #29283d; border-radius: 9px; padding: 10px 12px; margin-bottom: 9px; background: #11111a; font-size: .8rem; overflow-wrap: anywhere; }
+        .fonte-card summary { cursor: pointer; color: #b5c3cc; }
+        .fonte-card summary small { display: block; color: #8e87a3; margin-top: 4px; }
+        .fonte-card p { line-height: 1.5; margin: 10px 0; white-space: pre-line; }
+        #fontes-form label { display: block; margin: 12px 0 5px; color: #b5c3cc; }
+        #fontes-form input[type="text"], #fontes-form textarea { width: 100%; box-sizing: border-box; padding: 8px; background: #14141e; border: 1px solid #34334c; color: #d0d4df; border-radius: 6px; font: inherit; resize: vertical; }
+        .fonte-acoes { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+        .fonte-novidade { border-top: 1px solid #29283d; margin-top: 12px; padding-top: 4px; }
+        .fonte-novidade button, .fonte-links a { margin: 6px 8px 0 0; }
+        #fontes-feedback, #fontes-erro { font-size: .8rem; color: #b6a5d9; line-height: 1.5; }
+
+
         .turno {
             padding: 10px 16px;
             border-bottom: 1px solid #0f0f18;
@@ -1247,6 +1273,39 @@
             color: #a6c7ff; font-size: .85rem; text-decoration: underline; text-underline-offset: 3px; }
         .link-novidade:hover { color: #d5e5ff; }
         .link-novidade:focus-visible { outline: 2px solid #bb9af7; outline-offset: 3px; }
+        .cartao-web {
+            min-width: 0; margin: 12px 0; padding: 13px 14px;
+            border: 1px solid #34304a; border-radius: 10px;
+            background: linear-gradient(125deg, #1b1829, #12121c);
+            overflow-wrap: anywhere; font-size: .9em; line-height: 1.5;
+        }
+        .cartao-web-cabecalho { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .cartao-web-imagem {
+            display: block; width: 100%; max-width: 320px; height: auto; max-height: 180px;
+            margin: 10px 0; border-radius: 7px; object-fit: contain; background: #0d0d13;
+        }
+        .cartao-web-rotulo { color: #b5a4dd; font-size: .67rem; font-weight: 650; letter-spacing: .8px; text-transform: uppercase; }
+        .cartao-web-status { color: #b8c9be; font-size: .7rem; padding: 2px 7px; border-radius: 20px; background: #213128; }
+        .cartao-web-status[data-status="pausado"], .cartao-web-status[data-status="desconhecido"] { color: #b7b4c4; background: #2a2835; }
+        .cartao-web-status[data-status="encerrado"] { color: #9794a8; background: #22212c; }
+        .cartao-web-titulo { margin: 7px 0 5px; color: #e0dcea; font-size: 1em; line-height: 1.4; font-weight: 650; }
+        .cartao-web-fonte { color: #a6a9bc; font-size: .76rem; margin: 0; }
+        .cartao-web-campo { margin: 9px 0 0; color: #bec3cf; }
+        .cartao-web-campo span { display: block; margin-bottom: 2px; color: #9e93bd; font-size: .72rem; }
+        .cartao-web-trecho { margin-top: 10px; color: #a6a9bc; font-size: .78rem; }
+        .cartao-web-trecho summary { cursor: pointer; }
+        .cartao-web-trecho p { margin: 7px 0 0; border-left: 2px solid #655781; padding-left: 9px; white-space: pre-line; }
+        .cartao-web-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 12px; }
+        .cartao-web-acoes button, .cartao-web-acoes .link-novidade {
+            display: inline-flex; align-items: center; justify-content: center; margin: 0;
+            padding: 6px 9px; border: 1px solid #49405f; border-radius: 6px;
+            color: #d3c5ef; background: #292238; font: inherit; font-size: .76rem;
+            cursor: pointer; text-decoration: none; line-height: 1.4;
+        }
+        .cartao-web-acoes button:hover, .cartao-web-acoes .link-novidade:hover { background: #362b4b; border-color: #8067a6; }
+        .cartao-web-acoes button:focus-visible { outline: 2px solid #bb9af7; outline-offset: 3px; }
+        .cartao-web-acoes button:disabled { opacity: .45; cursor: default; }
+        .cartao-web-mais { margin-left: auto; color: #9d96ad; font-size: .73rem; }
         .turno-luna {
             position: relative; align-self: flex-start; max-width: 92%;
             padding: 11px 38px 11px 13px; border-radius: 13px 13px 13px 3px;
@@ -1286,28 +1345,105 @@
         }
         .turno-luna:hover .mensagem-copiar, .mensagem-copiar:focus { opacity: 1; }
         .mensagem-copiar:hover { color: #b4f9f8; background: #1b2135; }
-        .mensagem-conteudo p + p { margin-top: .75em; }
+        .mensagem-conteudo { min-width: 0; overflow-wrap: anywhere; }
+        .mensagem-conteudo p { margin: .7em 0; }
+        .mensagem-conteudo > :first-child { margin-top: 0; }
+        .mensagem-conteudo > :last-child { margin-bottom: 0; }
         .mensagem-conteudo h1, .mensagem-conteudo h2, .mensagem-conteudo h3 {
-            color: #d5dbe1; line-height: 1.25; margin: .8em 0 .35em; font-size: 1.04em;
+            color: #d5dbe1; line-height: 1.3; margin: 1.15em 0 .45em; font-weight: 650;
         }
+        .mensagem-conteudo h1 { font-size: 1.3em; }
+        .mensagem-conteudo h2 { font-size: 1.15em; }
+        .mensagem-conteudo h3 { font-size: 1.04em; }
         .mensagem-conteudo h1:first-child, .mensagem-conteudo h2:first-child,
         .mensagem-conteudo h3:first-child { margin-top: 0; }
-        .mensagem-conteudo ul, .mensagem-conteudo ol { padding-left: 1.35em; margin: .45em 0; }
-        .mensagem-conteudo li + li { margin-top: .2em; }
+        .mensagem-conteudo strong { color: #dce3eb; font-weight: 650; }
+        .mensagem-conteudo ul, .mensagem-conteudo ol { padding-left: 1.5em; margin: .65em 0; }
+        .mensagem-conteudo li { padding-left: .15em; }
+        .mensagem-conteudo li + li { margin-top: .4em; }
+        .mensagem-conteudo li::marker { color: #b1a2d8; }
+        .mensagem-conteudo li > ul, .mensagem-conteudo li > ol { margin: .35em 0; }
         .mensagem-conteudo a { color: #7aa2f7; text-decoration: underline; overflow-wrap: anywhere; }
-        .mensagem-conteudo code { font-family: Consolas, 'Courier New', monospace; color: #e0af68; background: #09090e; padding: .08em .3em; border-radius: 4px; }
-        .mensagem-conteudo pre { overflow-x: auto; margin: .6em 0; padding: 10px 12px; border-radius: 8px; background: #09090e; border: 1px solid #24243a; color: #c7d0e0; }
-        .mensagem-conteudo pre code { padding: 0; background: transparent; color: inherit; white-space: pre; }
-        .mensagem-conteudo blockquote { margin: .55em 0; padding-left: .75em; border-left: 3px solid #565f89; color: #9aa5ce; }
-        .md-tabela-wrap { overflow-x: auto; margin: .65em 0; border: 1px solid #292942; border-radius: 8px; }
-        .mensagem-conteudo table { width: max-content; min-width: 100%; border-collapse: collapse; color: #c1ccd5; font-size: .9em; }
-        .mensagem-conteudo th, .mensagem-conteudo td { padding: 7px 9px; border-right: 1px solid #292942; border-bottom: 1px solid #292942; text-align: left; vertical-align: top; }
-        .mensagem-conteudo th { color: #d5dbe1; background: #171724; white-space: nowrap; }
+        .mensagem-conteudo code { font-family: Consolas, 'Courier New', monospace; font-size: .9em; color: #e0af68; background: #09090e; padding: .12em .35em; border: 1px solid #24243a; border-radius: 4px; }
+        .md-codigo { min-width: 0; margin: .8em 0; border: 1px solid #292942; border-radius: 9px; overflow: hidden; background: #09090e; }
+        .md-codigo-titulo { padding: 6px 13px; background: #171724; border-bottom: 1px solid #292942; color: #a8afc7; font: .75em Consolas, 'Courier New', monospace; }
+        .mensagem-conteudo pre { overflow-x: auto; margin: 0; padding: 13px; color: #c7d0e0; line-height: 1.55; tab-size: 4; }
+        .mensagem-conteudo pre code { padding: 0; border: 0; background: transparent; color: inherit; white-space: pre; overflow-wrap: normal; }
+        .mensagem-conteudo blockquote { margin: .8em 0; padding: .45em .85em; border-left: 3px solid #8d7eb7; border-radius: 0 6px 6px 0; background: #171724; color: #acb5ce; }
+        .mensagem-conteudo hr { border: 0; border-top: 1px solid #303047; margin: 1em 0; }
+        .md-tabela-wrap { max-width: 100%; overflow-x: auto; margin: .8em 0; border: 1px solid #292942; border-radius: 9px; }
+        .mensagem-conteudo table { width: 100%; border-collapse: collapse; color: #c1ccd5; font-size: .9em; line-height: 1.5; }
+        .mensagem-conteudo th, .mensagem-conteudo td { min-width: 100px; padding: 10px 12px; border-right: 1px solid #292942; border-bottom: 1px solid #292942; text-align: left; vertical-align: top; }
+        .mensagem-conteudo th { color: #d5dbe1; background: #171724; font-weight: 650; }
+        .mensagem-conteudo tbody tr:nth-child(even) { background: #ffffff03; }
+        .mensagem-conteudo .md-alinhar-direita { text-align: right; }
+        .mensagem-conteudo .md-alinhar-centro { text-align: center; }
         .mensagem-conteudo tr:last-child td { border-bottom: 0; }
         .mensagem-conteudo th:last-child, .mensagem-conteudo td:last-child { border-right: 0; }
         /* Quando não existe feedback de acompanhamento, cancela o gap estrutural entre os
            botões de avaliação e o status do microfone. */
         #acompanhamento-feedback:not(.ativo) + .zona-divisor + #status-mic { margin-top: -16px; }
+
+
+        /* Os painéis ficam fora do fluxo da conversa: consultar um assunto não desloca a entrada. */
+        #btn-acompanhamentos {
+            position: fixed; top: 16px; right: 112px; z-index: 100;
+            width: 40px; height: 40px; border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            color: #8c92af; background: #11111a; border: 1px solid #2a2a4a; font-family: inherit; font-size: 1.1rem;
+        }
+        #btn-acompanhamentos:hover { color: #b4f9f8; border-color: #7aa2f7; }
+        #acompanhamentos-badge {
+            position: absolute; top: -5px; right: -5px; min-width: 17px; height: 17px;
+            padding: 0 4px; border-radius: 9px; background: #b4f9f8; color: #0d0d12;
+            font: bold .6rem 'Segoe UI', sans-serif; line-height: 17px;
+        }
+        #acompanhamentos-badge[hidden], .config-grupo[hidden] { display: none; }
+        .painel-lateral:not(.aberto) { visibility: hidden; }
+        .painel-lateral { display: flex; flex-direction: column; }
+        .painel-corpo { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+        .painel-lateral .config-header { flex: none; position: static; }
+        .painel-lateral .config-header > span { color: #b2b8cd; }
+        .painel-lateral .config-secao-titulo { color: #929bbd; }
+        .painel-lateral .oficina-dica { color: #888ba5; }
+        .painel-fechar {
+            padding: 5px 8px; border: 0; border-radius: 5px; background: transparent;
+            color: #9aa5ce; cursor: pointer; font: inherit;
+        }
+        .painel-fechar:hover { color: #f7768e; }
+        .config-nav {
+            display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 4px; padding: 12px 12px 0; flex: none;
+        }
+        .config-nav button {
+            border: 1px solid transparent; border-radius: 7px; padding: 9px 3px;
+            background: transparent; color: #949bb4; font: .78rem 'Segoe UI', sans-serif; cursor: pointer;
+        }
+        #config-memoria-badge { margin-left: 4px; color: #d2bafa; font-size: .72rem; }
+        #config-memoria-badge[hidden] { display: none; }
+        .config-nav button[aria-pressed="true"] {
+            background: #211d31; border-color: #3a3155; color: #d2bafa;
+        }
+        .painel-lateral button:focus-visible, .painel-lateral summary:focus-visible,
+        #btn-acompanhamentos:focus-visible { outline: 2px solid #bb9af7; outline-offset: 2px; }
+        .config-subgrupo { border-top: 1px solid #252536; margin-top: 12px; }
+        .config-subgrupo > summary {
+            padding: 12px 0; color: #b2b8cd; cursor: pointer; font-size: .84rem;
+        }
+        .acompanhamentos-intro { padding: 16px 16px 0; color: #999fb7; font-size: .82rem; line-height: 1.5; }
+        #acompanhamentos-decisao { margin: 14px 16px 0; padding: 12px; border: 1px solid #3d5875; border-radius: 9px; }
+        #acompanhamentos-decisao p { font-size: .82rem; color: #c1ccd5; line-height: 1.4; margin-bottom: 9px; }
+        #acompanhamentos-panel .acomp-lista-item {
+            display: block; padding: 10px 12px; margin-top: 8px;
+            border: 1px solid #29283d; border-radius: 9px; background: #11111a;
+        }
+        .acomp-lista-item summary { cursor: pointer; color: #c1ccd5; overflow-wrap: anywhere; }
+        .acomp-lista-item summary span { display: inline; }
+        .acomp-lista-item small { display: block; margin-top: 5px; color: #8e95ae; font-size: .74rem; }
+        .acomp-lista-item p { margin: 10px 0; color: #999fb7; font-size: .78rem; line-height: 1.4; }
+        #sopro-painel { background: #11111a; }
+        #sopro-conteudo { max-height: none; overflow: visible; }
+        @media (max-width: 380px) { .config-nav button { font-size: .72rem; } }
 
         /* Gear button */
         #btn-config {
@@ -1400,7 +1536,8 @@
         }
         .mem-item textarea {
             width: 100%; background: transparent; border: none; color: #cfc9c2;
-            font-size: 0.86rem; font-family: inherit; resize: vertical; min-height: 2.4em; line-height: 1.4;
+            display: block; box-sizing: border-box; overflow-y: hidden;
+            font-size: 0.86rem; font-family: inherit; resize: none; min-height: 2.4em; line-height: 1.4;
         }
         .mem-item textarea:focus { outline: none; }
         .mem-meta { display: flex; flex-direction: column; gap: 3px; margin-top: 5px; }
@@ -1409,6 +1546,7 @@
             letter-spacing: 0.08em; text-transform: uppercase;
         }
         .mem-evidencia { color: #737aa2; font-size: 0.73rem; line-height: 1.35; }
+        .mem-destino { color: #7aa2f7; font-size: 0.7rem; }
         .mem-acoes { display: flex; gap: 6px; margin-top: 6px; }
         .mem-acoes button {
             flex: 1; border: none; border-radius: 6px; padding: 5px; cursor: pointer;
@@ -1439,20 +1577,20 @@
         #config-overlay.ativo { opacity: 1; pointer-events: all; }
 
         /* Panel */
-        #config-panel {
+        #config-panel, #acompanhamentos-panel {
             position: fixed;
             top: 0;
             right: 0;
-            height: 100vh;
-            width: min(480px, 100vw);
+            height: 100dvh;
+            width: min(480px, 100%);
             background: #0d0d12;
             border-left: 1px solid #1a1a2e;
             z-index: 300;
             transform: translateX(100%);
             transition: transform 0.3s ease;
-            overflow-y: auto;
+            overflow: hidden;
         }
-        #config-panel.aberto { transform: translateX(0); }
+        #config-panel.aberto, #acompanhamentos-panel.aberto { transform: translateX(0); }
 
         .config-header {
             display: flex;
@@ -1789,15 +1927,106 @@
     </div>
 
     <button id="btn-soltar-mascote" title="Soltar Luna na área de trabalho">◲</button>
-    <button id="btn-config" title="Configurações">⚙<span id="config-badge"></span></button>
+    <button id="btn-acompanhamentos" type="button" title="Acompanhamentos" aria-label="Acompanhamentos" aria-controls="acompanhamentos-panel" aria-expanded="false">↪<span id="acompanhamentos-badge" hidden></span></button>
+    <div id="acompanhamentos-panel" class="painel-lateral" role="dialog" aria-modal="true" aria-labelledby="acompanhamentos-titulo" aria-hidden="true" inert>
+        <div class="config-header">
+            <span id="acompanhamentos-titulo">Acompanhamentos</span>
+            <button id="btn-acompanhamentos-fechar" class="painel-fechar" aria-label="Fechar acompanhamentos">✕</button>
+        </div>
+        <div class="painel-corpo">
+            <p class="acompanhamentos-intro">O que a Luna está acompanhando e onde cada assunto parou.</p>
+            <div id="acompanhamentos-decisao" hidden>
+                <p id="acompanhamentos-decisao-texto"></p>
+                <button id="btn-acompanhamentos-responder" type="button" class="acomp-btn">Responder na conversa</button>
+            </div>
+            <div class="config-secao">
+                <div class="config-secao-titulo">Novidades nas fontes</div>
+                <details id="fontes-cadastro" class="fonte-card">
+                    <summary id="fonte-form-titulo">Novo acompanhamento</summary>
+                    <form id="fontes-form" onsubmit="salvarFonte(event)">
+                        <input id="fonte-id" type="hidden" value="">
+                        <label for="fonte-assunto">Assunto</label>
+                        <input id="fonte-assunto" type="text" minlength="3" maxlength="120" required placeholder="Ex.: Atualizações de um TTS">
+                        <label for="fonte-interesse">Qual mudança interessa?</label>
+                        <textarea id="fonte-interesse" rows="2" minlength="8" maxlength="400" required placeholder="Ex.: suporte a português brasileiro e melhora do sotaque"></textarea>
+                        <label for="fonte-situacao">Onde o teste ou projeto parou (opcional)</label>
+                        <textarea id="fonte-situacao" rows="2" maxlength="300" placeholder="Ex.: gostei da voz, mas o sotaque ainda incomodou"></textarea>
+                        <label for="fonte-urls">Fontes públicas — até 3 links, um por linha</label>
+                        <textarea id="fonte-urls" rows="3" maxlength="6000" required placeholder="https://.../releases.atom"></textarea>
+                        <p class="oficina-dica">Prefira RSS, releases ou patch notes. A primeira consulta cria uma referência. Depois, a Luna consulta a cada 6 horas enquanto está aberta, com Proativo e Acompanhamentos ligados. Avisos esperam você estar disponível e fora do jogo.</p>
+                        <div class="fonte-acoes">
+                            <button id="fonte-salvar" type="submit" class="acomp-btn">Salvar acompanhamento</button>
+                            <button type="button" class="acomp-btn secundario" onclick="cancelarCadastroFonte()">Cancelar</button>
+                        </div>
+                    </form>
+                </details>
+                <p id="fontes-feedback" role="status" aria-live="polite"></p>
+                <p id="fontes-erro" role="status"></p>
+                <div id="fontes-lista"></div>
+                <details id="sopro-painel" hidden>
+            <summary id="sopro-resumo">Acompanhando: Sopro · PT-BR</summary>
+            <div id="sopro-conteudo">
+                <label for="sopro-situacao">Onde nosso teste parou</label>
+                <textarea id="sopro-situacao" rows="2" maxlength="300"></textarea>
+                <div id="sopro-acoes"></div>
+                <p id="sopro-proximo"></p>
+                <p id="sopro-resultado" role="status"></p>
+                <p id="sopro-verificado"></p>
+                <div id="sopro-novidades"></div>
+                <div id="sopro-fontes"></div>
+                <p class="oficina-dica">Consultas a cada 6 horas enquanto a Luna está aberta, com Proativo e Acompanhamentos ligados. Convites esperam você estar disponível e fora do jogo.</p>
+            </div>
+        </details>
+            </div>
+            <div class="config-secao">
+                <div class="config-secao-titulo">Retornos combinados</div>
+                <div id="acompanhamentos-lista"><div class="oficina-dica">Nenhum retorno combinado.</div></div>
+                <div class="oficina-dica">Aqui a Luna volta a perguntar como ficou um assunto que você confirmou.</div>
+            </div>
+            <div class="config-secao">
+                <div class="config-secao-titulo">🧵 Assuntos em andamento</div>
+                <div id="mem-assuntos"><div class="mem-vazio">Nenhum assunto registrado.</div></div>
+                <div class="oficina-dica">Onde seus projetos e conversas pararam. Guardar um assunto ajuda a Luna a lembrar do contexto; avisos automáticos dependem de um acompanhamento combinado.</div>
+            </div>
+        </div>
+    </div>
+
+    <button id="btn-config" title="Configurações" aria-label="Configurações" aria-controls="config-panel" aria-expanded="false">⚙<span id="config-badge"></span></button>
     <div id="config-overlay"></div>
 
-    <div id="config-panel">
+    <div id="config-panel" class="painel-lateral" role="dialog" aria-modal="true" aria-labelledby="config-titulo" aria-hidden="true" inert>
         <div class="config-header">
-            <span>Configurações</span>
-            <button id="btn-config-fechar">✕</button>
+            <span id="config-titulo">Configurações</span>
+            <button id="btn-config-fechar" class="painel-fechar" aria-label="Fechar configurações">✕</button>
         </div>
+        <nav class="config-nav" aria-label="Grupos de configurações">
+            <button type="button" data-config-grupo="uso" aria-pressed="true" aria-controls="config-grupo-uso">Uso</button>
+            <button type="button" data-config-grupo="proatividade" aria-pressed="false" aria-controls="config-grupo-proatividade">Proatividade</button>
+            <button type="button" data-config-grupo="memoria" aria-pressed="false" aria-controls="config-grupo-memoria">Memória<span id="config-memoria-badge" hidden></span></button>
+            <button type="button" data-config-grupo="avancado" aria-pressed="false" aria-controls="config-grupo-avancado">Avançado</button>
+        </nav>
+        <div class="painel-corpo">
+            <div id="config-grupo-uso" class="config-grupo">
+        <div class="config-secao">
+            <div class="config-secao-titulo">🔊 Voz</div>
+            <div class="voz-grid">
+                <button class="btn-voz ativo" data-voz="jf_alpha">Alpha</button>
+                <button class="btn-voz" data-voz="af_bella">Bella</button>
+                <button class="btn-voz" data-voz="af_nicole">Nicole</button>
+            </div>
+            <div class="config-secao-titulo" style="margin-top:14px;">Velocidade</div>
+            <div class="config-slider-linha">
+                <input type="range" id="cfg-velocidade" min="0.7" max="1.5" step="0.1" value="0.9">
+                <span class="config-velocidade-valor" id="cfg-velocidade-valor">0.9×</span>
+            </div>
+            <div class="config-slider-linha">
+                <label for="cfg-volume">Volume da Luna</label>
+                <input type="range" id="cfg-volume" min="0" max="100" step="1" value="100">
+                <span class="config-velocidade-valor" id="cfg-volume-valor">100%</span>
+            </div>
 
+
+        </div>
         <div class="config-secao">
             <div class="config-secao-titulo">💬 Conversa</div>
             <div class="config-linha">Tamanho do texto <span id="cfg-fonte-conversa-valor">100%</span></div>
@@ -1810,16 +2039,41 @@
             <button id="btn-historico-limpar" title="Limpar conversa desta sessão">🗑 Limpar conversa</button>
             <div class="oficina-dica">Remove apenas os turnos exibidos nesta sessão.</div>
         </div>
-
-        <!-- Tarefas proativas -->
+        <div class="config-secao">
+            <div class="config-secao-titulo">⌨ Teclas</div>
+            <div class="config-linha">
+                <span>Falar (PTT)</span>
+                <input class="oficina-input tecla-input" id="tecla-ptt" data-tecla="ptt" readonly placeholder="clique e aperte">
+            </div>
+            <div class="config-linha">
+                <span>Calar a fala</span>
+                <input class="oficina-input tecla-input" id="tecla-interromper" data-tecla="interromper" readonly placeholder="clique e aperte">
+            </div>
+            <div class="config-linha">
+                <span>Modo Suspenso</span>
+                <input class="oficina-input tecla-input" id="tecla-suspenso" data-tecla="suspenso" readonly placeholder="clique e aperte">
+            </div>
+            <div class="oficina-dica">Clique no campo e aperte a combinação nova (Esc cancela).
+                Prefira modificador + F1–F12 (ex: ctrl+f9) ou uma tecla só. Vale na hora.</div>
+        </div>
+            </div>
+            <div id="config-grupo-proatividade" class="config-grupo" hidden>
         <div class="config-secao" id="secao-tarefas">
             <div class="config-secao-titulo">⚡ Tarefas proativas</div>
+            <div class="oficina-dica" id="cfg-proativo-pausado" hidden>Proativo desligado: as preferências ficam salvas, mas as falas automáticas estão pausadas.</div>
 
-            <div class="config-subgrupo-titulo" style="opacity:.6;font-size:.8em;text-transform:uppercase;letter-spacing:.04em;margin:8px 0 2px;">🎮 Jogos</div>
+            <details class="config-subgrupo">
+<summary>🎮 Jogos</summary>
             <div class="config-linha config-sublinha">
                 <span>Monitorar jogos</span>
                 <label class="toggle"><input type="checkbox" id="cfg-tarefa-jogos" checked><span class="slider"></span></label>
             </div>
+            <div class="config-linha config-sublinha">
+                <span>Dark Souls Remastered (piloto)</span>
+                <label class="toggle"><input type="checkbox" id="cfg-dark-souls" disabled aria-label="Ativar piloto do Dark Souls Remastered"><span class="slider"></span></label>
+            </div>
+            <div class="oficina-dica">Comentar mortes, chefes derrotados e fogueiras liberadas.</div>
+            <div class="oficina-dica" id="cfg-dark-souls-status" role="status">Aguardando configuração da Luna…</div>
             <div class="config-linha config-sublinha">
                 <span>Comentar jogo Steam aberto</span>
                 <label class="toggle"><input type="checkbox" id="cfg-tarefa-steam_jogo" checked><span class="slider"></span></label>
@@ -1833,7 +2087,9 @@
                 <label class="toggle"><input type="checkbox" id="cfg-tarefa-lol_mortes" checked><span class="slider"></span></label>
             </div>
 
-            <div class="config-subgrupo-titulo" style="opacity:.6;font-size:.8em;text-transform:uppercase;letter-spacing:.04em;margin:12px 0 2px;">⏰ Rotina &amp; avisos</div>
+            </details>
+<details class="config-subgrupo">
+<summary>⏰ Rotina &amp; avisos</summary>
             <div class="config-linha config-sublinha">
                 <span>E-mails</span>
                 <label class="toggle"><input type="checkbox" id="cfg-tarefa-emails" checked><span class="slider"></span></label>
@@ -1859,7 +2115,9 @@
                 <label class="toggle"><input type="checkbox" id="cfg-tarefa-steam" checked><span class="slider"></span></label>
             </div>
 
-            <div class="config-subgrupo-titulo" style="opacity:.6;font-size:.8em;text-transform:uppercase;letter-spacing:.04em;margin:12px 0 2px;">💬 Conversa &amp; interesses</div>
+            </details>
+<details class="config-subgrupo">
+<summary>💬 Conversa &amp; interesses</summary>
             <div class="config-linha config-sublinha">
                 <span>Retomar assuntos</span>
                 <label class="toggle"><input type="checkbox" id="cfg-tarefa-retomar" checked><span class="slider"></span></label>
@@ -1888,19 +2146,30 @@
                 <span>Autoconhecimento</span>
                 <label class="toggle"><input type="checkbox" id="cfg-tarefa-autoconhecimento" checked><span class="slider"></span></label>
             </div>
-        </div>
-
-        <div class="config-secao">
-            <div class="config-secao-titulo">↪ Acompanhamentos</div>
-            <div id="acompanhamentos-lista">
-                <div class="oficina-dica">nenhum acompanhamento pendente</div>
+        </details>
+</div>
             </div>
-            <div class="oficina-dica">Aqui só entram assuntos que você confirmou. Cancelar não
-                apaga memória nem evento da agenda porque este estado é separado dos dois.</div>
-        </div>
+            <div id="config-grupo-memoria" class="config-grupo" hidden>
+        <div class="config-secao">
+            <div class="config-secao-titulo">🧠 Memória <span class="mem-count" id="mem-count"></span></div>
+            <div class="config-linha config-sublinha" style="padding-top:0;">
+                <span>Extração automática (ocioso)</span>
+                <label class="toggle"><input type="checkbox" id="cfg-tarefa-memoria" checked><span class="slider"></span></label>
+            </div>
+            <button class="btn-oficina" id="mem-processar">⟳ Processar agora</button>
+            <div id="mem-pendentes"></div>
 
-        <!-- Modelo local — a preferência fica no config_luna.json, nunca grava no .env -->
-        <div class="config-secao" id="secao-modelo">
+            <div class="config-secao-titulo sub-acc" id="mem-lixo-toggle" style="margin-top:12px;">🗑️ Lixo (7 dias)</div>
+            <div id="mem-lixo-wrap">
+                <div id="mem-lixo"></div>
+            </div>
+            <div class="oficina-dica">A Luna propõe lembranças quando você está fora. Fatos vão
+                para o Obsidian; projetos aparecem em “Assuntos em andamento”, na gaveta de
+                acompanhamentos. Clique no texto pra editar antes de guardar.</div>
+        </div>
+            </div>
+            <div id="config-grupo-avancado" class="config-grupo" hidden>
+        <div class="config-secao config-recolhivel" id="secao-modelo">
             <div class="config-secao-titulo">🧠 Cérebro local</div>
             <select class="modelo-campo" id="cfg-modelo">
                 <option value="">Padrão — Gemma-4-12B</option>
@@ -1915,28 +2184,9 @@
             <div class="oficina-dica">A troca vale na hora e fica salva só neste PC. Se
                 <code>MODELO_LLM</code> estiver preenchido, o .env tem prioridade.</div>
         </div>
-
-        <!-- Voz + Velocidade -->
-        <div class="config-secao">
-            <div class="config-secao-titulo">🔊 Voz</div>
-            <div class="voz-grid">
-                <button class="btn-voz ativo" data-voz="jf_alpha">Alpha</button>
-                <button class="btn-voz" data-voz="af_bella">Bella</button>
-                <button class="btn-voz" data-voz="af_nicole">Nicole</button>
-            </div>
-            <div class="config-secao-titulo" style="margin-top:14px;">Velocidade</div>
-            <div class="config-slider-linha">
-                <input type="range" id="cfg-velocidade" min="0.7" max="1.5" step="0.1" value="0.9">
-                <span class="config-velocidade-valor" id="cfg-velocidade-valor">0.9×</span>
-            </div>
-            <div class="config-slider-linha">
-                <label for="cfg-volume">Volume da Luna</label>
-                <input type="range" id="cfg-volume" min="0" max="100" step="1" value="100">
-                <span class="config-velocidade-valor" id="cfg-volume-valor">100%</span>
-            </div>
-
-            <!-- Dicionário de pronúncia (sanfona interna da Voz) -->
-            <div class="config-secao-titulo sub-acc" id="dic-toggle" style="margin-top:14px;">Dicionário de pronúncia</div>
+        <div class="config-secao config-recolhivel">
+            <!-- Pronúncia fica em avançado para manter os controles cotidianos de voz simples. -->
+            <div class="config-secao-titulo" id="dic-toggle">Dicionário de pronúncia</div>
             <div id="dic-wrap">
                 <div class="oficina-linha">
                     <input class="oficina-input" id="oficina-texto" placeholder="digite e ouça...">
@@ -1954,46 +2204,7 @@
                     escrito continua certo.</div>
             </div>
         </div>
-
-        <!-- Teclas de atalho (clica no campo e aperta a combinação) -->
-        <div class="config-secao">
-            <div class="config-secao-titulo">⌨ Teclas</div>
-            <div class="config-linha">
-                <span>Falar (PTT)</span>
-                <input class="oficina-input tecla-input" id="tecla-ptt" data-tecla="ptt" readonly placeholder="clique e aperte">
-            </div>
-            <div class="config-linha">
-                <span>Calar a fala</span>
-                <input class="oficina-input tecla-input" id="tecla-interromper" data-tecla="interromper" readonly placeholder="clique e aperte">
-            </div>
-            <div class="config-linha">
-                <span>Modo Suspenso</span>
-                <input class="oficina-input tecla-input" id="tecla-suspenso" data-tecla="suspenso" readonly placeholder="clique e aperte">
-            </div>
-            <div class="oficina-dica">Clique no campo e aperte a combinação nova (Esc cancela).
-                Prefira modificador + F1–F12 (ex: ctrl+f9) ou uma tecla só. Vale na hora.</div>
-        </div>
-
-        <!-- 🧠 Memória episódica — revisar lembranças propostas -->
-        <div class="config-secao">
-            <div class="config-secao-titulo">🧠 Memória <span class="mem-count" id="mem-count"></span></div>
-            <div class="config-linha config-sublinha" style="padding-top:0;">
-                <span>Extração automática (ocioso)</span>
-                <label class="toggle"><input type="checkbox" id="cfg-tarefa-memoria" checked><span class="slider"></span></label>
-            </div>
-            <button class="btn-oficina" id="mem-processar">⟳ Processar agora</button>
-            <div id="mem-pendentes"></div>
-            <div class="config-secao-titulo sub-acc" id="mem-lixo-toggle" style="margin-top:12px;">🗑️ Lixo (7 dias)</div>
-            <div id="mem-lixo-wrap">
-                <div id="mem-lixo"></div>
-            </div>
-            <div class="oficina-dica">A Luna propõe lembranças quando você está fora. Aqui você
-                <b>guarda</b> (vai pro Obsidian) ou <b>descarta</b> (fica no lixo por 7 dias). Clique no
-                texto pra editar antes de guardar.</div>
-        </div>
-
-        <!-- Atalhos de arquivos (só funciona no próprio PC) -->
-        <div class="config-secao">
+        <div class="config-secao config-recolhivel">
             <div class="config-secao-titulo">📂 Abrir no PC</div>
             <div class="atalhos-grid">
                 <button class="btn-oficina btn-abrir" data-alvo="avaliacoes">Avaliações</button>
@@ -2004,21 +2215,20 @@
             </div>
             <div class="oficina-dica" id="oficina-erro"></div>
         </div>
-
-        <!-- Chaves configuradas (.env) — só mostra SE está preenchida, nunca o valor -->
-        <div class="config-secao">
+        <div class="config-secao config-recolhivel">
             <div class="config-secao-titulo">🔑 Chaves (.env)</div>
             <div id="chaves-lista" class="oficina-dica">carregando...</div>
             <div class="atalhos-grid">
                 <button class="btn-oficina btn-abrir" data-alvo="env">Abrir .env</button>
             </div>
         </div>
-
-        <!-- Reload / Fechar -->
-        <div class="config-secao" style="border-bottom:none;">
+        <div class="config-secao">
+<div class="config-secao-titulo">Interface</div>
             <a id="btn-patchnotes-config" href="/patchnotes" target="_blank">📜 Novidades (patch notes)</a>
             <button id="btn-reload" onclick="window.location.reload()">↺ Recarregar interface</button>
             <button id="btn-fechar-luna">⏻ Fechar Luna</button>
+        </div>
+            </div>
         </div>
     </div>
 
@@ -2202,7 +2412,7 @@
             </div>
             <input type="text" id="aval-motivo-input" placeholder="Quer acrescentar algo? (opcional, Enter envia)" maxlength="1000">
             <button id="aval-motivo-enviar">Enviar</button>
-            <button id="aval-motivo-fechar" type="button">Fechar</button>
+            <button id="aval-motivo-fechar" type="button">Cancelar</button>
         </div>
 
         <div id="acompanhamento-card">
@@ -2212,6 +2422,9 @@
             <div id="acompanhamento-acoes"></div>
         </div>
         <div id="acompanhamento-feedback"></div>
+
+
+
 
         <!-- ══════════ ZONA DE ENTRADA (o que você manda) ══════════ -->
         <div class="zona-divisor"></div>
@@ -2240,6 +2453,7 @@
             <textarea id="texto-input" rows="1" placeholder="Digite aqui · Shift+Enter pula linha…" maxlength="2000" autocomplete="off"></textarea>
             <button id="texto-enviar" title="Enviar">➤</button>
         </div>
+        <div id="texto-envio-aviso" role="status" aria-live="polite" hidden></div>
 
         <!-- Letreiro de dicas — rotativo, só no ocioso -->
         <div id="dica-ticker"></div>
@@ -2251,7 +2465,60 @@
          animação a partir de valor calculado. O que é loop/rotação/opacidade fica em CSS. -->
     <script src="/static/anime.min.js"></script>
     <script>
-        const socket = new WebSocket('ws://' + window.location.host + '/ws');
+        function criarConexaoWeb(url) {
+            let atual = null, reconexao = null, tentativas = 0;
+            const ouvintes = {};
+            // Os mesmos controles e callbacks precisam sobreviver à troca da conexão.
+            const canal = {
+                onmessage: null,
+                get readyState() { return atual ? atual.readyState : 3; },
+                send(dados) {
+                    if (this.readyState !== 1) throw new Error('Sem conexão com a Luna');
+                    atual.send(dados);
+                },
+                addEventListener(tipo, fn) {
+                    const lista = ouvintes[tipo] || (ouvintes[tipo] = []);
+                    if (!lista.includes(fn)) lista.push(fn);
+                },
+                reconectar() {
+                    const antiga = atual;
+                    atual = null;
+                    if (antiga) antiga.close();
+                    emitir('close', {});
+                    agendarReconexao();
+                },
+            };
+            function emitir(tipo, evento) {
+                const lista = [...(ouvintes[tipo] || [])];
+                if (tipo === 'message' && canal.onmessage) lista.push(canal.onmessage);
+                for (const fn of lista) {
+                    // Como no WebSocket nativo, um callback com erro não impede os demais.
+                    try { fn.call(canal, evento); }
+                    catch (erro) { console.error('Erro ao atualizar a interface da Luna:', erro); }
+                }
+            }
+            function agendarReconexao() {
+                if (reconexao !== null) return;
+                const atraso = Math.min(1000 * (2 ** tentativas++), 10000);
+                reconexao = setTimeout(() => { reconexao = null; conectar(); }, atraso);
+            }
+            function conectar() {
+                const nova = new WebSocket(url);
+                atual = nova;
+                for (const tipo of ['open', 'message', 'error', 'close']) {
+                    nova.addEventListener(tipo, evento => {
+                        if (atual !== nova) return;
+                        if (tipo === 'open') tentativas = 0;
+                        if (tipo === 'close') agendarReconexao();
+                        emitir(tipo, evento);
+                    });
+                }
+            }
+            conectar();
+            return canal;
+        }
+
+        const socket = criarConexaoWeb((window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws');
         const PAPEL_MASCOTE = document.body.classList.contains('widget') ? 'widget' : 'principal';
         const TEM_ANIME = typeof anime !== 'undefined';   // degrada sem quebrar se faltar
 
@@ -4340,18 +4607,68 @@
 
         // --- Caixa de texto (digitar em vez de falar) ---
         const textoInput = document.getElementById('texto-input');
+        const textoEnviar = document.getElementById('texto-enviar');
+        const textoEnvioAviso = document.getElementById('texto-envio-aviso');
+        let envioTextoPendente = null, sequenciaEnvioTexto = 0;
+
+        function mostrarAvisoTexto(texto) {
+            textoEnvioAviso.textContent = texto;
+            textoEnvioAviso.hidden = !texto;
+        }
+        function liberarEnvioTexto() {
+            if (envioTextoPendente) clearTimeout(envioTextoPendente.timer);
+            envioTextoPendente = null;
+            textoEnviar.disabled = false;
+            textoEnviar.title = 'Enviar';
+        }
+        function avisarQuedaConexaoTexto() {
+            liberarEnvioTexto();
+            mostrarAvisoTexto('Sem conexão com a Luna. Reconectando… Seu texto fica preservado na caixa.');
+        }
+        function receberConfirmacaoTexto(dados) {
+            const pedido = envioTextoPendente;
+            if (!pedido || dados.request_id !== pedido.id) return;
+            liberarEnvioTexto();
+            if (dados.ok === true) {
+                // Uma confirmação atrasada não pode apagar o que foi editado nesse intervalo.
+                if (textoInput.value === pedido.original) {
+                    textoInput.value = '';
+                    ajustarAlturaTexto();
+                }
+                mostrarAvisoTexto('');
+            } else {
+                mostrarAvisoTexto(dados.erro || 'Não consegui enviar. Seu texto permanece na caixa.');
+            }
+        }
         function ajustarAlturaTexto() {
             textoInput.style.height = 'auto';
             textoInput.style.height = Math.min(textoInput.scrollHeight || 42, 132) + 'px';
         }
         function enviarTexto() {
             const txt = textoInput.value.trim();
-            if (!txt) return;
-            socket.send(JSON.stringify({ tipo: 'mensagem_texto', texto: txt }));
-            textoInput.value = '';
-            ajustarAlturaTexto();
+            if (!txt || envioTextoPendente) return;
+            if (socket.readyState !== 1) {
+                mostrarAvisoTexto('Aguardando conexão com a Luna. Seu texto permanece na caixa.');
+                return;
+            }
+            const pedido = { id: 'texto-' + Date.now() + '-' + (++sequenciaEnvioTexto), original: textoInput.value, timer: null };
+            envioTextoPendente = pedido;
+            textoEnviar.disabled = true;
+            textoEnviar.title = 'Confirmando envio';
+            mostrarAvisoTexto('Confirmando o envio…');
+            pedido.timer = setTimeout(() => {
+                if (envioTextoPendente !== pedido) return;
+                socket.reconectar();
+                mostrarAvisoTexto('Não recebi confirmação do envio. Texto preservado; confira a conversa antes de reenviar.');
+            }, 15000);
+            try {
+                socket.send(JSON.stringify({ tipo: 'mensagem_texto', texto: txt, request_id: pedido.id }));
+            } catch (erro) {
+                avisarQuedaConexaoTexto();
+                socket.reconectar();
+            }
         }
-        document.getElementById('texto-enviar').onclick = enviarTexto;
+        textoEnviar.onclick = enviarTexto;
         textoInput.addEventListener('input', ajustarAlturaTexto);
         textoInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarTexto(); }
@@ -4359,6 +4676,7 @@
 
         // --- Acompanhamentos: o mesmo id é resolvido por botão, voz ou texto ---
         let acompanhamentoEstado = { confirmacao: null, ativos: [] };
+        let cartoesEstadoRecebido = false;
 
         function botaoAcompanhamento(rotulo, acao, id, secundario, comando) {
             const btn = document.createElement('button');
@@ -4378,7 +4696,224 @@
             });
         }
 
+
+        let fontesItens = [];
+        let fonteCadastroPendente = null;
+        let fonteRequest = 0;
+
+        function valoresCadastroFonte() {
+            const valor = id => document.getElementById(id).value;
+            return { assunto: valor('fonte-assunto'), interesse: valor('fonte-interesse'),
+                     situacao: valor('fonte-situacao'), fontes: valor('fonte-urls') };
+        }
+
+        function feedbackFonte(texto) {
+            document.getElementById('fontes-feedback').textContent = texto || '';
+        }
+
+        function acaoFonte(acao, id='', novidade_id='', cadastro=null) {
+            if (socket.readyState !== 1) {
+                feedbackFonte('Sem conexão com a Luna. Seu rascunho continua aqui.');
+                return '';
+            }
+            const request_id = 'fonte-' + (++fonteRequest);
+            socket.send(JSON.stringify({ comando: 'fonte_acao', acao, id, novidade_id, cadastro, request_id }));
+            return request_id;
+        }
+
+        function cancelarCadastroFonte() {
+            document.getElementById('fontes-form').reset();
+            document.getElementById('fonte-id').value = '';
+            document.getElementById('fonte-form-titulo').textContent = 'Novo acompanhamento';
+            document.getElementById('fontes-cadastro').open = false;
+            feedbackFonte('');
+        }
+
+        function salvarFonte(event) {
+            event.preventDefault();
+            if (fonteCadastroPendente) return;
+            const cadastro = valoresCadastroFonte();
+            const id = document.getElementById('fonte-id').value;
+            const request_id = acaoFonte(id ? 'editar' : 'criar', id, '', cadastro);
+            if (!request_id) return;
+            fonteCadastroPendente = { request_id, id, cadastro };
+            document.getElementById('fonte-salvar').disabled = true;
+            feedbackFonte('Salvando acompanhamento...');
+        }
+
+        function receberFeedbackFonte(dados) {
+            const pendente = fonteCadastroPendente;
+            if (pendente && dados.request_id === pendente.request_id) {
+                fonteCadastroPendente = null;
+                document.getElementById('fonte-salvar').disabled = false;
+                // Nem a confirmação de salvar pode apagar texto escrito enquanto a rede respondia.
+                if (dados.ok && document.getElementById('fonte-id').value === pendente.id &&
+                    JSON.stringify(valoresCadastroFonte()) === JSON.stringify(pendente.cadastro)) {
+                    cancelarCadastroFonte();
+                }
+            }
+            feedbackFonte(dados.texto);
+        }
+
+        function interromperCadastroFonte() {
+            if (!fonteCadastroPendente) return;
+            fonteCadastroPendente = null;
+            document.getElementById('fonte-salvar').disabled = false;
+            feedbackFonte('Não consegui confirmar o salvamento: a conexão caiu. Copie seu rascunho antes de recarregar e confira a lista antes de salvar novamente.');
+        }
+
+        function editarFonte(id) {
+            const item = fontesItens.find(i => i.id === id);
+            if (!item || fonteCadastroPendente) return;
+            document.getElementById('fonte-id').value = item.id;
+            document.getElementById('fonte-assunto').value = item.assunto || '';
+            document.getElementById('fonte-interesse').value = item.interesse || '';
+            document.getElementById('fonte-situacao').value = item.situacao || '';
+            document.getElementById('fonte-urls').value = (item.fontes || []).join('\n');
+            document.getElementById('fonte-form-titulo').textContent = 'Editar acompanhamento';
+            document.getElementById('fontes-cadastro').open = true;
+            document.getElementById('fonte-assunto').focus();
+        }
+
+        function renderAcompanhamentoFontes(estado) {
+            const lista = document.getElementById('fontes-lista');
+            if (!lista) return;
+            fontesItens = (estado && estado.itens) || [];
+            const abertos = new Set(Array.from(lista.children || []).filter(el => el.open).map(el => el.dataset.id));
+            lista.innerHTML = '';
+            document.getElementById('fontes-erro').textContent = (estado && estado.erro) || '';
+            fontesItens.forEach(item => {
+                const card = document.createElement('details');
+                card.className = 'fonte-card'; card.dataset.id = item.id; card.open = abertos.has(item.id);
+                const resumo = document.createElement('summary');
+                const titulo = document.createElement('span'); titulo.textContent = item.assunto || '';
+                const status = document.createElement('small');
+                status.textContent = item.verificando ? 'Consultando fontes' :
+                    item.status === 'ativo' ? ((item.novidades || []).some(n => !n.lido) ? 'Novidade para conferir' : 'Acompanhando') :
+                    item.status === 'pausado' ? 'Pausado' : 'Encerrado';
+                resumo.appendChild(titulo); resumo.appendChild(status); card.appendChild(resumo);
+                function paragrafo(texto, destino=card) {
+                    const p = document.createElement('p'); p.textContent = texto; destino.appendChild(p);
+                }
+                paragrafo('Interesse: ' + (item.interesse || ''));
+                if (item.situacao) paragrafo('Onde parou: ' + item.situacao);
+                paragrafo(item.resultado || '');
+                if (item.status === 'ativo') paragrafo('Próximo passo: ' + (item.proximo_passo || ''));
+                if (item.verificado_em) paragrafo('Última consulta: ' +
+                    quandoAcompanhamento(new Date(item.verificado_em * 1000).toISOString()));
+                (item.erros || []).forEach(e => paragrafo(e));
+                const acoes = document.createElement('div'); acoes.className = 'fonte-acoes'; card.appendChild(acoes);
+                function botao(rotulo, acao, novidade_id='', destino=acoes) {
+                    const b = document.createElement('button'); b.type = 'button';
+                    b.className = 'acomp-btn secundario'; b.textContent = rotulo;
+                    b.onclick = () => acaoFonte(acao, item.id, novidade_id);
+                    destino.appendChild(b); return b;
+                }
+                const editar = botao('Editar', 'editar'); editar.onclick = () => editarFonte(item.id);
+                botao('Verificar agora', 'verificar').disabled = item.verificando || item.status !== 'ativo';
+                botao(item.status === 'ativo' ? 'Pausar' : 'Retomar', item.status === 'ativo' ? 'pausar' : 'retomar');
+                if (item.status !== 'encerrado') botao('Encerrar', 'encerrar');
+                else botao('Remover', 'excluir');
+                (item.novidades || []).slice().reverse().forEach(n => {
+                    const div = document.createElement('div'); div.className = 'fonte-novidade';
+                    paragrafo((n.etapa === 'plano' ? 'Plano futuro: ' : n.etapa === 'anuncio' ? 'Anúncio: ' : 'Menção: ') + n.resumo, div);
+                    paragrafo('Trecho da fonte: ' + n.evidencia, div);
+                    const link = linkNovidade(n.url, false, 'Conferir novidade');
+                    if (link) div.appendChild(link);
+                    if (!n.lido) {
+                        botao('Mais tarde (2h)', 'adiar', n.id, div);
+                        botao('Já vi', 'visto', n.id, div);
+                    } else paragrafo('Vista', div);
+                    card.appendChild(div);
+                });
+                const links = document.createElement('div'); links.className = 'fonte-links';
+                (item.fontes || []).forEach((url, i) => {
+                    const link = linkNovidade(url, false, 'Fonte ' + (i+1));
+                    if (link) links.appendChild(link);
+                });
+                card.appendChild(links); lista.appendChild(card);
+            });
+        }
+
+        function acaoSopro(acao, id='', situacao='') {
+            if (socket.readyState !== 1) return;
+            socket.send(JSON.stringify({ comando: 'sopro_acao', acao, id, situacao }));
+        }
+
+        function renderAcompanhamentoSopro(estado) {
+            const painel = document.getElementById('sopro-painel');
+            if (!painel) return;
+            painel.hidden = !estado;
+            if (!estado) return;
+            const status = { ativo: estado.tem_novidade ? 'menção nova de PT-BR' : 'aguardando PT-BR', pausado: 'pausado', encerrado: 'encerrado' };
+            document.getElementById('sopro-resumo').textContent =
+                'Sopro · ' + (estado.verificando ? 'consultando fontes' : status[estado.status] || estado.status);
+            const situacao = document.getElementById('sopro-situacao');
+            // Atualização de uma consulta não pode apagar o rascunho que a pessoa está editando.
+            if (situacao.dataset.servidor === undefined || situacao.value === situacao.dataset.servidor ||
+                situacao.value === estado.situacao) situacao.value = estado.situacao || '';
+            situacao.dataset.servidor = estado.situacao || '';
+            document.getElementById('sopro-proximo').textContent = 'Próximo passo: ' + (estado.proximo_passo || '');
+            document.getElementById('sopro-resultado').textContent =
+                (estado.resultado || '') + (estado.erros && estado.erros.length ? '\n' + estado.erros.join('\n') : '');
+            const data = estado.verificado_em ? quandoAcompanhamento(new Date(estado.verificado_em * 1000).toISOString()) : '';
+            document.getElementById('sopro-verificado').textContent = data ? 'Última consulta: ' + data : 'Ainda não consultado.';
+            const acoes = document.getElementById('sopro-acoes');
+            acoes.innerHTML = '';
+            function botao(rotulo, acao, id='', destino=acoes) {
+                const b = document.createElement('button');
+                b.type = 'button'; b.className = 'acomp-btn secundario'; b.textContent = rotulo;
+                b.onclick = () => acaoSopro(acao, id, acao === 'corrigir' ? situacao.value : '');
+                destino.appendChild(b);
+                return b;
+            }
+            botao('Salvar situação', 'corrigir');
+            botao('Verificar agora', 'verificar').disabled = estado.verificando || estado.status !== 'ativo';
+            botao(estado.status === 'ativo' ? 'Pausar' : 'Retomar', estado.status === 'ativo' ? 'pausar' : 'retomar');
+            if (estado.status !== 'encerrado') botao('Encerrar', 'encerrar');
+            const lista = document.getElementById('sopro-novidades');
+            lista.innerHTML = '';
+            (estado.novidades || []).slice().reverse().forEach(item => {
+                const div = document.createElement('div');
+                const texto = document.createElement('p');
+                texto.textContent = 'Menção na fonte: ' + (item.trecho || '');
+                div.appendChild(texto);
+                const link = linkNovidade(item.url, false, 'Ver fonte · ' + item.fonte);
+                if (link) div.appendChild(link);
+                if (!item.lido) {
+                    botao('Mais tarde (2h)', 'adiar', item.id, div);
+                    botao('Já vi', 'visto', item.id, div);
+                }
+                lista.appendChild(div);
+            });
+            const fontes = document.getElementById('sopro-fontes');
+            fontes.innerHTML = '';
+            (estado.fontes || []).forEach(fonte => {
+                const link = linkNovidade(fonte.url, false, fonte.nome);
+                if (link) fontes.appendChild(link);
+            });
+        }
+
+        function atualizarIndicadorAcompanhamentos(estado) {
+            const sopro = estado && estado.sopro;
+            const novidades = sopro && sopro.status !== 'encerrado'
+                ? Math.max((sopro.novidades || []).filter(item => !item.lido).length, sopro.tem_novidade ? 1 : 0)
+                : 0;
+            const decisoes = Number(!!(estado && estado.confirmacao)) + Number(!!(estado && estado.conclusao_tarefa));
+            const nasFontes = ((estado && estado.fontes && estado.fontes.itens) || [])
+                .filter(item => item.status !== 'encerrado')
+                .reduce((total, item) => total + (item.novidades || []).filter(n => !n.lido).length, 0);
+            const n = novidades + decisoes + nasFontes;
+            const badge = document.getElementById('acompanhamentos-badge');
+            badge.hidden = n === 0;
+            badge.textContent = n ? String(n) : '';
+            document.getElementById('btn-acompanhamentos').setAttribute('aria-label',
+                'Acompanhamentos' + (n ? ': ' + n + (n === 1 ? ' item pendente' : ' itens pendentes') : ''));
+        }
+
         function renderAcompanhamentos(estado) {
+            renderAcompanhamentoSopro(estado && estado.sopro);
+            renderAcompanhamentoFontes(estado && estado.fontes);
             acompanhamentoEstado = estado || { confirmacao: null, ativos: [] };
             const card = document.getElementById('acompanhamento-card');
             const titulo = document.getElementById('acompanhamento-titulo');
@@ -4423,27 +4958,47 @@
                 }
             }
 
+            const aviso = document.getElementById('acompanhamentos-decisao');
+            aviso.hidden = !conf;
+            document.getElementById('acompanhamentos-decisao-texto').textContent = conf
+                ? 'A Luna aguarda sua resposta sobre: ' + (conf.assunto || conf.tarefa || 'uma alteração na nota') : '';
+            atualizarIndicadorAcompanhamentos(acompanhamentoEstado);
+
             const lista = document.getElementById('acompanhamentos-lista');
+            const expandidos = new Set(Array.from(lista.querySelectorAll('details[open]')).map(el => el.dataset.id));
             lista.innerHTML = '';
             const ativos = acompanhamentoEstado.ativos || [];
             if (!ativos.length) {
                 const vazio = document.createElement('div');
                 vazio.className = 'oficina-dica';
-                vazio.textContent = 'nenhum acompanhamento pendente';
+                vazio.textContent = 'Nenhum retorno combinado.';
                 lista.appendChild(vazio);
             } else {
                 ativos.forEach(item => {
-                    const linha = document.createElement('div');
+                    const linha = document.createElement('details');
                     linha.className = 'acomp-lista-item';
+                    linha.dataset.id = item.id;
+                    linha.open = expandidos.has(item.id);
+                    const resumo = document.createElement('summary');
                     const texto = document.createElement('span');
                     texto.textContent = item.assunto || '';
+                    const status = document.createElement('small');
+                    const data = quandoAcompanhamento(item.perguntar_em);
+                    status.textContent = item.status === 'sem_resposta'
+                        ? 'Sem retorno; aguardando você retomar'
+                        : 'Aguardando seu retorno' + (data ? ' · ' + data : '');
+                    resumo.appendChild(texto);
+                    resumo.appendChild(status);
+                    const explicacao = document.createElement('p');
+                    explicacao.textContent = 'A Luna vai perguntar como ficou esse assunto. Cancelar encerra o acompanhamento e preserva suas memórias e a agenda.';
                     const cancelar = document.createElement('button');
                     cancelar.className = 'acomp-btn secundario';
-                    cancelar.textContent = 'Cancelar';
+                    cancelar.textContent = 'Cancelar acompanhamento';
                     cancelar.onclick = () => socket.send(JSON.stringify({
                         comando: 'acompanhamento_cancelar', id: item.id
                     }));
-                    linha.appendChild(texto);
+                    linha.appendChild(resumo);
+                    linha.appendChild(explicacao);
                     linha.appendChild(cancelar);
                     lista.appendChild(linha);
                 });
@@ -4600,27 +5155,91 @@
             })[c]);
         }
 
-        function markdownInline(texto) {
-            let html = escaparHtml(texto);
-            html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>');
-            html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
-            html = html.replace(/__([^_\n]+)__/g, '<strong>$1</strong>');
-            html = html.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
-            html = html.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g,
-                '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-            return html;
+        function markdownInline(texto, profundidade = 0) {
+            texto = String(texto || '');
+            if (profundidade >= 8) return escaparHtml(texto);
+            // Analisa o texto original: outra substituição não pode formatar código ou
+            // reescrever atributos de um link que já foi escapado.
+            const padrao = /`([^`\n]+)`|\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)|\*\*([^*\n]+)\*\*|__([^_\n]+)__|\*([^*\n]+)\*|~~([^~\n]+)~~|\\([\\`*{}\[\]()#+.!_|>-])/g;
+            let html = '', ultimo = 0, m;
+            const inline = valor => markdownInline(valor, profundidade + 1);
+            while ((m = padrao.exec(texto))) {
+                html += escaparHtml(texto.slice(ultimo, m.index));
+                if (m[1] !== undefined) html += '<code>' + escaparHtml(m[1]) + '</code>';
+                else if (m[2] !== undefined) html += '<a href="' + escaparHtml(m[3]) +
+                    '" target="_blank" rel="noopener noreferrer">' + inline(m[2]) + '</a>';
+                else if (m[4] !== undefined || m[5] !== undefined) html += '<strong>' + inline(m[4] || m[5]) + '</strong>';
+                else if (m[6] !== undefined) html += '<em>' + inline(m[6]) + '</em>';
+                else if (m[7] !== undefined) html += '<del>' + inline(m[7]) + '</del>';
+                else html += escaparHtml(m[8]);
+                ultimo = padrao.lastIndex;
+            }
+            return html + escaparHtml(texto.slice(ultimo));
         }
 
         function celulasTabela(linha) {
             let limpa = linha.trim();
             if (limpa.startsWith('|')) limpa = limpa.slice(1);
-            if (limpa.endsWith('|')) limpa = limpa.slice(0, -1);
-            return limpa.split('|').map(c => c.trim());
+            if (limpa.endsWith('|') && !limpa.endsWith('\\|')) limpa = limpa.slice(0, -1);
+            const cols = [];
+            let atual = '', crases = 0;
+            for (let i = 0; i < limpa.length; i++) {
+                const c = limpa[i];
+                if (c === '\\' && i + 1 < limpa.length) { atual += c + limpa[++i]; continue; }
+                if (c === '`') {
+                    let n = 1;
+                    while (limpa[i + 1] === '`') { n++; i++; }
+                    crases = crases === n ? 0 : (crases || n);
+                    atual += '`'.repeat(n);
+                } else if (c === '|' && !crases) { cols.push(atual.trim()); atual = ''; }
+                else atual += c;
+            }
+            cols.push(atual.trim());
+            return cols;
         }
 
         function ehSeparadorTabela(linha) {
             const cols = celulasTabela(linha);
             return cols.length > 1 && cols.every(c => /^:?-{3,}:?$/.test(c));
+        }
+
+        function marcadorLista(linha) {
+            const m = linha.match(/^(\s*)(?:([-*+])|(\d+)[.)])\s+(.+)$/);
+            return m ? { recuo: m[1].replace(/\t/g, '    ').length,
+                tag: m[3] ? 'ol' : 'ul', numero: Number(m[3]), texto: m[4] } : null;
+        }
+
+        function renderizarListaMarkdown(linhas, inicio, profundidade = 0) {
+            const raiz = marcadorLista(linhas[inicio]);
+            const itens = [];
+            let i = inicio;
+            while (i < linhas.length) {
+                const item = marcadorLista(linhas[i]);
+                if (!item || item.recuo !== raiz.recuo || item.tag !== raiz.tag) break;
+                let conteudo = markdownInline(item.texto);
+                i++;
+                while (i < linhas.length) {
+                    if (!linhas[i].trim()) {
+                        let proxima = i + 1;
+                        while (proxima < linhas.length && !linhas[proxima].trim()) proxima++;
+                        const m = proxima < linhas.length && marcadorLista(linhas[proxima]);
+                        if (m && m.recuo >= raiz.recuo) { i = proxima; continue; }
+                        break;
+                    }
+                    const filho = marcadorLista(linhas[i]);
+                    if (filho && filho.recuo > raiz.recuo && profundidade < 8) {
+                        const lista = renderizarListaMarkdown(linhas, i, profundidade + 1);
+                        conteudo += lista.html;
+                        i = lista.proxima;
+                    } else if (!filho && /^\s+/.test(linhas[i]) &&
+                               linhas[i].match(/^\s*/)[0].replace(/\t/g, '    ').length > raiz.recuo) {
+                        conteudo += '<br>' + markdownInline(linhas[i++].trim());
+                    } else break;
+                }
+                itens.push('<li>' + conteudo + '</li>');
+            }
+            const numero = raiz.tag === 'ol' && raiz.numero !== 1 ? ` start="${raiz.numero}"` : '';
+            return { html: `<${raiz.tag}${numero}>${itens.join('')}</${raiz.tag}>`, proxima: i };
         }
 
         // Subconjunto deliberadamente pequeno: formata o que notas e respostas usam sem
@@ -4632,23 +5251,29 @@
             while (i < linhas.length) {
                 const linha = linhas[i];
                 if (/^```/.test(linha.trim())) {
+                    const linguagem = linha.trim().slice(3).trim() || 'Código';
                     const codigo = [];
                     i++;
                     while (i < linhas.length && !/^```/.test(linhas[i].trim())) codigo.push(linhas[i++]);
                     if (i < linhas.length) i++;
-                    blocos.push('<pre><code>' + escaparHtml(codigo.join('\n')) + '</code></pre>');
+                    blocos.push('<div class="md-codigo"><div class="md-codigo-titulo">' +
+                        escaparHtml(linguagem) + '</div><pre><code>' +
+                        escaparHtml(codigo.join('\n')) + '</code></pre></div>');
                     continue;
                 }
                 if (i + 1 < linhas.length && linha.includes('|') && ehSeparadorTabela(linhas[i + 1])) {
                     const cab = celulasTabela(linha);
+                    const alinhamentos = celulasTabela(linhas[i + 1]).map(c =>
+                        c.startsWith(':') && c.endsWith(':') ? ' class="md-alinhar-centro"' :
+                        c.endsWith(':') ? ' class="md-alinhar-direita"' : '');
                     i += 2;
                     const corpo = [];
                     while (i < linhas.length && linhas[i].includes('|') && linhas[i].trim()) {
                         corpo.push(celulasTabela(linhas[i++]));
                     }
-                    const th = cab.map(c => '<th>' + markdownInline(c) + '</th>').join('');
+                    const th = cab.map((c, n) => '<th' + (alinhamentos[n] || '') + '>' + markdownInline(c) + '</th>').join('');
                     const trs = corpo.map(cols => '<tr>' + cab.map((_, n) =>
-                        '<td>' + markdownInline(cols[n] || '') + '</td>').join('') + '</tr>').join('');
+                        '<td' + (alinhamentos[n] || '') + '>' + markdownInline(cols[n] || '') + '</td>').join('') + '</tr>').join('');
                     blocos.push('<div class="md-tabela-wrap"><table><thead><tr>' + th +
                         '</tr></thead><tbody>' + trs + '</tbody></table></div>');
                     continue;
@@ -4660,18 +5285,13 @@
                     i++;
                     continue;
                 }
-                if (/^\s*[-*+]\s+/.test(linha) || /^\s*\d+[.)]\s+/.test(linha)) {
-                    const ordenada = /^\s*\d/.test(linha);
-                    const itens = [];
-                    const padrao = ordenada ? /^\s*\d+[.)]\s+(.+)$/ : /^\s*[-*+]\s+(.+)$/;
-                    while (i < linhas.length) {
-                        const item = linhas[i].match(padrao);
-                        if (!item) break;
-                        itens.push('<li>' + markdownInline(item[1]) + '</li>');
-                        i++;
-                    }
-                    const tag = ordenada ? 'ol' : 'ul';
-                    blocos.push(`<${tag}>${itens.join('')}</${tag}>`);
+                if (/^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/.test(linha)) {
+                    blocos.push('<hr>'); i++; continue;
+                }
+                if (marcadorLista(linha)) {
+                    const lista = renderizarListaMarkdown(linhas, i);
+                    blocos.push(lista.html);
+                    i = lista.proxima;
                     continue;
                 }
                 if (/^>\s?/.test(linha)) {
@@ -4685,6 +5305,7 @@
                 const paragrafo = [linha];
                 i++;
                 while (i < linhas.length && linhas[i].trim() && !/^```|^(#{1,3})\s|^\s*[-*+]\s+|^\s*\d+[.)]\s+|^>\s?/.test(linhas[i])) {
+                    if (/^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/.test(linhas[i])) break;
                     if (linhas[i].includes('|') && i + 1 < linhas.length && ehSeparadorTabela(linhas[i + 1])) break;
                     paragrafo.push(linhas[i++]);
                 }
@@ -4719,6 +5340,155 @@
             return link;
         }
 
+        function estadoCartaoAcompanhamento(dados, estado) {
+            if (!estado) return { status: 'desconhecido', rotulo: 'Atualizando estado', item: null };
+            let item;
+            if (dados.origem === 'sopro') {
+                if (!estado.sopro)
+                    return { status: 'desconhecido', rotulo: 'Estado indisponível', item: null };
+                item = estado.sopro;
+            } else if (dados.origem === 'fontes') {
+                if (!estado.fontes || estado.fontes.erro || !Array.isArray(estado.fontes.itens))
+                    return { status: 'desconhecido', rotulo: 'Estado indisponível', item: null };
+                item = (estado.fontes.itens || []).find(i => i.id === dados.id);
+            } else {
+                if (!Array.isArray(estado.ativos))
+                    return { status: 'desconhecido', rotulo: 'Estado indisponível', item: null };
+                item = estado.ativos.find(i => i.id === dados.id);
+            }
+            if (!item || item.status === 'encerrado')
+                return { status: 'encerrado', rotulo: 'Não está ativo', item };
+            const rotulos = { ativo: 'Acompanhando', pausado: 'Pausado', pendente: 'Retorno combinado',
+                aguardando_resposta: 'Aguardando sua resposta', sem_resposta: 'Sem resposta' };
+            if (!rotulos[item.status]) return { status: 'desconhecido', rotulo: 'Estado indisponível', item: null };
+            return { status: item.status, rotulo: item.verificando ? 'Consultando fontes' : rotulos[item.status], item };
+        }
+
+        function abrirAcompanhamentoDoCartao(dados, botao) {
+            abrirPainelLateral('acompanhamentos-panel', botao);
+            const alvo = dados.origem === 'sopro' ? document.getElementById('sopro-painel') :
+                Array.from(document.getElementById(dados.origem === 'fontes' ? 'fontes-lista' :
+                    'acompanhamentos-lista').children).find(el => el.dataset.id === dados.id);
+            if (alvo) { alvo.open = true; alvo.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+        }
+
+        function criarCartaoWeb(dados) {
+            if (!dados || typeof dados.titulo !== 'string' || !dados.titulo.trim()) return null;
+            const noticia = dados.tipo === 'noticia';
+            if (!noticia && (dados.tipo !== 'acompanhamento' ||
+                !['sopro', 'fontes', 'conversa'].includes(dados.origem) ||
+                typeof dados.id !== 'string' || !/^[\w-]{1,80}$/.test(dados.id) ||
+                (dados.origem === 'sopro' && dados.id !== 'sopro_ptbr'))) return null;
+            let fonte = linkNovidade(dados.url, false, noticia ? 'Abrir notícia ↗' : 'Conferir fonte ↗');
+            let dominio = '';
+            if (fonte) {
+                try { dominio = new URL(dados.url).hostname; if (!dominio) fonte = null; }
+                catch (_) { fonte = null; }
+            }
+            if (noticia && !fonte) return null;
+            const card = document.createElement('article');
+            card.className = 'cartao-web ' + (noticia ? 'cartao-noticia' : 'cartao-acompanhamento');
+            card.dataset.tipo = dados.tipo;
+            if (fonte) card.dataset.url = dados.url;
+            const cabecalho = document.createElement('div'); cabecalho.className = 'cartao-web-cabecalho';
+            const rotulo = document.createElement('span'); rotulo.className = 'cartao-web-rotulo';
+            const etapas = { plano: 'Plano anunciado', anuncio: 'Anúncio', mencao: 'Menção nova' };
+            rotulo.textContent = noticia ? 'Novidade' : 'Acompanhamento' +
+                (etapas[dados.etapa] ? ' · ' + etapas[dados.etapa] : '');
+            cabecalho.appendChild(rotulo); card.appendChild(cabecalho);
+            if (noticia && typeof dados.imagem === 'string' && /^https?:\/\//i.test(dados.imagem) && !/\s/.test(dados.imagem)) {
+                try {
+                    if (new URL(dados.imagem).hostname) {
+                        const imagem = document.createElement('img'); imagem.className = 'cartao-web-imagem';
+                        // O título já identifica a notícia; a miniatura não precisa repeti-lo no leitor de tela.
+                        imagem.alt = ''; imagem.loading = 'lazy'; imagem.decoding = 'async';
+                        imagem.referrerPolicy = 'no-referrer';
+                        imagem.onerror = () => imagem.remove();
+                        imagem.src = dados.imagem; card.appendChild(imagem);
+                    }
+                } catch (_) { /* Uma URL inválida não deve impedir a notícia de aparecer. */ }
+            }
+            const titulo = document.createElement('h4'); titulo.className = 'cartao-web-titulo';
+            titulo.textContent = dados.titulo; card.appendChild(titulo);
+            if (fonte) {
+                const origem = document.createElement('p'); origem.className = 'cartao-web-fonte';
+                origem.textContent = typeof dados.fonte === 'string' && dados.fonte.trim() ? dados.fonte :
+                    dominio;
+                card.appendChild(origem);
+            }
+            const acoes = document.createElement('div'); acoes.className = 'cartao-web-acoes';
+            if (fonte) acoes.appendChild(fonte);
+            if (noticia) {
+                if (Number.isInteger(dados.mais) && dados.mais > 0) {
+                    const mais = document.createElement('span'); mais.className = 'cartao-web-mais';
+                    mais.textContent = '+' + dados.mais + ' na nota';
+                    acoes.appendChild(mais);
+                }
+            } else {
+                const status = document.createElement('span'); status.className = 'cartao-web-status';
+                status.setAttribute('aria-live', 'polite'); cabecalho.appendChild(status);
+                function campo(rotuloCampo) {
+                    const p = document.createElement('div'); p.className = 'cartao-web-campo';
+                    const nome = document.createElement('span'); nome.textContent = rotuloCampo;
+                    const valor = document.createElement('div'); p.appendChild(nome); p.appendChild(valor);
+                    card.appendChild(p); return { p, valor };
+                }
+                const situacao = campo('Onde parou');
+                const proximo = campo('Próximo passo');
+                if (typeof dados.trecho === 'string' && dados.trecho) {
+                    const detalhe = document.createElement('details'); detalhe.className = 'cartao-web-trecho';
+                    const resumo = document.createElement('summary'); resumo.textContent = 'Trecho da fonte nesta atualização';
+                    const texto = document.createElement('p'); texto.textContent = dados.trecho;
+                    detalhe.appendChild(resumo); detalhe.appendChild(texto); card.appendChild(detalhe);
+                }
+                const ver = document.createElement('button'); ver.type = 'button'; ver.textContent = 'Ver acompanhamento';
+                ver.onclick = () => abrirAcompanhamentoDoCartao(dados, ver); acoes.appendChild(ver);
+                const pausa = document.createElement('button'); pausa.type = 'button';
+                if (dados.origem !== 'conversa') acoes.appendChild(pausa);
+                pausa.onclick = () => {
+                    // A mensagem é histórica; a ação precisa seguir o estado atual do acompanhamento.
+                    const atual = estadoCartaoAcompanhamento(dados, cartoesEstadoRecebido ? acompanhamentoEstado : null);
+                    if (!['ativo', 'pausado'].includes(atual.status)) return;
+                    if (socket.readyState !== 1) { mostrarFeedbackAcompanhamento('Sem conexão com a Luna. Reconectando…'); return; }
+                    const acao = atual.status === 'ativo' ? 'pausar' : 'retomar';
+                    if (dados.origem === 'fontes') acaoFonte(acao, dados.id);
+                    else acaoSopro(acao);
+                };
+                card.atualizarEstado = estado => {
+                    const atual = estadoCartaoAcompanhamento(dados, estado);
+                    status.textContent = atual.rotulo; status.dataset.status = atual.status;
+                    const item = atual.item || {};
+                    const textoSituacao = item.situacao || dados.situacao || '';
+                    situacao.valor.textContent = textoSituacao; situacao.p.hidden = !textoSituacao;
+                    let textoProximo = item.proximo_passo || dados.proximo_passo || '';
+                    if (atual.status === 'pausado') textoProximo = 'Retome quando quiser voltar a consultar as fontes.';
+                    else if (atual.status === 'encerrado') textoProximo = 'Este acompanhamento não está mais ativo.';
+                    else if (atual.status === 'desconhecido') textoProximo = 'Aguardando o estado atual da Luna.';
+                    else if (dados.origem === 'conversa') textoProximo = 'Conversar sobre como ficou esse assunto.';
+                    else {
+                        // Ler um plano não o torna disponível; só uma atualização posterior muda isso.
+                        const novidades = Array.isArray(item.novidades) ? item.novidades : [];
+                        const ultima = novidades[novidades.length - 1];
+                        if (ultima && (ultima.etapa || ultima.tipo) === 'plano')
+                            textoProximo = 'Aguardar a disponibilidade anunciada antes de testar.';
+                    }
+                    proximo.valor.textContent = textoProximo; proximo.p.hidden = !textoProximo;
+                    pausa.textContent = atual.status === 'pausado' ? 'Retomar' : 'Pausar';
+                    pausa.disabled = !['ativo', 'pausado'].includes(atual.status);
+                };
+                card.atualizarEstado(cartoesEstadoRecebido ? acompanhamentoEstado : null);
+            }
+            card.appendChild(acoes);
+            return card;
+        }
+
+        function atualizarCartoesAcompanhamento() {
+            const lista = document.getElementById('historico-lista');
+            if (!lista || !lista.querySelectorAll) return;
+            for (const card of lista.querySelectorAll('.cartao-acompanhamento'))
+                card.atualizarEstado(cartoesEstadoRecebido ? acompanhamentoEstado : null);
+        }
+
         function criarTurnoEl(turno, pendente=false) {
             const div = document.createElement('div');
             div.className = 'turno' + (turno.usuario ? '' : ' turno-proativo') +
@@ -4747,14 +5517,18 @@
                 copiar.title = 'Copiar resposta'; copiar.textContent = '⎘';
                 copiar.onclick = () => copiarMensagem(turno.luna, copiar);
                 const links = turno.links_novidades || {};
-                const noticia = linkNovidade(links.noticia);
+                const cartoes = (Array.isArray(turno.cartoes_web) ? turno.cartoes_web.slice(0, 3) : [])
+                    .map(criarCartaoWeb).filter(Boolean);
+                const noticia = cartoes.some(c => c.dataset.url === links.noticia) ? null : linkNovidade(links.noticia);
                 const nota = linkNovidade(links.nota, true, links.rotulo_nota);
+                for (const card of cartoes.filter(c => c.dataset.tipo === 'noticia')) luna.appendChild(card);
                 if (noticia) luna.appendChild(noticia);
                 for (const oferta of (Array.isArray(links.ofertas) ? links.ofertas : [])) {
                     const link = linkNovidade(oferta.url, false, oferta.rotulo);
                     if (link) luna.appendChild(link);
                 }
                 luna.append(conteudo, copiar);
+                for (const card of cartoes.filter(c => c.dataset.tipo === 'acompanhamento')) luna.appendChild(card);
                 if (nota) luna.appendChild(nota);
                 div.appendChild(luna);
             }
@@ -4903,22 +5677,116 @@
         const modeloAplicar = document.getElementById('modelo-aplicar');
         const modeloStatus = document.getElementById('modelo-status');
 
-        document.getElementById('btn-config').onclick = function() {
-            configPanel.classList.add('aberto');
+        // Uma só gaveta aberta evita sobrepor controles e mantém o foco no painel escolhido.
+        let painelOrigem = null;
+
+        function abrirPainelLateral(id, origem) {
+            painelOrigem = origem || document.activeElement;
+            for (const nome of ['config-panel', 'acompanhamentos-panel']) {
+                const painel = document.getElementById(nome);
+                const aberto = nome === id;
+                painel.classList.toggle('aberto', aberto);
+                painel.inert = !aberto;
+                painel.setAttribute('aria-hidden', String(!aberto));
+            }
             configOverlay.classList.add('ativo');
-        };
-        function fecharConfig() {
-            configPanel.classList.remove('aberto');
-            configOverlay.classList.remove('ativo');
+            document.getElementById('btn-config').setAttribute('aria-expanded', String(id === 'config-panel'));
+            document.getElementById('btn-acompanhamentos').setAttribute('aria-expanded', String(id === 'acompanhamentos-panel'));
+            if (id === 'config-panel') ajustarCaixasMemoria();
+            const fechar = document.getElementById(id === 'config-panel' ? 'btn-config-fechar' : 'btn-acompanhamentos-fechar');
+            if (fechar && typeof fechar.focus === 'function') fechar.focus();
         }
+
+        function fecharConfig() {
+            for (const nome of ['config-panel', 'acompanhamentos-panel']) {
+                const painel = document.getElementById(nome);
+                painel.classList.remove('aberto');
+                painel.inert = true;
+                painel.setAttribute('aria-hidden', 'true');
+            }
+            configOverlay.classList.remove('ativo');
+            document.getElementById('btn-config').setAttribute('aria-expanded', 'false');
+            document.getElementById('btn-acompanhamentos').setAttribute('aria-expanded', 'false');
+            if (painelOrigem && typeof painelOrigem.focus === 'function') painelOrigem.focus();
+            painelOrigem = null;
+        }
+
+        function selecionarGrupoConfig(grupo) {
+            if (!['uso', 'proatividade', 'memoria', 'avancado'].includes(grupo)) grupo = 'uso';
+            document.querySelectorAll('[data-config-grupo]').forEach(botao =>
+                botao.setAttribute('aria-pressed', String(botao.dataset.configGrupo === grupo)));
+            document.querySelectorAll('.config-grupo').forEach(secao => {
+                secao.hidden = secao.id !== 'config-grupo-' + grupo;
+            });
+            if (grupo === 'memoria') ajustarCaixasMemoria();
+            // Um grupo pode estar rolado até o fim; o seguinte deve abrir pelo início.
+            const corpo = configPanel.querySelector('.painel-corpo');
+            if (corpo) corpo.scrollTop = 0;
+        }
+
+        function tratarTeclaPainel(e) {
+            const painel = ['config-panel', 'acompanhamentos-panel'].map(id => document.getElementById(id))
+                .find(el => el.classList.contains('aberto'));
+            if (!painel) return;
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                fecharConfig();
+            } else if (e.key === 'Tab') {
+                const itens = Array.from(painel.querySelectorAll('button, input, select, textarea, summary, a[href], [tabindex="0"]'))
+                    .filter(el => !el.disabled && el.getClientRects().length);
+                const primeiro = itens[0], ultimo = itens[itens.length - 1];
+                if (primeiro && !painel.contains(document.activeElement)) {
+                    e.preventDefault(); (e.shiftKey ? ultimo : primeiro).focus();
+                } else if (primeiro && e.shiftKey && document.activeElement === primeiro) {
+                    e.preventDefault(); ultimo.focus();
+                } else if (primeiro && !e.shiftKey && document.activeElement === ultimo) {
+                    e.preventDefault(); primeiro.focus();
+                }
+            }
+        }
+
+        document.getElementById('btn-config').onclick = function() {
+            abrirPainelLateral('config-panel', this);
+        };
+        document.getElementById('btn-acompanhamentos').onclick = function() {
+            abrirPainelLateral('acompanhamentos-panel', this);
+        };
         document.getElementById('btn-config-fechar').onclick = fecharConfig;
+        document.getElementById('btn-acompanhamentos-fechar').onclick = fecharConfig;
+        document.getElementById('btn-acompanhamentos-responder').onclick = function() {
+            fecharConfig();
+            const card = document.getElementById('acompanhamento-card');
+            if (card.classList.contains('ativo')) {
+                card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                const botao = card.querySelector('button');
+                if (botao) botao.focus();
+            }
+        };
         configOverlay.onclick = fecharConfig;
+        document.addEventListener('keydown', tratarTeclaPainel);
+        document.querySelectorAll('[data-config-grupo]').forEach(botao =>
+            botao.addEventListener('click', () => selecionarGrupoConfig(botao.dataset.configGrupo)));
 
         function enviarConfig(dados) {
             socket.send(JSON.stringify(dados));
         }
 
+        function atualizarControleDarkSouls(estado) {
+            const controle = document.getElementById('cfg-dark-souls');
+            const status = document.getElementById('cfg-dark-souls-status');
+            const disponivel = typeof estado.dark_souls === 'boolean';
+            controle.disabled = !disponivel;
+            controle.checked = estado.dark_souls === true;
+            if (!disponivel) status.textContent = 'Reinicie a Luna para disponibilizar este controle.';
+            else if (estado.dark_souls_erro) status.textContent = estado.dark_souls_erro;
+            else if (!estado.dark_souls) status.textContent = 'Piloto desligado: leitura e comentários desativados.';
+            else if (estado.proativo === false) status.textContent = 'Piloto ligado; comentários pausados pelo Proativo desligado.';
+            else if (estado.tarefas && estado.tarefas.jogos === false) status.textContent = 'Piloto ligado; ative “Monitorar jogos” para ouvir os comentários.';
+            else status.textContent = 'Piloto ligado. Carregue o personagem e mantenha o jogo em primeiro plano.';
+        }
+
         function aplicarEstadoConfig(estado) {
+            atualizarControleDarkSouls(estado);
             if (estado.tarefas) {
                 for (const [nome, val] of Object.entries(estado.tarefas)) {
                     const el = document.getElementById('cfg-tarefa-' + nome);
@@ -4949,8 +5817,7 @@
                 vl.textContent = parseFloat(estado.velocidade).toFixed(1) + '×';
             }
 
-            document.getElementById('secao-tarefas').style.display =
-                (estado.proativo === false) ? 'none' : '';
+            document.getElementById('cfg-proativo-pausado').hidden = estado.proativo !== false;
             if (estado.proativo !== undefined) atualizarBtnProativo(estado.proativo);
         }
 
@@ -5014,10 +5881,22 @@
         }
         btnToggleProativo.onclick = function() {
             const novoEstado = this.classList.contains('inativo');
-            document.getElementById('secao-tarefas').style.display = novoEstado ? '' : 'none';
+            document.getElementById('cfg-proativo-pausado').hidden = novoEstado;
             atualizarBtnProativo(novoEstado);
             enviarConfig({ config: 'proativo', valor: novoEstado });
         };
+
+        document.getElementById('cfg-dark-souls').addEventListener('change', function() {
+            this.disabled = true;
+            document.getElementById('cfg-dark-souls-status').textContent = 'Salvando…';
+            try {
+                enviarConfig({ config: 'dark_souls', valor: this.checked });
+            } catch (_) {
+                this.checked = !this.checked;
+                this.disabled = false;
+                document.getElementById('cfg-dark-souls-status').textContent = 'Sem conexão com a Luna. Tente novamente.';
+            }
+        });
 
         // Task toggles
         ['jogos', 'emails', 'agenda', 'pausa', 'clima', 'bom_dia', 'retomar', 'acompanhamentos', 'steam', 'steam_jogo', 'habitos', 'lol_mortes', 'navegador', 'radar_rss', 'radar_promocoes', 'animes', 'autoconhecimento', 'memoria'].forEach(nome => {
@@ -5063,6 +5942,7 @@
                 categorias: [...avaliacaoPendente.categorias], motivo: avalMotivoInput.value }));
         }
         function enviarMotivo() {
+            if (!avaliacaoPendente) return;
             salvarAvaliacaoPendente();
             fecharMotivo();
         }
@@ -5074,12 +5954,18 @@
         botoesAval.forEach(btn => {
             btn.addEventListener('click', function() {
                 if (!ultimoAlvoAval) return;
+                const r = this.dataset.rating;
+                if (avaliacaoPendente && avaliacaoPendente.id === ultimoAlvoAval.id
+                        && avaliacaoPendente.rating === r) {
+                    limparAval();
+                    this.classList.add(r);
+                    return;
+                }
                 const comentario = avaliacaoPendente && avaliacaoPendente.id === ultimoAlvoAval.id
                     ? avalMotivoInput.value : '';
-                // Guarda o rascunho anterior antes de trocar o alvo por outro voto.
-                if (avaliacaoPendente) salvarAvaliacaoPendente();
+                // Voto e motivos são rascunho até Enviar/Enter; salvar a cada clique
+                // gravava avaliações que o usuário ainda estava escolhendo.
                 fecharMotivo();
-                const r = this.dataset.rating;
                 limparAval();
                 this.classList.add(r);
                 avaliacaoPendente = {...ultimoAlvoAval, rating: r, categorias: new Set()};
@@ -5091,10 +5977,10 @@
                     r === 'bom' ? 'O que funcionou?' : 'O que não funcionou?');
                 avalMotivoInput.value = comentario;
                 document.getElementById('aval-alvo').textContent = 'Sobre: ' + ultimoAlvoAval.luna.slice(0, 110);
-                salvarAvaliacaoPendente(); // O voto já vale; explicar é opcional nos dois casos.
                 avalMotivo.classList.add('ativo');
             });
         });
+
         document.querySelectorAll('[data-categoria]').forEach(btn => {
             btn.addEventListener('click', function() {
                 if (!avaliacaoPendente || this.dataset.voto !== avaliacaoPendente.rating) return;
@@ -5103,10 +5989,12 @@
                 if (selecionadas.has(categoria)) selecionadas.delete(categoria);
                 else selecionadas.add(categoria);
                 this.setAttribute('aria-pressed', String(selecionadas.has(categoria)));
-                salvarAvaliacaoPendente();
             });
         });
-        document.getElementById('aval-motivo-fechar').onclick = enviarMotivo;
+        document.getElementById('aval-motivo-fechar').onclick = function() {
+            fecharMotivo();
+            limparAval();
+        };
         document.getElementById('aval-motivo-enviar').onclick = enviarMotivo;
         avalMotivoInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') { e.preventDefault(); enviarMotivo(); }
@@ -5193,6 +6081,10 @@
         let _climaTurnoPendente = '';
         socket.onmessage = function(event) {
             const dados = JSON.parse(event.data);
+            if (dados.tipo === 'mensagem_texto_recebida') {
+                receberConfirmacaoTexto(dados);
+                return;
+            }
             if (dados.tipo === 'evento_visual') {
                 if (dados.destino === PAPEL_MASCOTE) executarEventoVisual(dados.evento);
                 return;
@@ -5298,6 +6190,12 @@
             if (dados.tipo === 'memoria_badge') { atualizarBadgeMemoria(dados.n || 0); return; }
             if (dados.tipo === 'acompanhamentos') {
                 renderAcompanhamentos(dados.estado || {});
+                cartoesEstadoRecebido = true;
+                atualizarCartoesAcompanhamento();
+                return;
+            }
+            if (dados.tipo === 'fonte_feedback') {
+                receberFeedbackFonte(dados);
                 return;
             }
             if (dados.tipo === 'acompanhamento_feedback') {
@@ -5358,16 +6256,22 @@
 
         // Sem isso, uma queda durante a geração deixava o balão e o mascote presos em processamento.
         socket.addEventListener('error', function() {
+            avisarQuedaConexaoTexto();
             finalizarRespostaStreamInterrompida('conexão perdida');
             aplicarPresenca('dormindo');
         });
         socket.addEventListener('close', function() {
+            cartoesEstadoRecebido = false;
+            atualizarCartoesAcompanhamento();
+            avisarQuedaConexaoTexto();
+            interromperCadastroFonte();
             finalizarRespostaStreamInterrompida('conexão encerrada');
             aplicarPresenca('dormindo');
         });
 
         // ── Oficina: teste de fala, dicionário de pronúncia, atalhos, chaves ──
         socket.addEventListener('open', function() {
+            mostrarAvisoTexto('');
             socket.send(JSON.stringify({ comando: 'pronuncia_listar' }));
             socket.send(JSON.stringify({ comando: 'chaves_status' }));
             socket.send(JSON.stringify({ comando: 'modelos_listar' }));
@@ -5440,11 +6344,25 @@
         });
 
         // ── 🧠 Memória: badge, caixa de revisão, lixo, processar agora ──
+        function ajustarAlturaMemoria(caixa) {
+            // A aba escondida não tem medida; recalculamos quando ela fica visível.
+            if (!caixa.getClientRects().length) return;
+            caixa.style.height = 'auto';
+            caixa.style.height = caixa.scrollHeight + 'px';
+        }
+
+        function ajustarCaixasMemoria() {
+            document.getElementById('mem-pendentes').querySelectorAll('textarea')
+                .forEach(ajustarAlturaMemoria);
+        }
+
         function atualizarBadgeMemoria(n) {
             const badge = document.getElementById('config-badge');
             const cont = document.getElementById('mem-count');
             if (badge) { badge.textContent = n; badge.classList.toggle('ativo', n > 0); }
             if (cont) cont.textContent = n > 0 ? `(${n} pra revisar)` : '';
+            const grupo = document.getElementById('config-memoria-badge');
+            if (grupo) { grupo.hidden = n === 0; grupo.textContent = n > 0 ? String(n) : ''; }
         }
 
         function renderMemoria(estado) {
@@ -5464,6 +6382,7 @@
                 const ta = document.createElement('textarea');
                 ta.value = p.fato;
                 ta.rows = 1;
+                ta.addEventListener('input', () => ajustarAlturaMemoria(ta));
                 const meta = document.createElement('div');
                 meta.className = 'mem-meta';
                 if (p.tipo) {
@@ -5478,6 +6397,12 @@
                     evidencia.textContent = `Evidência: “${p.evidencia}”`;
                     meta.appendChild(evidencia);
                 }
+                if (p.tipo === 'projeto') {
+                    const destino = document.createElement('span');
+                    destino.className = 'mem-destino';
+                    destino.textContent = 'Destino: assunto em andamento';
+                    meta.appendChild(destino);
+                }
                 const acoes = document.createElement('div');
                 acoes.className = 'mem-acoes';
                 const g = document.createElement('button');
@@ -5491,6 +6416,24 @@
                 if (meta.childNodes.length) div.appendChild(meta);
                 div.appendChild(acoes);
                 lista.appendChild(div);
+            }
+            ajustarCaixasMemoria();
+
+            const assuntos = document.getElementById('mem-assuntos');
+            assuntos.innerHTML = '';
+            const fios = estado.assuntos || [];
+            if (!fios.length) assuntos.innerHTML = '<div class="mem-vazio">nenhum assunto registrado</div>';
+            for (const fio of fios) {
+                const div = document.createElement('div');
+                div.className = 'mem-lixo-item';
+                const texto = document.createElement('span');
+                texto.textContent = `${fio.titulo} — ${fio.estado_atual}`;
+                const status = document.createElement('span');
+                status.className = 'mem-tipo';
+                status.textContent = fio.status || 'aberto';
+                div.appendChild(texto);
+                div.appendChild(status);
+                assuntos.appendChild(div);
             }
 
             const lx = document.getElementById('mem-lixo');
@@ -5510,6 +6453,8 @@
             }
         }
 
+        window.addEventListener('resize', ajustarCaixasMemoria);
+
         document.getElementById('mem-processar').onclick = function() {
             socket.send(JSON.stringify({ comando: 'memoria_processar' }));
         };
@@ -5521,6 +6466,11 @@
         document.getElementById('btn-config').addEventListener('click', function() {
             socket.send(JSON.stringify({ comando: 'memoria_listar' }));
             socket.send(JSON.stringify({ comando: 'modelos_listar' }));
+        });
+
+        // Assuntos continuam vindo da memória; abrir a gaveta precisa buscar o estado atual.
+        document.getElementById('btn-acompanhamentos').addEventListener('click', function() {
+            if (socket.readyState === 1) socket.send(JSON.stringify({ comando: 'memoria_listar' }));
         });
 
         // sub-sanfona do Lixo (fechado por padrão)
@@ -5535,16 +6485,25 @@
             });
         })();
 
-        // ── Acordeão do painel: cada grupo abre/fecha pelo título (estado lembrado) ──
-        document.querySelectorAll('#config-panel .config-secao').forEach(sec => {
+        // As seções recolhíveis lembram a expansão para não despejar todos os ajustes de uma vez.
+        document.querySelectorAll('#config-panel .config-recolhivel').forEach(sec => {
             const titulo = sec.querySelector('.config-secao-titulo');   // só o 1º = cabeçalho
             if (!titulo) return;                                        // seção sem título (Reload/Fechar) fica sempre visível
             const chave = 'luna_sec_' + titulo.textContent.trim();
             titulo.classList.add('acc');
+            titulo.setAttribute('role', 'button');
+            titulo.tabIndex = 0;
             if (localStorage.getItem(chave) !== 'aberto') sec.classList.add('fechada');
-            titulo.addEventListener('click', () => {
+            const atualizar = () => titulo.setAttribute('aria-expanded', String(!sec.classList.contains('fechada')));
+            const alternar = () => {
                 sec.classList.toggle('fechada');
                 localStorage.setItem(chave, sec.classList.contains('fechada') ? 'fechado' : 'aberto');
+                atualizar();
+            };
+            atualizar();
+            titulo.addEventListener('click', alternar);
+            titulo.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alternar(); }
             });
         });
 
@@ -5800,20 +6759,7 @@
             }, { passive: false });
         })();
 
-        // Sanfona interna: Dicionário de pronúncia (dentro de Voz)
-        (function() {
-            const t = document.getElementById('dic-toggle');
-            const w = document.getElementById('dic-wrap');
-            if (!t || !w) return;
-            if (localStorage.getItem('luna_sub_dic') !== 'aberto') {
-                t.classList.add('fechado'); w.classList.add('sub-fechado');
-            }
-            t.addEventListener('click', () => {
-                t.classList.toggle('fechado');
-                w.classList.toggle('sub-fechado');
-                localStorage.setItem('luna_sub_dic', w.classList.contains('sub-fechado') ? 'fechado' : 'aberto');
-            });
-        })();
+
     </script>
 </body>
 </html>

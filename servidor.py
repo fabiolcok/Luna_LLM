@@ -22,9 +22,11 @@ WebSocket (/ws): recebe {'comando': 'interromper'} do frontend para acionar sd.s
 
 from flask import Flask, render_template, request
 from flask_sock import Sock
+from simple_websocket import ConnectionClosed
 from modulos.execucoes import controle, vincular
 import threading
 import json
+import logging
 import os
 import random
 import re
@@ -43,7 +45,10 @@ def _remover_tags_voz(texto: str) -> str:
 
 app  = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
+# Detecta conexões abandonadas após suspensão/perda de rede, em vez de mantê-las no broadcast.
+app.config['SOCK_SERVER_OPTIONS'] = {"ping_interval": 20}
 sock = Sock(app)
+_log = logging.getLogger("luna.servidor")
 
 
 @app.after_request
@@ -179,14 +184,29 @@ def sincronizar_config(chave: str, valor):
     """Atualiza o estado de config e faz broadcast sem chamar os handlers Python."""
     _estado_config[chave] = valor
     _salvar_config()
-    _broadcast({"tipo": "config_estado", "estado": _estado_config.copy()})
+    _broadcast({"tipo": "config_estado", "estado": _config_para_web()})
 
 def registrar_config_handler(chave: str, fn):
     _config_handlers[chave] = fn
 
+def _config_para_web(erro_dark_souls=""):
+    from modulos import dark_souls
+    # Não persiste uma segunda cópia: o comando de terminal continua usando o mesmo arquivo.
+    return {**_estado_config, "dark_souls": dark_souls.habilitado(),
+            "dark_souls_erro": erro_dark_souls}
+
 def _aplicar_config(dados: dict):
     chave = dados.get('config')
     if not chave:
+        return
+    if chave == 'dark_souls':
+        from modulos import dark_souls
+        erro = ""
+        try:
+            dark_souls.configurar(dados.get('valor'))
+        except (OSError, ValueError):
+            erro = "Não consegui salvar. A configuração anterior foi mantida."
+        _broadcast({"tipo": "config_estado", "estado": _config_para_web(erro)})
         return
     if chave == 'tarefa':
         nome = dados.get('nome')
@@ -224,7 +244,7 @@ def _aplicar_config(dados: dict):
     # Arrastar ajusta o áudio ao vivo; só soltar grava a preferência no disco.
     if not (chave == 'volume' and dados.get('previa') is True):
         _salvar_config()
-    _broadcast({"tipo": "config_estado", "estado": _estado_config.copy()})
+    _broadcast({"tipo": "config_estado", "estado": _config_para_web()})
 
 
 def _estado_modelos():
@@ -358,10 +378,11 @@ def _falar_teste(texto: str):
 def _memoria_estado() -> dict:
     """{pendentes:[...], lixo:[...]} pra caixa de revisão do web."""
     try:
-        from modulos import memoria
-        return {"pendentes": memoria.mem_listar_pendentes(), "lixo": memoria.mem_listar_lixo()}
+        from modulos import memoria, assuntos
+        return {"pendentes": memoria.mem_listar_pendentes(), "lixo": memoria.mem_listar_lixo(),
+                "assuntos": assuntos.listar()}
     except Exception:
-        return {"pendentes": [], "lixo": []}
+        return {"pendentes": [], "lixo": [], "assuntos": []}
 
 def notificar_memoria(n=None):
     """Broadcast do nº de lembranças pendentes (acende o badge no web).
@@ -386,12 +407,42 @@ def _acompanhamentos_estado() -> dict:
         estado["conclusao_tarefa"] = conclusao_tarefas.estado_interface().get("confirmacao")
     except Exception:
         estado["conclusao_tarefa"] = None
+    try:
+        from modulos import acompanhamento_sopro
+        estado["sopro"] = acompanhamento_sopro.estado_interface()
+    except Exception:
+        estado["sopro"] = None
+    try:
+        from modulos import acompanhamento_fontes
+        estado["fontes"] = acompanhamento_fontes.estado_interface()
+    except Exception:
+        estado["fontes"] = {"itens": [], "erro": "Não consegui carregar as fontes cadastradas."}
     return estado
 
 
 def notificar_acompanhamentos():
     """Atualiza card e lista sem atrelar o estado à fala atual da Luna."""
     _broadcast({"tipo": "acompanhamentos", "estado": _acompanhamentos_estado()})
+
+def _receber_texto_web(ws, dados):
+    texto = (dados.get('texto') or '').strip()
+    ok = bool(texto and _handler_texto_web)
+    if ok:
+        _log.info("[Web] Texto recebido (%d caracteres)", len(texto))
+        preparar = getattr(_handler_texto_web, "preparar", None)
+        if preparar:
+            trabalho = preparar(texto)
+            with controle.condicao:
+                if controle.atual and controle.atual.proativa:
+                    atualizar_status("◗ Aguardando a engine liberar sua conversa...")
+            threading.Thread(target=trabalho, daemon=True).start()
+        else:
+            threading.Thread(target=_handler_texto_web, args=(texto,), daemon=True).start()
+    # Confirma a entrada na fila; a resposta do modelo pode demorar sem segurar o rascunho.
+    ws.send(json.dumps({"tipo": "mensagem_texto_recebida", "request_id": dados.get('request_id'),
+                        "ok": ok, "erro": "" if ok else "A Luna ainda não está pronta para receber texto. Tente novamente."},
+                       ensure_ascii=False))
+
 
 @sock.route('/ws')
 def websocket(ws):
@@ -414,7 +465,7 @@ def websocket(ws):
             'kaomoji': _ultimo_kaomoji,
         }, ensure_ascii=False)
         ws.send(boas_vindas)
-        ws.send(json.dumps({"tipo": "config_estado", "estado": _estado_config.copy()}))
+        ws.send(json.dumps({"tipo": "config_estado", "estado": _config_para_web()}))
         ws.send(json.dumps({"tipo": "historico_completo", "turnos": list(_historico_web)}))
         ws.send(json.dumps({"tipo": "status", "texto": _ultimo_status}))
         ws.send(json.dumps({"tipo": "memoria_badge", "n": len(_memoria_estado()["pendentes"])}))
@@ -467,18 +518,7 @@ def websocket(ws):
                 elif dados.get('tipo') == 'mensagem_texto':
                     # Usuário DIGITOU na caixa do web (não falou) -> mesmas regras do Telegram,
                     # mas presença = no PC. Roda em thread pra não travar o WebSocket.
-                    _txt = (dados.get('texto') or '').strip()
-                    if _txt and _handler_texto_web:
-                        import threading as _th
-                        preparar = getattr(_handler_texto_web, "preparar", None)
-                        if preparar:
-                            trabalho = preparar(_txt)
-                            with controle.condicao:
-                                if controle.atual and controle.atual.proativa:
-                                    atualizar_status("◗ Aguardando a engine liberar sua conversa...")
-                            _th.Thread(target=trabalho, daemon=True).start()
-                        else:
-                            _th.Thread(target=_handler_texto_web, args=(_txt,), daemon=True).start()
+                    _receber_texto_web(ws, dados)
                 elif dados.get('comando') == 'laboratorio_visual':
                     acao = str(dados.get('acao', ''))
                     if acao in _ACOES_LAB_VISUAL:
@@ -582,6 +622,23 @@ def websocket(ws):
                             args=(dados.get('acao', ''), confirmacao, resposta),
                             daemon=True,
                         ).start()
+                elif dados.get('comando') == 'sopro_acao':
+                    from modulos import acompanhamento_sopro
+                    resposta = acompanhamento_sopro.agir(
+                        str(dados.get('acao', '')), identificador=str(dados.get('id', '')),
+                        situacao=str(dados.get('situacao', '')))
+                    ws.send(json.dumps({"tipo": "acompanhamento_feedback", "texto": resposta},
+                                       ensure_ascii=False))
+                    notificar_acompanhamentos()
+                elif dados.get('comando') == 'fonte_acao':
+                    from modulos import acompanhamento_fontes
+                    resposta = acompanhamento_fontes.agir(
+                        str(dados.get('acao', '')), identificador=str(dados.get('id', '')),
+                        cadastro=dados.get('cadastro'), novidade_id=str(dados.get('novidade_id', '')))
+                    ws.send(json.dumps({**resposta, "tipo": "fonte_feedback",
+                                        "acao": dados.get('acao', ''),
+                                        "request_id": dados.get('request_id', '')}, ensure_ascii=False))
+                    notificar_acompanhamentos()
                 elif dados.get('comando') == 'acompanhamento_cancelar':
                     from modulos import acompanhamentos
                     ok = acompanhamentos.cancelar(dados.get('id', ''))
@@ -607,8 +664,10 @@ def websocket(ws):
                         ).start()
                 elif dados.get('config'):
                     _aplicar_config(dados)
-    except Exception:
+    except ConnectionClosed:
         pass
+    except Exception:
+        _log.exception("Falha na conexão Web da Luna")
     finally:
         with _clientes_lock:
             _clientes.discard(ws)
@@ -744,7 +803,8 @@ def _registrar_avaliacao(rating: str, motivo: str = "", usuario=None, luna=None,
     except Exception:
         pass
 
-def _registrar_turno(usuario: str, luna: str, origem_proativa: str = "", clima: str = "", links_novidades=None):
+def _registrar_turno(usuario: str, luna: str, origem_proativa: str = "", clima: str = "", links_novidades=None,
+                    cartoes_web=None):
     global _clima_turno_pendente
     import datetime
     from modulos import avaliacoes
@@ -764,6 +824,11 @@ def _registrar_turno(usuario: str, luna: str, origem_proativa: str = "", clima: 
         turno["origem_proativa"] = origem_proativa
     if links_novidades:
         turno["links_novidades"] = dict(links_novidades)
+    if cartoes_web:
+        from modulos.cartoes_web import normalizar
+        cartoes = normalizar(cartoes_web)
+        if cartoes:
+            turno["cartoes_web"] = cartoes
     clima_turno = str(clima or _clima_turno_pendente or "").strip()
     if clima_turno:
         turno["clima"] = clima_turno
@@ -778,11 +843,12 @@ def _registrar_turno(usuario: str, luna: str, origem_proativa: str = "", clima: 
 def atualizar_legenda(texto: str, origem_proativa: str = "", clima: str = ""):
     global _ultima_fala_luna
     links_novidades = getattr(texto, "links_novidades", None)
+    cartoes_web = getattr(texto, "cartoes_web", None)
     texto = _remover_tags_voz(texto)   # voz fica com os tags; texto exibido não
     _ultima_fala_luna = texto
     _broadcast({'legenda': texto})
     if texto:
-        _registrar_turno(_ultima_fala_usuario, texto, origem_proativa, clima, links_novidades)
+        _registrar_turno(_ultima_fala_usuario, texto, origem_proativa, clima, links_novidades, cartoes_web)
 
 def atualizar_stream_resposta(texto: str):
     """Mostra uma prévia da persona sem contaminar histórico, avaliação ou última fala."""

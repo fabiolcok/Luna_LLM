@@ -30,9 +30,11 @@ from modulos.memoria import (
 )
 from modulos.falar import limpar_texto_para_voz, periodo_atual
 from modulos.intencao_gameplay import contexto_gameplay_anterior, validar_pedido_gameplay
-from modulos import (obsidian, config_env, animes, briefing, pendencias,
+from modulos.intencao_memoria import pergunta_de_lembranca
+from modulos import (obsidian, config_env, animes, briefing, pendencias, assuntos,
                      conclusao_tarefas, anotacoes, autoconhecimento)
 from modulos.turbollm_api import (
+    adaptar_mensagens_alternadas, erro_alternancia_papeis,
     erro_modelo_descarregado, listar_biblioteca,
     opcoes_pensamento, recarregar_modelo,
 )
@@ -180,16 +182,29 @@ def _recarregar_modelo_esfriado() -> bool:
 
 
 def _chamar_llm(**parametros):
-    """Repete uma vez somente quando o TurboLLM confirma que descarregou por ociosidade."""
+    """Recupera modelo frio e adapta histórico quando o template exige alternância."""
     ciclo_antes = _ciclo_modelo
 
     def chamar():
-        controle.verificar()
         from modulos import avaliacoes
-        avaliacoes.registrar_chamada(modelo(), parametros)
         # Sem retries invisíveis de dez minutos enquanto a conversa espera o radar.
         alvo = cliente.with_options(timeout=120.0, max_retries=0) if controle.contexto.get() else cliente
-        resposta = alvo.chat.completions.create(model=modelo(), **parametros)
+        for tentativa in range(2):
+            controle.verificar()
+            avaliacoes.registrar_chamada(modelo(), parametros)
+            try:
+                resposta = alvo.chat.completions.create(model=modelo(), **parametros)
+                break
+            except Exception as erro:
+                if tentativa or not erro_alternancia_papeis(erro):
+                    raise
+                adaptadas = adaptar_mensagens_alternadas(
+                    parametros.get("messages"), _prompts.CONTEXTO_HISTORICO_SEM_USUARIO)
+                if adaptadas == parametros.get("messages"):
+                    raise
+                # Só negocia após a rejeição explícita: modelos permissivos mantêm o prompt original.
+                parametros["messages"] = adaptadas
+                cor.amarelo("[🧠 Adaptando histórico à alternância exigida pelo modelo]")
         try:
             controle.verificar()
         except ExecucaoCancelada:
@@ -611,7 +626,7 @@ FUNCOES_DISPONIVEIS = {
 # conduta, forma, saída). O alias mantém o nome usado no resto do arquivo e nos testes.
 PROMPT_LUNA_PERSONA = _prompts.PERSONA
 
-# O clima vira ROSTO aqui no Python, não no modelo (ideia do Fábio, ago/2026). O 12B só escolhe
+# O clima vira ROSTO aqui no Python, não no modelo (decisão do usuário, ago/2026). O 12B só escolhe
 # uma PALAVRA — tarefa trivial, que ele já fazia bem no tempo do [gif:]. Deixar ele escrever o
 # kaomoji dava: carinha quebrada ('= कर_ω_', devanágari), parênteses de volta, 4 formatos
 # diferentes e vício nas 3 caras mais comuns do treino. Agora a saída é sempre válida.
@@ -771,12 +786,34 @@ import contextvars as _cv
 # ContextVar é thread-safe: voz, Telegram e web (threads diferentes) não se atropelam.
 _presenca_pc = _cv.ContextVar("presenca_pc", default=True)
 
+
+def _capturar_momento(historico, responder_completo, proativo=False):
+    from modulos import momento
+    canal = ("telegram" if not _presenca_pc.get() else
+             "proativo" if proativo else "web" if responder_completo else "voz")
+    janela = obter_janela_em_foco() if _presenca_pc.get() else ""
+    return momento.capturar(canal=canal, janela=janela, historico=historico)
+
+def _estado_pesquisa_jogo(resultado: str) -> str:
+    # O sucesso dessa ferramenta também começa com SISTEMA:, que o fallback tratava como erro.
+    for prefixo, estado in (
+        ("SISTEMA: Resultado da pesquisa sobre ", "dados"),
+        ("SISTEMA: PESQUISA_JOGO_SEM_DADOS:", "sem_dados"),
+        ("SISTEMA: PESQUISA_JOGO_ERRO:", "erro"),
+        ("SISTEMA: PESQUISA_JOGO_SEM_CONTEXTO:", "sem_contexto"),
+    ):
+        if resultado.startswith(prefixo):
+            return estado
+    return ""
+
+
 def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico: list,
                           max_tokens=300, forcar_incluir=False, responder_completo=False,
-                          tarefa_documento=None, ao_fragmento=None) -> str:
+                          tarefa_documento=None, ao_fragmento=None, tarefa_proativa=None) -> str:
     global _ultima_saudacao_ts, _kaomoji_pendente
     _clima_da_resposta.set("")
     resposta_tecnica = re.sub(r'<think>.*?</think>', '', resposta_tecnica, flags=re.DOTALL).strip()
+    estado_pesquisa_jogo = _estado_pesquisa_jogo(resposta_tecnica)
 
     data_hoje = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
     memoria_permanente = obsidian.ler_perfil() or ler_memoria_permanente()   # perfil.md é o núcleo
@@ -788,6 +825,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     _mem_relevantes = (buscar_memoria_relevante(prompt_usuario, excluir={f for _, f in _mem_recentes})
                        if prompt_usuario else [])
     memoria_relacionada = "\n".join(obsidian.fmt_memoria(d, f) for d, f in _mem_relevantes)
+    assuntos_relacionados = assuntos.contexto_relacionado(prompt_usuario) if prompt_usuario else ""
     # Proativo já recebe seu fato completo; recall paralelo só contamina e consultar com texto
     # vazio ainda faria embedding sem qualquer benefício.
     contexto_db = buscar_contexto_relevante(prompt_usuario) if prompt_usuario else ""
@@ -806,39 +844,18 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     if os.getenv("LUNA_DIAG_PROMPT") or os.path.exists("modelos/diag_prompt.flag"):
         _blocos = [("perfil", memoria_permanente), ("recentes", memoria_episodica),
                    ("relacionada", memoria_relacionada), ("chromadb", contexto_db or "")]
+        if assuntos_relacionados:
+            _blocos.append(("assuntos", assuntos_relacionados))
         _det = " · ".join(f"{n} {len(t)}c≈{len(t)//4}tok" for n, t in _blocos if t)
         _tot = sum(len(t) for _, t in _blocos)
         cor.cinza(f"[📏 Chamada 2 — memória: {_det} · TOTAL {_tot}c≈{_tot//4}tok]")
 
-    estado = ler_estado_luna()
-    programa_em_uso = estado.get("programa_atual") or obter_janela_em_foco()
-    horas_sessao = estado.get("horas_na_sessao", 0)
-    jogo_ativo = estado.get("jogo_ativo")
-
-    partes_situacao = []
-    if not _presenca_pc.get():
-        # Ele está falando pelo CELULAR (Telegram): o estado do PC é irrelevante e ENGANA
-        # (dizer "Programa em uso: firefox" faz a Luna achar que ele está sentado no PC).
-        contexto_situacional = ("ELE NÃO ESTÁ NO COMPUTADOR — está te escrevendo pelo CELULAR, longe do PC "
-                                "(pode estar na rua, no trabalho ou em outro cômodo). LOGO: é IMPOSSÍVEL pra ele "
-                                "mexer no PC agora — NÃO sugira nem pergunte se ele vai programar, revisar código, "
-                                "mexer no Colibri/sistema, jogar ou olhar a tela. Qualquer sugestão sua tem que "
-                                "caber no celular ou fora de casa")
-    else:
-        if jogo_ativo:
-            partes_situacao.append(f"MODO GAMER ATIVO — jogo: {jogo_ativo}")
-        else:
-            partes_situacao.append("MODO NORMAL")
-        partes_situacao.append(f"Programa em uso: {programa_em_uso}")
-        if horas_sessao > 0.1:
-            partes_situacao.append(f"sessão ativa há {horas_sessao:.1f}h")
-        programa_desde = estado.get("programa_desde")
-        if programa_desde and programa_em_uso:
-            mins = (time.time() - programa_desde) / 60
-            if mins >= 1:
-                label = f"{int(mins)}min" if mins < 60 else f"{mins / 60:.1f}h"
-                partes_situacao.append(f"há {label} nesse programa")
-        contexto_situacional = " | ".join(partes_situacao)
+    # A mesma observação acompanha roteador e persona: uma mudança de janela durante
+    # a geração não pode fazer cada etapa responder sobre uma situação diferente.
+    _momento = getattr(controle.contexto.get(), "momento", None)
+    if _momento is None:
+        _momento = _capturar_momento(historico, responder_completo, proativo=not prompt_usuario)
+    contexto_situacional = _prompts.contexto_momento(_momento)
 
     # Já cumprimentou nas últimas horas? Então é PROIBIDO saudar de novo (determinístico).
     aviso_saudacao = ""
@@ -850,6 +867,9 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
 
     # Comprimento e formatação pelo canal: voz vira áudio; Web digitado e Telegram são texto.
     canal_hint = _prompts.CANAL_TEXTO if responder_completo else _prompts.CANAL_VOZ
+    if responder_completo and _presenca_pc.get():
+        # Telegram também é texto, mas não compartilha o renderizador de tabelas da web.
+        canal_hint = _prompts.CANAL_WEB
 
     # Tom da voz (SER acústico) — SÓ no canal de voz. Palpite SUTIL que colore o COMO.
     dica_tom = ""
@@ -970,6 +990,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         ajustes=[aviso_saudacao, canal_hint, dica_tom, presenca_hint,
                  aviso_kaomoji, aviso_referencia, aviso_cotidiano],
         emocao=emocao_do_turno,
+        assuntos_relacionados=assuntos_relacionados,
     )
 
     is_proativo = (prompt_usuario == "")
@@ -991,7 +1012,10 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     elif agradecimento_curto:
         modo_enxuto = _prompts.ENXUTO_AGRADECIMENTO
     elif is_proativo:
-        modo_enxuto = _prompts.ENXUTO_PROATIVO
+        # A origem explícita evita mudar o radar, a abertura Steam ou uma conversa sobre o jogo.
+        modo_enxuto = (_prompts.ENXUTO_DARK_SOULS if tarefa_proativa in (
+            "dark_souls_morte", "dark_souls_chefe", "dark_souls_fogueira"
+        ) else _prompts.ENXUTO_PROATIVO)
     elif zoeira_backlog:
         modo_enxuto = _prompts.ENXUTO_ZOEIRA_BACKLOG
     elif momento_sensivel:
@@ -1020,7 +1044,8 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     # recentes, relacionada e ChromaDB), e saber quanto ela pesa é a pergunta do dia a dia.
     # O detalhe bloco a bloco continua no [📏], sob o flag — é o que serve pra decidir o que cortar.
     _mem = sum(len(t) for t in (memoria_permanente, memoria_episodica,
-                                memoria_relacionada, contexto_db or "")) if not modo_enxuto else 0
+                                memoria_relacionada, contexto_db or "",
+                                assuntos_relacionados)) if not modo_enxuto else 0
     _diag_mem = f" · memória {_mem}c" if _mem else ""
     _diag_prompt = (f"[🧩 Prompt: {_caminho} + {_emocao_usada} · {_canal} · "
                     f"{len(prompt_sistema)}c≈{len(prompt_sistema)//4}tok{_diag_mem}]")
@@ -1031,7 +1056,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         caminho_prompt=_caminho, emocao=_emocao_usada, canal_resposta=_canal,
         memoria_chars=_mem, historico_modelo=avaliacoes.historico_curto(historico),
         dados_origem=str(resposta_tecnica or "")[:1800],
-        situacao=contexto_situacional,
+        situacao=contexto_situacional, momento=_momento,
     )
 
     resultado_longo = len(resposta_tecnica) > 200 and not is_proativo and not forcar_incluir
@@ -1039,8 +1064,8 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     resultado_acompanhamento = resposta_tecnica.startswith("ACOMPANHAMENTO_PROPOSTO:")
     resultado_acompanhamento_confirmado = resposta_tecnica.startswith("ACOMPANHAMENTO_CONFIRMADO:")
     resultado_acompanhamento_descartado = resposta_tecnica.startswith("ACOMPANHAMENTO_DESCARTADO:")
-    _falhou = bool(re.match(r'^\s*(erro|falha|nenhum|não foi possível)\b|^\s*sistema:',
-                            resposta_tecnica, re.IGNORECASE))
+    _falhou = not estado_pesquisa_jogo and bool(re.match(
+        r'^\s*(erro|falha|nenhum|não foi possível)\b|^\s*sistema:', resposta_tecnica, re.IGNORECASE))
 
     ultima_resp = next((m["content"] for m in reversed(historico) if m["role"] == "assistant"), "")
     # A lista parava em 'Ih' — logo antes das que mais aparecem. Medido em 875 respostas de modo
@@ -1127,6 +1152,9 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
                 "Não diga que já salvou, não prometa lembrar ainda e não chame de agenda ou lembrete. "
                 "O botão e a próxima resposta dele farão a confirmação."
             )
+        elif estado_pesquisa_jogo:
+            user_msg = _prompts.prompt_pesquisa_jogo(
+                prompt_usuario, resposta_tecnica, estado_pesquisa_jogo) + anti_rep
         elif _falhou:
             user_msg = (
                 f"O usuário disse: '{prompt_usuario}'\n\n"
@@ -1549,9 +1577,18 @@ def _montar_prompt_imagem(pedido_usuario: str, dica: str = "") -> str:
 
 def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True, salvar=True,
                    modo_memoria=False, max_tokens=800, responder_completo=False,
-                   presenca_pc=True, ao_fragmento=None):
+                   presenca_pc=True, ao_fragmento=None, historico_momento=None, tarefa_proativa=None):
     global _imagem_pendente
     _presenca_pc.set(presenca_pc)   # onde ele está (voz/web = no PC; Telegram = fora) — colore o prompt
+    from modulos import momento, avaliacoes
+    _momento = {} if modo_memoria else _capturar_momento(
+        historico if historico_momento is None else historico_momento,
+        responder_completo, proativo=not analisar)
+    if not modo_memoria:
+        _execucao = controle.contexto.get()
+        if _execucao is not None:
+            _execucao.momento = _momento
+        avaliacoes.registrar_contexto(momento=_momento)
     if responder_completo:
         _imagem_pendente = None   # começa limpo a cada turno do Telegram
 
@@ -1566,7 +1603,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
     if not analisar and not modo_memoria:
         cor.amarelo("[🎭 Passando direto para LLM persona (Modo Proativo)...]")
         return _reescrever_como_luna(prompt_usuario, "", historico, max_tokens,
-                                     ao_fragmento=ao_fragmento)
+                                     ao_fragmento=ao_fragmento, tarefa_proativa=tarefa_proativa)
 
     try:
         inicio = time.time()
@@ -1613,13 +1650,10 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
 
             # Jogo ativo no contexto do roteador: sem isto ele não sabe que uma dúvida
             # vaga de gameplay ('como faço o trem andar?') é sobre o jogo em andamento.
-            _jogo_ativo = ler_estado_luna().get("jogo_ativo")
+            prompt_ferramenta += "\n" + _prompts.contexto_momento(_momento)
+            _jogo_ativo = momento.jogo_unico(_momento)
             if _jogo_ativo:
-                prompt_ferramenta += (
-                    f"\nO usuário está JOGANDO '{_jogo_ativo}' AGORA. Se ele fizer uma pergunta de "
-                    "gameplay/how-to que faça sentido nesse jogo (como fazer algo, onde achar, como "
-                    "passar de uma parte), MESMO sem citar o jogo, use 'duvida_do_jogo' com a pergunta dele."
-                )
+                prompt_ferramenta += _prompts.ROTEADOR_JOGO_MOMENTO.format(jogo=repr(_jogo_ativo))
             prompt_ferramenta += (
                 "\nPara 'duvida_do_jogo', copie em 'trecho_pedido' o trecho LITERAL da mensagem "
                 "ATUAL que pede ajuda ou informação. O histórico pode identificar qual é o jogo, "
@@ -1675,6 +1709,11 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             print(f"\n\033[90m[🧠 LÓGICA INTERNA]:\n{raciocinio.strip()}\033[0m\n")
 
         _tool_calls = getattr(mensagem_modelo, 'tool_calls', None)
+        _pergunta_lembranca = not modo_memoria and pergunta_de_lembranca(prompt_usuario)
+        if (_tool_calls and _pergunta_lembranca
+                and _tool_calls[0].function.name in ("ler_obsidian", "salvar_obsidian")):
+            cor.amarelo("[🧠 Pergunta de lembrança — nota indevida ignorada; usando memória da conversa]")
+            _tool_calls = None
         conteudo_salvo_turno = ""
         _jogo_contexto_guard = ""
         _contexto_gameplay = contexto_gameplay_anterior(historico) or {}
@@ -1757,9 +1796,9 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                     from modulos.habilidades import analisar_imagem_gemini
                     # Se tem jogo aberto, avisa o Gemini QUAL é — ele reconhece o jogo e a
                     # tela muito melhor (o contexto vai pro Gemini, não incha o prompt local).
-                    _jogo_tela = ler_estado_luna().get("jogo_ativo")
-                    _pergunta_tela = (f"[Contexto: o usuário está jogando '{_jogo_tela}' agora.] {prompt_usuario}"
-                                      if _jogo_tela else prompt_usuario)
+                    _jogo_tela = momento.jogo_unico(_momento)
+                    _pergunta_tela = (_prompts.VISAO_JOGO_MOMENTO.format(
+                        jogo=repr(_jogo_tela), pergunta=prompt_usuario) if _jogo_tela else prompt_usuario)
                     resultado_ferramenta = analisar_imagem_gemini(imagem_b64, _pergunta_tela)
                     cor.amarelo(f"[🖥️ Gemini ver_tela retornou: {str(resultado_ferramenta)[:200]}]")
                 else:
@@ -1880,7 +1919,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             eh_documento = (ferramenta_chamada and nome_funcao in ("resumir_youtube", "resumir_site", "ler_obsidian")
                             and not resultado_str.startswith(("SISTEMA:", "ERRO", "Erro")))
 
-            if (not ferramenta_chamada) and (not modo_memoria) and _RE_INICIO_SALVAR.match(prompt_usuario or ""):
+            if (not ferramenta_chamada) and (not modo_memoria) and not _pergunta_lembranca and _RE_INICIO_SALVAR.match(prompt_usuario or ""):
                 # O usuário claramente pediu pra ANOTAR, mas o roteador não firou salvar_obsidian
                 # (comum com texto longo). Salva na mão, com o texto fiel, sem depender do 4B.
                 _cont, _titulo = _dados_para_anotar(prompt_usuario)
@@ -1897,7 +1936,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                     ao_fragmento=ao_fragmento,
                 )
                 lembranca_oculta = ""
-            elif (not ferramenta_chamada) and _parece_pedido_de_acao(prompt_usuario):
+            elif (not ferramenta_chamada) and not _pergunta_lembranca and _parece_pedido_de_acao(prompt_usuario):
                 # Pedido de ação que o roteador NÃO roteou: resposta honesta determinística,
                 # sem deixar a persona inventar a partir da memória recuperada (anti-alucinação).
                 cor.vermelho("[⚠️ Pedido de ação sem ferramenta acionada — resposta honesta]")
@@ -2112,8 +2151,8 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
 
         texto_para_memoria = texto_resposta + lembranca_oculta
 
-        historico.append({"role": "user", "content": prompt_usuario})
-        _turno_assistente = {"role": "assistant", "content": texto_resposta}
+        historico.append({"role": "user", "content": prompt_usuario, "instante": inicio})
+        _turno_assistente = {"role": "assistant", "content": texto_resposta, "instante": time.time()}
         if (ferramenta_chamada and nome_funcao == "duvida_do_jogo"
                 and str(resultado_ferramenta).startswith("SISTEMA: Resultado da pesquisa")):
             # Metadado local: autoriza um follow-up curto somente após uma consulta que
@@ -2141,6 +2180,8 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 from modulos import metricas_ferramentas
                 _resultado = str(resultado_ferramenta).lstrip()
                 _sucesso = not _resultado.startswith(("Erro", "ERRO", "SISTEMA: Erro", "SISTEMA: Não consegui"))
+                if nome_funcao == "duvida_do_jogo":
+                    _sucesso = _estado_pesquisa_jogo(_resultado) in ("dados", "sem_dados")
                 metricas_ferramentas.registrar_uso(
                     nome_funcao, _sucesso, time.time() - inicio_ferramenta,
                     prompt_usuario, texto_resposta,

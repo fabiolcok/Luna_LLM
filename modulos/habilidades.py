@@ -572,13 +572,15 @@ def duvida_do_jogo(pergunta: str, nome_jogo: str = "") -> str:
     # O contexto pode saber o jogo mesmo depois de ele ser fechado; o detector fica como fallback.
     jogo = (nome_jogo or ler_estado_luna().get("jogo_ativo") or "").strip()
     if not jogo:
-        return "SISTEMA: Nenhum jogo ativo agora — não sei de qual jogo é a dúvida. Peça pra citar o jogo."
+        return "SISTEMA: PESQUISA_JOGO_SEM_CONTEXTO: Jogo não identificado; nenhuma pesquisa foi realizada."
     resultado = pesquisar_na_web(f"{jogo} {pergunta}")
+    # Falha de conexão e consulta sem material são situações diferentes para a conversa.
+    if re.match(r'^\s*(erro|falha)\b', resultado, re.IGNORECASE):
+        return f"SISTEMA: PESQUISA_JOGO_ERRO: {resultado}"
     nucleo = _nucleo_jogo(jogo)
     if not nucleo or nucleo not in _norm_txt(resultado):
-        return (f"SISTEMA: Pesquisei sobre '{jogo}' mas não achei nada específico DESSE jogo "
-                f"(pode ser um jogo com pouca informação na web). NÃO invente nem confunda com "
-                f"jogo parecido — diga honestamente que não achou material confiável sobre ele.")
+        return (f"SISTEMA: PESQUISA_JOGO_SEM_DADOS: A consulta sobre '{jogo}' não trouxe material "
+                "identificável desse jogo. Não há evidência para responder à dúvida.")
     return f"SISTEMA: Resultado da pesquisa sobre '{jogo}':\n{resultado}"
 
 

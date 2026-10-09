@@ -14,9 +14,10 @@ assert.ok(pensar.includes('AUTONOMIA NÃO É BIRRA') &&
           pensar.includes('pedido simples, seguro e possível deve ser atendido'),
           'FALHA: opinião voltou a servir como desculpa para recusar pedido simples');
 assert.ok(pensar.includes('CANAL DE TEXTO (Web ou Telegram)') &&
-          !pensar.includes('Formatação e Markdown dependem do canal') &&
-          !pensar.includes('Markdown, tabela, lista, título ou bloco de código'),
-          'FALHA: canal de texto voltou a gastar prompt explicando uma capacidade natural');
+          pensar.includes('APRESENTAÇÃO WEB:') &&
+          pensar.includes('papo casual não precisa de título nem lista') &&
+          /if responder_completo and _presenca_pc\.get\(\):[\s\S]*?canal_hint = _prompts\.CANAL_WEB/.test(pensar),
+          'FALHA: orientação visual deve valer só na web e preservar papo casual');
 assert.ok(pensar.includes('CANAL DE VOZ:') &&
           pensar.includes('Use somente texto falável: sem emojis, Markdown'),
           'FALHA: emojis ou Markdown podem vazar para o TTS');

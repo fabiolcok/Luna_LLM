@@ -111,6 +111,10 @@ class TestaRadarInterrupcao(unittest.TestCase):
         self.assertEqual(len(self.cards),1)
         self.assertEqual(self.tentativas,1)
         self.assertTrue(self.disk["radar"].get("noticia"))
+        self.assertEqual(1, len(self.geracoes), "O cartão não pode acrescentar uma chamada ao modelo.")
+        self.assertEqual("Noticia", self.legendas[0].cartoes_web[0]["titulo"])
+        self.assertEqual("Teste", self.legendas[0].cartoes_web[0]["fonte"])
+        self.assertEqual("Comentario.", str(self.legendas[0]))
 
     def test_sem_legenda_confirma_so_quando_audio_inicia(self):
         def falhar(*a,**k):
@@ -123,6 +127,16 @@ class TestaRadarInterrupcao(unittest.TestCase):
         self.radar()
         self.assertTrue(self.disk["radar"].get("noticia"))
         self.assertEqual(len(self.cards),1)
+
+    def test_web_reaproveita_imagem_do_obsidian_sem_enviar_ao_modelo(self):
+        imagem = 'https://example.org/foto-da-noticia.jpg'
+        self.e['_extrair_imagem'] = lambda entry: imagem
+        self.radar()
+        self.assertEqual(imagem, self.cards[0][4])
+        self.assertEqual(self.cards[0][4], self.legendas[0].cartoes_web[0]['imagem'])
+        self.assertEqual(1, len(self.geracoes))
+        self.assertNotIn(imagem, self.geracoes[0][0])
+        self.assertNotIn(imagem, str(self.legendas[0]))
 
     def test_fala_vazia_permanece_pendente(self):
         self.modo="vazio"

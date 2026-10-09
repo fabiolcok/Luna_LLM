@@ -54,6 +54,11 @@ class _Resposta:
 # acrescente um cenário aqui — senão ele nasce sem rede.
 CENARIOS = [
     {"id": "texto_normal", "usuario": "tava pensando em trocar o roteador, o wifi cai direto"},
+    {"id": "momento_com_jogo", "usuario": "qual jogo está detectado?", "janela": "Luna",
+     "observacoes_jogos": {"processos": {"nomes": ["Overwatch"], "instante": 990}}},
+    {"id": "momento_com_relato", "usuario": "e agora?", "janela": "Editor de código",
+     "historico": [{"role": "user", "content": "Estou ajustando a Luna.", "instante": 980},
+                   {"role": "assistant", "content": "Vamos nessa.", "instante": 985}]},
     {"id": "voz_normal", "usuario": "que horas são as reuniões amanhã?", "responder_completo": False},
     {"id": "primeiro_turno_do_dia", "usuario": "e aí, novidade?", "saudou_antes": False},
     {"id": "fora_do_pc", "usuario": "cheguei no mercado", "no_pc": False},
@@ -61,11 +66,21 @@ CENARIOS = [
      "memorias": [("12/08", "terminou a refatoração do módulo de voz"),
                   ("14/08", "reclamou do calor em Brasília")],
      "chroma": "Ele comentou que o ventilador da sala faz barulho."},
+    {"id": "com_assunto_em_andamento", "usuario": "voltei a mexer no Fluxer",
+     "assuntos": "- [aberto] Fluxer no Ubuntu — instalado, mas ainda sem outros usuários"},
     {"id": "kaomoji_recente", "usuario": "consegui fazer funcionar", "kaomojis": ["(•‿•)", "ᗜ‿ᗜ"]},
     {"id": "com_ferramenta", "usuario": "que música tá tocando?",
      "tecnica": "Tocando agora: Comfortably Numb — Pink Floyd"},
     {"id": "ferramenta_falhou", "usuario": "abre minha agenda",
      "tecnica": "Erro: não foi possível conectar no Google Calendar"},
+    {"id": "duvida_jogo_com_dados", "usuario": "Como funciona a coleta no jogo de teste?",
+     "tecnica": "SISTEMA: Resultado da pesquisa sobre 'Jogo de teste':\nA fonte sintética informa: ative Coleta perto do recurso."},
+    {"id": "duvida_jogo_sem_dados", "usuario": "Como funciona a coleta no jogo de teste?",
+     "tecnica": "SISTEMA: PESQUISA_JOGO_SEM_DADOS: Não há material identificável desse jogo."},
+    {"id": "duvida_jogo_erro", "usuario": "Como funciona a coleta no jogo de teste?",
+     "tecnica": "SISTEMA: PESQUISA_JOGO_ERRO: Conexão indisponível."},
+    {"id": "duvida_jogo_sem_contexto", "usuario": "Como funciona a coleta?",
+     "tecnica": "SISTEMA: PESQUISA_JOGO_SEM_CONTEXTO: Nenhuma consulta foi realizada."},
     # a partir daqui, um cenário por modo_enxuto — na mesma ordem em que o pensar.py testa
     {"id": "enxuto_saudacao", "usuario": "oi, tudo bem?"},
     {"id": "enxuto_saudacao_voz", "usuario": "oi, tudo bem?", "responder_completo": False},
@@ -82,6 +97,12 @@ CENARIOS = [
      "tecnica": "A placa de vídeo está em 82°C há quarenta minutos."},
     {"id": "enxuto_proativo_contraste", "usuario": "",
      "tecnica": "CONTRASTE DE ABERTURA CONFIRMADO PELO SISTEMA: anunciou The Last of Us, abriu Silksong."},
+    {"id": "dark_souls_morte_voz", "usuario": "", "responder_completo": False,
+     "tarefa_proativa": "dark_souls_morte", "evento_dark_souls": {"tipo": "morte", "nome": ""}},
+    {"id": "dark_souls_chefe_voz", "usuario": "", "responder_completo": False,
+     "tarefa_proativa": "dark_souls_chefe", "evento_dark_souls": {"tipo": "chefe", "nome": "Bell Gargoyles"}},
+    {"id": "dark_souls_fogueira_voz", "usuario": "", "responder_completo": False,
+     "tarefa_proativa": "dark_souls_fogueira", "evento_dark_souls": {"tipo": "fogueira", "nome": "Undead Burg"}},
     {"id": "enxuto_zoeira_backlog", "usuario": "quero comprar mais um jogo e meu backlog tá lotado"},
     {"id": "enxuto_sensivel", "usuario": "tô triste hoje"},
     {"id": "enxuto_cansaco", "usuario": "tô muito cansado dessa semana"},
@@ -91,6 +112,8 @@ CENARIOS = [
 def capturar(cenario: dict) -> str:
     """Roda a persona de verdade com as fontes pessoais substituídas e devolve o system prompt."""
     from modulos import pensar
+    from modulos import momento
+    capturar_momento = momento.capturar
 
     capturado = {}
 
@@ -112,14 +135,20 @@ def capturar(cenario: dict) -> str:
         patch.object(pensar.obsidian, "avaliar_relevancia", return_value=True),
         patch.object(pensar, "buscar_memoria_relevante", return_value=[]),
         patch.object(pensar, "buscar_contexto_relevante", return_value=cenario.get("chroma", "")),
+        patch.object(pensar.assuntos, "contexto_relacionado",
+                     return_value=cenario.get("assuntos", "")),
         patch.object(pensar, "ler_estado_luna", return_value={}),
-        patch.object(pensar, "obter_janela_em_foco", return_value="bancada de teste"),
+        patch.object(pensar, "obter_janela_em_foco", return_value=cenario.get("janela", "bancada de teste")),
+        patch.object(momento, "_jogos", cenario.get("observacoes_jogos", {})),
+        patch.object(momento, "capturar", side_effect=lambda **kw: capturar_momento(agora=1000, **kw)),
     ):
         pensar._reescrever_como_luna(
-            cenario.get("tecnica", ""), cenario["usuario"],
+            (pensar._prompts.prompt_dark_souls(cenario["evento_dark_souls"])
+             if "evento_dark_souls" in cenario else cenario.get("tecnica", "")), cenario["usuario"],
             [dict(m) for m in cenario.get("historico", [])],
             max_tokens=220,
             responder_completo=cenario.get("responder_completo", True),
+            tarefa_proativa=cenario.get("tarefa_proativa"),
         )
     if "sistema" not in capturado:
         return "<<NENHUM PROMPT FOI MONTADO>>"
@@ -128,7 +157,19 @@ def capturar(cenario: dict) -> str:
 
 def normalizar(texto: str) -> str:
     """Tira o que muda a cada execução — data, hora e período do dia — sem tocar no resto."""
-    return re.sub(r"^Hoje é .*$", "Hoje é <DATA/HORA/PERÍODO>", texto, count=1, flags=re.MULTILINE)
+    from modulos import pensar
+    texto = re.sub(r"^Hoje é .*$", "Hoje é <DATA/HORA/PERÍODO>", texto, count=1, flags=re.MULTILINE)
+    # O golden é público. Só normaliza os campos de nome: o padrão "Usuário" também
+    # aparece em regras genéricas que precisam continuar sendo comparadas literalmente.
+    nome = pensar._prompts.NOME_USUARIO
+    if nome:
+        for antes, depois in (("PERFIL DO ", " (a pessoa"),
+                              ("amiga próxima do ", " (o usuário)"),
+                              ("amiga próxima do ", ". Responda"),
+                              ("o próprio ", " construiu")):
+            padrao = "(" + re.escape(antes) + ")" + re.escape(nome) + "(?=" + re.escape(depois) + ")"
+            texto = re.sub(padrao, r"\1<USUARIO>", texto, flags=re.IGNORECASE)
+    return texto
 
 
 def montar_tudo() -> str:
@@ -156,6 +197,12 @@ class TestaMontagemDoPrompt(unittest.TestCase):
     def test_golden_existe(self):
         self.assertTrue(GOLDEN.exists(),
                         "Falta o golden. Gere com: python -m testes.testa_prompt_montagem --atualizar")
+
+    def test_nome_padrao_nao_normaliza_regras_genericas(self):
+        from modulos import pensar
+        with patch.object(pensar._prompts, "NOME_USUARIO", "Usuário"):
+            self.assertEqual(normalizar("PERFIL DO USUÁRIO (a pessoa); responda ao usuário."),
+                             "PERFIL DO <USUARIO> (a pessoa); responda ao usuário.")
 
     def test_todo_cenario_montou_um_prompt(self):
         for nome, corpo in self._fatiar(self.atual).items():
@@ -189,6 +236,37 @@ class TestaMontagemDoPrompt(unittest.TestCase):
                     "   Se foi DE PROPÓSITO, rode:\n"
                     "     python -m testes.testa_prompt_montagem --atualizar\n"
                     "   e confira o `git diff` do golden antes de commitar." % nome)
+
+    def test_apresentacao_visual_so_na_web_com_prompt_completo(self):
+        blocos = self._fatiar(self.atual)
+        for cenario in CENARIOS:
+            nome = cenario["id"]
+            sistema = blocos[nome].split(MARCA_USUARIO)[0]
+            e_web = cenario.get("responder_completo", True) and cenario.get("no_pc", True)
+            e_completo = "CANAL DE TEXTO (Web ou Telegram)" in sistema
+            with self.subTest(cenario=nome):
+                self.assertEqual("APRESENTAÇÃO WEB:" in sistema, e_web and e_completo)
+
+    def test_duvida_jogo_recebe_estado_sem_falha_generica(self):
+        blocos = self._fatiar(self.atual)
+        for nome in ("duvida_jogo_com_dados", "duvida_jogo_sem_dados", "duvida_jogo_erro",
+                     "duvida_jogo_sem_contexto"):
+            with self.subTest(cenario=nome):
+                usuario = blocos[nome].split(MARCA_USUARIO)[1]
+                self.assertIn("ESTADO CONFIRMADO DA CONSULTA:", usuario)
+                self.assertNotIn("A ferramenta FALHOU", usuario)
+                self.assertIn("causa, intenção dos criadores ou mecânica", usuario)
+        self.assertIn("A ferramenta FALHOU", blocos["ferramenta_falhou"].split(MARCA_USUARIO)[1])
+
+    def test_conversa_de_jogo_preserva_emocao_e_perfil(self):
+        from modulos import prompts
+        blocos = self._fatiar(self.atual)
+        for nome in ("duvida_jogo_com_dados", "duvida_jogo_sem_dados", "duvida_jogo_erro",
+                     "duvida_jogo_sem_contexto"):
+            with self.subTest(cenario=nome):
+                sistema = blocos[nome].split(MARCA_USUARIO)[0]
+                self.assertEqual(sistema.count(prompts.EMOCAO), 1)
+                self.assertIn(PERFIL, sistema)
 
 
 if __name__ == "__main__":

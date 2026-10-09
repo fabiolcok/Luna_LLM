@@ -33,7 +33,7 @@ assert.ok(index.includes("socket.addEventListener('error'") &&
           index.includes("aplicarPresenca('dormindo')"),
           'FALHA: queda do WebSocket pode deixar streaming ou mascote presos');
 
-assert.ok(/def gerar_resposta\([^)]*ao_fragmento=None\)/s.test(pensar),
+assert.ok(/def gerar_resposta\([^)]*\bao_fragmento=None(?:\s*,|\s*\))/s.test(pensar),
           'FALHA: persona perdeu o callback opcional de streaming');
 assert.ok(/_chamar_llm\(stream=True, \*\*_parametros_persona\)/.test(pensar) &&
           /_visivel = _bruto\[:-20\]/.test(pensar),

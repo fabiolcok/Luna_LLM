@@ -11,7 +11,7 @@ from modulos.habilidades import checar_emails_nao_lidos, ler_agenda_google, obte
 from modulos.pensar import gerar_resposta, aquecer_modelo, obter_clima_resposta
 from modulos.falar import falar_texto
 from modulos.memoria import carregar_vistos, salvar_vistos, atualizar_estado_luna
-from modulos import obsidian, animes
+from modulos import obsidian, animes, momento
 from modulos import prompts as _prompts
 import modelos.cores as cor
 import psutil
@@ -334,8 +334,7 @@ def _contexto_recente_para_proativo(prompt_atual="") -> str:
         return ""
     # Proativos anteriores já têm anti-repetição próprio. Ignorá-los aqui preserva a última
     # conversa REAL mesmo quando duas rotinas autônomas acontecem antes da próxima resposta.
-    conversa = [m for m in list(_historico_principal)
-                if m.get("origem") != "proativo" and m.get("role") in ("user", "assistant")]
+    conversa = momento.conversa_recente(list(_historico_principal))
     linhas = []
     for mensagem in conversa[-2:]:
         conteudo = re.sub(r'\s+', ' ', str(mensagem.get("content", ""))).strip()
@@ -409,7 +408,8 @@ class _FalaProativa(str):
         return obj
 
 
-def _falar_proativamente(texto_resposta, ao_apresentar=None) -> bool:
+def _falar_proativamente(texto_resposta, respeitar_intervalo=True, ainda_valido=None,
+                         ao_apresentar=None) -> bool:
     """Retorna True se chegou ao fim sem cancelamento.
 
     `ao_apresentar` confirma uma única vez a legenda publicada ou o início da voz,
@@ -421,16 +421,19 @@ def _falar_proativamente(texto_resposta, ao_apresentar=None) -> bool:
     if not texto_resposta or not str(texto_resposta).strip():
         _limpar_visual_proativo()
         return False
-    if not _pode_falar_proativo():
+    if respeitar_intervalo and not _pode_falar_proativo():
         return False
     timeout = time.time() + 300
     while not luna_esta_livre():
         if not _execucoes.valida(_execucoes.contexto.get()):
             return False
-        if time.time() > timeout:
+        if time.time() > timeout or (ainda_valido and not ainda_valido()):
             _limpar_visual_proativo()
             return False
         time.sleep(3)
+    if ainda_valido and not ainda_valido():
+        _limpar_visual_proativo()
+        return False
     confirmado = False
     def confirmar_apresentacao():
         nonlocal confirmado
@@ -457,6 +460,7 @@ def _falar_proativamente(texto_resposta, ao_apresentar=None) -> bool:
         if _historico_principal is not None:
             _historico_principal.append({
                 "role": "assistant", "content": texto_resposta, "origem": "proativo",
+                "instante": time.time(),
             })
             if len(_historico_principal) > 12:
                 del _historico_principal[:-12]
@@ -491,12 +495,16 @@ _ABORDAGENS = [
 ]
 # Últimas falas proativas, para evitar repetir tema/palavras
 _falas_recentes = []
+# Separadas do radar: outras rotinas nao devem apagar as mortes ja comentadas.
+# Inclui geracoes validas que perderam a janela de entrega depois.
+_falas_morte_recentes = []
 
-def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150, variar=True):
+def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150, variar=True,
+                         respeitar_intervalo=True, ainda_valido=None):
     global _historico_proativo
     _execucoes.verificar()
 
-    if not _pode_falar_proativo():   # em cooldown: nem gera (economiza o 12B), tenta no próximo ciclo
+    if respeitar_intervalo and not _pode_falar_proativo():
         return None
     cor.amarelo(f"[🌚 Proativo: {tarefa}]")
     try:
@@ -517,6 +525,7 @@ def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150, variar=True)
     # Variedade + anti-repetição (adicionados após o corte, para nunca serem truncados)
     if variar:
         prompt_sistema += f"\nDesta vez, faça isso como {random.choice(_ABORDAGENS)}."
+    prompt_sem_recentes = prompt_sistema
     if _falas_recentes:
         prompt_sistema += ("\nVocê já falou isto há pouco — NÃO repita o tema nem as mesmas palavras: "
                            + " / ".join(_falas_recentes[-3:]))
@@ -527,16 +536,35 @@ def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150, variar=True)
         def receber_proativo(_texto):
             _execucoes.verificar()
         receber_proativo.cancelado = lambda: not _execucoes.valida(_execucoes.contexto.get())
-        resposta = gerar_resposta(
-            prompt_sistema,
-            _historico_proativo,
-            analisar=False,
-            salvar=False,
-            max_tokens=max_tokens,
-            ao_fragmento=receber_proativo if _execucoes.contexto.get() else None,
-        )
-        _execucoes.verificar()
-        _historico_proativo = []
+        for tentativa in range(2):
+            _execucoes.verificar()
+            if ainda_valido is not None and not ainda_valido():
+                _limpar_visual_proativo()
+                return None
+            resposta = gerar_resposta(
+                prompt_sistema,
+                _historico_proativo,
+                analisar=False,
+                salvar=False,
+                max_tokens=max_tokens,
+                ao_fragmento=receber_proativo if _execucoes.contexto.get() else None,
+                historico_momento=_historico_principal or [],
+                tarefa_proativa=tarefa,
+            )
+            _execucoes.verificar()
+            _historico_proativo = []
+            if tarefa != "dark_souls_morte" or not resposta:
+                break
+            from modulos.antirrepeticao import repete_fala
+            if not repete_fala(resposta, _falas_morte_recentes):
+                break
+            if tentativa:
+                cor.amarelo("[Dark Souls: morte repetida nas duas gerações — comentário descartado]")
+                _limpar_visual_proativo()
+                return None
+            cor.amarelo("[Dark Souls: fala de morte repetida — tentando outra reação]")
+            # Repetir a citação na correção reforçava o molde que queremos abandonar.
+            prompt_sistema = prompt_sem_recentes + _prompts.RETENTATIVA_MORTE_REPETIDA
         if tarefa == "hábito de jogo" or tarefa.startswith("steam_abriu_"):
             from modulos.validacao_horas import horas_conferem
             if resposta and not horas_conferem(dados_originais, resposta):
@@ -552,6 +580,9 @@ def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150, variar=True)
             _limpar_visual_proativo()
             return None
         if resposta:
+            if tarefa == "dark_souls_morte":
+                _falas_morte_recentes.append(resposta.strip())
+                del _falas_morte_recentes[:-5]
             _falas_recentes.append(resposta.strip()[:120])
             if len(_falas_recentes) > 5:
                 _falas_recentes.pop(0)
@@ -645,18 +676,18 @@ def _steam_cliente_aberto():
 
 def _steam_status_atual():
     """Pergunta pro Steam o que o usuário está jogando neste momento.
-    Retorna (appid:str, nome:str) ou (None, None) se não estiver jogando."""
+    Retorna (appid, nome), (None, None) sem jogo, ou None se a consulta falhou."""
     if not STEAM_API_KEY or not STEAM_ID:
-        return None, None
+        return None
     url = (f"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/"
            f"?key={STEAM_API_KEY}&steamids={STEAM_ID}")
     try:
         r = requests.get(url, timeout=10)
         if r.status_code != 200:
-            return None, None
+            return None
         players = r.json().get("response", {}).get("players", [])
         if not players:
-            return None, None
+            return None
         p = players[0]
         nome = p.get("gameextrainfo")
         appid = p.get("gameid")
@@ -664,7 +695,7 @@ def _steam_status_atual():
             return str(appid), nome
         return None, None
     except Exception:
-        return None, None
+        return None
 
 def _steam_conquistas(appid):
     """(feitas, total) de conquistas do jogo. None se o jogo não tem achievements
@@ -1405,6 +1436,8 @@ def _tarefa_radar_rss():
     if fala:
         # Os endereços pertencem ao item sorteado, nunca ao texto inventado pelo modelo.
         fala.links_novidades = {"noticia": destaque[1], "nota": obsidian.link_novidades()}
+        from modulos import cartoes_web
+        fala.cartoes_web = [cartoes_web.noticia(destaque[0], destaque[2], destaque[1], n - 1, destaque[4])]
     apresentado = False
     def registrar_apresentacao():
         nonlocal apresentado
@@ -1639,6 +1672,78 @@ _RETOMAR_ESPACO_2A = 6 * 3600          # 6h entre a 1ª e a 2ª retomada
 _RETOMAR_REASK_DIAS = 21               # NÃO repõe o MESMO assunto por N dias (era o bug do "todo dia a mesma pergunta")
 
 
+
+def _tarefa_acompanhamento_sopro():
+    from modulos import acompanhamento_sopro as sopro, dark_souls
+    if not luna_esta_livre():
+        return
+    item = sopro.proxima_novidade()
+    if not item:
+        return
+    valido = lambda: (_proativo_ativo and TAREFAS_ATIVAS.get("acompanhamentos", True)
+                      and not any(ESTADO_JOGOS.values()) and not _STEAM_JOGANDO_AGORA
+                      and not dark_souls.contexto() and sopro.ainda_valida(item["id"]))
+    estado = sopro.estado_interface()
+    prompt = _prompts.ACOMPANHAMENTO_SOPRO.format(
+        situacao=estado["situacao"][:180], fonte=item["fonte"], trecho=item["trecho"][:350],
+        orientacao=_prompts.SOPRO_ORIENTACOES.get(item.get("tipo"), _prompts.SOPRO_ORIENTACOES["mencao"]))
+    fala = _gerar_fala_proativa(prompt, "Sopro · PT-BR", max_tokens=220, variar=False,
+                               ainda_valido=valido)
+    if fala:
+        fala.links_novidades = {"noticia": item["url"]}
+        from modulos import cartoes_web
+        fala.cartoes_web = [cartoes_web.acompanhamento("sopro", estado, item)]
+    def apresentado():
+        sopro.registrar_apresentacao(item["id"])
+        registrar_tentativa()
+    _falar_proativamente(fala, ainda_valido=valido, ao_apresentar=apresentado)
+
+def _tarefa_acompanhamento_fontes():
+    from modulos import acompanhamento_fontes as fontes, dark_souls
+    if not luna_esta_livre() or not _pode_falar_proativo():
+        return
+    def disponivel():
+        return (_proativo_ativo and TAREFAS_ATIVAS.get("acompanhamentos", True)
+                and not any(ESTADO_JOGOS.values()) and not _STEAM_JOGANDO_AGORA
+                and not dark_souls.contexto() and not esta_suspensa() and obter_tempo_afk() <= 300)
+    if not disponivel():
+        return
+    try:
+        item = fontes.proxima_novidade()
+        if not item:
+            analise = fontes.proxima_analise()
+            if not analise or not fontes.ainda_valido(analise):
+                return
+            _execucoes.verificar()
+            bruto = gerar_resposta(_prompts.prompt_classificar_fonte(analise), [],
+                                   analisar=False, salvar=False, modo_memoria=True, max_tokens=300)
+            _execucoes.verificar()
+            if not disponivel() or not fontes.ainda_valido(analise):
+                return
+            _execucoes.efeito(fontes.registrar_analise)(analise, bruto)
+            _execucoes.verificar()
+            item = fontes.proxima_novidade()
+        if not item:
+            return
+        valido = lambda: disponivel() and fontes.ainda_valido(item)
+        fala = _gerar_fala_proativa(_prompts.prompt_acompanhamento_fonte(item),
+                                   "Acompanhamento · " + item["assunto"][:80], max_tokens=220,
+                                   variar=False, ainda_valido=valido)
+        if fala:
+            fala.links_novidades = {"noticia": item["url"]}
+            from modulos import cartoes_web
+            fala.cartoes_web = [cartoes_web.acompanhamento("fontes", {
+                "id": item["acompanhamento_id"], "assunto": item["assunto"],
+                "situacao": item["situacao"],
+            }, item)]
+        def apresentado():
+            fontes.registrar_apresentacao(item)
+            registrar_tentativa()
+        _falar_proativamente(fala, ainda_valido=valido, ao_apresentar=apresentado)
+    except (ValueError, OSError) as e:
+        cor.amarelo(f"[Acompanhamentos: {e}]")
+
+
 def _tarefa_acompanhamentos():
     """Pergunta só por itens que o usuário confirmou; agenda nunca entra nesta fila."""
     # O loop já roda a cada ~30 s. Um segundo relógio de 5 min podia checar segundos
@@ -1654,6 +1759,9 @@ def _tarefa_acompanhamentos():
         "arquivo, sistema ou agendamento e não invente nenhum detalhe."
     )
     texto = _gerar_fala_proativa(prompt, "acompanhamento", max_tokens=100, variar=False)
+    if texto:
+        from modulos import cartoes_web
+        texto.cartoes_web = [cartoes_web.acompanhamento("conversa", item)]
     if texto and _falar_proativamente(texto):
         acompanhamentos.registrar_pergunta(item["id"])
         registrar_tentativa()
@@ -2060,7 +2168,9 @@ def _tarefa_monitorar_jogos():
     global ESTADO_JOGOS
     
     # Pega todos os nomes de processos rodando agora (case-insensitive)
-    processos_ativos = {p.info['name'].lower() for p in psutil.process_iter(['name'])}
+    processos_ativos = {(p.info['name'] or '').lower() for p in psutil.process_iter(['name'])}
+    momento.observar_jogos("processos", [nome for exe, nome in PROCESSOS_JOGOS.items()
+                                       if exe.lower() in processos_ativos])
 
     for exe, nome_jogo in PROCESSOS_JOGOS.items():
         esta_rodando_agora = exe.lower() in processos_ativos
@@ -2271,7 +2381,11 @@ def _tarefa_monitorar_steam():
     # Só consulta a API se o cliente Steam estiver aberto (senão: 0 chamadas).
     # Se o Steam foi fechado com um jogo em sessão, appid=None cai no CASO 2 (fim).
     if _steam_cliente_aberto():
-        appid, nome = _steam_status_atual()
+        status = _steam_status_atual()
+        if status is None:
+            # Falha de rede não confirma fechamento nem renova a idade da observação.
+            return
+        appid, nome = status
     else:
         appid, nome = None, None
 
@@ -2283,6 +2397,8 @@ def _tarefa_monitorar_steam():
     # como sessão — nem comenta na abertura, nem liga o "não perturbe".
     if _steam_ignorado(appid, nome):
         appid, nome = None, None
+
+    momento.observar_jogos("steam", [nome] if appid and nome else [])
 
     appid_antes = _STEAM_SESSAO["appid"]
 
@@ -2526,7 +2642,8 @@ def _tarefa_extrair_memoria(forcar=False):
     blocos = "\n\n".join(
         f"FALA {i}:\n\"\"\"{fala}\"\"\"" for i, fala in enumerate(falas_usuario, 1)
     )[:6000]
-    prompt = _prompts.prompt_extrair_memoria(blocos)
+    from modulos import assuntos
+    prompt = _prompts.prompt_extrair_memoria(blocos, assuntos.resumo_para_extracao())
     cor.cinza("[🧠 Memória: extraindo fatos das conversas novas...]")
     try:
         bruto = gerar_resposta(prompt, [], analisar=False, salvar=False, modo_memoria=True)
@@ -2562,6 +2679,7 @@ def processar_memoria_agora() -> int:
 # LOOP PRINCIPAL DA THREAD PROATIVA
 # ============================================================
 def _loop_proativo():
+    from modulos import dark_souls
     time.sleep(10)
     _ja_imprimiu_suspensa = False
     _ja_imprimiu_jogando = False
@@ -2575,6 +2693,12 @@ def _loop_proativo():
             atualizar_estado_luna("horas_na_sessao", round((time.time() - _sessao_inicio) / 3600, 1))
         segundos_afk = obter_tempo_afk()
         minutos_afk = segundos_afk / 60
+
+        # A rede não reserva o turno nem depende de a pessoa sair do jogo.
+        if TAREFAS_ATIVAS.get("acompanhamentos", True):
+            from modulos import acompanhamento_sopro, acompanhamento_fontes
+            acompanhamento_sopro.agendar_verificacao()
+            acompanhamento_fontes.agendar_verificacao()
 
         # Camada 1 — sempre ativa, independente de suspensão ou AFK
         if TAREFAS_ATIVAS.get("jogos", True):
@@ -2591,7 +2715,7 @@ def _loop_proativo():
                     pass
             _ja_imprimiu_suspensa = False
 
-            jogando_agora = any(ESTADO_JOGOS.values()) or _STEAM_JOGANDO_AGORA
+            jogando_agora = any(ESTADO_JOGOS.values()) or _STEAM_JOGANDO_AGORA or bool(dark_souls.contexto())
 
             # O MODO "NÃO PERTURBE"
             if not jogando_agora:
@@ -2607,7 +2731,10 @@ def _loop_proativo():
                     if TAREFAS_ATIVAS.get("clima", True): _tarefa_monitorar_clima()
                     if TAREFAS_ATIVAS.get("steam", True): _tarefa_steam_wishlist()
                     if TAREFAS_ATIVAS.get("bom_dia", True): _tarefa_bom_dia()
-                    if TAREFAS_ATIVAS.get("acompanhamentos", True): _tarefa_acompanhamentos()
+                    if TAREFAS_ATIVAS.get("acompanhamentos", True):
+                        _tarefa_acompanhamento_sopro()
+                        _tarefa_acompanhamento_fontes()
+                        _tarefa_acompanhamentos()
                     if TAREFAS_ATIVAS.get("retomar", True): _tarefa_retomar_assunto()
                     if TAREFAS_ATIVAS.get("habitos", True): _tarefa_detectar_habito()
                     if TAREFAS_ATIVAS.get("navegador", True): _tarefa_contexto_navegador()
@@ -2639,6 +2766,27 @@ def _loop_proativo():
 
         time.sleep(30)
 
+def _pode_comentar_dark_souls():
+    return _thread_rodando and _proativo_ativo and TAREFAS_ATIVAS.get("jogos", True) and luna_esta_livre()
+
+
+def _comentar_evento_dark_souls(evento, ainda_valido):
+    if not ainda_valido():
+        return False
+    # O monitor tem intervalos próprios: a vitória não precisa esperar o cooldown do radar.
+    resposta = _gerar_fala_proativa(
+        _prompts.prompt_dark_souls(evento), tarefa="dark_souls_" + evento["tipo"],
+        max_tokens=180, variar=False, respeitar_intervalo=False, ainda_valido=ainda_valido,
+    )
+    if not resposta:
+        cor.amarelo(f"[Dark Souls: geração de {evento['tipo']} terminou sem fala utilizável]")
+        return False
+    if not ainda_valido():
+        _limpar_visual_proativo()
+        return False
+    return _falar_proativamente(resposta, respeitar_intervalo=False, ainda_valido=ainda_valido)
+
+
 def iniciar_modo_proativo():
     global _thread_rodando, _sessao_inicio
     if _thread_rodando: return
@@ -2655,6 +2803,8 @@ def iniciar_modo_proativo():
     atualizar_estado_luna("programa_desde", None)
 
     _thread_rodando = True
+    from modulos import dark_souls
+    dark_souls.iniciar(_pode_comentar_dark_souls, _comentar_evento_dark_souls, cor.amarelo)
     t = threading.Thread(target=_loop_proativo, daemon=True)
     t.start()
     cor.magenta("[🌚 Luna proativa: thread iniciada]")
@@ -2662,6 +2812,8 @@ def iniciar_modo_proativo():
 def parar_modo_proativo():
     global _thread_rodando
     _thread_rodando = False
+    from modulos import dark_souls
+    dark_souls.parar()
 
 
 # Reserva cobre coleta, geracao e entrega, sem lacunas entre etapas.
@@ -2696,10 +2848,13 @@ _tarefa_radar_rss = _execucao_proativa(_tarefa_radar_rss)
 _tarefa_radar_promocoes = _execucao_proativa(_tarefa_radar_promocoes)
 _tarefa_avisar_animes = _execucao_proativa(_tarefa_avisar_animes)
 _tarefa_bom_dia = _execucao_proativa(_tarefa_bom_dia)
+_tarefa_acompanhamento_sopro = _execucao_proativa(_tarefa_acompanhamento_sopro)
+_tarefa_acompanhamento_fontes = _execucao_proativa(_tarefa_acompanhamento_fontes)
 _tarefa_acompanhamentos = _execucao_proativa(_tarefa_acompanhamentos)
 _tarefa_retomar_assunto = _execucao_proativa(_tarefa_retomar_assunto)
 _tarefa_detectar_habito = _execucao_proativa(_tarefa_detectar_habito)
 _comentar_morte_lol = _execucao_proativa(_comentar_morte_lol)
+_comentar_evento_dark_souls = _execucao_proativa(_comentar_evento_dark_souls)
 _tarefa_monitorar_jogos = _execucao_proativa(_tarefa_monitorar_jogos)
 _tarefa_monitorar_steam = _execucao_proativa(_tarefa_monitorar_steam)
 _tarefa_contexto_navegador = _execucao_proativa(_tarefa_contexto_navegador)

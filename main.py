@@ -192,9 +192,10 @@ _historico_conversa = []
 
 def _registrar_turno_direto(historico: list, usuario: str, luna: str):
     """Interceptadores também pertencem à conversa, mesmo sem passar pela LLM."""
+    agora = time.time()
     historico.extend([
-        {"role": "user", "content": usuario},
-        {"role": "assistant", "content": luna},
+        {"role": "user", "content": usuario, "instante": agora},
+        {"role": "assistant", "content": luna, "instante": agora},
     ])
     if len(historico) > 12:
         del historico[:-12]
@@ -234,8 +235,9 @@ def responder_texto_web(texto: str):
         _log.info(f"[Web texto] Usuário: {texto}")
         atualizar_usuario(texto)                       # mostra "Você: ..." no web
         atualizar_estado_rosto("pensando")             # anima a presença (a lua) também no texto
-        from modulos import acompanhamentos, conclusao_tarefas
-        resposta_direta = (conclusao_tarefas.interceptar_resposta(texto)
+        from modulos import acompanhamentos, conclusao_tarefas, acompanhamento_sopro
+        resposta_direta = (acompanhamento_sopro.interceptar_pedido(texto)
+                           or conclusao_tarefas.interceptar_resposta(texto)
                            or acompanhamentos.interceptar_resposta(texto))
         if resposta_direta:
             _registrar_turno_direto(_historico_conversa, texto, resposta_direta)
@@ -375,8 +377,9 @@ def loop_voz():
 
                     # Confirmação de acompanhamento é igual por botão, texto e STT. Resolve antes
                     # do roteador para um simples "sim" não virar conversa ou evento de agenda.
-                    from modulos import acompanhamentos, conclusao_tarefas
-                    resposta_direta = (conclusao_tarefas.interceptar_resposta(texto_usuario)
+                    from modulos import acompanhamentos, conclusao_tarefas, acompanhamento_sopro
+                    resposta_direta = (acompanhamento_sopro.interceptar_pedido(texto_usuario)
+                                        or conclusao_tarefas.interceptar_resposta(texto_usuario)
                                         or acompanhamentos.interceptar_resposta(texto_usuario))
                     if resposta_direta:
                         _registrar_turno_direto(historico, texto_usuario, resposta_direta)

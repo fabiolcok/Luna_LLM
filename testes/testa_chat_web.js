@@ -125,5 +125,42 @@ assert.ok(tabela.includes('<table>') && tabela.includes('<th>Nome</th>') &&
 const codigo = contexto.renderizarMarkdownSeguro('```py\nprint("Luna")\n```');
 assert.ok(codigo.includes('<pre><code>') && codigo.includes('print(&quot;Luna&quot;)'),
           'FALHA: bloco de código perdeu formatação segura');
+assert.ok(codigo.includes('class="md-codigo-titulo">py</div>'),
+          'FALHA: linguagem do código deixou de identificar o bloco');
+
+const aninhada = contexto.renderizarMarkdownSeguro(
+    '3. Verificar conexão\n   - Abrir detalhes\n     continuação\n   - Conferir status\n\n4. Recarregar\n\nFim.');
+assert.ok(aninhada.includes('<ol start="3"><li>Verificar conexão<ul>') &&
+          aninhada.includes('<li>Abrir detalhes<br>continuação</li>') &&
+          aninhada.includes('</ul></li><li>Recarregar</li></ol><p>Fim.</p>'),
+          'FALHA: passos com subitens perderam hierarquia ou absorveram o parágrafo seguinte');
+
+const colunas = contexto.renderizarMarkdownSeguro(
+    '| Expressão | Valor |\n| :--- | ---: |\n| `a|b` | 2 |\n| a\\|b | 3 |');
+assert.ok(colunas.includes('<td><code>a|b</code></td>') &&
+          colunas.includes('<td>a|b</td>') &&
+          colunas.includes('<td class="md-alinhar-direita">3</td>'),
+          'FALHA: pipe literal virou outra coluna ou alinhamento numérico se perdeu');
+
+assert.strictEqual(contexto.markdownInline('`**literal** [x](https://exemplo.test)`'),
+                   '<code>**literal** [x](https://exemplo.test)</code>',
+                   'FALHA: Markdown dentro de código foi reinterpretado');
+assert.strictEqual(contexto.markdownInline('\\*literal\\* e **forte**'),
+                   '*literal* e <strong>forte</strong>',
+                   'FALHA: asterisco escapado deixou de ser literal');
+
+const url = contexto.markdownInline('[**fonte**](https://exemplo.test/**rota**?a=1&b=2"onclick="x)');
+assert.ok(url.includes('href="https://exemplo.test/**rota**?a=1&amp;b=2&quot;onclick=&quot;x"') &&
+          url.includes('<strong>fonte</strong></a>') &&
+          !url.includes('"onclick="'),
+          'FALHA: formatação alterou a URL ou criou atributo vindo do texto');
+assert.ok(!contexto.markdownInline('[clique](javascript:alert(1))').includes('<a'),
+          'FALHA: link executável passou pelo Markdown');
+
+const parcial = contexto.renderizarMarkdownSeguro('## Plano\nTexto\n---\n```<img src=x>\n<script>');
+assert.ok(parcial.includes('<h2>Plano</h2><p>Texto</p><hr>') &&
+          parcial.includes('&lt;img src=x&gt;') && parcial.includes('&lt;script&gt;') &&
+          !parcial.includes('<script>') && !parcial.includes('<img'),
+          'FALHA: resposta parcial ou linguagem do código criou HTML executável');
 
 console.log('PASSOU — conversa web renderiza e copia texto com segurança');

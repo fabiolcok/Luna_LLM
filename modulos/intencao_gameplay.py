@@ -10,10 +10,14 @@ def _normalizar(texto: str) -> str:
     return re.sub(r"\s+", " ", texto).strip()
 
 
-# São formas gerais de pedir informação, não uma lista de chefes, itens, verbos ou mecânicas.
+# "Conta como skill" passava como pergunta por conter "como". A evidência precisa
+# pertencer a uma oração de pedido na fala original, não começar num recorte do roteador.
 _SINAL_PEDIDO = re.compile(
-    r"\b(como|onde|aonde|o que|que que|qual|quais|por que|me ajuda|me da uma dica|"
-    r"me de uma dica|alguma dica|tem dica|preciso de ajuda)\b"
+    r"^(?:(?:luna|ei|e|mas|entao)\s+)*(?:como|onde|aonde|o que|que que|qual|quais|por que|"
+    r"me ajuda|me da uma dica|me de uma dica|alguma dica|tem (?:alguma )?dica|preciso de ajuda|"
+    r"me explica|explica|queria saber|quero saber|"
+    r"(?:voce\s+)?(?:pode|poderia|consegue)\s+(?:me\s+)?(?:explicar|dizer|ajudar)|"
+    r"(?:voce\s+)?sabe\s+(?:como|onde|qual))\b"
 )
 _FOLLOWUP = re.compile(
     r"^(?:e|mas)?\s*(?:na|no|nessa|nesse|depois|durante|contra|com|e quanto a|e quanto ao)\b"
@@ -37,6 +41,11 @@ def validar_pedido_gameplay(texto: str, trecho_pedido: str,
     evidencia = _normalizar(trecho_pedido)
     if len(evidencia) < 3 or evidencia not in atual:
         return False
-    if _SINAL_PEDIDO.search(evidencia) or "?" in evidencia:
+    if "?" in evidencia:
         return True
-    return bool(contexto_gameplay_anterior(historico) and _FOLLOWUP.search(evidencia))
+    for oracao in re.split(r"[.!?;\n]+", texto or ""):
+        original = _normalizar(oracao)
+        if (evidencia in original or original in evidencia) and _SINAL_PEDIDO.search(original):
+            return True
+    return bool(contexto_gameplay_anterior(historico)
+                and _FOLLOWUP.search(atual) and _FOLLOWUP.search(evidencia))
