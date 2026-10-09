@@ -1,6 +1,7 @@
 # Ambiente virtual
 venv/
 .venv/
+.venv-tts/
 env/
 
 # Python
@@ -29,6 +30,7 @@ token.json
 modelos/chromadb/
 modelos/memoria_permanente.json
 modelos/estado_proativo.json
+modelos/dark_souls_piloto.json
 modelos/estado_luna.json
 modelos/vistos.json
 modelos/config_luna.json
@@ -39,6 +41,11 @@ modelos/historico_jogos.json
 modelos/rotina_jogos.json
 modelos/conclusao_tarefa.json
 modelos/acompanhamentos.json
+modelos/acompanhamento_sopro.json
+modelos/acompanhamento_sopro.tmp
+modelos/acompanhamento_fontes.json
+modelos/acompanhamento_fontes.tmp
+modelos/assuntos_em_andamento.json
 modelos/tom_baseline.json
 modelos/widget_posicao.json
 modelos/janela_principal.json
@@ -70,3 +77,7 @@ logs/
 .DS_Store
 Thumbs.db
 *.lnk
+
+# Pesos de embedding e backups privados da migracao
+modelos/embeddings/
+modelos/backups_embeddings/

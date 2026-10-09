@@ -51,6 +51,18 @@ class TestaDeduplicacaoMemoria(unittest.TestCase):
         ], falas)
         self.assertEqual([], candidatos)
 
+    def test_categorias_aceitam_acento_e_espaco_sem_afrouxar_evidencia(self):
+        candidatos = memoria.validar_candidatos_memoria([{
+            "fato": "encerrou o projeto do Fluxer",
+            "tipo": "projeto",
+            "duracao": "em andamento",
+            "status": "concluído",
+            "assunto": "Fluxer no Ubuntu",
+            "evidencia": "desisti do Fluxer por agora",
+        }], ["desisti do Fluxer por agora"])
+        self.assertEqual("em_andamento", candidatos[0]["duracao"])
+        self.assertEqual("concluido", candidatos[0]["status"])
+
     def test_repeticao_normalizada_nem_chama_llm(self):
         confirmadas = [("2026-08-10", "Está pensando em comprar um Steam Deck.")]
         llm = unittest.mock.Mock()
@@ -110,6 +122,21 @@ class TestaDeduplicacaoMemoria(unittest.TestCase):
         self.assertEqual("projeto", estado["pendentes"][0]["tipo"])
         self.assertEqual("fiz aqui no servidor do linux",
                          estado["pendentes"][0]["evidencia"])
+
+    def test_confirmar_projeto_encaminha_para_assunto(self):
+        estado = {"marcador_ts": 0.0, "pendentes": [{
+            "id": "abc", "fato": "instalou o Fluxer no Ubuntu", "tipo": "projeto",
+            "duracao": "em_andamento", "assunto": "Fluxer no Ubuntu",
+            "evidencia": "fiz aqui no servidor", "data": "2026-08-29",
+        }], "lixo": [], "recusados": []}
+        with (patch.object(memoria, "carregar_mem_pendente", return_value=estado),
+              patch.object(memoria, "salvar_mem_pendente"),
+              patch("modulos.assuntos.registrar_candidato", return_value=True) as registrar,
+              patch("modulos.obsidian.adicionar_memoria") as obsidian_salvar):
+            self.assertTrue(memoria.mem_confirmar("abc"))
+        registrar.assert_called_once()
+        obsidian_salvar.assert_not_called()
+        self.assertEqual([], estado["pendentes"])
 
 
 if __name__ == "__main__":

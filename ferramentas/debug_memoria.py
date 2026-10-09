@@ -13,9 +13,9 @@ if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))
 os.chdir(RAIZ)
 
-from modulos.memoria import _colecao
+from modulos.memoria import _historico
 
-resultado = _colecao.get()
+resultado = _historico().get()
 for doc in resultado["documents"]:
     print("---")
     print(doc)

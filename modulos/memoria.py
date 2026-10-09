@@ -13,7 +13,9 @@ from dotenv import load_dotenv
 import re
 import unicodedata
 import warnings
-from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
+import threading
+from modulos import embeddings
+from modulos.indice_memoria import abrir_historico
 import modelos.cores as cor
 
 
@@ -30,37 +32,40 @@ NOME_USUARIO = os.getenv("USUARIO_NOME", "Usuário")
 # ============================================================
 LIMITE_SESSOES      = 30        # máximo de conversas guardadas
 RESULTADOS_BUSCA    = 3         # quantas memórias buscar por pergunta
-LIMIAR_DISTANCIA    = 1.3       # descarta memórias acima dessa distância (0=idêntico, ~2=sem relação).
-                                # Evita que conversas antigas/irrelevantes contaminem o contexto.
+# Pisos próprios por canal: a escala do Gemma difere dos MiniLM.
+# Valores iniciais medidos na bancada de 06/10/2026, em 768 dimensões.
+LIMIAR_HISTORICO    = 0.75
+LIMIAR_MEMORIA      = 0.772
+LIMIAR_DEDUP        = 0.77
+LIMIAR_DISTANCIA    = 1.0 - LIMIAR_HISTORICO  # Chroma cosine: distância = 1 - similaridade
 CAMINHO_MEMORIA     = "modelos/memoria_permanente.json"
 CAMINHO_CHROMADB    = "modelos/chromadb"
-MODELO_EMBEDDING    = "all-MiniLM-L6-v2"  # ~80MB, roda na CPU (ChromaDB / conversas)
-MODELO_EMBEDDING_MEM = "paraphrase-multilingual-MiniLM-L12-v2"  # ~470MB, recall da memória em PT
-                                # (o all-MiniLM é de inglês e embola no semântico PT; este separa)
+CAMINHO_BACKUP_EMBEDDINGS = "modelos/backups_embeddings"
+MODELO_EMBEDDING    = embeddings.MODELO
+MODELO_EMBEDDING_MEM = embeddings.MODELO
 
-# ============================================================
-# INICIALIZAÇÃO
-# ============================================================
-_embedding_fn = SentenceTransformerEmbeddingFunction(
-    model_name=MODELO_EMBEDDING,
-    device="cpu"   # deixa GPU livre para jogos e LLM
-)
+_cliente_chroma = None
+_colecao = None
+_lock_historico = threading.RLock()
 
-_cliente_chroma = chromadb.PersistentClient(path=CAMINHO_CHROMADB)
-_colecao = _cliente_chroma.get_or_create_collection(
-    name="historico_luna",
-    embedding_function=_embedding_fn
-)
 
-# Embedder do recall episódico — carregado só quando a memória semântica é usada de fato
-# (não pesa no boot de quem não mexe na memória). Separado do ChromaDB de propósito.
-_embedding_fn_mem = None
 def _emb_mem():
-    global _embedding_fn_mem
-    if _embedding_fn_mem is None:
-        _embedding_fn_mem = SentenceTransformerEmbeddingFunction(
-            model_name=MODELO_EMBEDDING_MEM, device="cpu")
-    return _embedding_fn_mem
+    return embeddings.obter_embedder()
+
+
+def _historico():
+    global _cliente_chroma, _colecao
+    # Importar curadoria/testes não deve abrir o banco nem carregar pesos.
+    with _lock_historico:
+        if _colecao is None:
+            if _cliente_chroma is None:
+                _cliente_chroma = chromadb.PersistentClient(path=CAMINHO_CHROMADB)
+            colecao, migradas = abrir_historico(
+                _cliente_chroma, _emb_mem(), CAMINHO_BACKUP_EMBEDDINGS)
+            _colecao = colecao
+            if migradas:
+                cor.magenta(f"[Memória: {migradas} conversas migradas para EmbeddingGemma 2 CPU; origem preservada]")
+        return _colecao
 
 # ============================================================
 # MEMÓRIA PERMANENTE (JSON)
@@ -124,128 +129,117 @@ def salvar_conversa(pergunta: str, resposta: str):
     Chama após cada resposta da Luna no pensar.py.
     Mantém apenas as últimas LIMITE_SESSOES conversas.
     """
+    colecao = _historico()
     agora = datetime.datetime.now()
     agora_str = agora.strftime("%d/%m/%Y %H:%M")
     # Usa timestamp como ID para garantir ordem cronológica
     id_conversa = agora.strftime("%Y%m%d%H%M%S") + "_" + str(uuid.uuid4())[:8]
     documento = f"{NOME_USUARIO}: {pergunta}\nLuna: {resposta}"
     
-    _colecao.add(
+    colecao.add(
         documents=[documento],
+        embeddings=_emb_mem().documentos([documento]),
         ids=[id_conversa],
         metadatas=[{"data": agora_str, "timestamp": agora.timestamp()}]
     )
 
-    total = _colecao.count()
+    total = colecao.count()
     if total > LIMITE_SESSOES:
         excesso = total - LIMITE_SESSOES
         # Pega todos e ordena por timestamp para deletar os mais antigos
-        todos = _colecao.get(include=["metadatas"])
+        todos = colecao.get(include=["metadatas"])
         pares = list(zip(todos["ids"], todos["metadatas"]))
         pares.sort(key=lambda x: x[1].get("timestamp", 0))
         ids_deletar = [id_ for id_, _ in pares[:excesso]]
-        _colecao.delete(ids=ids_deletar)
+        colecao.delete(ids=ids_deletar)
 
 
 
 def buscar_contexto_relevante(pergunta: str) -> str:
-    """
-    Busca conversas anteriores relevantes para a pergunta atual.
-    Retorna string formatada para injetar no prompt.
-    """
-    total = _colecao.count()
-    if total == 0:
+    """Busca histórico com prefixo de consulta e filtro de cosseno calibrado."""
+    if not pergunta or not pergunta.strip():
         return ""
-
     try:
-        resultados = _colecao.query(
-            query_texts=[pergunta],
+        colecao = _historico()
+        total = colecao.count()
+        if total == 0:
+            return ""
+        resultados = colecao.query(
+            query_embeddings=_emb_mem().consultas([pergunta]),
             n_results=min(RESULTADOS_BUSCA, total),
             include=["documents", "metadatas", "distances"],
         )
-
         documentos = resultados.get("documents", [[]])[0]
-        metadatas  = resultados.get("metadatas",  [[]])[0]
-        distancias = resultados.get("distances",  [[]])[0]
-
-        if not documentos:
-            return ""
-
+        metadatas = resultados.get("metadatas", [[]])[0]
+        distancias = resultados.get("distances", [[]])[0]
         linhas = ["Conversas anteriores relevantes:"]
         for doc, meta, dist in zip(documentos, metadatas, distancias):
-            if dist is not None and dist > LIMIAR_DISTANCIA:
-                continue  # memória pouco relacionada — não injeta no contexto
-            linhas.append(f"[{meta.get('data', '')}]\n{doc}")
-
-        if len(linhas) == 1:   # nenhuma passou no limiar
-            return ""
-        return "\n\n".join(linhas)
-
+            if dist is None or not np.isfinite(dist) or dist > LIMIAR_DISTANCIA:
+                continue
+            linhas.append(f"[{(meta or {}).get('data', '')}]\n{doc}")
+        return "\n\n".join(linhas) if len(linhas) > 1 else ""
     except Exception as e:
         cor.vermelho(f"[Memória: erro na busca — {e}]")
         return ""
 
-
 # ============================================================
 # MEMÓRIA EPISÓDICA — retrieval semântico (relevante ao assunto)
 # ============================================================
-# v1 injeta só os fatos RECENTES (por data). v2 injeta também os RELEVANTES ao que está
-# sendo falado, mesmo antigos — embeddando os fatos com o MESMO modelo do ChromaDB.
-# Cache: só re-embeda quando o Memoria.md muda (o conjunto é pequeno, dezenas de linhas).
+# Datas e identidade do embedder invalidam o cache após mudança de modelo
+# ou quando uma lembrança esquenta; nunca mistura vetores antigos com os novos.
 _mem_emb_cache = {"assinatura": None, "fatos": [], "vecs": []}
+_mem_cache_lock = threading.RLock()
+
+
+def _fatos_vetorizados(combinado):
+    assinatura = (embeddings.IDENTIDADE_CACHE, tuple(combinado))
+    with _mem_cache_lock:
+        if _mem_emb_cache["assinatura"] != assinatura:
+            vecs = _emb_mem().documentos([f for _, f, _ in combinado])
+            _mem_emb_cache.update(
+                assinatura=assinatura, fatos=list(combinado),
+                vecs=[np.asarray(v, dtype=np.float32) for v in vecs],
+            )
+        return _mem_emb_cache["fatos"], _mem_emb_cache["vecs"]
+
 
 def _cos(a, b) -> float:
     return float(np.dot(a, b) / ((np.linalg.norm(a) * np.linalg.norm(b)) + 1e-9))
 
-def buscar_memoria_relevante(pergunta: str, limite: int = 3, forte: float = 0.52, excluir=None) -> list:
-    """Fatos episódicos FORTEMENTE relevantes à pergunta (recall por tema, não só recência).
-    Retorna [(data, fato)] ordenado por similaridade. Busca no ATIVO (Memoria.md) E no FRIO
-    (Memoria_arquivo.md) — e se um fato FRIO casa forte, ele 'ESQUENTA': volta pro ativo com
-    data de hoje (o assunto voltou à tona = relevante de novo).
+def buscar_memoria_relevante(pergunta: str, limite: int = 3,
+                            forte: float = LIMIAR_MEMORIA, excluir=None) -> list:
+    """Retorna [(data, fato)] por relevância, com EmbeddingGemma textual na CPU.
 
-    Usa o embedder multilíngue (paraphrase-multilingual-MiniLM-L12-v2), que em PT separa bem
-    sinal de ruído: match forte tipo 'violão' pra 'instrumento musical' ~0.77, enquanto ruído
-    fica ~0.51 pra baixo. O piso (forte=0.52) fica nesse vão: a Luna só puxa a lembrança antiga
-    quando o assunto casa de verdade — melhor calar do que trazer o fato errado. A continuidade
-    do dia a dia já vem pela MEMÓRIA RECENTE.
-    'excluir' = fatos que já vão no bloco de recentes (evita duplicar)."""
+    Ativo e frio usam prefixo Document; a pergunta usa SearchQuery. Só os fatos
+    frios efetivamente selecionados voltam ao ativo. A curadoria usa uma busca
+    separada, sem esse efeito. 'excluir' evita repetir o bloco de memória recente.
+    """
     if not pergunta or not pergunta.strip():
         return []
     from modulos import obsidian
-    # ativo + frio, marcando a origem (o frio só existe pra poder 'esquentar')
     combinado = ([(d, f, "ativo") for d, f in obsidian.listar_memoria_episodica()]
                  + [(d, f, "frio") for d, f in obsidian.listar_memoria_arquivo()])
     if not combinado:
         return []
-    efn = _emb_mem()
-    assinatura = tuple((f, o) for _, f, o in combinado)
-    if _mem_emb_cache["assinatura"] != assinatura:      # a memória mudou -> re-embeda
-        try:
-            vecs = efn([f for _, f, _ in combinado])
-        except Exception as e:
-            cor.vermelho(f"[Memória: erro ao embeddar fatos — {e}]")
-            return []
-        _mem_emb_cache.update(assinatura=assinatura, fatos=combinado,
-                              vecs=[np.asarray(v, dtype=float) for v in vecs])
     try:
-        qv = np.asarray(efn([pergunta])[0], dtype=float)
-    except Exception:
+        fatos, vecs = _fatos_vetorizados(combinado)
+        qv = np.asarray(_emb_mem().consultas([pergunta])[0], dtype=np.float32)
+    except Exception as e:
+        cor.vermelho(f"[Memória: erro ao buscar fatos — {e}]")
         return []
     excluir = excluir or set()
     ranked = []
-    for (data, fato, origem), ev in zip(_mem_emb_cache["fatos"], _mem_emb_cache["vecs"]):
-        if fato in excluir:
-            continue
-        s = _cos(qv, ev)
-        if s >= forte:
-            ranked.append((s, data, fato, origem))
+    for (data, fato, origem), ev in zip(fatos, vecs):
+        if fato not in excluir:
+            score = _cos(qv, ev)
+            if score >= forte:
+                ranked.append((score, data, fato, origem))
     ranked.sort(key=lambda x: x[0], reverse=True)
     top = ranked[:limite]
-    for s, data, fato, origem in top:               # os frios do top voltam pro ativo
+    for _, _, fato, origem in top:
         if origem == "frio":
             obsidian.esquentar_memoria(fato)
     return [(d, f) for _, d, f, _ in top]
-
 
 # ============================================================
 # ANÁLISE DE IMPORTÂNCIA (chamada após cada resposta)
@@ -302,9 +296,10 @@ def conversas_desde(marcador_ts: float, limite: int = 40) -> list:
     """Pares de conversa gravados APÓS marcador_ts, do mais antigo pro mais novo.
     Retorna [(timestamp, documento)]. Vazio se não houver novas."""
     try:
-        if _colecao.count() == 0:
+        colecao = _historico()
+        if colecao.count() == 0:
             return []
-        todos = _colecao.get(include=["documents", "metadatas"])
+        todos = colecao.get(include=["documents", "metadatas"])
         pares = []
         for doc, meta in zip(todos.get("documents", []), todos.get("metadatas", [])):
             ts = (meta or {}).get("timestamp", 0)
@@ -368,8 +363,8 @@ def validar_candidatos_memoria(candidatos: list, falas_usuario: list) -> list:
         if not isinstance(candidato, dict):
             continue
         fato = str(candidato.get("fato", "")).strip()
-        tipo = str(candidato.get("tipo", "")).strip().lower()
-        duracao = str(candidato.get("duracao", "")).strip().lower()
+        tipo = _mem_norm(candidato.get("tipo", "")).replace(" ", "_")
+        duracao = _mem_norm(candidato.get("duracao", "")).replace(" ", "_")
         evidencia = str(candidato.get("evidencia", "")).strip().strip('"“”')
         evidencia_norm = _norm_evidencia(evidencia)
         if (not 5 <= len(fato) <= 300
@@ -382,12 +377,27 @@ def validar_candidatos_memoria(candidatos: list, falas_usuario: list) -> list:
         if not norm or norm in vistos:
             continue
         vistos.add(norm)
-        validados.append({
+        validado = {
             "fato": fato,
             "tipo": tipo,
             "duracao": duracao,
             "evidencia": evidencia[:300],
-        })
+        }
+        if tipo == "projeto":
+            assunto = str(candidato.get("assunto") or fato).strip()[:120]
+            assunto_id = str(candidato.get("assunto_id") or "").strip()
+            status = _mem_norm(candidato.get("status") or "aberto").replace(" ", "_")
+            if not assunto or status not in {"aberto", "pausado", "concluido"}:
+                continue
+            # Um ID só serve para atualizar se tiver sido emitido pelo próprio armazenamento.
+            try:
+                from modulos import assuntos
+                if assunto_id and assunto_id not in assuntos.ids_existentes():
+                    assunto_id = ""
+            except Exception:
+                assunto_id = ""
+            validado.update(assunto=assunto, assunto_id=assunto_id, status=status)
+        validados.append(validado)
     return validados
 
 
@@ -398,11 +408,11 @@ def _memorias_episodicas_confirmadas() -> list:
 
 
 def _memorias_semelhantes_para_dedup(fato: str, limite: int = 3,
-                                      minimo: float = 0.52) -> list:
-    """Busca curta e sem efeitos colaterais para revisar um candidato de memória.
+                                      minimo: float = LIMIAR_DEDUP) -> list:
+    """Recupera candidatos próximos sem esquentar memórias nem decidir duplicação.
 
-    Não usa buscar_memoria_relevante porque aquela função esquenta memórias frias: uma
-    comparação interna da curadoria não significa que o assunto voltou na conversa.
+    Igualdade normalizada e classificador distinguem repetição de atualização
+    real; similaridade sozinha não pode descartar uma novidade.
     """
     from modulos import obsidian
     combinado = ([(d, f, "ativo") for d, f in obsidian.listar_memoria_episodica()]
@@ -410,27 +420,16 @@ def _memorias_semelhantes_para_dedup(fato: str, limite: int = 3,
     if not fato or not combinado:
         return []
     try:
-        efn = _emb_mem()
-        assinatura = tuple((f, origem) for _, f, origem in combinado)
-        if _mem_emb_cache["assinatura"] != assinatura:
-            vecs = efn([f for _, f, _ in combinado])
-            _mem_emb_cache.update(
-                assinatura=assinatura,
-                fatos=combinado,
-                vecs=[np.asarray(v, dtype=float) for v in vecs],
-            )
-        qv = np.asarray(efn([fato])[0], dtype=float)
+        fatos, vecs = _fatos_vetorizados(combinado)
+        qv = np.asarray(_emb_mem().consultas([fato])[0], dtype=np.float32)
         ranked = sorted(
-            ((_cos(qv, v), texto)
-             for (_, texto, _), v in zip(_mem_emb_cache["fatos"],
-                                          _mem_emb_cache["vecs"])),
+            ((_cos(qv, v), texto) for (_, texto, _), v in zip(fatos, vecs)),
             reverse=True,
         )
         return [texto for score, texto in ranked[:limite] if score >= minimo]
     except Exception as e:
         cor.vermelho(f"[Memória: erro ao comparar candidato — {e}]")
         return []
-
 
 def mem_filtrar_candidatos(fatos: list, gerar_resposta_fn) -> list:
     """Remove da curadoria fatos já confirmados, preservando atualizações reais.
@@ -538,7 +537,7 @@ def mem_adicionar_candidatos(fatos: list) -> int:
             "fato": fato,
             "data": datetime.datetime.now().strftime("%Y-%m-%d"),
         }
-        for campo in ("tipo", "duracao", "evidencia"):
+        for campo in ("tipo", "duracao", "evidencia", "assunto", "assunto_id", "status"):
             if meta.get(campo):
                 item[campo] = str(meta[campo])
         d["pendentes"].append(item)
@@ -555,15 +554,23 @@ def mem_listar_lixo() -> list:
     return carregar_mem_pendente()["lixo"]
 
 def mem_confirmar(id_: str, texto_editado: str = None) -> bool:
-    """Confirma um pendente: grava no Obsidian (Luna/Memoria.md) e tira da fila.
-    texto_editado permite o usuário corrigir a frase antes de salvar."""
+    """Confirma um pendente e encaminha conforme o tipo escolhido na extração.
+
+    Fatos continuam no Obsidian; projetos vão para o estado estruturado de assuntos. O cartão
+    é o mesmo para a decisão humana continuar sendo a última barreira nos dois destinos.
+    """
     from modulos import obsidian
     d = carregar_mem_pendente()
     item = next((p for p in d["pendentes"] if p["id"] == id_), None)
     if not item:
         return False
     fato = (texto_editado or item["fato"]).strip()
-    if not obsidian.adicionar_memoria(fato, item.get("data")):
+    if item.get("tipo") == "projeto" and item.get("duracao") == "em_andamento":
+        from modulos import assuntos
+        salvo = assuntos.registrar_candidato(item, fato)
+    else:
+        salvo = obsidian.adicionar_memoria(fato, item.get("data"))
+    if not salvo:
         return False
     d["pendentes"] = [p for p in d["pendentes"] if p["id"] != id_]
     salvar_mem_pendente(d)
