@@ -16,6 +16,19 @@ Esse segundo comando roda primeiro a suíte rápida acima e depois todos os `tes
 módulos. Ele procura o Python do `venv` e tem fallback para o launcher do sistema. As bancadas
 que usam modelo real ficam de fora de propósito.
 
+Seletor de vozes do Kokoro e volume, sem modelo nem reprodução de áudio:
+
+```powershell
+.\venv\Scripts\python.exe -X utf8 -m unittest testes.testa_vozes_kokoro testes.testa_volume_voz
+```
+
+Cobre os 54 timbres nos nove grupos, seleção e persistência de todas as vozes,
+restauração ao reiniciar, favoritas sem duplicação, rejeição de valores inválidos e preservação
+do volume e do áudio. Favoritar e desfavoritar não alteram o timbre ativo.
+A suíte Node cobre o seletor compacto, a confirmação da escolha, a reconexão e a manutenção
+da lista durante ajustes de volume, além das estrelas em cada linha, navegação por teclado,
+fechamento com Escape ou clique fora e preservação da voz ativa ao favoritar outra voz.
+
 Regressão do radar RSS após interrupção de fala (sem rede, voz ou LLM):
 
 ```powershell
@@ -24,6 +37,30 @@ Regressão do radar RSS após interrupção de fala (sem rede, voz ou LLM):
 
 Cobre interrupção antes da apresentação, durante a síntese e durante o áudio,
 preservação do intervalo e ausência de repetição ou duplicação da nota.
+
+Seletor de personalidade, sem modelo ou áudio:
+
+```powershell
+.\venv\Scripts\python.exe -X utf8 -m unittest testes.testa_personalidade testes.testa_execucoes
+```
+
+Cobre 44 montagens por nível, persistência (inclusive nível 0), rejeição de configurações
+inválidas, confirmação com o perfil atual e troca entre turnos sem apagar memórias ou a
+conversa visível. A fixture registra os três backups fornecidos no momento da consolidação;
+os testes e a Luna não importam os arquivos de backup.
+
+Depois de uma mudança intencional de prompt validada na bancada, atualize também essa
+fixture com `-m testes.bancada_personalidades --atualizar-fixture`. O golden tradicional
+continua cobrindo o perfil TARS; mudanças nele seguem o procedimento de montagem do AGENTS.md.
+
+Para repetir a bancada curta com o Gemma local (ferramentas simuladas, sem áudio):
+
+```powershell
+.\venv\Scripts\python.exe -X utf8 -m testes.bancada_personalidades --executar logs/bancada_personalidades/nova-rodada/resultados.json
+```
+
+São quatro casos de persona (chat, acolhimento, morte e novidade) e um fluxo de ferramenta
+por nível. Leia as respostas: essa amostra não mede repetição longa, FPS ou qualidade do TTS.
 
 ## Por que existem
 
@@ -70,15 +107,24 @@ pobre que o DOM de verdade (`classList` não-variádico, `className` fora de sin
 
 ## Vendo qual prompt montou uma fala
 
-Cada turno imprime uma linha no terminal:
+Cada turno imprime a composição do prompt e o tamanho do contexto no terminal:
 
 ```
-[🧩 Prompt: ENXUTO_COTIDIANO + sem humor · voz · 1959c≈489tok]
-[🧩 Prompt: ENXUTO_PROATIVO + EMOCAO · texto · 4147c≈1036tok]
-[🧩 Prompt: PROMPT_COMPLETO + EMOCAO · texto · 10536c≈2634tok · memória 1351c]
+[🧩 Prompt: ENXUTO_COTIDIANO + sem humor · voz · sistema 1959c≈489tok]
+[🧩 Prompt: ENXUTO_PROATIVO + EMOCAO · texto · sistema 4147c≈1036tok]
+[🧩 Prompt: IDENTIDADE + EMOCAO + ESTRUTURA + LIMITES + TAG_CLIMA + CANAL_WEB · texto · sistema 10536c≈2634tok · memória 1351c no sistema]
+[📦 Contexto: sistema 10536c≈2634tok · histórico 4msg 800c≈200tok · mensagem/instruções 1800c≈450tok · TOTAL 13136c≈3284tok]
 ```
 
-Sai no terminal e no `logs/luna.log`. Três informações, cada uma para uma pergunta:
+Sai no terminal e no `logs/luna.log`. O prompt completo lista os blocos da persona na
+ordem em que entram e o canal (`CANAL_WEB`, `CANAL_TEXTO` ou `CANAL_VOZ`). O tamanho
+da linha `Prompt` é o do sistema, incluindo a memória. A linha `Contexto` sai depois
+que todas as mensagens foram montadas e mostra o histórico após os cortes, a mensagem
+atual com instruções/dados e o total dos três. Proativo tem histórico de mensagens
+zerado; fatos e falas anteriores incluídos na instrução aparecem em mensagem/instruções.
+Os tokens são estimados por caracteres/4; a contagem não inclui o template interno do
+modelo, imagens ou esquemas de ferramentas. Esse diagnóstico mede a chamada da persona.
+As informações respondem a estas perguntas:
 
 - **o caminho** — `sem humor` significa que aquele turno caiu num modo enxuto que não recebe o
   bloco `EMOCAO`; aí mexer no `HUMOR E ACIDEZ` não vai adiantar nada, o problema é de arquitetura.
@@ -86,6 +132,8 @@ Sai no terminal e no `logs/luna.log`. Três informações, cada uma para uma per
   recentes, relacionada e ChromaDB), que é a parte que cresce sozinha. O detalhe bloco a
   bloco sai no `[📏]`, que só liga com `LUNA_DIAG_PROMPT=1` ou o arquivo
   `modelos/diag_prompt.flag` — é o que serve pra decidir o que cortar.
+- **o total textual da chamada** — sistema + histórico + mensagem/instruções; a memória
+  já está dentro do sistema e não é somada novamente.
 O modelo não entra na linha — ele já sai no boot e na troca. Mas fique de olho nele por outro
 motivo: o seletor do painel só grava a escolha quando a troca dá certo. Se o TurboLLM não
 carregar, o `config_luna.json` mantém o modelo anterior e a Luna sobe com ele no próximo
@@ -602,3 +650,43 @@ também os testes das tarefas que produzem esses dados:
 
 [Resultado e prévia do piloto](resultado_cartoes_web.md). A prévia usa exemplos
 de demonstração e não acessa a instância da Luna nem o TurboLLM.
+
+## Iniciativa na conversa casual
+
+Captura seis casos de papo sem pedido definido, com histórico fixo, e compara
+a posição atual do `EMOCAO` com o mesmo bloco antes da regra final de evidência.
+Não muda o prompt de produção, inicia a Luna, consulta arquivos pessoais ou
+executa ferramentas. O controle sem histórico é analisado separadamente.
+
+```powershell
+.\venv\Scripts\python.exe -X utf8 -m testes.bancada_conversa_casual preparar --pasta logs/bancada_casual/nova-rodada
+.\venv\Scripts\python.exe -X utf8 -u -m testes.bancada_conversa_casual rodar --pasta logs/bancada_casual/nova-rodada
+```
+
+A execução exige Gemma 4 12B já carregado. São 36 respostas, salvas uma a uma;
+repetir `rodar` pula as concluídas enquanto a identidade da engine permanece
+a mesma. Leia as falas: acidez extra sem iniciativa ou com fatos inventados
+não é melhoria. [Resultado da rodada](resultado_conversa_casual.md).
+
+## Desenvolvimento da conversa comum
+
+O ajuste de 11/10 foi rejeitado e revertido. A bancada e seus resultados ficam
+como registro experimental; os gatilhos e assuntos fixos não estão ativos.
+
+`bancada_conversa_completa.py` compara a orientação final do papo comum,
+preservando sistema, histórico, fontes e parâmetros. São sete casos do prompt
+completo e dois controles enxutos, duas seeds, 36 respostas. Os controles são
+analisados separadamente; comprimento maior não comprova humor ou factualidade.
+
+Para uma calibração futura, congele **antes** de editar a orientação. Prepare
+os pares depois da edição e execute com o Gemma já carregado:
+
+```powershell
+.\venv\Scripts\python.exe -X utf8 -m testes.bancada_conversa_completa congelar --pasta logs/bancada_casual/nova-calibracao
+.\venv\Scripts\python.exe -X utf8 -m testes.bancada_conversa_completa preparar --pasta logs/bancada_casual/nova-calibracao
+.\venv\Scripts\python.exe -X utf8 -u -m testes.bancada_conversa_completa rodar --pasta logs/bancada_casual/nova-calibracao
+```
+
+Não inicia a Luna nem executa ferramentas, memória real, embeddings ou áudio.
+Salva cada resposta e permite retomar a execução quando a identidade do modelo
+e da engine permanece igual. [Resultado e limites](resultado_conversa_completa.md).

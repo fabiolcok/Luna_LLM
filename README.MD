@@ -74,8 +74,9 @@ transcreve os áudios que chegam pelo Telegram.
 
 **TTS (texto → voz)** — **Kokoro-82M**, pt-BR (`lang_code='p'`), rodando local na CPU
 via `sounddevice`. Escolhido pela prosódia natural de `?` e `!` (entonação de pergunta
-e exclamação) e por ser leve (RTF ~0.3). Vozes disponíveis (só o timbre muda; a
-pronúncia é sempre pt-BR):
+e exclamação) e por ser leve (RTF ~0.3). São 54 timbres em nove grupos de origem,
+selecionáveis no modo Web, com favoritas na própria lista. A leitura usa PT-BR;
+vozes estrangeiras podem ter sotaque. Alguns exemplos:
 
 | Voz | Timbre | |
 |-----|--------|-|
@@ -295,9 +296,37 @@ A tela é dividida em duas zonas: **saída** em cima (tudo que é da Luna) e **e
   enviados** e o retorno; quando nenhuma ferramenta roda, mostra o que o roteador gerou (e é
   descartado). Serve pra diagnosticar acionamento errado sem caçar no log. Mais métricas de tok/s.
 - Histórico da sessão e drag & drop de arquivos (`.txt/.md/.py/.js/.json/.pdf`…) pro prompt.
+- **Responder a uma mensagem:** a seta ↩ em cada resposta seleciona a referência e mantém seu
+  rascunho. A Luna recebe só aquele trecho junto da pergunta, inclusive em uma conversa antiga.
+- **Ouvir uma resposta:** o botão da mensagem e o Play principal usam a mesma reprodução,
+  com o timbre e o volume atuais, sem chamar o modelo novamente.
+- **Agenda visual:** eventos aparecem com data, horário e link para o Calendar na própria linha.
+- **Notícias e promoções:** o atalho no canto superior direito e o botão **Ver todas** abrem uma tela
+  ampla, com vários cartões por linha, busca, filtro de leitura e opção de conversar sobre
+  um item. Reaproveita as capas do radar; clique numa imagem para ampliar e pressione Escape para fechar.
+- **Buscar conversa:** consulta os últimos 1.000 turnos salvos, inclusive de sessões anteriores.
+  Na primeira busca, recupera também as conversas disponíveis no histórico local da memória,
+  seus backups textuais e o log antigo. Respostas cortadas no log aparecem como trechos.
+  O arquivo fica em `logs/biblioteca_web.json`, junto dos últimos 300 itens do radar. Esse arquivo não é
+  enviado automaticamente ao modelo. Limpar a sessão mantém o arquivo de busca.
 - **Configurações (engrenagem):** toggle do Proativo e de cada tarefa proativa (jogos, emails,
   agenda, pausa, clima, bom_dia, steam, navegador, radar RSS, promoções, animes, mortes no LoL…),
-  seleção de voz (Alpha/Bella/Nicole) e velocidade do TTS.
+  seleção entre os 54 timbres do Kokoro em uma lista agrupada por origem, com as vozes
+  brasileiras primeiro. Cada voz tem sua estrela dentro da lista: marque suas preferidas
+  para reuni-las no topo, mesmo depois de reiniciar. Clicar na estrela mantém o menu aberto;
+  clicar no nome escolhe o timbre para as próximas falas.
+  Também permite ajustar velocidade e volume do TTS. Todas leem em PT-BR;
+  vozes estrangeiras podem ter sotaque. O primeiro uso de cada timbre baixa seu arquivo;
+  as próximas falas reutilizam o cache local.
+- **Personalidade (Configurações → Avançado):** 0 — Padrão do modelo, 1 — LUNA,
+  2 — TARS ou 3 — GLaDOS. A escolha fica salva e vale para chat, voz e proativos.
+  A troca espera a resposta atual terminar e reinicia só as mensagens recentes usadas pelo
+  modelo; a conversa na tela, ChromaDB e Obsidian continuam guardados. O nível 0 mantém as
+  regras de ferramentas e formato sem impor uma personagem. Os perfis ficam reunidos em
+  `modulos/prompts.py`; os campos `Emocao_P_LUNA`, `Emocao_P_TARS` e `Emocao_P_GLADOS`
+  são os pontos para editar o registro de cada um. Instalações existentes mantêm TARS até a primeira troca.
+  GLaDOS preserva o registro hostil do experimento, inclusive em assuntos sensíveis;
+  os resultados de cada perfil estão em [resultado_seletor_personalidade.md](testes/resultado_seletor_personalidade.md).
 
 ---
 
@@ -398,6 +427,12 @@ evidência e link para conferir. Planos continuam sendo planos; um anúncio não
 qualidade testada. Consulta, pausa, edição e novidades ficam nesse painel. O cadastro não
 aumenta o contexto de toda conversa. Guia e limites em
 [resultado_acompanhamento_fontes.md](testes/resultado_acompanhamento_fontes.md).
+
+Também dá para enviar um link pela conversa e pedir que ela acompanhe uma mudança específica.
+A Luna prepara um cartão com o cadastro para revisar; só a confirmação inicia o monitor.
+Nos cartões de notícias, **Continuar assunto** oferece perguntas sobre a matéria, e
+**Afinar radar** salva os temas e fontes que devem receber mais ou menos destaque na escolha
+proativa. Essas preferências não acrescentam o histórico da biblioteca ao contexto do chat.
 
 **Carência de boot (120s):** nos primeiros minutos o modelo ainda esquenta e várias tarefas
 querem falar juntas — a fala ficava *starved* (ela detectava e até escrevia a nota, mas a voz

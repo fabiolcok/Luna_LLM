@@ -8,6 +8,65 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 12/10/2026
+
+- ✨ **Personalidade escolhida no modo Web.** Em Configurações → Avançado, escolha
+  entre Padrão do modelo, LUNA, TARS e GLaDOS. A preferência fica salva e vale para
+  conversa, voz e proativos. A troca espera o turno terminar e limpa só as mensagens
+  recentes usadas pelo modelo, preservando a conversa visível e as memórias.
+- 🔧 **Os perfis ficam em um único arquivo.** Identidade, emoção e variações de cada
+  personalidade estão reunidas em `modulos/prompts.py`. Só o perfil escolhido entra
+  na chamada; ter quatro opções não multiplica o contexto. As bancadas registram as
+  diferenças no chat, nos jogos, nas ferramentas e em assuntos sensíveis.
+- ✨ **Todos os 54 timbres do Kokoro disponíveis.** A lista de vozes reúne nove
+  origens, com Português (Brasil) primeiro e divisórias destacadas por país e idioma.
+  A leitura continua em PT-BR, embora timbres estrangeiros possam ter sotaque.
+- ✨ **Favoritas dentro do seletor.** Marque a estrela ao lado de qualquer voz para
+  reuni-la no topo. Favoritar mantém a lista aberta e não troca o timbre ativo;
+  escolher o nome aplica a voz nas próximas falas. As favoritas sobrevivem ao reinício.
+- 🔧 **Log mostra o contexto completo da chamada.** Além dos blocos de prompt ativos,
+  aparecem os tamanhos do sistema, histórico e mensagem com instruções, distinguindo
+  o que é memória do que é conversa recente.
+
+## 11/10/2026
+
+- ✨ **Responder a uma mensagem específica.** A seta na resposta seleciona o trecho
+  que você quer retomar e preserva seu rascunho. Só essa referência acompanha a nova
+  pergunta; o histórico inteiro da busca não entra no prompt.
+- ✨ **Busca de conversas entre sessões.** O painel encontra até 1.000 turnos salvos,
+  inclusive registros locais anteriores quando disponíveis. A consulta não carrega
+  o modelo nem os embeddings, e distingue respostas completas de trechos de log.
+- ✨ **Biblioteca de notícias e promoções.** O botão Ver todas abre uma tela ampla,
+  com vários cartões por linha, busca e filtro de leitura. As imagens podem ser
+  ampliadas, e um item antigo pode virar referência para uma nova conversa.
+- 🔧 **Cartões mais compactos.** Fonte em destaque, imagens centralizadas com bordas
+  suaves e tamanho adaptável à janela. Abrir notícia e Ver todas ficam no mesmo cartão;
+  Continuar assunto e Afinar radar ficam recolhidos. Os atalhos se reúnem no topo.
+- 🔧 **Ações da resposta aparecem ao passar o mouse.** Copiar, ouvir e responder ficam
+  juntos, também acessíveis por teclado e em telas de toque.
+- 🐛 **Continuar uma notícia deixou de cair no aviso de ação não executada.** A pergunta
+  escolhida e a referência da matéria chegam separadas ao roteador, evitando que o
+  contexto do cartão seja confundido com uma ordem para executar uma ferramenta.
+- 🐛 **Mensagem recebida aparece antes da geração.** O chat confirma e mostra o texto
+  aceito enquanto aguarda sua vez, sem os atrasos artificiais após cada resposta Web.
+
+## 10/10/2026
+
+- ✨ **Cadastrar acompanhamento pela conversa.** Envie o link público e diga o que
+  quer acompanhar. A Luna prepara um cartão editável; o monitor só começa quando
+  você confirma. O cadastro também fica disponível no painel de Acompanhamentos.
+- ✨ **Radar por interesse.** Afinar radar permite destacar temas e fontes que você
+  quer ver mais ou menos. Isso orienta a escolha da notícia proativa e fica salvo.
+- ✨ **Botões para continuar a notícia.** A Luna pode sugerir perguntas ligadas à
+  matéria, sem ler os botões em voz alta. As sugestões variam conforme o assunto.
+- ✨ **Ouvir uma resposta do chat.** O botão da mensagem usa a voz e o volume atuais,
+  sem pedir outra resposta ao modelo. O Play principal usa a mesma reprodução.
+- 🔧 **Promoções também mostram imagens.** Os cartões reaproveitam as capas e fotos
+  já obtidas pelo radar e usadas no Obsidian, sem uma chamada extra ao modelo.
+- ✨ **Agenda visual na conversa.** Compromissos mostram data e horário na própria
+  linha, incluindo eventos de dia inteiro e link para o Google Calendar. A consulta
+  usa o fuso correto, e o cartão evita repetir o intervalo amplo de busca.
+
 ## 09/10/2026
 
 - ✨ **Novidades com cartões e imagens na conversa.** A notícia destacada mostra

@@ -5,6 +5,28 @@ definitiva. Itens daqui não estão automaticamente aprovados para commit.
 
 ## Em teste
 
+- [ ] **Responder a mensagens, biblioteca do radar, busca e imagens ampliadas.** Implementados
+      em 11/10: controles discretos acima da conversa, seleção de referência sem apagar o
+      rascunho, consultas locais sem LLM e biblioteca com lidas/não lidas. Histórico salvo
+      limitado a 1.000 turnos; 300 notícias/promoções, incluindo as notas atuais do Obsidian.
+      Validar no uso após reiniciar a Luna. [Bancada e uso](testes/resultado_consulta_web.md).
+
+- [ ] **Cadastro de fontes pela conversa, interesses no radar e leitura das respostas.**
+      Implementados em 10/10: pedido com link prepara um cartão editável; somente o clique
+      confirma o monitor. Interesse e situação usam trechos literais, sem objetivo inventado.
+      “Afinar radar” salva palavras para mais/menos destaque sem mudar as avaliações ou
+      apagar notícias da nota. Botão de ouvir em cada resposta usa Kokoro, volume atual e
+      cede a uma conversa nova, sem chamar a LLM. Validar após reiniciar a Luna.
+      [Bancada e uso](testes/resultado_fontes_interesses_voz.md).
+      Resumo do que aconteceu na ausência fica adiado: estudar agrupamento dos avisos
+      já coletados, sem novas gerações ou captura de tela durante jogos.
+
+- [ ] **Agenda visual na conversa.** Implementada em 09/10: compromissos do Google Calendar
+      agrupados por dia, horários, dia inteiro, local e link para abrir o evento. Aparece
+      ao consultar/criar compromissos e nos avisos proativos da agenda. Cartão montado
+      pelo Python, sem chamada extra à LLM. Validar com a agenda real após reiniciar.
+      Bancada e limites em [resultado_agenda_web.md](testes/resultado_agenda_web.md).
+
 - [ ] **Acompanhamentos com fontes cadastradas.** Implementado em 07/10: assunto, interesse,
       situação opcional e até três links no painel Web. Primeira leitura silenciosa, consulta
       a cada 6h, análise de conteúdo novo com evidência literal e avisos respeitando conversa
@@ -133,6 +155,10 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
 
 > Combine antes de mexer neste arquivo: são ~4100 linhas com CSS, HTML e todo o JS juntos, e é
 > onde dois agentes colidem. Rode `node testes/rodar.js` antes e depois.
+
+- [ ] **Comparações interativas na conversa.** Na fila por escolha do usuário em 09/10.
+      Explorar cartões para comparar opções quando surgir uma dúvida que justifique isso.
+      Conversas simples continuam sendo o uso principal; aguardar um caso concreto.
 
 - [ ] **Um evento novo que se resolva por ESPERA.** Os que existem hoje pedem gestos ativos; falta
       um cujo desfecho seja não fazer nada por um tempo. Chegou a ser cogitado, sem fechar o

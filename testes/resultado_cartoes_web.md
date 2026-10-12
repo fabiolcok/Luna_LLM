@@ -2,11 +2,40 @@
 
 Data: 2026-10-09.
 
+## Promoções do Telegram
+
+O radar de promoções também envia um cartão antes da fala, com o produto
+rastreado, o canal e o link da mensagem. Quando o radar baixou uma foto para
+`Luna/promo_imgs` no Obsidian, a web reaproveita esse mesmo arquivo e centraliza
+a imagem. A rota serve somente JPGs dessa pasta; não abre outras notas ou caminhos
+do vault. O link da promoção não aparece duplicado e a nota completa continua
+depois da fala. Canal sem link público conserva o cartão sem inventar um link.
+
+Não há download nem chamada adicional à LLM para o cartão. Promoção sem foto,
+download que falhou ou imagem já removida mantém produto, canal e links sem
+ícone de imagem quebrada. O comportamento vale para os próximos avisos; os
+metadados de cartões não são reconstruídos para falas antigas.
+
+Validação: os 45 arquivos de testes da web e 44 testes Python relacionados
+passaram. Uma foto já existente no cache real também foi servida com HTTP 200
+e `image/jpeg`, sem iniciar outra instância da Luna.
+
 ## Resultado
 
 Novidades dos feeds agora trazem um cartão com o título original, a fonte e o
-link da matéria antes do comentário da Luna. O link da nota completa do Obsidian
-continua depois da fala; o link individual não aparece duplicado.
+link da matéria antes do comentário da Luna. No ajuste de 10/10, o link da nota completa
+fica dentro do cartão da notícia, à direita, como **Ver todas**. Promoções conservam a
+nota depois da fala; o link individual não aparece duplicado.
+
+Nas miniaturas das notícias, o ajuste de 10/10 acrescenta um fundo difuso com as cores da
+própria imagem, cantos suaves e fade curto nas extremidades. O centro permanece nítido,
+com proporção preservada e altura máxima de 180 px. O efeito é CSS estático: não gera uma
+imagem nova, não usa LLM e não anima o desfoque. O fundo é ativado apenas depois da carga
+da miniatura, preservando a leitura lazy; imagem que falha também remove a área vazia.
+
+Conferência desse efeito: 45 arquivos de testes Web passando; prévia no Edge em 900 e 420 px,
+sem corte horizontal, com miniaturas horizontais, quadradas e verticais mantendo a proporção.
+Prévia isolada, com imagens vetoriais de teste: `logs/bancada_web/20261010-miniatura-difusa/preview.html`.
 
 Retornos combinados, novidades do Sopro e acompanhamentos de fontes recebem
 cartões depois do comentário, com assunto, situação e próximo passo. O botão
