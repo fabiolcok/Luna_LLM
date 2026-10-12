@@ -20,17 +20,22 @@ Funções para usar no main.py:
 WebSocket (/ws): recebe {'comando': 'interromper'} do frontend para acionar sd.stop().
 """
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, abort, send_from_directory
 from flask_sock import Sock
 from simple_websocket import ConnectionClosed
 from modulos.execucoes import controle, vincular
+from modulos.vozes_kokoro import VOZES_VALIDAS, VOZ_PADRAO, normalizar_favoritas, vozes_para_web
+from contextvars import ContextVar
 import threading
 import json
 import logging
 import os
 import random
+import queue
 import re
+import socket
 import time
+import uuid
 import httpx
 import modelos.cores as cor
 
@@ -73,6 +78,11 @@ _ultimo_estado_rosto = None       # diagnóstico das transições reais enviadas
 _ultimo_kaomoji      = None       # nova janela do widget já nasce com a expressão atual
 _clima_turno_pendente = ""        # consumido pelo próximo balão; não confunde com o rosto atual
 _historico_web       = []   # lista de {usuario, luna, tempo}
+_textos_web = {}
+_textos_web_lock = threading.RLock()
+_texto_web_id = ContextVar("texto_web_id", default=None)
+_audios_web = {}
+_audios_web_lock = threading.RLock()
 _mascote_solto       = False
 _relogio_visual_iniciado = False
 _relogio_visual_lock = threading.Lock()
@@ -109,15 +119,20 @@ _estado_config = {
                 "steam_jogo": True, "radar_rss": True, "animes": True,
                 "autoconhecimento": True, "memoria": True, "habitos": True, "lol_mortes": True,
                 "radar_promocoes": True, "acompanhamentos": True},
-    "voz": "jf_alpha",
+    "voz": VOZ_PADRAO,
+    "vozes_favoritas": [],
     "velocidade": 0.9,
     "volume": 1.0,
     "modelo_local": "",
     "modelo_thinking": "desligado",
+    "personalidade": 2,  # preserva o TARS ativo em instalações anteriores ao seletor
     "teclas": {"ptt": "ctrl+alt+f8", "interromper": "ctrl+f9", "suspenso": "ctrl+f7"},
 }
 
 _CAMINHO_CONFIG = "modelos/config_luna.json"
+_trava_personalidade = threading.Lock()
+_personalidade_pendente = False
+_personalidade_erro = ""
 
 def _salvar_config():
     """Persiste o estado de config no disco para sobreviver a reinicializações."""
@@ -143,8 +158,16 @@ def carregar_e_aplicar_config():
         except Exception:
             pass
 
+    if not isinstance(_estado_config.get("voz"), str) or _estado_config["voz"] not in VOZES_VALIDAS:
+        _estado_config["voz"] = VOZ_PADRAO
+    _estado_config["vozes_favoritas"] = normalizar_favoritas(_estado_config.get("vozes_favoritas"))
+    from modulos import prompts
+    try:
+        _estado_config["personalidade"] = prompts.validar_personalidade(_estado_config["personalidade"])
+    except (KeyError, ValueError):
+        _estado_config["personalidade"] = prompts.PERSONALIDADE_PADRAO
     # Aplica os valores carregados nos módulos reais
-    for chave in ("proativo", "memoria", "voz", "velocidade", "volume"):
+    for chave in ("proativo", "memoria", "voz", "velocidade", "volume", "personalidade"):
         fn = _config_handlers.get(chave)
         if fn and chave in _estado_config:
             try: fn(_estado_config[chave])
@@ -165,6 +188,14 @@ def registrar_callback_interrupcao(fn):
     _callback_interrupcao = fn
 
 _handler_texto_web = None
+_handler_ouvir_web = None
+
+
+def registrar_handler_ouvir_web(fn):
+    global _handler_ouvir_web
+    _handler_ouvir_web = fn
+
+
 def registrar_handler_texto_web(fn):
     """main.py registra aqui a função que processa uma mensagem DIGITADA na caixa do web."""
     global _handler_texto_web
@@ -193,11 +224,70 @@ def _config_para_web(erro_dark_souls=""):
     from modulos import dark_souls
     # Não persiste uma segunda cópia: o comando de terminal continua usando o mesmo arquivo.
     return {**_estado_config, "dark_souls": dark_souls.habilitado(),
-            "dark_souls_erro": erro_dark_souls}
+            "dark_souls_erro": erro_dark_souls,
+            "personalidade_disponivel": callable(_config_handlers.get("personalidade")),
+            "personalidade_pendente": _personalidade_pendente,
+            "personalidade_erro": _personalidade_erro,
+            "vozes": vozes_para_web()}
+
+
+def _trocar_personalidade_web(valor):
+    """Reserva na fila antes de abrir a thread; uma mensagem seguinte usa o perfil novo."""
+    global _personalidade_pendente, _personalidade_erro
+    from modulos import prompts
+    try:
+        nivel = prompts.validar_personalidade(valor)
+    except ValueError as erro:
+        _personalidade_erro = str(erro)
+        _broadcast({"tipo": "config_estado", "estado": _config_para_web()})
+        return
+    fn = _config_handlers.get("personalidade")
+    if not callable(fn):
+        _personalidade_erro = "Reinicie a Luna para disponibilizar este controle."
+        _broadcast({"tipo": "config_estado", "estado": _config_para_web()})
+        return
+    if not _trava_personalidade.acquire(blocking=False):
+        _broadcast({"tipo": "config_estado", "estado": _config_para_web()})
+        return
+    if nivel == _estado_config.get("personalidade"):
+        _trava_personalidade.release()
+        _personalidade_erro = ""
+        _broadcast({"tipo": "config_estado", "estado": _config_para_web()})
+        return
+    try:
+        trabalho = fn.preparar(nivel) if callable(getattr(fn, "preparar", None)) else lambda: fn(nivel)
+    except Exception:
+        _trava_personalidade.release()
+        _personalidade_erro = "Não consegui preparar a troca. O perfil anterior foi mantido."
+        _broadcast({"tipo": "config_estado", "estado": _config_para_web()})
+        return
+    _personalidade_pendente = True
+    _personalidade_erro = ""
+    _broadcast({"tipo": "config_estado", "estado": _config_para_web()})
+
+    def aplicar():
+        global _personalidade_pendente, _personalidade_erro
+        try:
+            trabalho()
+            _estado_config["personalidade"] = nivel
+            _personalidade_erro = ""
+            _salvar_config()
+        except Exception:
+            _log.exception("Falha ao trocar a personalidade")
+            _personalidade_erro = "Não consegui trocar. O perfil anterior foi mantido."
+        finally:
+            _personalidade_pendente = False
+            _trava_personalidade.release()
+            _broadcast({"tipo": "config_estado", "estado": _config_para_web()})
+
+    threading.Thread(target=aplicar, daemon=True).start()
 
 def _aplicar_config(dados: dict):
     chave = dados.get('config')
     if not chave:
+        return
+    if chave == 'personalidade':
+        _trocar_personalidade_web(dados.get('valor'))
         return
     if chave == 'dark_souls':
         from modulos import dark_souls
@@ -216,6 +306,18 @@ def _aplicar_config(dados: dict):
             try: fn(nome, valor)
             except Exception: pass
         _estado_config.setdefault('tarefas', {})[nome] = valor
+    elif chave == 'voz_favorita':
+        voz, favorita = dados.get('voz'), dados.get('valor')
+        if not isinstance(voz, str) or voz not in VOZES_VALIDAS or not isinstance(favorita, bool):
+            _broadcast({"tipo": "config_estado", "estado": _config_para_web()})
+            return
+        favoritas = normalizar_favoritas(_estado_config.get('vozes_favoritas'))
+        if favorita and voz not in favoritas:
+            favoritas.append(voz)
+        elif not favorita and voz in favoritas:
+            favoritas.remove(voz)
+        # Alterar uma estrela não substitui a lista enviada por outra janela nem troca o timbre ativo.
+        _estado_config['vozes_favoritas'] = favoritas
     elif chave == 'tecla':
         nome = dados.get('nome')
         valor = str(dados.get('valor', '')).lower().strip()
@@ -229,6 +331,9 @@ def _aplicar_config(dados: dict):
         # combo inválido: não salva — o broadcast devolve o valor antigo pro painel
     else:
         valor = dados.get('valor')
+        if chave == 'voz' and (not isinstance(valor, str) or valor not in VOZES_VALIDAS):
+            _broadcast({"tipo": "config_estado", "estado": _config_para_web()})
+            return
         if chave == 'volume':
             try:
                 valor = float(valor)
@@ -239,7 +344,10 @@ def _aplicar_config(dados: dict):
         fn = _config_handlers.get(chave)
         if fn:
             try: fn(valor)
-            except Exception: pass
+            except Exception:
+                if chave == 'voz':
+                    _broadcast({"tipo": "config_estado", "estado": _config_para_web()})
+                    return
         _estado_config[chave] = valor
     # Arrastar ajusta o áudio ao vivo; só soltar grava a preferência no disco.
     if not (chave == 'volume' and dados.get('previa') is True):
@@ -274,6 +382,41 @@ def index():
     return render_template('index.html')
 
 
+@app.get('/api/biblioteca')
+@app.get('/api/historico')
+def consultar_biblioteca_web():
+    from modulos import biblioteca_web, obsidian
+    try:
+        inicio = int(request.args.get('inicio', '0'))
+        if request.path == '/api/biblioteca':
+            biblioteca_web.importar_notas(obsidian._VAULT)
+        else:
+            biblioteca_web.importar_conversas()
+        return biblioteca_web.consultar(modo='historico' if request.path == '/api/historico' else 'itens',
+            tipo=request.args.get('tipo', ''), leitura=request.args.get('leitura', ''),
+            busca=request.args.get('busca', ''), inicio=inicio)
+    except ValueError:
+        return {'erro': 'Página inválida.'}, 400
+    except OSError:
+        _log.exception('Não foi possível abrir a biblioteca web')
+        return {'erro': 'Não consegui abrir o arquivo local. Tente novamente.'}, 503
+
+
+@app.post('/api/biblioteca/<identificador>/leitura')
+def marcar_biblioteca_web(identificador):
+    from modulos.biblioteca_web import marcar_leitura
+    dados = request.get_json(silent=True) or {}
+    if not isinstance(dados, dict) or type(dados.get('lido')) is not bool:
+        return {'erro': 'Leitura inválida.'}, 400
+    try:
+        if not marcar_leitura(identificador, dados['lido']):
+            return {'erro': 'Item não encontrado.'}, 404
+    except OSError:
+        _log.exception('Não foi possível salvar a leitura')
+        return {'erro': 'Não consegui salvar a leitura. Tente novamente.'}, 503
+    return {'ok': True}
+
+
 # ── Patchnotes renderizado (markdown → HTML, sem dependência externa) ──
 def _md_para_html(md: str) -> str:
     import html as _html
@@ -302,6 +445,21 @@ def _md_para_html(md: str) -> str:
     corpo = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', corpo)
     corpo = re.sub(r'(?<!\*)\*([^*\n]+)\*(?!\*)', r'<em>\1</em>', corpo)
     return corpo
+
+@app.route('/imagens/promocoes/<nome>')
+def imagem_promocao_web(nome):
+    from modulos import obsidian, cartoes_web
+    if not obsidian._VAULT or not cartoes_web.imagem_promocao(nome):
+        abort(404)
+    pasta = os.path.realpath(os.path.join(obsidian._VAULT, *obsidian._PASTA_IMGS_PROMO))
+    caminho = os.path.realpath(os.path.join(pasta, nome))
+    # A rota serve só a pasta das fotos do radar, inclusive quando há links no disco.
+    if os.path.normcase(os.path.dirname(caminho)) != os.path.normcase(pasta) or not os.path.isfile(caminho):
+        abort(404)
+    resposta = send_from_directory(pasta, nome, mimetype="image/jpeg", max_age=3600)
+    resposta.headers['X-Content-Type-Options'] = 'nosniff'
+    return resposta
+
 
 @app.route('/patchnotes')
 def patchnotes():
@@ -417,6 +575,10 @@ def _acompanhamentos_estado() -> dict:
         estado["fontes"] = acompanhamento_fontes.estado_interface()
     except Exception:
         estado["fontes"] = {"itens": [], "erro": "Não consegui carregar as fontes cadastradas."}
+    from modulos import fontes_conversa
+    estado['propostas_fontes'] = fontes_conversa.estado_interface()
+    from modulos import interesses_radar
+    estado['interesses_radar'] = interesses_radar.estado_interface()
     return estado
 
 
@@ -424,28 +586,198 @@ def notificar_acompanhamentos():
     """Atualiza card e lista sem atrelar o estado à fala atual da Luna."""
     _broadcast({"tipo": "acompanhamentos", "estado": _acompanhamentos_estado()})
 
+def _receber_ouvir_web(ws, dados):
+    from modulos.execucoes import ExecucaoCancelada
+    referencia, request_id = dados.get('turno_id'), dados.get('request_id')
+    def feedback(estado, texto=''):
+        payload = {'tipo': 'audio_resposta', 'turno_id': referencia, 'request_id': request_id,
+                   'estado': estado, 'texto': texto}
+        if estado == 'erro':
+            ws.send(json.dumps(payload, ensure_ascii=False))
+        else:
+            _broadcast(payload)
+    turno = next((t for t in tuple(_historico_web) if t.get('id') == referencia), None)
+    if (not isinstance(request_id, str) or not re.fullmatch(r'[\w-]{1,80}', request_id, re.ASCII)
+            or not turno or not isinstance(turno.get('luna'), str) or not turno['luna'].strip()
+            or not _handler_ouvir_web):
+        feedback('erro', 'Não consegui encontrar essa resposta para ouvir.'); return
+    texto = turno['luna']
+    with _audios_web_lock:
+        if request_id in _audios_web:
+            return
+        if len(_audios_web) >= 8:
+            feedback('erro', 'Já há pedidos de áudio aguardando. Tente novamente.'); return
+        execucao = controle.reservar(leitura=True)
+        _audios_web[request_id] = {'execucao': execucao, 'turno_id': referencia}
+    feedback('fila')
+    def ouvir():
+        estado, erro = 'fim', ''
+        try:
+            with controle.executar(execucao):
+                controle.verificar()
+                feedback('gerando')
+                _handler_ouvir_web(texto, lambda: feedback('falando'))
+                if execucao.cancelada.is_set():
+                    estado = 'interrompido'
+        except ExecucaoCancelada:
+            estado = 'interrompido'
+        except Exception:
+            _log.exception('Falha ao ouvir resposta Web')
+            estado, erro = 'erro', 'Não consegui gerar o áudio dessa resposta.'
+        finally:
+            with _audios_web_lock:
+                _audios_web.pop(request_id, None)
+            with controle.condicao:
+                if controle.atual is None and not controle.fila:
+                    atualizar_estado_rosto('dormindo')
+            feedback(estado, erro)
+    try:
+        threading.Thread(target=ouvir, daemon=True, name='Luna-Ouvir-Web').start()
+    except Exception:
+        with controle.condicao:
+            controle.fila.remove(execucao)
+            controle.condicao.notify_all()
+        with _audios_web_lock:
+            _audios_web.pop(request_id, None)
+        feedback('erro', 'Não consegui iniciar a leitura da resposta.')
+
+
+def _parar_leitura_web(request_id):
+    with _audios_web_lock:
+        pedido = _audios_web.get(request_id) if isinstance(request_id, str) else None
+    if not pedido:
+        return
+    execucao = pedido['execucao']
+    with controle.condicao:
+        execucao.cancelada.set()
+        if controle.atual is execucao and controle.parar_audio:
+            controle.parar_audio()
+    _broadcast({'tipo': 'audio_resposta', 'estado': 'interrompido',
+                'turno_id': pedido['turno_id'], 'request_id': request_id})
+
+
+def _fila_texto_web():
+    with _textos_web_lock:
+        return [{k: v for k, v in item.items() if k != "recebido_em"}
+                for item in _textos_web.values()]
+
+
+def _notificar_fila_texto():
+    with _textos_web_lock:
+        _broadcast({"tipo": "fila_texto", "mensagens": _fila_texto_web()})
+
+
 def _receber_texto_web(ws, dados):
     texto = (dados.get('texto') or '').strip()
+    noticia = None
+    resposta = None
+    if 'resposta_a' in dados:
+        from modulos.biblioteca_web import resolver_resposta
+        resolvida = resolver_resposta(dados['resposta_a'], _historico_web)
+        if not resolvida or 'novidade' in dados:
+            ws.send(json.dumps({'tipo': 'mensagem_texto_recebida', 'request_id': dados.get('request_id'),
+                                'ok': False, 'erro': 'Essa referência não está mais disponível. Escolha outra mensagem.'},
+                               ensure_ascii=False))
+            return
+        resposta, noticia = resolvida
+    if 'novidade' in dados:
+        from modulos.novidades_web import resolver_continuacao
+        continuacao = resolver_continuacao(_historico_web, dados['novidade'])
+        if not continuacao:
+            ws.send(json.dumps({"tipo": "mensagem_texto_recebida", "request_id": dados.get('request_id'),
+                                "ok": False, "erro": "Esta notícia saiu do histórico. Escolha uma mais recente."},
+                               ensure_ascii=False))
+            return
+        texto, noticia = continuacao
     ok = bool(texto and _handler_texto_web)
     if ok:
-        _log.info("[Web] Texto recebido (%d caracteres)", len(texto))
+        identificador = uuid.uuid4().hex
+        recebido_em = time.monotonic()
+        _log.info("[Web] Texto recebido id=%s (%d caracteres)", identificador, len(texto))
         preparar = getattr(_handler_texto_web, "preparar", None)
-        if preparar:
-            trabalho = preparar(texto)
-            with controle.condicao:
-                if controle.atual and controle.atual.proativa:
-                    atualizar_status("◗ Aguardando a engine liberar sua conversa...")
-            threading.Thread(target=trabalho, daemon=True).start()
-        else:
-            threading.Thread(target=_handler_texto_web, args=(texto,), daemon=True).start()
+        trabalho = preparar(texto) if preparar else lambda: _handler_texto_web(texto)
+        with _textos_web_lock:
+            _textos_web[identificador] = {
+                "id": identificador, "usuario": texto, "estado": "fila",
+                "tempo": time.strftime("%H:%M"), "recebido_em": recebido_em,
+            }
+        # A entrada aceita aparece antes da geração, sem trocar o usuário do turno atual.
+        _notificar_fila_texto()
+
+        def atender():
+            from modulos.novidades_web import contexto_novidade
+            from modulos.biblioteca_web import contexto_resposta
+            token = _texto_web_id.set(identificador)
+            token_noticia = contexto_novidade.set(noticia)
+            token_resposta = contexto_resposta.set(resposta)
+            try:
+                trabalho()
+            finally:
+                contexto_resposta.reset(token_resposta)
+                contexto_novidade.reset(token_noticia)
+                _texto_web_id.reset(token)
+                with _textos_web_lock:
+                    _textos_web.pop(identificador, None)
+                _notificar_fila_texto()
+
+        threading.Thread(target=atender, daemon=True).start()
     # Confirma a entrada na fila; a resposta do modelo pode demorar sem segurar o rascunho.
     ws.send(json.dumps({"tipo": "mensagem_texto_recebida", "request_id": dados.get('request_id'),
                         "ok": ok, "erro": "" if ok else "A Luna ainda não está pronta para receber texto. Tente novamente."},
                        ensure_ascii=False))
 
 
+class _ClienteWeb:
+    """Uma conexão lenta não pode segurar a trava que libera a conversa."""
+
+    def __init__(self, ws):
+        self.ws = ws
+        self.fila = queue.Queue(maxsize=128)
+        self.encerrado = threading.Event()
+        threading.Thread(target=self._enviar, daemon=True).start()
+
+    def send(self, payload):
+        if self.encerrado.is_set():
+            raise ConnectionClosed()
+        try:
+            self.fila.put_nowait(payload)
+        except queue.Full:
+            _log.warning("[Web] Conexão lenta: fila de saída cheia; reconectando")
+            self.encerrar()
+            raise ConnectionClosed()
+
+    def receive(self, timeout=None):
+        return self.ws.receive(timeout=timeout)
+
+    def encerrar(self):
+        if self.encerrado.is_set():
+            return
+        self.encerrado.set()
+        try:
+            self.fila.put_nowait(None)
+        except queue.Full:
+            pass
+        # close() também escreve na rede. Shutdown desbloqueia um send preso sem
+        # exigir outro envio pela conexão que deixou de receber os eventos.
+        try:
+            self.ws.sock.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
+
+    def _enviar(self):
+        try:
+            while not self.encerrado.is_set():
+                payload = self.fila.get()
+                if payload is None:
+                    return
+                self.ws.send(payload)
+        except Exception:
+            self.encerrar()
+
+
 @sock.route('/ws')
 def websocket(ws):
+    ws = _ClienteWeb(ws)
     # O servidor escuta em 0.0.0.0 (dá pra abrir do celular). Ações que mexem NO PC
     # (abrir arquivo/pasta) ficam restritas a conexões do próprio PC.
     try:
@@ -466,7 +798,8 @@ def websocket(ws):
         }, ensure_ascii=False)
         ws.send(boas_vindas)
         ws.send(json.dumps({"tipo": "config_estado", "estado": _config_para_web()}))
-        ws.send(json.dumps({"tipo": "historico_completo", "turnos": list(_historico_web)}))
+        ws.send(json.dumps({"tipo": "historico_completo", "turnos": list(_historico_web),
+                            "pendentes": _fila_texto_web()}))
         ws.send(json.dumps({"tipo": "status", "texto": _ultimo_status}))
         ws.send(json.dumps({"tipo": "memoria_badge", "n": len(_memoria_estado()["pendentes"])}))
         ws.send(json.dumps({"tipo": "acompanhamentos", "estado": _acompanhamentos_estado()},
@@ -502,7 +835,8 @@ def websocket(ws):
                     _imagem_anexada_pendente = None
                 elif dados.get('comando') == 'limpar_historico':
                     _historico_web.clear()
-                    _broadcast({"tipo": "historico_completo", "turnos": []})
+                    _broadcast({"tipo": "historico_completo", "turnos": [],
+                                "pendentes": _fila_texto_web()})
                 elif dados.get('comando') == 'avaliar':
                     resultado = _registrar_avaliacao(
                         dados.get('rating', ''), dados.get('motivo', ''),
@@ -630,6 +964,20 @@ def websocket(ws):
                     ws.send(json.dumps({"tipo": "acompanhamento_feedback", "texto": resposta},
                                        ensure_ascii=False))
                     notificar_acompanhamentos()
+                elif dados.get('comando') == 'ouvir_resposta':
+                    _receber_ouvir_web(ws, dados)
+                elif dados.get('comando') == 'parar_leitura':
+                    _parar_leitura_web(dados.get('request_id'))
+                elif dados.get('comando') == 'radar_interesse':
+                    resposta = _receber_interesse_radar(dados)
+                    ws.send(json.dumps({**resposta, 'tipo': 'radar_interesse_feedback',
+                                        'turno_id': dados.get('turno_id', '')}, ensure_ascii=False))
+                    notificar_acompanhamentos()
+                elif dados.get('comando') == 'fonte_proposta_acao':
+                    from modulos import fontes_conversa
+                    resposta = fontes_conversa.resolver(dados.get('acao'), dados.get('id'), dados.get('cadastro'))
+                    ws.send(json.dumps({**resposta, 'tipo': 'fonte_proposta_feedback'}, ensure_ascii=False))
+                    notificar_acompanhamentos()
                 elif dados.get('comando') == 'fonte_acao':
                     from modulos import acompanhamento_fontes
                     resposta = acompanhamento_fontes.agir(
@@ -671,6 +1019,17 @@ def websocket(ws):
     finally:
         with _clientes_lock:
             _clientes.discard(ws)
+        ws.encerrar()
+
+def _receber_interesse_radar(dados):
+    from modulos import interesses_radar
+    if dados.get('acao') != 'remover':
+        turno = next((t for t in tuple(_historico_web) if t.get('id') == dados.get('turno_id') and
+                      t.get('origem_proativa') == 'radar_rss'), None)
+        if not turno or not any(c.get('tipo') == 'noticia' for c in turno.get('cartoes_web', [])):
+            return {'ok': False, 'texto': 'Esta notícia não está mais no histórico. Use uma notícia recente.'}
+    return interesses_radar.agir(dados.get('acao'), dados.get('assunto'))
+
 
 def _broadcast(dados: dict):
     payload = json.dumps(dados, ensure_ascii=False)
@@ -820,6 +1179,8 @@ def _registrar_turno(usuario: str, luna: str, origem_proativa: str = "", clima: 
         "luna": luna,
         "tempo": datetime.datetime.now().strftime("%H:%M"),
     }
+    if _texto_web_id.get():
+        turno["request_id"] = _texto_web_id.get()
     if origem_proativa:
         turno["origem_proativa"] = origem_proativa
     if links_novidades:
@@ -835,6 +1196,14 @@ def _registrar_turno(usuario: str, luna: str, origem_proativa: str = "", clima: 
         cor.cinza(f"[🎭 Clima do turno Web: {clima_turno}]")
     _clima_turno_pendente = ""
     turno["id"] = avaliacoes.capturar_turno(turno, _historico_web)
+    from modulos.biblioteca_web import contexto_resposta, registrar_turno
+    referencia = contexto_resposta.get()
+    if referencia:
+        turno['resposta_a'] = {**referencia['referencia'], 'trecho': referencia['luna'][:140]}
+    try:
+        registrar_turno(turno)
+    except (OSError, ValueError):
+        _log.exception('Não foi possível arquivar o turno para a busca')
     _historico_web.append(turno)
     if len(_historico_web) > 40:
         _historico_web.pop(0)
@@ -861,7 +1230,16 @@ def atualizar_stream_interrompido(motivo: str = "interrompida"):
 def atualizar_usuario(texto: str):
     global _ultima_fala_usuario
     _ultima_fala_usuario = texto
-    _broadcast({'usuario': texto})
+    identificador = _texto_web_id.get()
+    if identificador:
+        with _textos_web_lock:
+            item = _textos_web.get(identificador)
+            if item:
+                item["estado"] = "respondendo"
+                espera = time.monotonic() - item["recebido_em"]
+                _log.info("[Web] Iniciando id=%s; espera na fila %.1fs", identificador, espera)
+                cor.cinza(f"[⌨️ Web: espera na fila {espera:.1f}s]")
+    _broadcast({'usuario': texto, 'request_id': identificador})
 
 def atualizar_estado_rosto(estado: str):
     """Envia o estado visual e deixa a transição observável no terminal."""

@@ -20,6 +20,7 @@ class Execucao:
     cancelada: threading.Event = field(default_factory=threading.Event)
     # Avisos já apresentados não voltam à fila quando o usuário corta o áudio.
     intervalos_confirmados: dict = field(default_factory=dict)
+    leitura: bool = False
 
 
 class Coordenador:
@@ -39,7 +40,7 @@ class Coordenador:
 
     def _ceder(self):
         self.retomar_em = time.monotonic() + self.pausa
-        if self.atual and self.atual.proativa:
+        if self.atual and (self.atual.proativa or self.atual.leitura):
             self.atual.cancelada.set()
             # Executado sob a mesma trava que autoriza o início do áudio: não pode
             # parar por engano a fala do turno seguinte.
@@ -54,9 +55,14 @@ class Coordenador:
         with self.condicao:
             self._ceder()
 
-    def reservar(self):
+    def reservar(self, *, leitura=False):
         with self.condicao:
+            # Ouvir texto antigo pode ser substituído. Respostas novas seguem a fila normal.
+            for pendente in self.fila:
+                if pendente.leitura:
+                    pendente.cancelada.set()
             turno = self._nova(False)
+            turno.leitura = leitura
             self.fila.append(turno)
             self._ceder()
             return turno

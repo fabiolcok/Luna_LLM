@@ -51,6 +51,27 @@ class TestaAssuntosEmAndamento(unittest.TestCase):
         })
         self.assertEqual("concluido", assuntos.listar()[0]["status"])
 
+    def test_cumprimento_nao_retoma_assunto_por_palavra_solta(self):
+        assuntos.registrar_candidato({
+            "fato": "Busca um notebook para plantões com boa bateria, de dia ou à noite",
+            "assunto": "Compra de Notebook", "status": "aberto",
+        })
+        for pergunta in ("Boa noite.", "Boa tarde!", "Bom dia", "boa noite, Luna",
+                         "oi, tudo bem?", "Olá", "eae"):
+            with self.subTest(pergunta=pergunta):
+                self.assertEqual([], assuntos.buscar_relacionados(pergunta))
+                self.assertEqual("", assuntos.contexto_relacionado(pergunta))
+
+    def test_saudacao_com_assunto_explicito_preserva_recuperacao(self):
+        assuntos.registrar_candidato({
+            "fato": "Busca um notebook para plantões com boa bateria",
+            "assunto": "Compra de Notebook", "status": "aberto",
+        })
+        for pergunta in ("Boa noite, voltei a procurar o notebook",
+                         "Bom dia, notebook com boa bateria?", "e o notebook?"):
+            with self.subTest(pergunta=pergunta):
+                self.assertEqual(1, len(assuntos.buscar_relacionados(pergunta)))
+
 
 if __name__ == "__main__":
     unittest.main()

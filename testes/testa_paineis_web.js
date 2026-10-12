@@ -102,13 +102,13 @@ assert.ok(dentro('sopro-painel', 'acompanhamentos-panel'));
 assert.ok(dentro('acompanhamentos-lista', 'acompanhamentos-panel'));
 assert.ok(!dentro('sopro-painel', 'config-panel') && !dentro('sopro-painel', 'presenca'));
 assert.ok(dentro('texto-input', 'avaliacao-bar') === false);
-for (const id of ['cfg-volume', 'cfg-velocidade', 'cfg-fonte-conversa', 'tecla-ptt']) assert.ok(dentro(id, 'config-grupo-uso'));
+for (const id of ['cfg-voz', 'cfg-voz-menu', 'cfg-volume', 'cfg-velocidade', 'cfg-fonte-conversa', 'tecla-ptt']) assert.ok(dentro(id, 'config-grupo-uso'));
 for (const id of ['cfg-dark-souls', 'cfg-tarefa-acompanhamentos', 'cfg-tarefa-radar_rss']) assert.ok(dentro(id, 'config-grupo-proatividade'));
 assert.ok(dentro('mem-pendentes', 'config-grupo-memoria'));
 assert.ok(dentro('mem-assuntos', 'acompanhamentos-panel'));
 assert.ok(!dentro('mem-assuntos', 'config-grupo-memoria'));
 assert.ok(!ids['secao-tarefas'].classList.contains('config-recolhivel'));
-for (const id of ['cfg-modelo', 'dic-wrap', 'chaves-lista']) assert.ok(dentro(id, 'config-grupo-avancado'));
+for (const id of ['cfg-personalidade', 'cfg-modelo', 'dic-wrap', 'chaves-lista']) assert.ok(dentro(id, 'config-grupo-avancado'));
 assert.ok(ids['config-panel'].inert && ids['acompanhamentos-panel'].inert);
 assert.ok(ids['acompanhamentos-badge'].hidden);
 const enviados = [];
@@ -118,15 +118,121 @@ function trecho(start, end) {
     assert.ok(i >= 0 && j > i, 'Trecho não encontrado: ' + start);
     return html.slice(i, j);
 }
+const vozesUI = new Function('document', 'socket', 'WebSocket', 'enviarConfig',
+    trecho('        function atualizarControleVoz(', '        // Avaliação 👍/👎') +
+    '; return {atualizarControleVoz, fecharMenuVoz, abrirMenuVoz};'
+)(document, socket, { OPEN: 1 }, dados => enviados.push(dados));
+const controleVoz = vozesUI.atualizarControleVoz;
+const seletorVoz = ids['cfg-voz'];
+const menuVoz = ids['cfg-voz-menu'];
+const opcaoVoz = id => menuVoz.querySelectorAll('.voz-menu-opcao').find(o => o.dataset.voz === id);
+const estrelaVoz = id => menuVoz.querySelectorAll('.voz-menu-favorita').find(o => o.dataset.voz === id);
+const tituloGrupoVoz = grupo => grupo.querySelector('.voz-menu-titulo').textContent;
+assert.equal(seletorVoz.tagName, 'BUTTON');
+assert.ok(seletorVoz.disabled);
+assert.ok(menuVoz.hidden);
+controleVoz({ voz: 'jf_alpha' });
+assert.ok(seletorVoz.disabled);
+controleVoz({ voz: 'jf_alpha', vozes: [
+    { idioma: 'Português (Brasil)', vozes: [
+        { id: 'pf_dora', nome: 'Dora', genero: 'feminina' },
+        { id: 'pm_alex', nome: 'Alex', genero: 'masculina' },
+    ] },
+    { idioma: 'Japonês', vozes: [{ id: 'jf_alpha', nome: 'Alpha', genero: 'feminina' }] },
+    { idioma: 'Inglês (EUA)', vozes: [{ id: 'af_nicole', nome: 'Nicole', genero: 'feminina' }] },
+] });
+assert.equal(seletorVoz.value, 'jf_alpha');
+assert.equal(seletorVoz.disabled, false);
+assert.equal(tituloGrupoVoz(menuVoz.children[0]), 'Português (Brasil)');
+assert.equal(menuVoz.querySelectorAll('.voz-menu-opcao').length, 4);
+assert.equal(menuVoz.querySelectorAll('.voz-menu-favorita').length, 4);
+const primeiroGrupoVoz = menuVoz.children[0];
+controleVoz({ voz: 'pm_alex' });
+assert.equal(seletorVoz.value, 'pm_alex');
+assert.equal(menuVoz.children[0], primeiroGrupoVoz, 'Atualizações de volume não devem recriar a lista.');
+assert.ok(ids['cfg-voz-status'].textContent.includes('Português (Brasil)'));
+seletorVoz.onclick();
+assert.equal(menuVoz.hidden, false);
+assert.equal(seletorVoz.getAttribute('aria-expanded'), 'true');
+opcaoVoz('af_nicole').onclick();
+assert.deepEqual(enviados.pop(), { config: 'voz', valor: 'af_nicole' });
+assert.ok(seletorVoz.disabled);
+assert.ok(menuVoz.hidden);
+assert.equal(seletorVoz.value, 'pm_alex', 'A voz ativa aguarda a confirmação do servidor.');
+controleVoz({ voz: 'af_nicole' });
+assert.equal(seletorVoz.disabled, false);
+assert.equal(opcaoVoz('af_nicole').getAttribute('aria-pressed'), 'true');
+assert.ok(estrelaVoz('jf_alpha').disabled, 'Servidor antigo não pode aparentar salvar favoritas.');
+controleVoz({ voz: 'af_nicole', vozes_favoritas: [] });
+seletorVoz.onclick();
+assert.equal(estrelaVoz('jf_alpha').disabled, false);
+estrelaVoz('jf_alpha').focus();
+estrelaVoz('jf_alpha').onclick();
+assert.deepEqual(enviados.pop(), { config: 'voz_favorita', voz: 'jf_alpha', valor: true });
+assert.equal(seletorVoz.value, 'af_nicole', 'Favoritar outra voz não pode selecionar essa voz.');
+assert.equal(menuVoz.hidden, false, 'Favoritar deve manter a lista aberta.');
+assert.ok(estrelaVoz('jf_alpha').disabled);
+assert.equal(estrelaVoz('jf_alpha').textContent, '☆', 'A estrela aguarda a confirmação do servidor.');
+controleVoz({ voz: 'af_nicole', vozes_favoritas: ['jf_alpha', 'af_nicole'] });
+assert.equal(tituloGrupoVoz(menuVoz.children[0]), '★ Favoritas');
+assert.deepEqual(menuVoz.children[0].querySelectorAll('.voz-menu-opcao').map(o => o.dataset.voz), ['jf_alpha', 'af_nicole']);
+assert.equal(menuVoz.querySelectorAll('.voz-menu-opcao').length, 4, 'Favoritas não duplicam as opções.');
+assert.equal(menuVoz.hidden, false);
+assert.equal(document.activeElement, estrelaVoz('jf_alpha'), 'A confirmação deve preservar o foco da estrela.');
+assert.equal(estrelaVoz('jf_alpha').textContent, '★');
+assert.equal(estrelaVoz('jf_alpha').getAttribute('aria-pressed'), 'true');
+const grupoFavoritas = menuVoz.children[0];
+controleVoz({ voz: 'af_nicole', vozes_favoritas: ['jf_alpha', 'af_nicole'], volume: 0.5 });
+assert.equal(menuVoz.children[0], grupoFavoritas);
+estrelaVoz('jf_alpha').onclick();
+assert.deepEqual(enviados.pop(), { config: 'voz_favorita', voz: 'jf_alpha', valor: false });
+controleVoz({ voz: 'af_nicole', vozes_favoritas: ['af_nicole'] });
+assert.equal(estrelaVoz('jf_alpha').textContent, '☆');
+assert.equal(seletorVoz.value, 'af_nicole');
+assert.equal(menuVoz.querySelectorAll('.voz-menu-opcao').filter(o => o.dataset.voz === 'jf_alpha').length, 1);
+socket.readyState = 0;
+opcaoVoz('pf_dora').onclick();
+assert.equal(seletorVoz.value, 'af_nicole');
+assert.equal(enviados.length, 0);
+assert.ok(ids['cfg-voz-status'].textContent.includes('Sem conexão'));
+estrelaVoz('af_nicole').onclick();
+assert.equal(enviados.length, 0);
+assert.equal(estrelaVoz('af_nicole').textContent, '★');
+socket.readyState = 1;
+controleVoz({ voz: 'jf_alpha', vozes_favoritas: ['af_nicole'] });
+assert.equal(estrelaVoz('af_nicole').disabled, false);
+controleVoz({ voz: 'jf_alpha', vozes_favoritas: [] });
+assert.equal(tituloGrupoVoz(menuVoz.children[0]), 'Português (Brasil)');
+assert.equal(menuVoz.querySelectorAll('.voz-menu-opcao').length, 4);
+document.events.click.at(-1)({ target: root });
+assert.ok(menuVoz.hidden);
+const teclaVoz = (alvo, key) => {
+    const event = { key, target: alvo, preventDefault() { this.prevented = true; }, stopPropagation() { this.stopped = true; } };
+    const receptor = alvo === seletorVoz ? seletorVoz : menuVoz;
+    receptor.events.keydown[0](event);
+    return event;
+};
+assert.ok(teclaVoz(seletorVoz, 'ArrowDown').prevented);
+assert.equal(menuVoz.hidden, false);
+assert.equal(document.activeElement, opcaoVoz('jf_alpha'));
+assert.ok(teclaVoz(opcaoVoz('jf_alpha'), 'Home').prevented);
+assert.equal(document.activeElement, opcaoVoz('pf_dora'));
+assert.ok(teclaVoz(opcaoVoz('pf_dora'), 'ArrowDown').prevented);
+assert.equal(document.activeElement, opcaoVoz('pm_alex'));
+teclaVoz(estrelaVoz('pm_alex'), 'End');
+assert.equal(document.activeElement, opcaoVoz('af_nicole'));
+assert.ok(teclaVoz(opcaoVoz('af_nicole'), 'Escape').stopped);
+assert.ok(menuVoz.hidden);
+assert.equal(document.activeElement, seletorVoz);
 const windowEvents = {};
 const memoria = new Function('document', 'socket', 'window',
     trecho('        function ajustarAlturaMemoria(', "        document.getElementById('mem-processar').onclick") +
     '; return {renderMemoria, ajustarCaixasMemoria};'
 )(document, socket, { addEventListener: (nome, fn) => { windowEvents[nome] = fn; } });
-const controller = new Function('document', 'configPanel', 'configOverlay', 'ajustarCaixasMemoria',
+const controller = new Function('document', 'configPanel', 'configOverlay', 'ajustarCaixasMemoria', 'fecharMenuVoz',
     trecho('        let painelOrigem =', '        function enviarConfig(') +
     '; return {abrirPainelLateral, fecharConfig, selecionarGrupoConfig, tratarTeclaPainel};'
-)(document, ids['config-panel'], ids['config-overlay'], memoria.ajustarCaixasMemoria);
+)(document, ids['config-panel'], ids['config-overlay'], memoria.ajustarCaixasMemoria, vozesUI.fecharMenuVoz);
 ids['btn-config'].onclick.call(ids['btn-config']);
 assert.ok(ids['config-panel'].classList.contains('aberto'));
 assert.equal(ids['config-panel'].inert, false);
@@ -171,6 +277,11 @@ const key = (name, shiftKey = false) => {
     controller.tratarTeclaPainel(event);
     return event;
 };
+seletorVoz.onclick();
+assert.equal(menuVoz.hidden, false);
+assert.ok(key('Escape').prevented);
+assert.ok(menuVoz.hidden);
+assert.ok(ids['config-panel'].classList.contains('aberto'), 'Escape na lista deve fechar só a lista.');
 const visible = ids['config-panel'].querySelectorAll('button, input, select, textarea, summary, a[href], [tabindex="0"]').filter(el => !el.disabled && el.getClientRects().length);
 visible[visible.length - 1].focus();
 assert.ok(key('Tab').prevented);
@@ -191,7 +302,8 @@ assert.equal(document.activeElement, ids['btn-acompanhamentos']);
 const inicio = html.indexOf('        let acompanhamentoEstado =');
 const fim = html.indexOf('\n        }', html.indexOf('function renderAcompanhamentos(', inicio)) + '\n        }'.length;
 const render = new Function('document', 'socket', 'linkNovidade',
-    html.slice(inicio, fim) + '; return {renderAcompanhamentos};'
+    html.slice(inicio, fim) + html.slice(html.indexOf('function renderInteressesRadar('), html.indexOf('function criarTurnoEl(')) +
+    '; return {renderAcompanhamentos};'
 )(document, socket, () => null);
 const sopro = { status: 'ativo', situacao: 'Sotaque incomodou', novidades: [], fontes: [] };
 render.renderAcompanhamentos({ ativos: [{ id: 'a', assunto: '<img src=x> Modem', perguntar_em: '2026-10-06T12:00:00' }], sopro });
@@ -238,5 +350,39 @@ assert.deepEqual(enviados.pop(), { comando: 'memoria_listar' });
 socket.readyState = 3;
 ids['btn-acompanhamentos'].events.click[0]();
 assert.equal(enviados.length, 0);
+socket.readyState = 1;
+
+// A escolha só fica confirmada após o backend aplicar o perfil entre turnos.
+const personalidade = new Function('document', 'socket', 'WebSocket', 'enviarConfig',
+    trecho('        function atualizarControlePersonalidade(', '        function renderModelos(') +
+    '; return {atualizarControlePersonalidade};'
+)(document, socket, { OPEN: 1 }, dados => socket.send(JSON.stringify(dados)));
+const atualizarPerfil = personalidade.atualizarControlePersonalidade;
+const cfgPerfil = ids['cfg-personalidade'];
+assert.deepEqual(cfgPerfil.children.map(o => o.getAttribute('value')), ['0', '1', '2', '3']);
+atualizarPerfil({});
+assert.ok(cfgPerfil.disabled, 'Backend anterior não deve habilitar uma troca que não suporta.');
+atualizarPerfil({ personalidade: 2, personalidade_disponivel: true });
+assert.equal(cfgPerfil.value, '2');
+assert.ok(!cfgPerfil.disabled);
+cfgPerfil.value = '3';
+cfgPerfil.onchange();
+assert.deepEqual(enviados.pop(), { config: 'personalidade', valor: 3 });
+assert.ok(cfgPerfil.disabled, 'Clique repetido não pode iniciar duas trocas.');
+atualizarPerfil({ personalidade: 2, personalidade_disponivel: true, personalidade_pendente: true });
+assert.ok(cfgPerfil.disabled);
+assert.ok(ids['cfg-personalidade-status'].textContent.includes('Aguardando'));
+atualizarPerfil({ personalidade: 3, personalidade_disponivel: true });
+assert.equal(cfgPerfil.value, '3');
+assert.ok(!cfgPerfil.disabled);
+atualizarPerfil({ personalidade: 3, personalidade_disponivel: true, personalidade_erro: 'Falhou' });
+assert.equal(cfgPerfil.value, '3');
+assert.equal(ids['cfg-personalidade-status'].textContent, 'Falhou');
+atualizarPerfil({ personalidade: 0, personalidade_disponivel: true });
+assert.equal(cfgPerfil.value, '0', 'O nível zero é uma escolha válida.');
+socket.readyState = 3;
+cfgPerfil.onchange();
+assert.ok(cfgPerfil.disabled);
+assert.equal(enviados.length, 0, 'Sem conexão não pode fingir que a troca foi enviada.');
 socket.readyState = 1;
 console.log('PASSOU — gavetas, grupos, foco, decisões e indicador preservam a conversa');

@@ -18,6 +18,7 @@ import re
 import sys
 import time
 import unittest
+from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import patch
 
@@ -28,6 +29,30 @@ GOLDEN = Path(__file__).parent / "prompt_golden.txt"
 PERFIL = "- Mora em Brasília.\n- Trabalha com automação.\n- Tem duas filhas."
 SEPARADOR = "\n\n" + "=" * 78 + "\n"
 MARCA_USUARIO = "\n\n--- mensagem do usuário ---\n"
+EVENTOS_AGENDA = [{'titulo': 'Reunião de teste', 'inicio': '2026-10-10T14:00:00-03:00',
+                  'fim': '2026-10-10T15:00:00-03:00', 'dia_inteiro': False}]
+NOTICIA = {'titulo': 'Fabricante pode mudar a linha de placas', 'fonte': 'Feed de teste',
+           'url': 'https://example.org/noticia', 'resumo': 'Mudança possível, sem confirmação.'}
+
+
+@contextmanager
+def referencia_novidade(noticia):
+    from modulos.novidades_web import contexto_novidade
+    token = contexto_novidade.set(noticia)
+    try:
+        yield
+    finally:
+        contexto_novidade.reset(token)
+
+
+@contextmanager
+def referencia_resposta(resposta):
+    from modulos.biblioteca_web import contexto_resposta
+    token = contexto_resposta.set(resposta)
+    try:
+        yield
+    finally:
+        contexto_resposta.reset(token)
 
 
 class _Resposta:
@@ -53,6 +78,19 @@ class _Resposta:
 # Cada cenário existe para acender UM ramo da montagem. Ao criar um `modo_enxuto` novo,
 # acrescente um cenário aqui — senão ele nasce sem rede.
 CENARIOS = [
+    {'id': 'resposta_mensagem_web', 'usuario': 'O que você quis dizer com isso?',
+     'resposta_a': {'referencia': {'turno_id': 'turno-teste'}, 'usuario': 'Quero começar Dark Souls.',
+                   'luna': 'A gravidade já pediu uma reunião com você.', 'cartoes': []}},
+    {'id': 'resposta_mensagem_voz', 'usuario': 'O que você quis dizer com isso?', 'responder_completo': False,
+     'resposta_a': {'referencia': {'turno_id': 'turno-teste'}, 'usuario': '', 'luna': 'Referência exclusiva da web.', 'cartoes': []}},
+    {"id": "rascunho_fontes_web", "usuario": "Acompanhe suporte PT-BR em https://example.org/releases.atom",
+     "tecnica": "Rascunho preparado no cartão. A consulta só começa após a confirmação.",
+     "tarefa_documento": "CONFIRMACAO_RASCUNHO_FONTES"},
+    {"id": "continuacao_novidade_web", "usuario": "O que muda para quem já planejou a compra?",
+     "noticia": NOTICIA},
+    {"id": "continuacao_novidade_artigo_web", "usuario": "Quais mudanças o artigo confirmou?",
+     "noticia": NOTICIA, "tecnica": "Artigo sintético: o fabricante ainda não confirmou a mudança.",
+     "tarefa_documento_texto": "Atenda exatamente ao pedido com base no conteúdo do artigo."},
     {"id": "texto_normal", "usuario": "tava pensando em trocar o roteador, o wifi cai direto"},
     {"id": "momento_com_jogo", "usuario": "qual jogo está detectado?", "janela": "Luna",
      "observacoes_jogos": {"processos": {"nomes": ["Overwatch"], "instante": 990}}},
@@ -73,6 +111,16 @@ CENARIOS = [
      "tecnica": "Tocando agora: Comfortably Numb — Pink Floyd"},
     {"id": "ferramenta_falhou", "usuario": "abre minha agenda",
      "tecnica": "Erro: não foi possível conectar no Google Calendar"},
+    {"id": "agenda_web", "usuario": "Como está minha agenda?", "agenda_eventos": EVENTOS_AGENDA,
+     "tecnica": "Aqui estão os seus compromissos:\n- Reunião de teste — sábado, 10 de outubro às 14h"},
+    {"id": "agenda_vazia_web", "usuario": "Como está minha agenda?", "agenda_eventos": [],
+     "tecnica": "A sua agenda está completamente vazia para os próximos 30 dias."},
+    {"id": "agenda_criada_web", "usuario": "Marque reunião de teste amanhã às 14h",
+     "agenda_eventos": EVENTOS_AGENDA, "tecnica": "Sucesso! O evento 'Reunião de teste' foi criado para sábado, 10 de outubro às 14h."},
+    {"id": "agenda_voz", "usuario": "Consulte minha agenda", "agenda_eventos": EVENTOS_AGENDA,
+     "responder_completo": False, "tecnica": "Aqui estão os seus compromissos:\n- Reunião de teste — sábado, 10 de outubro às 14h"},
+    {"id": "agenda_telegram", "usuario": "Consulte minha agenda", "agenda_eventos": EVENTOS_AGENDA,
+     "no_pc": False, "tecnica": "Aqui estão os seus compromissos:\n- Reunião de teste — sábado, 10 de outubro às 14h"},
     {"id": "duvida_jogo_com_dados", "usuario": "Como funciona a coleta no jogo de teste?",
      "tecnica": "SISTEMA: Resultado da pesquisa sobre 'Jogo de teste':\nA fonte sintética informa: ative Coleta perto do recurso."},
     {"id": "duvida_jogo_sem_dados", "usuario": "Como funciona a coleta no jogo de teste?",
@@ -97,6 +145,10 @@ CENARIOS = [
      "tecnica": "A placa de vídeo está em 82°C há quarenta minutos."},
     {"id": "enxuto_proativo_contraste", "usuario": "",
      "tecnica": "CONTRASTE DE ABERTURA CONFIRMADO PELO SISTEMA: anunciou The Last of Us, abriu Silksong."},
+    {"id": "radar_rss_voz", "usuario": "", "responder_completo": False,
+     "tarefa_proativa": "radar_rss", "tecnica": "Notícia sintética: um estúdio anunciou combate a cheaters com IA."},
+    {"id": "radar_rss_texto", "usuario": "", "tarefa_proativa": "radar_rss",
+     "tecnica": "Notícia sintética: um teste prolongado de OLED encontrou burn-in."},
     {"id": "dark_souls_morte_voz", "usuario": "", "responder_completo": False,
      "tarefa_proativa": "dark_souls_morte", "evento_dark_souls": {"tipo": "morte", "nome": ""}},
     {"id": "dark_souls_chefe_voz", "usuario": "", "responder_completo": False,
@@ -109,7 +161,7 @@ CENARIOS = [
 ]
 
 
-def capturar(cenario: dict) -> str:
+def capturar(cenario: dict, *, pedido_completo=False):
     """Roda a persona de verdade com as fontes pessoais substituídas e devolve o system prompt."""
     from modulos import pensar
     from modulos import momento
@@ -121,14 +173,24 @@ def capturar(cenario: dict) -> str:
         msgs = parametros["messages"]
         capturado.setdefault("sistema", msgs[0]["content"])
         capturado.setdefault("usuario", msgs[-1]["content"])
+        capturado.setdefault('pedido', parametros)
         return _Resposta()
 
     pensar._ultima_saudacao_ts = time.time() if cenario.get("saudou_antes", True) else 0
     pensar._kaomoji_recentes.clear()
     pensar._kaomoji_recentes.extend(cenario.get("kaomojis", []))
     pensar._presenca_pc.set(cenario.get("no_pc", True))
+    tecnica = cenario.get('tecnica', '')
+    if 'agenda_eventos' in cenario:
+        from modulos.agenda_web import resultado
+        tecnica = resultado(tecnica, cenario['agenda_eventos'])
     with (
+        referencia_novidade(cenario.get('noticia')),
+        referencia_resposta(cenario.get('resposta_a')),
         patch.object(pensar, "_chamar_llm", _dublê),
+        # Em produção os exemplos de tom são sorteados; o golden fixa os três primeiros.
+        patch.object(pensar._prompts, "sortear_exemplos_tom",
+                     side_effect=lambda mensagem="", qtd=3: pensar._prompts.EXEMPLOS_TOM[:qtd]),
         patch.object(pensar.obsidian, "ler_perfil", return_value=PERFIL),
         patch.object(pensar.obsidian, "listar_memoria_episodica",
                      return_value=list(cenario.get("memorias", []))),
@@ -144,21 +206,24 @@ def capturar(cenario: dict) -> str:
     ):
         pensar._reescrever_como_luna(
             (pensar._prompts.prompt_dark_souls(cenario["evento_dark_souls"])
-             if "evento_dark_souls" in cenario else cenario.get("tecnica", "")), cenario["usuario"],
+             if "evento_dark_souls" in cenario else tecnica), cenario["usuario"],
             [dict(m) for m in cenario.get("historico", [])],
             max_tokens=220,
             responder_completo=cenario.get("responder_completo", True),
+            tarefa_documento=(getattr(pensar._prompts, cenario['tarefa_documento'])
+                              if cenario.get('tarefa_documento') else cenario.get('tarefa_documento_texto')),
             tarefa_proativa=cenario.get("tarefa_proativa"),
         )
     if "sistema" not in capturado:
         return "<<NENHUM PROMPT FOI MONTADO>>"
-    return capturado["sistema"] + MARCA_USUARIO + capturado["usuario"]
+    return capturado['pedido'] if pedido_completo else capturado["sistema"] + MARCA_USUARIO + capturado["usuario"]
 
 
 def normalizar(texto: str) -> str:
     """Tira o que muda a cada execução — data, hora e período do dia — sem tocar no resto."""
     from modulos import pensar
     texto = re.sub(r"^Hoje é .*$", "Hoje é <DATA/HORA/PERÍODO>", texto, count=1, flags=re.MULTILINE)
+    texto = re.sub(r'("(?:hoje|amanha)":")\d{4}-\d{2}-\d{2}(?=")', r'\1<DATA>', texto)
     # O golden é público. Só normaliza os campos de nome: o padrão "Usuário" também
     # aparece em regras genéricas que precisam continuar sendo comparadas literalmente.
     nome = pensar._prompts.NOME_USUARIO
@@ -166,6 +231,7 @@ def normalizar(texto: str) -> str:
         for antes, depois in (("PERFIL DO ", " (a pessoa"),
                               ("amiga próxima do ", " (o usuário)"),
                               ("amiga próxima do ", ". Responda"),
+                              ("falando com ", ". "),
                               ("o próprio ", " construiu")):
             padrao = "(" + re.escape(antes) + ")" + re.escape(nome) + "(?=" + re.escape(depois) + ")"
             texto = re.sub(padrao, r"\1<USUARIO>", texto, flags=re.IGNORECASE)
@@ -198,11 +264,18 @@ class TestaMontagemDoPrompt(unittest.TestCase):
         self.assertTrue(GOLDEN.exists(),
                         "Falta o golden. Gere com: python -m testes.testa_prompt_montagem --atualizar")
 
+    def test_referencia_so_entra_na_resposta_web(self):
+        blocos = self._fatiar(self.atual)
+        self.assertIn('A gravidade já pediu uma reunião com você.', blocos['resposta_mensagem_web'])
+        self.assertNotIn('Referência exclusiva da web.', blocos['resposta_mensagem_voz'])
+
     def test_nome_padrao_nao_normaliza_regras_genericas(self):
         from modulos import pensar
         with patch.object(pensar._prompts, "NOME_USUARIO", "Usuário"):
             self.assertEqual(normalizar("PERFIL DO USUÁRIO (a pessoa); responda ao usuário."),
                              "PERFIL DO <USUARIO> (a pessoa); responda ao usuário.")
+            self.assertEqual(normalizar("Você é Luna, falando com Usuário. Responda ao usuário."),
+                             "Você é Luna, falando com <USUARIO>. Responda ao usuário.")
 
     def test_todo_cenario_montou_um_prompt(self):
         for nome, corpo in self._fatiar(self.atual).items():
@@ -267,6 +340,25 @@ class TestaMontagemDoPrompt(unittest.TestCase):
                 sistema = blocos[nome].split(MARCA_USUARIO)[0]
                 self.assertEqual(sistema.count(prompts.EMOCAO), 1)
                 self.assertIn(PERFIL, sistema)
+
+    def test_sugestoes_so_entram_no_radar_rss_sem_reordenar_persona(self):
+        from modulos import prompts
+        blocos = self._fatiar(self.atual)
+        for nome, corpo in blocos.items():
+            with self.subTest(cenario=nome):
+                self.assertEqual(prompts.SUGESTOES_NOVIDADE_WEB in corpo, nome.startswith('radar_rss_'))
+                if nome.startswith('radar_rss_'):
+                    sistema = corpo.split(MARCA_USUARIO)[0]
+                    self.assertIn(prompts.ENXUTO_PROATIVO, sistema)
+                    self.assertEqual(sistema.count(prompts.EMOCAO), 1)
+
+    def test_agenda_visual_so_muda_instrucao_da_persona_na_web(self):
+        blocos = self._fatiar(self.atual)
+        for nome, corpo in blocos.items():
+            with self.subTest(cenario=nome):
+                self.assertEqual('já aparecem em um cartão na conversa' in corpo,
+                                 nome in {'agenda_web', 'agenda_vazia_web', 'agenda_criada_web'})
+
 
 
 if __name__ == "__main__":

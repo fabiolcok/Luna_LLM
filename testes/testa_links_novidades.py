@@ -30,7 +30,8 @@ class TestaLinksNovidades(unittest.TestCase):
         eventos = []
         escopo = dict(_clima_turno_pendente='', _historico_web=[], _ultima_fala_usuario='',
                       _remover_tags_voz=lambda t: str(t).replace('[clima:zoeira]', '').strip(),
-                      _broadcast=eventos.append, cor=SimpleNamespace(cinza=lambda t: None))
+                      _broadcast=eventos.append, cor=SimpleNamespace(cinza=lambda t: None),
+                      _texto_web_id=SimpleNamespace(get=lambda: None))
         carregar('servidor.py', ['_registrar_turno', 'atualizar_legenda'], escopo)
         class Fala(str):
             pass

@@ -10,7 +10,7 @@ import datetime
 import subprocess
 import contextvars
 from openai import OpenAI
-from modulos.execucoes import controle, ExecucaoCancelada
+from modulos.execucoes import controle, ExecucaoCancelada, conversa
 
 _log = logging.getLogger("luna.pensar")
 import modelos.cores as cor
@@ -76,7 +76,7 @@ Prompts:
   O TEXTO todo mora em modulos/prompts.py, separado por eixo (identidade, emoção, conduta,
   forma, saída) mais os 12 modos enxutos. Aqui fica a LÓGICA: quem escolhe qual prompt, em
   que ordem testa os gatilhos e o que entra como ajuste do turno.
-  PROMPT_LUNA_PERSONA — alias de prompts.PERSONA, mantido pelo resto do arquivo.
+  O perfil de personalidade é escolhido entre turnos, sem alterar o roteador.
 """
 
 # Servidor local de inferência: TurboLLM (OpenAI-compatível na porta 6996).
@@ -624,7 +624,26 @@ FUNCOES_DISPONIVEIS = {
 
 # O texto da persona mora em modulos/prompts.py, separado por eixo (identidade, emoção,
 # conduta, forma, saída). O alias mantém o nome usado no resto do arquivo e nos testes.
-PROMPT_LUNA_PERSONA = _prompts.PERSONA
+_historicos_personalidade = []
+
+
+def registrar_historico_personalidade(historico: list):
+    # Voz/Web compartilham a mesma lista; registrar por identidade evita duplicá-la.
+    if not any(h is historico for h in _historicos_personalidade):
+        _historicos_personalidade.append(historico)
+
+
+@conversa
+def configurar_personalidade(valor):
+    # Uma resposta em andamento termina antes da troca. Limpar durante geração
+    # permitia ao turno antigo repovoar o histórico com a personalidade anterior.
+    mudou = _prompts.selecionar_personalidade(valor)
+    if mudou:
+        for historico in _historicos_personalidade:
+            historico.clear()
+        cor.ciano(f"[🎭 Personalidade: {_prompts.personalidade_ativa()} — "
+                  f"{_prompts.nome_personalidade()} · mensagens recentes reiniciadas]")
+    return _prompts.personalidade_ativa()
 
 # O clima vira ROSTO aqui no Python, não no modelo (decisão do usuário, ago/2026). O 12B só escolhe
 # uma PALAVRA — tarefa trivial, que ele já fazia bem no tempo do [gif:]. Deixar ele escrever o
@@ -745,7 +764,7 @@ def frase_confirmacao(instrucao: str, max_tokens: int = 120) -> str:
     try:
         r = _chamar_llm(
             messages=[
-                {"role": "system", "content": PROMPT_LUNA_PERSONA},
+                {"role": "system", "content": _prompts.persona()},
                 {"role": "user", "content": instrucao},
             ],
             temperature=0.65,
@@ -812,6 +831,9 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
                           tarefa_documento=None, ao_fragmento=None, tarefa_proativa=None) -> str:
     global _ultima_saudacao_ts, _kaomoji_pendente
     _clima_da_resposta.set("")
+    _agenda_web = (responder_completo and _presenca_pc.get() and any(
+        c.get('tipo') == 'agenda' for c in getattr(resposta_tecnica, 'cartoes_web', [])))
+    _eventos_agenda = getattr(resposta_tecnica, 'eventos_agenda', []) if _agenda_web else []
     resposta_tecnica = re.sub(r'<think>.*?</think>', '', resposta_tecnica, flags=re.DOTALL).strip()
     estado_pesquisa_jogo = _estado_pesquisa_jogo(resposta_tecnica)
 
@@ -991,6 +1013,7 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
                  aviso_kaomoji, aviso_referencia, aviso_cotidiano],
         emocao=emocao_do_turno,
         assuntos_relacionados=assuntos_relacionados,
+        exemplos_tom=_prompts.bloco_exemplos_tom(_prompts.sortear_exemplos_tom(prompt_usuario)),
     )
 
     is_proativo = (prompt_usuario == "")
@@ -1034,10 +1057,14 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     # DIAGNÓSTICO: por qual caminho de prompt esta fala passou. Sem isto, ver a Luna mansa não
     # distingue "caiu num modo enxuto sem o bloco de humor" de "o modelo amoleceu" — e as duas
     # coisas se resolvem em lugares diferentes. Uma linha por turno, no terminal.
-    _bloco_emocao = (emocao_do_turno or _prompts.EMOCAO) if (is_proativo or not modo_enxuto) else ""
+    _bloco_emocao = (emocao_do_turno or _prompts.EMOCAO) if (
+        is_proativo or not modo_enxuto or _prompts.personalidade_ativa() in (2, 3)) else ""
     _emocao_usada = _prompts.nome_do_bloco(_bloco_emocao, "EMOCAO") if _bloco_emocao else "sem humor"
     _caminho = (_prompts.nome_do_bloco(modo_enxuto, "ENXUTO_") if modo_enxuto
                 else "PROMPT_COMPLETO")
+    _blocos_prompt = (f"{_caminho} + {_emocao_usada}" if modo_enxuto else
+                      f"IDENTIDADE + {_emocao_usada} + ESTRUTURA + LIMITES + TAG_CLIMA + "
+                      f"{_prompts.nome_do_bloco(canal_hint, 'CANAL_')}")
     _canal = "texto" if responder_completo else "voz"
     # O modelo NÃO entra aqui: já sai no boot e na troca, e repetir em todo turno só polui.
     # A fatia de MEMÓRIA entra: no prompt completo ela é a parte que cresce sozinha (perfil,
@@ -1046,14 +1073,16 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     _mem = sum(len(t) for t in (memoria_permanente, memoria_episodica,
                                 memoria_relacionada, contexto_db or "",
                                 assuntos_relacionados)) if not modo_enxuto else 0
-    _diag_mem = f" · memória {_mem}c" if _mem else ""
-    _diag_prompt = (f"[🧩 Prompt: {_caminho} + {_emocao_usada} · {_canal} · "
-                    f"{len(prompt_sistema)}c≈{len(prompt_sistema)//4}tok{_diag_mem}]")
+    _diag_mem = f" · memória {_mem}c no sistema" if _mem else ""
+    _diag_prompt = (f"[🧩 Prompt: {_blocos_prompt} · {_canal} · "
+                    f"personalidade {_prompts.personalidade_ativa()} ({_prompts.nome_personalidade()}) · "
+                    f"sistema {len(prompt_sistema)}c≈{len(prompt_sistema)//4}tok{_diag_mem}]")
     cor.cinza(_diag_prompt)      # terminal
     _log.info(_diag_prompt)      # e o luna.log, pra dar pra revisar depois
     from modulos import avaliacoes
     avaliacoes.registrar_contexto(
         caminho_prompt=_caminho, emocao=_emocao_usada, canal_resposta=_canal,
+        personalidade=_prompts.personalidade_ativa(),
         memoria_chars=_mem, historico_modelo=avaliacoes.historico_curto(historico),
         dados_origem=str(resposta_tecnica or "")[:1800],
         situacao=contexto_situacional, momento=_momento,
@@ -1070,9 +1099,10 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
     ultima_resp = next((m["content"] for m in reversed(historico) if m["role"] == "assistant"), "")
     # A lista parava em 'Ih' — logo antes das que mais aparecem. Medido em 875 respostas de modo
     # enxuto: 22% abriam com poxa/nossa/putz/eita/puxa, nenhuma delas coberta aqui.
-    anti_rep = "" if is_proativo else (
-        " [varie a abertura — nada de 'Pois é', 'Ah', 'Olha', 'Pô', 'Ih', 'Nossa', "
-        "'Poxa', 'Puxa', 'Putz', 'Eita']")
+    # A lista fixa de muletas saiu daqui: repetia a ESTRUTURA (e o núcleo enxuto), e sem ela
+    # foram 0 muletas em 24 respostas com a última fala aberta em muleta (11/10/2026). Ficam
+    # só os avisos que citam a fala anterior — esses o prompt estático não tem como dar.
+    anti_rep = ""
     if ultima_resp and not is_proativo:
         primeira = re.split(r'[.\n]', ultima_resp)[0].strip()
         if len(primeira) > 15:
@@ -1129,7 +1159,9 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             f"frases. Use apenas o feito visto: não invente quantas vezes ele morreu, sofreu ou tentou.{anti_rep}"
         )
     elif resposta_tecnica:
-        if resultado_acompanhamento_confirmado:
+        if _agenda_web:
+            user_msg = _prompts.prompt_agenda_web(prompt_usuario, resposta_tecnica, _eventos_agenda) + anti_rep
+        elif resultado_acompanhamento_confirmado:
             user_msg = (
                 f"O usuário clicou em 'Acompanhar resultado' para este assunto: '{prompt_usuario}'.\n"
                 f"O sistema confirmou: '{resposta_tecnica}'\n"
@@ -1289,21 +1321,24 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         )
     else:
         user_msg = (
+            # As regras de tom (validar genérico, fala pequena) moram na ESTRUTURA; repeti-las
+            # aqui não mudou o tom na ablação de 11/10/2026. A de NÃO PUXAR assunto fica: sem
+            # ela, trabalho/backlog sem relação com a mensagem foi de 2 para 11 em 33 respostas.
             f"O usuário disse: '{prompt_usuario}'\n"
-            f"Responda de forma natural, usando o contexto da conversa anterior e o que você já sabe. "
-            f"Se for uma pergunta de acompanhamento, conecte com o que já foi falado. "
-            f"SE ele afirmou uma conclusão, desabafou ou tomou uma decisão: é PROIBIDO validar genérico "
-            f"('faz sentido, às vezes a gente...', 'é isso mesmo, o importante é focar no que faz diferença'). "
-            f"Traga um ângulo ESPECÍFICO do que ele acabou de dizer, um contraponto ou uma pergunta afiada. "
-            f"Se for uma fala cotidiana pequena, pode só reagir com naturalidade e brevidade. Não puxe "
-            f"trabalho, família, jogos ou memória antiga sem relação direta com a mensagem atual. "
-            f"Concordar tudo bem — mas com substância específica, nunca fórmula de biscoito da sorte. "
-            f"Só diga que não tem a informação se ela realmente exigir dados externos que você não consultou.\n"
-            f"ATENÇÃO: NENHUMA ferramenta foi executada agora — você NÃO realizou ação nenhuma "
-            f"(não salvou, não marcou, não editou, não agendou, não tocou nada). Se o pedido era pra "
-            f"VOCÊ FAZER algo, seja honesta: diga que NÃO fez. Ex: você não consegue editar notas "
+            "Responda usando o contexto da conversa anterior e o que você já sabe. "
+            "Não puxe trabalho, família, jogos ou memória antiga sem relação direta com a mensagem atual. "
+            "Só diga que não tem a informação se ela realmente exigir dados externos que você não consultou.\n"
+            "ATENÇÃO: NENHUMA ferramenta foi executada agora — você NÃO realizou ação nenhuma "
+            "(não salvou, não marcou, não editou, não agendou, não tocou nada). Se o pedido era pra "
+            "VOCÊ FAZER algo, seja honesta: diga que NÃO fez. Ex: você não consegue editar notas "
             f"existentes do Obsidian (marcar concluído, riscar item) — só criar notas novas.{anti_rep}"
         )
+
+    if _prompts.personalidade_ativa() == 0:
+        if modo_enxuto and not is_proativo:
+            user_msg = _prompts.MENSAGEM_MODO_MODELO.format(mensagem=prompt_usuario)
+        elif is_proativo:
+            user_msg += _prompts.ESTILO_MODELO_PROATIVO
 
     if referencia_sem_nome:
         user_msg += (
@@ -1318,11 +1353,41 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
             "esteja nessa frase. Dê um pouco de personalidade à reação, mas não fabrique uma premissa."
         )
 
+    from modulos.novidades_web import contexto_novidade
+    from modulos.biblioteca_web import contexto_resposta
+    _resposta_web = (contexto_resposta.get()
+                    if responder_completo and _presenca_pc.get() and not is_proativo else None)
+    if _resposta_web and not contexto_novidade.get():
+        user_msg += '\n' + _prompts.prompt_resposta_mensagem(_resposta_web)
+    _noticia_web = (contexto_novidade.get()
+                   if responder_completo and _presenca_pc.get() and not is_proativo else None)
+    if _noticia_web:
+        user_msg += "\n" + _prompts.prompt_continuar_novidade(
+            prompt_usuario, _noticia_web, artigo_consultado=tarefa_documento is not None)
+
+    _sugestoes_novidade = is_proativo and tarefa_proativa == "radar_rss"
+    if _sugestoes_novidade:
+        user_msg += _prompts.SUGESTOES_NOVIDADE_WEB
+
     try:
         msgs = [{"role": "system", "content": prompt_sistema}]
         if not is_proativo:
             msgs.extend(_hist_curto(historico, 8))
         msgs.append({"role": "user", "content": user_msg})
+        # Mede após os cortes do histórico e as instruções do turno: contar os textos
+        # de origem escondia tanto o truncamento quanto o peso de uma referência escolhida.
+        _sistema_chars = len(msgs[0]["content"])
+        _historico_chars = sum(len(m["content"]) for m in msgs[1:-1])
+        _atual_chars = len(msgs[-1]["content"])
+        _total_chars = _sistema_chars + _historico_chars + _atual_chars
+        _diag_contexto = (
+            f"[📦 Contexto: sistema {_sistema_chars}c≈{_sistema_chars//4}tok · "
+            f"histórico {len(msgs)-2}msg {_historico_chars}c≈{_historico_chars//4}tok · "
+            f"mensagem/instruções {_atual_chars}c≈{_atual_chars//4}tok · "
+            f"TOTAL {_total_chars}c≈{_total_chars//4}tok]"
+        )
+        cor.cinza(_diag_contexto)
+        _log.info(_diag_contexto)
         _t0 = time.time()
         _parametros_persona = {
             "messages": msgs,
@@ -1362,6 +1427,9 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
                 if _uso:
                     _tk = getattr(_uso, "completion_tokens", 0) or _tk
                 _bruto = "".join(_partes)
+                if _sugestoes_novidade:
+                    from modulos.novidades_web import previa_sem_sugestoes
+                    _bruto = previa_sem_sugestoes(_bruto)
                 _visivel = _bruto[:-20] if len(_bruto) > 20 else ""
                 _agora = time.monotonic()
                 if (_visivel and _visivel != _ultimo_visivel
@@ -1401,6 +1469,10 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         # Rede de segurança: remove blocos de raciocínio que o modelo às vezes vaza.
         texto_luna = re.sub(r'<think>.*?</think>', '', texto_luna, flags=re.DOTALL | re.IGNORECASE).strip()
         texto_luna = re.sub(r'</?think>', '', texto_luna, flags=re.IGNORECASE).strip()
+        _sugestoes = []
+        if _sugestoes_novidade:
+            from modulos.novidades_web import separar_sugestoes
+            texto_luna, _sugestoes = separar_sugestoes(texto_luna)
 
         if texto_luna.startswith("Luna:"):
             texto_luna = texto_luna[5:].lstrip()
@@ -1466,7 +1538,11 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         # Web/Telegram precisam receber o Markdown que a persona gerou. A limpeza pesada
         # existe para o Kokoro e removia títulos, listas, links e código no fechamento do
         # stream — por isso a formatação aparecia enquanto digitava e virava texto cru no fim.
-        return texto_luna if responder_completo else limpar_texto_para_voz(texto_luna)
+        texto_luna = texto_luna if responder_completo else limpar_texto_para_voz(texto_luna)
+        if _sugestoes_novidade:
+            from modulos.novidades_web import FalaComSugestoes
+            return FalaComSugestoes(texto_luna, _sugestoes)
+        return texto_luna
 
     except (GeracaoInterrompida, ExecucaoCancelada):
         raise
@@ -1609,6 +1685,14 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
         inicio = time.time()
 
         ferramentas_ativas = ferramentas_disponiveis if not imagem_base64 and not modo_memoria else None
+        from modulos import fontes_conversa
+        from modulos.novidades_web import contexto_novidade
+        # A referência é contexto do clique, não fala do usuário. Misturá-la ao pedido
+        # fazia o guard de ação detectar nosso próprio "consulte a fonte" e recusar papo.
+        _noticia_continuacao = (contexto_novidade.get()
+            if not modo_memoria and responder_completo and presenca_pc and not imagem_base64 else None)
+        _pedido_fontes = (not modo_memoria and responder_completo and presenca_pc and not imagem_base64
+                          and not _noticia_continuacao and fontes_conversa.eh_pedido(prompt_usuario))
 
         if modo_memoria:
             prompt_ferramenta = (
@@ -1668,8 +1752,22 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 "Retorne texto vazio."
             )
 
+        if _pedido_fontes:
+            # Só este pedido recebe o contrato de cadastro; o chat normal mantém seu contexto.
+            prompt_ferramenta = _prompts.ROTEADOR_FONTES_CONVERSA
+            ferramentas_ativas = [_prompts.FERRAMENTA_FONTES_CONVERSA]
+        elif _noticia_continuacao:
+            prompt_ferramenta = _prompts.prompt_roteador_novidade(_noticia_continuacao)
+            ferramentas_ativas = [f for f in ferramentas_disponiveis
+                                   if f['function']['name'] == 'resumir_site']
+        from modulos.biblioteca_web import contexto_resposta
+        _resposta_web = (contexto_resposta.get()
+                        if not modo_memoria and responder_completo and presenca_pc and not imagem_base64 else None)
+        if _resposta_web and not _noticia_continuacao:
+            prompt_ferramenta = _prompts.prompt_roteador_resposta_mensagem(_resposta_web, _data_ctx)
         mensagens_ferramenta = [{"role": "system", "content": prompt_ferramenta}]
-        mensagens_ferramenta.extend(_hist_curto(historico, 4))  # contexto mínimo para calibrar tool calling
+        if not _pedido_fontes and not _noticia_continuacao and not _resposta_web:
+            mensagens_ferramenta.extend(_hist_curto(historico, 4))  # contexto mínimo para calibrar tool calling
         mensagens_ferramenta.append({"role": "user", "content": prompt_usuario})
 
         # MONO: o mesmo modelo (Gemma-4-12B) roteia as ferramentas. Thinking fica desligado
@@ -1709,6 +1807,12 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             print(f"\n\033[90m[🧠 LÓGICA INTERNA]:\n{raciocinio.strip()}\033[0m\n")
 
         _tool_calls = getattr(mensagem_modelo, 'tool_calls', None)
+        if (_tool_calls and _noticia_continuacao
+                and _tool_calls[0].function.name != 'resumir_site'):
+            cor.vermelho("[⚠️ Continuação de notícia: ferramenta fora da leitura do artigo ignorada]")
+            _tool_calls = None
+        if _tool_calls and _tool_calls[0].function.name == 'preparar_acompanhamento_fontes' and not _pedido_fontes:
+            _tool_calls = None
         _pergunta_lembranca = not modo_memoria and pergunta_de_lembranca(prompt_usuario)
         if (_tool_calls and _pergunta_lembranca
                 and _tool_calls[0].function.name in ("ler_obsidian", "salvar_obsidian")):
@@ -1762,7 +1866,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             except Exception:
                 pass
 
-            if nome_funcao in FUNCOES_DISPONIVEIS:
+            if nome_funcao in FUNCOES_DISPONIVEIS or nome_funcao == 'preparar_acompanhamento_fontes':
                 argumentos_json = tool_call.function.arguments
 
                 try:
@@ -1789,7 +1893,11 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                     if not argumentos_dit.get("nome_jogo") and _contexto_gameplay.get("nome_jogo"):
                         argumentos_dit["nome_jogo"] = _contexto_gameplay["nome_jogo"]
 
-                if nome_funcao == "ver_tela":
+                if nome_funcao == 'preparar_acompanhamento_fontes':
+                    # O modelo nunca escolhe URLs: só os links literais deste pedido vão ao rascunho.
+                    resultado_ferramenta = fontes_conversa.propor(pedido_usuario=prompt_usuario,
+                        **{k: argumentos_dit.get(k, '') for k in ('assunto', 'interesse', 'situacao')})
+                elif nome_funcao == "ver_tela":
                     imagem_b64 = FUNCOES_DISPONIVEIS["ver_tela"]()
                     if responder_completo:   # Telegram: guarda o print para enviar como foto
                         _imagem_pendente = {"tipo": "b64", "dado": imagem_b64}
@@ -1812,10 +1920,15 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                         _yt = _extrair_url_youtube(prompt_usuario)
                         if _yt:
                             argumentos_dit["url"] = _yt
-                    if nome_funcao == "resumir_site" and not argumentos_dit.get("url"):
-                        _u = _extrair_url(prompt_usuario)
-                        if _u:
-                            argumentos_dit["url"] = _u
+                    if nome_funcao == "resumir_site":
+                        if _noticia_continuacao:
+                            # O clique aponta para o cartão validado no servidor, mesmo
+                            # quando o modelo omite a URL ou inventa outra matéria.
+                            argumentos_dit["url"] = _noticia_continuacao['url']
+                        elif not argumentos_dit.get("url"):
+                            _u = _extrair_url(prompt_usuario)
+                            if _u:
+                                argumentos_dit["url"] = _u
                     if nome_funcao == "propor_acompanhamento":
                         # O 12B inventou 10h para uma frase que dizia apenas "amanhã". A data do
                         # acompanhamento é resolvida deterministicamente a partir da fala ORIGINAL;
@@ -2047,6 +2160,12 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 else:
                     texto_resposta = "Não consegui registrar isso na rotina do jogo desta vez."
                 lembranca_oculta = ""
+            elif ferramenta_chamada and nome_funcao == 'preparar_acompanhamento_fontes':
+                texto_resposta = _reescrever_como_luna(
+                    resultado_str, prompt_usuario, historico, max_tokens,
+                    tarefa_documento=_prompts.CONFIRMACAO_RASCUNHO_FONTES,
+                    responder_completo=responder_completo, ao_fragmento=ao_fragmento)
+                lembranca_oculta = ''
             elif ferramenta_chamada and nome_funcao == "propor_acompanhamento":
                 # A proposta é estado temporário, não um fato ocorrido nem memória de ferramenta.
                 texto_resposta = _reescrever_como_luna(
@@ -2136,7 +2255,8 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             else:
                 cor.amarelo("[🎭 Passando para LLM persona...]")
                 texto_resposta = _reescrever_como_luna(
-                    resultado_str, prompt_usuario, historico, max_tokens,
+                    resultado_ferramenta if getattr(resultado_ferramenta, 'cartoes_web', None) else resultado_str,
+                    prompt_usuario, historico, max_tokens,
                     forcar_incluir=eh_ver_tela, responder_completo=responder_completo,
                     ao_fragmento=ao_fragmento,
                 )
@@ -2190,6 +2310,9 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             except Exception:
                 _log.exception("Não foi possível registrar a métrica da ferramenta")
 
+        if ferramenta_chamada and _presenca_pc.get():
+            from modulos.cartoes_web import anexar
+            texto_resposta = anexar(texto_resposta, resultado_ferramenta)
         return texto_resposta
 
     except (GeracaoInterrompida, ExecucaoCancelada):

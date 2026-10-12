@@ -6,7 +6,8 @@ const html = fs.readFileSync(HTML, 'utf8');
 
 const blocos = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
 if (!blocos.length) { console.log('QUEBROU: nenhum <script> encontrado'); process.exit(1); }
-const src = blocos.join('\n;\n');
+const consulta = fs.readFileSync(require('path').join(__dirname, '..', 'static', 'consulta-web.js'), 'utf8');
+const src = consulta + '\n;\n' + blocos.join('\n;\n');
 console.log('extraido de Index.html:', src.length, 'chars,', blocos.length, 'bloco(s)');
 
 const fake = () => new Proxy(function(){}, {

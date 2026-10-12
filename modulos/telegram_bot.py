@@ -65,6 +65,10 @@ def iniciar_bot_telegram():
         _log.warning("TELEGRAM_TOKEN não configurado — bot Telegram desativado.")
         return
 
+    # Telegram desativado continua leve: importar só para registrar a lista
+    # carregava o motor de voz/LLM mesmo ao usar apenas utilitários deste módulo.
+    from modulos.pensar import registrar_historico_personalidade
+    registrar_historico_personalidade(_historico_telegram)
     bot = telebot.TeleBot(TELEGRAM_TOKEN, parse_mode=None)
 
     @conversa

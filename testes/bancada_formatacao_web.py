@@ -62,7 +62,7 @@ def capturar(caso):
         patch.object(pensar, "obter_janela_em_foco", return_value="Luna"),
         patch.object(tom, "obter_hint", return_value=""),
         patch.object(momento, "_jogos", {}),
-        pensar.controle.executar(), redirect_stdout(saida),
+        pensar.controle.executar() as execucao, redirect_stdout(saida),
     ):
         try:
             pensar._reescrever_como_luna(caso["tecnica"], caso["usuario"], [],
@@ -76,10 +76,10 @@ def capturar(caso):
     pedido["messages"][0]["content"] = re.sub(
         r"^Hoje é .*", "Hoje é quinta-feira, 08/10/2026 10:00 (manhã).",
         pedido["messages"][0]["content"], count=1, flags=re.MULTILINE)
-    ramo = re.search(r"Prompt: ([^ ·]+)", saida.getvalue())
-    if caso["id"] == "saudacao_enxuta" and (not ramo or ramo.group(1) != "ENXUTO_SAUDACAO"):
+    ramo = getattr(execucao, "diagnostico", {}).get("caminho_prompt", "DESCONHECIDO")
+    if caso["id"] == "saudacao_enxuta" and ramo != "ENXUTO_SAUDACAO":
         raise RuntimeError("A saudação não acionou o núcleo enxuto; não é um controle válido.")
-    return {"id": caso["id"], "ramo": ramo.group(1) if ramo else "DESCONHECIDO", "pedido": pedido}
+    return {"id": caso["id"], "ramo": ramo, "pedido": pedido}
 
 
 def preparar(pasta, variante):

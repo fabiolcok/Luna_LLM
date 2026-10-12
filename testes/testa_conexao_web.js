@@ -23,6 +23,7 @@ const elementos = {};
 const document = { getElementById(id) {
     return elementos[id] ||= { value: '', style: {}, scrollHeight: 42, disabled: false,
         hidden: true, textContent: '', events: {},
+        setAttribute(nome, valor) { this[nome] = valor; },
         addEventListener(tipo, fn) { (this.events[tipo] ||= []).push(fn); } };
 } };
 const contexto = vm.createContext({ document, WebSocket: SocketFalso, console,
@@ -41,9 +42,9 @@ vm.runInContext(trecho('        function criarConexaoWeb(', '        const PAPEL
 vm.runInContext(trecho('        // --- Caixa de texto', '        // --- Acompanhamentos:'), contexto);
 vm.runInContext(trecho('        function atualizarCartoesAcompanhamento(', '        function criarTurnoEl('), contexto);
 let ultimoEstadoDoCartao = 'inicial';
-document.getElementById('historico-lista').querySelectorAll = () => [{
+document.getElementById('historico-lista').querySelectorAll = seletor => seletor === '.cartao-acompanhamento' ? [{
     atualizarEstado(estado) { ultimoEstadoDoCartao = estado; },
-}];
+}] : [];
 vm.runInContext(trecho('        socket.onmessage = function(event)', "            if (dados.tipo === 'evento_visual')") + '};', contexto);
 vm.runInContext(trecho('        // Sem isso, uma queda durante a geração', '        // ── Oficina:'), contexto);
 const socket = vm.runInContext('socket', contexto);
@@ -150,4 +151,19 @@ caixa.events.keydown[0]({ key: 'Enter', shiftKey: false, preventDefault() { prev
 assert.equal(preveniu, true);
 confirmar(conexoes[5].enviados[0]);
 assert.equal(caixa.value, '');
+// Sugestões usam a mesma confirmação, sem apagar um rascunho de outra mensagem.
+caixa.value = 'Ainda estou escrevendo outra coisa';
+contexto.enviarPedidoTexto('Como fizeram esse teste?', null, {turno_id: 'rss-antigo', indice: 0});
+const pergunta = conexoes[5].enviados.at(-1);
+assert.deepEqual(pergunta.novidade, {turno_id: 'rss-antigo', indice: 0});
+assert.equal(pergunta.texto, 'Como fizeram esse teste?');
+contexto.enviarPedidoTexto('OLED ainda vale a pena?', null, {turno_id: 'rss-antigo', indice: 1});
+assert.equal(conexoes[5].enviados.at(-1), pergunta, 'Clique durante confirmação duplicou o envio');
+confirmar(pergunta);
+assert.equal(caixa.value, 'Ainda estou escrevendo outra coisa');
+assert.equal(enviar.disabled, false);
+conexoes[5].close();
+contexto.enviarPedidoTexto('OLED ainda vale a pena?', null, {turno_id: 'rss-antigo', indice: 1});
+assert.equal(conexoes[5].enviados.at(-1), pergunta, 'Sugestão foi enviada sem conexão');
+assert.equal(caixa.value, 'Ainda estou escrevendo outra coisa');
 console.log('PASSOU — reconexão preserva callbacks e texto só sai após confirmação do servidor');

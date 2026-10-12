@@ -109,6 +109,7 @@ def gerar_turno(pensar, evento, recentes, modo, seed, instante, executar, tarefa
         patch.object(tom, "obter_hint", return_value=""),
         patch.object(momento, "_jogos", {}),
         patch.object(dark_souls, "contexto", return_value=contexto_jogo),
+        pensar.controle.executar() as execucao,
         redirect_stdout(saida),
     ):
         contexto = momento.capturar(canal="proativo", janela="DARK SOULS REMASTERED", agora=instante)
@@ -118,12 +119,14 @@ def gerar_turno(pensar, evento, recentes, modo, seed, instante, executar, tarefa
                 max_tokens=180, variar=False, respeitar_intervalo=False)
     if not pedido:
         raise FalhaBancada("Não chegou ao modelo: " + saida.getvalue())
-    ramo = re.search(r"Prompt: ([^·\n]+)", saida.getvalue())
+    diagnostico = getattr(execucao, "diagnostico", {})
+    ramo = (f"{diagnostico['caminho_prompt']} + {diagnostico['emocao']}"
+            if 'caminho_prompt' in diagnostico else "DESCONHECIDO")
     total_s = sum(t.get("total_s", 0) for t in tentativas)
     return {"evento": evento, "thinking": modo, "pedido": pedido, **resultado,
             "tentativas": tentativas, "total_s": total_s,
             "fala": str(fala or ""), "clima": getattr(fala, "clima", ""),
-            "ramo": ramo.group(1).strip() if ramo else "DESCONHECIDO",
+            "ramo": ramo,
             "diagnostico": saida.getvalue(),
             "excede_ttl_antes_do_tts": total_s > dark_souls.TTL[evento["tipo"]]}
 

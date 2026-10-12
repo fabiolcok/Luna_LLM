@@ -27,7 +27,10 @@ const contexto = vm.createContext({
     document: {getElementById: id => ids[id], querySelectorAll: q => q.includes('data-rating') ? votos : categorias},
     socket: {send: texto => enviados.push(JSON.parse(texto))},
 });
-vm.runInContext(html.slice(html.indexOf('const botoesAval ='), html.indexOf('// 🔊 Repetir a última fala')), contexto);
+const inicioAval = html.indexOf('const botoesAval =');
+const fimAval = html.indexOf("document.getElementById('btn-repetir').onclick =", inicioAval);
+assert.ok(inicioAval >= 0 && fimAval > inicioAval, 'Trecho da avaliação não encontrado');
+vm.runInContext(html.slice(inicioAval, fimAval), contexto);
 const executar = codigo => vm.runInContext(codigo, contexto);
 votos[0].click();
 assert.equal(enviados.length, 0, 'Sem resposta não existe alvo');

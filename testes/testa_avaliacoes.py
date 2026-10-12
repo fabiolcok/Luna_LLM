@@ -33,7 +33,8 @@ class TestaAvaliacoes(unittest.TestCase):
         nos = [n for n in arvore.body if isinstance(n, ast.FunctionDef)
                and n.name in ("_registrar_avaliacao", "_registrar_turno")]
         self.escopo = dict(_historico_web=[], _clima_turno_pendente="", _broadcast=lambda x: None,
-                           cor=SimpleNamespace(cinza=lambda x: None))
+                           cor=SimpleNamespace(cinza=lambda x: None),
+                           _texto_web_id=SimpleNamespace(get=lambda: None))
         exec(compile(ast.Module(body=nos, type_ignores=[]), "servidor.py", "exec"), self.escopo)
         self.votar = self.escopo["_registrar_avaliacao"]
 

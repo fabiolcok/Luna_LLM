@@ -11,6 +11,7 @@ from unittest.mock import patch, Mock
 
 from integracoes.dark_souls.leitor import flag_offset, localizar, LeituraIndisponivel
 from modulos import dark_souls, momento
+from modulos.vozes_kokoro import vozes_para_web
 
 
 def snapshot(mortes=13, chefe=False, fogo=0, sessao="processo:slot:ng", tempo=10000):
@@ -196,7 +197,11 @@ class TestaConfigDarkSouls(unittest.TestCase):
         self.mensagens = []
         self.salvar_geral = Mock()
         self.estado = {"proativo": True, "tarefas": {"jogos": True}}
-        self.para_web = funcao("servidor.py", "_config_para_web", {"_estado_config": self.estado})
+        self.para_web = funcao("servidor.py", "_config_para_web", {
+            "_estado_config": self.estado, "_config_handlers": {},
+            "_personalidade_pendente": False, "_personalidade_erro": "",
+            "vozes_para_web": vozes_para_web,
+        })
         self.aplicar = funcao("servidor.py", "_aplicar_config", {
             "_estado_config": self.estado, "_config_handlers": {},
             "_config_para_web": self.para_web, "_broadcast": self.mensagens.append,

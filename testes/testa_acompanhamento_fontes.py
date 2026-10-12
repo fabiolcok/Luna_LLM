@@ -341,6 +341,7 @@ class FontesTest(unittest.TestCase):
             return mensagem
         ws=Mock(); ws.send=lambda s:enviados.append(json.loads(s)); ws.receive=receber
         c={"json":json,"request":types.SimpleNamespace(remote_addr="127.0.0.1"),"_clientes":set(),
+           "_ClienteWeb":lambda ws:ws,"_fila_texto_web":lambda:[],
            "_clientes_lock":threading.Lock(),"_ultima_fala_usuario":"","_ultima_fala_luna":"",
            "_ultimo_pensamento":"","_ultimo_estado_rosto":None,"_ultimo_kaomoji":None,
            "_ultimo_status":"","_historico_web":[],"_config_para_web":lambda:{},

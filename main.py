@@ -40,7 +40,8 @@ from modulos.habilidades import ler_agenda_google, capturar_tela_base64, iniciar
 from modulos.proativa import iniciar_modo_proativo, registrar_interacao, registrar_tentativa, MAX_TENTATIVAS, marcar_luna_ocupada, luna_esta_livre, configurar_proativo, configurar_tarefa
 from modulos.telegram_bot import iniciar_bot_telegram
 from modulos.falar import configurar_voz
-from modulos.pensar import configurar_memoria
+from modulos.pensar import (configurar_memoria, configurar_personalidade,
+                           registrar_historico_personalidade)
 from servidor import (
     atualizar_estado_rosto, atualizar_legenda, atualizar_status,
     atualizar_usuario, atualizar_stream_resposta, atualizar_stream_interrompido,
@@ -48,7 +49,7 @@ from servidor import (
     iniciar_servidor, registrar_config_handler, sincronizar_config,
     injetar_arquivo_pendente, obter_e_limpar_imagem_anexada, carregar_e_aplicar_config,
     registrar_handler_texto_web, registrar_handler_acompanhamento_web,
-    registrar_handler_conclusao_web, atualizar_mascote_solto
+    registrar_handler_conclusao_web, registrar_handler_ouvir_web, atualizar_mascote_solto
 )
 
 from pynput import keyboard as kb
@@ -188,6 +189,7 @@ def ao_interromper():
 # Histórico da conversa — MÓDULO-level pra ser compartilhado entre a voz e a caixa de
 # texto do web (é UMA conversa só). gerar_resposta cuida de append/trim in-place.
 _historico_conversa = []
+registrar_historico_personalidade(_historico_conversa)
 
 
 def _registrar_turno_direto(historico: list, usuario: str, luna: str):
@@ -208,6 +210,30 @@ def _falar_atalho(texto: str):
         ao_iniciar=lambda: atualizar_estado_rosto("falando"),
         ao_terminar=lambda: atualizar_estado_rosto("dormindo"),
     )
+
+
+def ouvir_resposta_web(texto: str, ao_iniciar=None):
+    """A leitura usa o texto já respondido; não cria turno, memória ou chamada LLM."""
+    registrar_interacao()
+    marcar_luna_ocupada(True)
+    _interromper.clear()
+    def iniciou():
+        atualizar_estado_rosto('falando')
+        if ao_iniciar:
+            ao_iniciar()
+    try:
+        fluxo = FalaEmFluxo(interromper=_interromper, ao_iniciar=iniciou)
+        fluxo.receber(texto)
+        fluxo.finalizar(texto)
+        while not fluxo.aguardar(.1):
+            with controle.condicao:
+                if not controle.valida(controle.contexto.get()):
+                    # A síntese pendente termina em segundo plano, sem reter a fila do chat.
+                    fluxo.cancelar()
+                    break
+    finally:
+        atualizar_estado_rosto('dormindo')
+        marcar_luna_ocupada(False)
 
 
 def _mostrar_resposta_web_no_terminal(texto: str):
@@ -235,15 +261,14 @@ def responder_texto_web(texto: str):
         _log.info(f"[Web texto] Usuário: {texto}")
         atualizar_usuario(texto)                       # mostra "Você: ..." no web
         atualizar_estado_rosto("pensando")             # anima a presença (a lua) também no texto
-        from modulos import acompanhamentos, conclusao_tarefas, acompanhamento_sopro
-        resposta_direta = (acompanhamento_sopro.interceptar_pedido(texto)
+        from modulos import acompanhamentos, conclusao_tarefas, acompanhamento_sopro, fontes_conversa
+        resposta_direta = ((None if fontes_conversa.eh_pedido(texto) else acompanhamento_sopro.interceptar_pedido(texto))
                            or conclusao_tarefas.interceptar_resposta(texto)
                            or acompanhamentos.interceptar_resposta(texto))
         if resposta_direta:
             _registrar_turno_direto(_historico_conversa, texto, resposta_direta)
             atualizar_estado_rosto("digitando")
             atualizar_legenda(resposta_direta)
-            time.sleep(min(9.0, max(4.0, len(resposta_direta) * 0.03)))
             _mostrar_resposta_web_no_terminal(resposta_direta)
             _log.info(f"[Web texto] Luna [acompanhamento]: {resposta_direta}")
             return
@@ -259,7 +284,8 @@ def responder_texto_web(texto: str):
         resposta = gerar_resposta(texto_modelo, _historico_conversa,
                                   responder_completo=True, presenca_pc=True,
                                   ao_fragmento=_mostrar_fragmento)
-        resposta = (resposta or "").strip()
+        from modulos.cartoes_web import anexar
+        resposta = anexar((resposta or "").strip(), resposta)
         if stream_iniciou and not resposta:
             atualizar_stream_interrompido("falhou")
             return
@@ -267,7 +293,6 @@ def responder_texto_web(texto: str):
         atualizar_legenda(                             # mostra a resposta + registra o turno (SEM falar)
             resposta, clima=obter_clima_resposta()
         )
-        time.sleep(min(9.0, max(4.0, len(resposta) * 0.03)))
         if resposta:
             _mostrar_resposta_web_no_terminal(resposta)
             _log.info(f"[Web texto] Luna: {resposta[:200]}")
@@ -395,10 +420,12 @@ def loop_voz():
                     # 2. INTERCEPTADOR DE HABILIDADES POR PALAVRAS DE ATIVAÇÃO
                     texto_lower = texto_usuario.lower()
                     imagem_tela = None
+                    agenda_do_turno = None
 
                     if any(p in texto_lower for p in ATIVAR_MODO_AGENDA):
                         cor.amarelo("📅 Consultando Google Agenda...")
                         dados_agenda = ler_agenda_google()
+                        agenda_do_turno = dados_agenda
                         pergunta_original = texto_usuario
                         texto_usuario = f"""O usuário perguntou: "{pergunta_original}"
                                             Dados da agenda:
@@ -518,6 +545,9 @@ def loop_voz():
                         atualizar_estado_rosto("dormindo")
                         continue
                     # Erros anteriores à persona não chamam o finalizador do callback.
+                    if agenda_do_turno and not getattr(resposta_luna, 'cartoes_web', None):
+                        from modulos.cartoes_web import anexar
+                        resposta_luna = anexar(resposta_luna, agenda_do_turno)
                     fala_fluxo.finalizar(resposta_luna)
                     atualizar_legenda(resposta_luna, clima=obter_clima_resposta())
                     if resposta_luna and resposta_luna.strip():
@@ -708,8 +738,10 @@ def main():
     registrar_handler_texto_web(responder_texto_web)
     registrar_handler_acompanhamento_web(responder_clique_acompanhamento)
     registrar_handler_conclusao_web(responder_clique_conclusao)
+    registrar_handler_ouvir_web(ouvir_resposta_web)
     registrar_config_handler("proativo", configurar_proativo)
     registrar_config_handler("memoria", configurar_memoria)
+    registrar_config_handler("personalidade", configurar_personalidade)
     registrar_config_handler("voz", lambda v: configurar_voz(voz=v))
     registrar_config_handler("velocidade", lambda v: configurar_voz(velocidade=float(v)))
     registrar_config_handler("volume", lambda v: configurar_voz(volume=v))

@@ -1281,8 +1281,24 @@
         }
         .cartao-web-cabecalho { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .cartao-web-imagem {
-            display: block; width: 100%; max-width: 320px; height: auto; max-height: 180px;
-            margin: 10px 0; border-radius: 7px; object-fit: contain; background: #0d0d13;
+            display: block; width: auto; max-width: min(440px, 100%); height: auto; max-height: 250px;
+            margin: 10px auto; border-radius: 7px; object-fit: contain; background: #0d0d13;
+        }
+        .cartao-noticia-midia {
+            position: relative; display: flex; justify-content: center; isolation: isolate;
+            width: 100%; max-width: 480px; margin: 12px auto; overflow: hidden; border-radius: 14px;
+        }
+        .cartao-noticia-midia::before {
+            content: ''; position: absolute; inset: -12px; z-index: -1; pointer-events: none;
+            background-image: var(--imagem-noticia, none); background-position: center; background-size: cover;
+            filter: blur(20px); opacity: .28;
+            mask-image: radial-gradient(ellipse closest-side, #000 30%, transparent 100%);
+        }
+        .cartao-noticia-midia .cartao-web-imagem {
+            margin: 0; border-radius: 12px; background: transparent;
+            mask-image: linear-gradient(to right, transparent, #000 2.5%, #000 97.5%, transparent),
+                linear-gradient(to bottom, transparent, #000 4%, #000 96%, transparent);
+            mask-composite: intersect;
         }
         .cartao-web-rotulo { color: #b5a4dd; font-size: .67rem; font-weight: 650; letter-spacing: .8px; text-transform: uppercase; }
         .cartao-web-status { color: #b8c9be; font-size: .7rem; padding: 2px 7px; border-radius: 20px; background: #213128; }
@@ -1305,7 +1321,38 @@
         .cartao-web-acoes button:hover, .cartao-web-acoes .link-novidade:hover { background: #362b4b; border-color: #8067a6; }
         .cartao-web-acoes button:focus-visible { outline: 2px solid #bb9af7; outline-offset: 3px; }
         .cartao-web-acoes button:disabled { opacity: .45; cursor: default; }
+        .cartao-web-acoes .cartao-noticia-todas {
+            margin-left: auto;
+        }
+        .cartao-noticia .cartao-web-fonte { margin-left: auto; text-align: right; }
         .cartao-web-mais { margin-left: auto; color: #9d96ad; font-size: .73rem; }
+        .cartao-agenda .cartao-web-titulo { margin: 0; }
+        .cartao-agenda .cartao-web-rotulo { margin-left: auto; }
+        .agenda-periodo { margin: 4px 0 0; color: #a6a9bc; font-size: .74rem; }
+        .agenda-data { color: #b4c7df; font-size: .75rem; }
+        .agenda-eventos { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 8px; }
+        .agenda-evento { min-width: 0; padding: 10px 12px;
+            border: 1px solid #302c40; border-radius: 7px; background: #13121d; }
+        .agenda-evento-info { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 5px; }
+        .agenda-horario { color: #b8a1e2; font-size: .75rem; line-height: 1.5; white-space: pre-line; }
+        .agenda-evento-titulo { color: #e0dcea; font-weight: 600; font-size: .85rem; }
+        .agenda-local { color: #a6a9bc; font-size: .74rem; margin-top: 3px; }
+        .agenda-evento .link-novidade { margin: 4px 0 0; font-size: .72rem; }
+        .agenda-vazia, .agenda-limite { margin: 12px 0 0; color: #b9b3c7; font-size: .8rem; }
+        .novidade-sugestoes { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+        .novidade-sugestoes button {
+            padding: 7px 10px; border: 1px solid #39334d; border-radius: 16px;
+            background: #191621; color: #cfc3e6; font: inherit; font-size: .74rem;
+            line-height: 1.4; cursor: pointer; text-align: left;
+        }
+        .novidade-sugestoes button:hover { background: #292136; border-color: #8067a6; }
+        .novidade-sugestoes button:focus-visible { outline: 2px solid #bb9af7; outline-offset: 3px; }
+        .novidade-controles { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px 24px; margin-top: 12px; }
+        .novidade-controles > details { min-width: 0; font-size: .78rem; }
+        .novidade-controles > details[open] { flex-basis: 100%; }
+        .novidade-controles > details > summary { cursor: pointer; color: #8ba2c3; }
+        .novidade-controles .radar-interesse { margin-top: 0; }
+        .novidade-controles .novidade-sugestoes { margin-top: 9px; }
         .turno-luna {
             position: relative; align-self: flex-start; max-width: 92%;
             padding: 11px 38px 11px 13px; border-radius: 13px 13px 13px 3px;
@@ -1324,6 +1371,7 @@
         }
         .turno-pendente { opacity: .72; }
         .turno-pendente .turno-tempo::after { content: ' · processando'; }
+        .turno-fila .turno-tempo::after { content: ' · recebida · aguardando resposta'; color: #9690ae; }
         .turno-incompleto { opacity: .78; }
         .turno-incompleto .turno-tempo::after {
             content: ' · ' attr(data-interrupcao); color: #c87588;
@@ -1343,9 +1391,130 @@
             padding: 4px 6px; color: #565f89; background: transparent; cursor: pointer;
             opacity: 0; transition: opacity .2s, color .2s, background .2s;
         }
-        .turno-luna:hover .mensagem-copiar, .mensagem-copiar:focus { opacity: 1; }
+        .turno-luna:hover .mensagem-copiar, .mensagem-copiar:focus,
+        .turno-luna:hover .mensagem-ouvir, .mensagem-ouvir:focus,
+        .turno-luna:hover .mensagem-responder, .mensagem-responder:focus { opacity: 1; }
         .mensagem-copiar:hover { color: #b4f9f8; background: #1b2135; }
         .mensagem-conteudo { min-width: 0; overflow-wrap: anywhere; }
+        .mensagem-responder {
+            position: absolute; top: 8px; right: 60px; border: 0; border-radius: 6px;
+            padding: 4px 6px; color: #8995b8; background: transparent; cursor: pointer;
+            opacity: 0; transition: opacity .2s, color .2s, background .2s;
+        }
+        .mensagem-responder:hover { color: #b4f9f8; background: #1b2135; }
+        .turno-luna:has(.mensagem-responder)::before { padding-right: 80px; }
+        .turno-localizado .turno-luna { outline: 2px solid #bb9af7; outline-offset: -2px; }
+        #atalhos-web { position: fixed; top: 16px; right: 16px; z-index: 100; display: flex; gap: 8px; }
+        #atalhos-web > button { position: relative; top: auto; right: auto; }
+        #btn-biblioteca-web, #btn-buscar-conversa {
+            width: 40px; height: 40px; border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            color: #565f89; background: #11111a; border: 1px solid #2a2a4a;
+            font: 1.1rem 'Segoe UI', sans-serif; transition: color .2s, border-color .2s, background .2s;
+        }
+        #btn-biblioteca-web:hover, #btn-buscar-conversa:hover { color: #b4f9f8; border-color: #7aa2f7; background: #0d1526; }
+        #atalhos-web > button:focus-visible { outline: 2px solid #bb9af7; outline-offset: 2px; }
+        #resposta-selecionada {
+            display: flex; align-items: center; gap: 10px; padding: 8px 12px; margin-bottom: 6px;
+            border-left: 3px solid #bb9af7; border-radius: 5px; background: #171522;
+            color: #b9b9ce; font-size: .76rem;
+        }
+        #resposta-selecionada[hidden], #consulta-filtros[hidden] { display: none; }
+        #resposta-selecionada > div { min-width: 0; flex: 1; }
+        #resposta-selecionada strong { display: block; color: #cbb5ef; font-size: .7rem; margin-bottom: 3px; }
+        #resposta-selecionada-texto { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #resposta-selecionada-remover { border: 0; background: none; color: #b9b9ce; cursor: pointer; padding: 7px; }
+        .consulta-dialogo {
+            margin: auto; padding: 0; width: min(780px, calc(100vw - 28px)); max-width: none; max-height: 86dvh;
+            border: 1px solid #3d3553; border-radius: 15px; background: #101018; color: #c9d0e2;
+            box-shadow: 0 18px 70px #0009; font-family: inherit; overflow: hidden;
+        }
+        .consulta-dialogo::backdrop { background: #05050bbb; backdrop-filter: blur(4px); }
+        .consulta-dialogo-interior { display: flex; flex-direction: column; max-height: 86dvh; }
+        html:has(#consulta-web.consulta-biblioteca[open]) { overflow: hidden; }
+        #consulta-web.consulta-biblioteca {
+            inset: 0; margin: 0; width: 100%; height: 100dvh; max-height: none;
+            border: 0; border-radius: 0; box-shadow: none; background: #0d0d14;
+        }
+        .consulta-biblioteca .consulta-dialogo-interior {
+            width: min(2200px, 100%); height: 100%; max-height: none; margin: 0 auto;
+        }
+        .consulta-biblioteca .consulta-cabecalho { padding: 22px 24px 16px; }
+        .consulta-biblioteca .consulta-cabecalho h2 { font-size: 1.2rem; }
+        .consulta-biblioteca .consulta-controles {
+            display: grid; grid-template-columns: minmax(200px, 1fr) auto; gap: 10px 14px;
+            padding: 0 24px 18px;
+        }
+        .consulta-biblioteca #consulta-filtros { margin-top: 0; }
+        .consulta-biblioteca #consulta-dica { grid-column: 1 / -1; margin: 0; }
+        .consulta-biblioteca #consulta-lista {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+            gap: 16px; padding: 0 24px 20px; flex: 1; align-content: start;
+        }
+        .consulta-biblioteca #consulta-lista .cartao-web {
+            display: flex; flex-direction: column; min-width: 0; margin: 0; padding: 16px;
+        }
+        .consulta-biblioteca #consulta-lista .cartao-noticia .cartao-web-fonte {
+            margin-left: 0; text-align: left; color: #d3c5ef; font-size: .93rem; font-weight: 650;
+        }
+        .consulta-biblioteca #consulta-lista .cartao-web-acoes { margin-top: auto; padding-top: 14px; }
+        .consulta-biblioteca .consulta-resumo {
+            display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4;
+            overflow: hidden; margin: 8px 0 12px;
+        }
+        .consulta-biblioteca .consulta-rodape { padding: 14px 24px; }
+        @media (max-width: 640px) {
+            .consulta-biblioteca .consulta-controles { grid-template-columns: 1fr; }
+            .consulta-biblioteca .consulta-cabecalho { padding: 16px 12px; }
+            .consulta-biblioteca .consulta-cabecalho h2 { font-size: 1rem; }
+            .consulta-biblioteca .consulta-controles { padding: 0 12px 14px; }
+            .consulta-biblioteca #consulta-lista { padding: 0 12px 14px; gap: 12px; }
+            .consulta-biblioteca .consulta-rodape { padding: 12px; }
+        }
+        .consulta-cabecalho { display: flex; align-items: center; justify-content: space-between; padding: 15px 18px; gap: 15px; }
+        .consulta-cabecalho h2 { font-size: 1rem; margin: 0; color: #d9c8fa; }
+        .consulta-dialogo button, .consulta-dialogo select, .consulta-dialogo input {
+            background: #1c1a29; color: #c9d0e2; border: 1px solid #45405a; border-radius: 7px;
+            padding: 7px 10px; font: inherit; font-size: .78rem;
+        }
+        .consulta-dialogo button { cursor: pointer; }
+        .consulta-dialogo button:hover { border-color: #bb9af7; }
+        .consulta-dialogo button:disabled { opacity: .5; cursor: wait; }
+        .consulta-dialogo button:focus-visible, .consulta-dialogo input:focus-visible,
+        .consulta-dialogo select:focus-visible, .cartao-web-imagem:focus-visible, .mensagem-responder:focus-visible {
+            outline: 2px solid #bb9af7; outline-offset: 2px;
+        }
+        .consulta-controles { padding: 0 18px 10px; }
+        #consulta-busca { box-sizing: border-box; width: 100%; }
+        #consulta-filtros { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 9px; }
+        #consulta-dica { font-size: .72rem; color: #969cb3; margin: 9px 0 0; line-height: 1.5; }
+        #consulta-lista { min-height: 0; overflow: auto; padding: 0 18px; overscroll-behavior: contain; }
+        #consulta-lista .cartao-web { margin: 10px 0; }
+        #consulta-lista .cartao-web-imagem { max-width: min(300px, 100%); max-height: 150px; }
+        #consulta-lista .cartao-noticia-midia { max-width: 340px; }
+        #consulta-lista .cartao-web-acoes { flex-wrap: wrap; justify-content: flex-start; }
+        .biblioteca-nao-lida { border-left: 3px solid #bb9af7; }
+        .consulta-data { font-size: .7rem; color: #969cb3; }
+        .consulta-conversa { border: 1px solid #2d2940; border-radius: 10px; padding: 14px; margin: 10px 0; overflow-wrap: anywhere; }
+        .consulta-pergunta { font-size: .87rem; font-weight: 600; margin: 8px 0; color: #d7c5f5; }
+        .consulta-resumo { font-size: .82rem; line-height: 1.6; color: #bac1d4; }
+        .consulta-conversa .mensagem-conteudo { font-size: .9rem; margin: 12px 0; }
+        .consulta-acoes { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+        .consulta-feedback { font-size: .72rem; color: #f7768e; }
+        .consulta-rodape { padding: 12px 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border-top: 1px solid #262235; }
+        #consulta-status { font-size: .75rem; flex: 1; color: #a3adc9; }
+        #imagem-ampliada { width: min(1100px, calc(100vw - 28px)); }
+        #imagem-ampliada-arquivo { display: block; max-width: 100%; max-height: calc(86dvh - 80px); object-fit: contain; margin: 0 auto 16px; }
+        #imagem-ampliada-titulo { font-size: .85rem; font-weight: 500; }
+        .cartao-web-imagem { cursor: zoom-in; }
+        .mensagem-ouvir {
+            position: absolute; top: 8px; right: 34px; border: 0; border-radius: 6px;
+            padding: 4px 6px; color: #8995b8; background: transparent; cursor: pointer;
+            opacity: 0; transition: opacity .2s, color .2s, background .2s;
+        }
+        .mensagem-ouvir:hover { color: #b4f9f8; background: #1b2135; }
+        .mensagem-ouvir:focus-visible { outline: 2px solid #bb9af7; }
+        .turno-luna:has(.mensagem-ouvir)::before { padding-right: 36px; }
         .mensagem-conteudo p { margin: .7em 0; }
         .mensagem-conteudo > :first-child { margin-top: 0; }
         .mensagem-conteudo > :last-child { margin-bottom: 0; }
@@ -1708,26 +1877,36 @@
         .toggle input:checked + .slider { background: #0d2a1a; border-color: #1a3a2a; }
         .toggle input:checked + .slider::before { transform: translateX(18px); background: #9ece6a; }
 
-        /* Voice grid */
-        .voz-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 4px;
-            margin-top: 8px;
+        .voz-seletor { position: relative; margin-top: 7px; }
+        #cfg-voz { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 0; text-align: left; cursor: pointer; }
+        #cfg-voz-nome { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #cfg-voz-menu {
+            position: absolute; top: calc(100% + 5px); left: 0; right: 0; z-index: 5;
+            max-height: min(340px, 45vh); overflow-y: auto; overscroll-behavior: contain;
+            color-scheme: dark; scrollbar-width: thin; scrollbar-color: #4e4e68 #13131e;
+            padding: 5px; border: 1px solid #41415b; border-radius: 8px;
+            background: #13131e; box-shadow: 0 12px 28px #0008;
         }
-        .btn-voz {
-            background: #11111a;
-            border: 1px solid #1e1e2e;
-            color: #3a3a5a;
-            padding: 7px 0;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: all 0.15s;
-            font-family: inherit;
+        .voz-menu-grupo + .voz-menu-grupo { margin-top: 8px; padding-top: 8px; border-top: 1px solid #3a3a50; }
+        .voz-menu-titulo {
+            padding: 7px 9px; margin-bottom: 5px; border-left: 3px solid #a78be4;
+            border-radius: 3px; background: #252538; color: #d5dcff;
+            font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .65px;
         }
-        .btn-voz:hover { border-color: #565f89; color: #cfc9c2; }
-        .btn-voz.ativo { border-color: #7aa2f7; color: #7aa2f7; background: #0d1526; }
+        .voz-menu-linha { display: flex; align-items: stretch; gap: 4px; margin: 2px 0; }
+        .voz-menu-opcao, .voz-menu-favorita {
+            border: 1px solid transparent; border-radius: 5px; background: transparent;
+            color: #cfc9c2; font-family: inherit; cursor: pointer;
+        }
+        .voz-menu-opcao { flex: 1; min-width: 0; padding: 6px 8px; text-align: left; font-size: .82rem; }
+        .voz-menu-opcao .voz-menu-nome { display: block; font-weight: 600; }
+        .voz-menu-opcao .voz-menu-detalhe { display: block; color: #7a7a9a; font-size: .7rem; margin-top: 2px; }
+        .voz-menu-opcao.ativo { background: #1b2440; border-color: #3c5080; color: #b5c9ff; }
+        .voz-menu-favorita { flex: 0 0 36px; color: #7a7a9a; font-size: 1.2rem; }
+        .voz-menu-favorita.ativo { color: #e0af68; }
+        .voz-menu-opcao:hover:not(:disabled), .voz-menu-favorita:hover:not(:disabled) { background: #242438; }
+        .voz-menu-opcao:focus-visible, .voz-menu-favorita:focus-visible { outline: 1px solid #7aa2f7; outline-offset: -1px; }
+        .voz-menu-opcao:disabled, .voz-menu-favorita:disabled { opacity: .45; cursor: not-allowed; }
 
         /* Speed slider */
         .config-slider-linha {
@@ -1846,6 +2025,20 @@
             transition: color 0.2s;
         }
         #btn-anexo-remover:hover { color: #f7768e; }
+        .proposta-fonte-campo { display: block; margin: 12px 0; font-size: .8rem; }
+        .cartao-proposta-fonte [hidden] { display: none !important; }
+        .proposta-fonte-campo span { display: block; margin-bottom: 5px; color: #b5c3cc; }
+        .proposta-fonte-campo input, .proposta-fonte-campo textarea, .radar-interesse input {
+            width: 100%; box-sizing: border-box; background: #14141e; color: #d0d4df;
+            border: 1px solid #34334c; border-radius: 6px; padding: 8px; font: inherit;
+        }
+        .proposta-fonte-campo textarea { resize: vertical; }
+        .radar-interesse { margin-top: 12px; font-size: .78rem; }
+        .radar-interesse summary { cursor: pointer; color: #8ba2c3; }
+        .radar-interesse label { display: block; margin: 12px 0 8px; }
+        .radar-interesse input { margin-top: 5px; }
+        .radar-interesse p { font-size: .75rem; color: #8ba2c3; }
+        #radar-interesses-lista .cartao-web-acoes { margin: 8px 0; }
     </style>
 </head>
 <body class="{{ 'widget' if request.args.get('widget') == '1' else '' }}">
@@ -1926,8 +2119,13 @@
         </div>
     </div>
 
-    <button id="btn-soltar-mascote" title="Soltar Luna na área de trabalho">◲</button>
-    <button id="btn-acompanhamentos" type="button" title="Acompanhamentos" aria-label="Acompanhamentos" aria-controls="acompanhamentos-panel" aria-expanded="false">↪<span id="acompanhamentos-badge" hidden></span></button>
+    <nav id="atalhos-web" aria-label="Atalhos da Luna">
+        <button id="btn-biblioteca-web" type="button" title="Notícias e promoções" aria-label="Notícias e promoções">▤</button>
+        <button id="btn-buscar-conversa" type="button" title="Buscar conversas" aria-label="Buscar conversas">⌕</button>
+        <button id="btn-acompanhamentos" type="button" title="Acompanhamentos" aria-label="Acompanhamentos" aria-controls="acompanhamentos-panel" aria-expanded="false">↪<span id="acompanhamentos-badge" hidden></span></button>
+        <button id="btn-soltar-mascote" type="button" title="Soltar Luna na área de trabalho" aria-label="Soltar Luna na área de trabalho">◲</button>
+        <button id="btn-config" type="button" title="Configurações" aria-label="Configurações" aria-controls="config-panel" aria-expanded="false">⚙<span id="config-badge"></span></button>
+    </nav>
     <div id="acompanhamentos-panel" class="painel-lateral" role="dialog" aria-modal="true" aria-labelledby="acompanhamentos-titulo" aria-hidden="true" inert>
         <div class="config-header">
             <span id="acompanhamentos-titulo">Acompanhamentos</span>
@@ -1991,7 +2189,6 @@
         </div>
     </div>
 
-    <button id="btn-config" title="Configurações" aria-label="Configurações" aria-controls="config-panel" aria-expanded="false">⚙<span id="config-badge"></span></button>
     <div id="config-overlay"></div>
 
     <div id="config-panel" class="painel-lateral" role="dialog" aria-modal="true" aria-labelledby="config-titulo" aria-hidden="true" inert>
@@ -2009,11 +2206,17 @@
             <div id="config-grupo-uso" class="config-grupo">
         <div class="config-secao">
             <div class="config-secao-titulo">🔊 Voz</div>
-            <div class="voz-grid">
-                <button class="btn-voz ativo" data-voz="jf_alpha">Alpha</button>
-                <button class="btn-voz" data-voz="af_bella">Bella</button>
-                <button class="btn-voz" data-voz="af_nicole">Nicole</button>
+            <label for="cfg-voz" class="oficina-dica">Timbre da Luna</label>
+            <div class="voz-seletor" id="cfg-voz-seletor">
+                <button type="button" class="modelo-campo" id="cfg-voz" disabled
+                        aria-expanded="false" aria-controls="cfg-voz-menu" aria-describedby="cfg-voz-status cfg-voz-dica">
+                    <span id="cfg-voz-nome">Alpha · feminina</span><span aria-hidden="true">▾</span>
+                </button>
+                <div id="cfg-voz-menu" role="group" aria-label="Vozes e favoritas" hidden></div>
             </div>
+            <div class="oficina-dica" id="cfg-voz-status" role="status">Consultando as vozes...</div>
+            <div class="oficina-dica" id="cfg-voz-dica">A origem indica o timbre; a fala continua em PT-BR.
+                Uma voz nova precisa de internet na primeira fala; depois fica guardada localmente.</div>
             <div class="config-secao-titulo" style="margin-top:14px;">Velocidade</div>
             <div class="config-slider-linha">
                 <input type="range" id="cfg-velocidade" min="0.7" max="1.5" step="0.1" value="0.9">
@@ -2118,6 +2321,12 @@
             </details>
 <details class="config-subgrupo">
 <summary>💬 Conversa &amp; interesses</summary>
+            <details class="config-subgrupo" id="radar-interesses-config">
+                <summary>Interesses do radar de novidades</summary>
+                <div class="oficina-dica">Ajuste em “Afinar radar” nas notícias. As palavras escolhidas influenciam o destaque; todas as novidades continuam na nota.</div>
+                <p id="radar-interesses-erro" class="oficina-dica" role="status"></p>
+                <div id="radar-interesses-lista"></div>
+            </details>
             <div class="config-linha config-sublinha">
                 <span>Retomar assuntos</span>
                 <label class="toggle"><input type="checkbox" id="cfg-tarefa-retomar" checked><span class="slider"></span></label>
@@ -2169,6 +2378,20 @@
         </div>
             </div>
             <div id="config-grupo-avancado" class="config-grupo" hidden>
+        <div class="config-secao config-recolhivel" id="secao-personalidade">
+            <div class="config-secao-titulo">🎭 Nível da personalidade</div>
+            <label for="cfg-personalidade" class="oficina-dica">Escolha o jeito de conversar</label>
+            <select class="modelo-campo" id="cfg-personalidade" disabled aria-describedby="cfg-personalidade-status">
+                <option value="0">0 — Padrão do modelo</option>
+                <option value="1">1 — LUNA</option>
+                <option value="2">2 — TARS</option>
+                <option value="3">3 — GLaDOS</option>
+            </select>
+            <div class="oficina-dica" id="cfg-personalidade-status" role="status">Consultando a personalidade...</div>
+            <div class="oficina-dica">Vale para chat, voz e comentários durante os jogos.
+                Ao trocar, as mensagens recentes usadas pelo modelo são reiniciadas.
+                A conversa na tela e as memórias continuam guardadas.</div>
+        </div>
         <div class="config-secao config-recolhivel" id="secao-modelo">
             <div class="config-secao-titulo">🧠 Cérebro local</div>
             <select class="modelo-campo" id="cfg-modelo">
@@ -2384,7 +2607,7 @@
         </details>
 
         <div id="avaliacao-bar">
-            <button class="btn-aval" id="btn-repetir" title="Ouvir de novo">▶️</button>
+            <button class="btn-aval" id="btn-repetir" title="Ouvir última resposta" aria-label="Ouvir última resposta" disabled>▶️</button>
             <button id="btn-interromper" title="Parar a fala atual">⏹️</button>
             <div id="avaliacao-resposta" role="group" aria-labelledby="avaliacao-resposta-label">
                 <span id="avaliacao-resposta-label">Última resposta</span>
@@ -2449,6 +2672,10 @@
         </div>
 
         <!-- Digitar em vez de falar: sem TTS, mesmas regras de tamanho do Telegram -->
+        <div id="resposta-selecionada" hidden>
+            <div><strong>Respondendo à Luna</strong><span id="resposta-selecionada-texto"></span></div>
+            <button id="resposta-selecionada-remover" type="button" title="Cancelar referência" aria-label="Cancelar referência">✕</button>
+        </div>
         <div id="texto-input-bloco">
             <textarea id="texto-input" rows="1" placeholder="Digite aqui · Shift+Enter pula linha…" maxlength="2000" autocomplete="off"></textarea>
             <button id="texto-enviar" title="Enviar">➤</button>
@@ -2463,7 +2690,29 @@
     <!-- anime.js v3.2.2 (MIT) — servido LOCAL, de static/. Sem CDN: a Luna roda offline.
          Serve pro que o CSS não faz: morph de forma (path SVG), coreografia encadeada e
          animação a partir de valor calculado. O que é loop/rotação/opacidade fica em CSS. -->
+    <dialog id="consulta-web" class="consulta-dialogo" aria-labelledby="consulta-titulo">
+        <div class="consulta-dialogo-interior">
+            <div class="consulta-cabecalho"><h2 id="consulta-titulo">Notícias e promoções</h2><button id="consulta-fechar" type="button" aria-label="Fechar consulta">✕</button></div>
+            <div class="consulta-controles">
+                <input id="consulta-busca" type="search" maxlength="100" aria-label="Buscar conteúdo salvo" placeholder="Buscar por título, fonte ou assunto…">
+                <div id="consulta-filtros">
+                    <select id="consulta-tipo" aria-label="Tipo de conteúdo"><option value="">Tudo</option><option value="noticia">Notícias</option><option value="promocao">Promoções</option></select>
+                    <select id="consulta-leitura" aria-label="Estado de leitura"><option value="">Todas</option><option value="nao_lidas">Não lidas</option><option value="lidas">Lidas</option></select>
+                </div>
+                <p id="consulta-dica"></p>
+            </div>
+            <div id="consulta-lista"></div>
+            <div class="consulta-rodape"><span id="consulta-status" role="status" aria-live="polite"></span><button id="consulta-tentar" type="button" title="Atualizar consulta">Atualizar</button><button id="consulta-mais" type="button" hidden>Carregar mais</button></div>
+        </div>
+    </dialog>
+    <dialog id="imagem-ampliada" class="consulta-dialogo" aria-labelledby="imagem-ampliada-titulo">
+        <div class="consulta-dialogo-interior">
+            <div class="consulta-cabecalho"><h2 id="imagem-ampliada-titulo">Imagem</h2><button id="imagem-ampliada-fechar" type="button" aria-label="Fechar imagem">✕</button></div>
+            <img id="imagem-ampliada-arquivo" alt="" referrerpolicy="no-referrer">
+        </div>
+    </dialog>
     <script src="/static/anime.min.js"></script>
+    <script src="/static/consulta-web.js"></script>
     <script>
         function criarConexaoWeb(url) {
             let atual = null, reconexao = null, tentativas = 0;
@@ -4636,6 +4885,8 @@
                     ajustarAlturaTexto();
                 }
                 mostrarAvisoTexto('');
+                if (pedido.resposta && typeof limparRespostaSelecionada === 'function')
+                    limparRespostaSelecionada(pedido.resposta);
             } else {
                 mostrarAvisoTexto(dados.erro || 'Não consegui enviar. Seu texto permanece na caixa.');
             }
@@ -4646,12 +4897,16 @@
         }
         function enviarTexto() {
             const txt = textoInput.value.trim();
+            enviarPedidoTexto(txt, textoInput.value, null,
+                typeof obterRespostaSelecionada === 'function' ? obterRespostaSelecionada() : null);
+        }
+        function enviarPedidoTexto(txt, original, novidade, resposta) {
             if (!txt || envioTextoPendente) return;
             if (socket.readyState !== 1) {
                 mostrarAvisoTexto('Aguardando conexão com a Luna. Seu texto permanece na caixa.');
                 return;
             }
-            const pedido = { id: 'texto-' + Date.now() + '-' + (++sequenciaEnvioTexto), original: textoInput.value, timer: null };
+            const pedido = { id: 'texto-' + Date.now() + '-' + (++sequenciaEnvioTexto), original, resposta, timer: null };
             envioTextoPendente = pedido;
             textoEnviar.disabled = true;
             textoEnviar.title = 'Confirmando envio';
@@ -4662,7 +4917,10 @@
                 mostrarAvisoTexto('Não recebi confirmação do envio. Texto preservado; confira a conversa antes de reenviar.');
             }, 15000);
             try {
-                socket.send(JSON.stringify({ tipo: 'mensagem_texto', texto: txt, request_id: pedido.id }));
+                const dados = { tipo: 'mensagem_texto', texto: txt, request_id: pedido.id };
+                if (novidade) dados.novidade = novidade;
+                else if (resposta) dados.resposta_a = resposta;
+                socket.send(JSON.stringify(dados));
             } catch (erro) {
                 avisarQuedaConexaoTexto();
                 socket.reconectar();
@@ -4912,6 +5170,7 @@
         }
 
         function renderAcompanhamentos(estado) {
+            renderInteressesRadar(estado && estado.interesses_radar);
             renderAcompanhamentoSopro(estado && estado.sopro);
             renderAcompanhamentoFontes(estado && estado.fontes);
             acompanhamentoEstado = estado || { confirmacao: null, ativos: [] };
@@ -5095,6 +5354,8 @@
         const historicoPanel   = document.getElementById('historico-panel');
         const historicoOverlay = document.getElementById('historico-overlay');
         const historicoLista   = document.getElementById('historico-lista');
+        const textosWebPendentes = new Map();
+        const textosWebConcluidos = new Set();
         const fonteConversa    = document.getElementById('cfg-fonte-conversa');
         const fonteConversaValor = document.getElementById('cfg-fonte-conversa-valor');
 
@@ -5372,14 +5633,205 @@
             if (alvo) { alvo.open = true; alvo.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
         }
 
-        function criarCartaoWeb(dados) {
+        function dataAgenda(valor) {
+            if (typeof valor !== 'string' || !/^\d{4}-\d{2}-\d{2}(?:$|T)/.test(valor)) return null;
+            const dia = valor.slice(0, 10);
+            const data = new Date(dia + 'T00:00:00Z');
+            if (!Number.isFinite(data.getTime()) || data.toISOString().slice(0, 10) !== dia) return null;
+            return data;
+        }
+
+        function rotuloDataAgenda(valor) {
+            const data = dataAgenda(valor);
+            return data ? new Intl.DateTimeFormat('pt-BR', {timeZone: 'UTC', weekday: 'short',
+                day: 'numeric', month: 'short', year: 'numeric'}).format(data) : '';
+        }
+
+        function criarAgendaWeb(dados) {
+            if (!Array.isArray(dados.eventos)) return null;
+            const card = document.createElement('article'); card.className = 'cartao-web cartao-agenda';
+            card.dataset.tipo = 'agenda';
+            const cabecalho = document.createElement('div'); cabecalho.className = 'cartao-web-cabecalho';
+            const rotulo = document.createElement('span'); rotulo.className = 'cartao-web-rotulo';
+            rotulo.textContent = 'Google Calendar';
+            const titulo = document.createElement('h4'); titulo.className = 'cartao-web-titulo';
+            titulo.textContent = dados.titulo;
+            cabecalho.append(titulo, rotulo); card.appendChild(cabecalho);
+            const inicio = Date.parse(dados.inicio_periodo), fim = Date.parse(dados.fim_periodo);
+            const dias = Math.round((fim - inicio) / 86400000);
+            if (Number.isFinite(inicio) && Number.isFinite(fim) && dias > 1) {
+                // O intervalo da consulta não deve parecer outra data de compromisso.
+                const periodo = document.createElement('p'); periodo.className = 'agenda-periodo';
+                periodo.textContent = 'Próximos ' + dias + ' dias';
+                const ultimoDia = dataAgenda(dados.fim_periodo);
+                if (ultimoDia && /T00:00:00(?:[.+Z-]|$)/.test(dados.fim_periodo))
+                    ultimoDia.setUTCDate(ultimoDia.getUTCDate() - 1);
+                periodo.title = 'Período consultado: ' + rotuloDataAgenda(dados.inicio_periodo) +
+                    ' — ' + rotuloDataAgenda(ultimoDia ? ultimoDia.toISOString() : dados.fim_periodo);
+                card.appendChild(periodo);
+            }
+            const eventos = dados.eventos.slice(0, 50).filter(e => e && typeof e.titulo === 'string' &&
+                dataAgenda(e.inicio) && (e.dia_inteiro === true ||
+                (/T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(e.inicio) &&
+                Number.isFinite(Date.parse(e.inicio))))).sort((a, b) =>
+                a.inicio.slice(0, 10).localeCompare(b.inicio.slice(0, 10)) ||
+                Number(b.dia_inteiro === true) - Number(a.dia_inteiro === true) || a.inicio.localeCompare(b.inicio));
+            const lista = document.createElement('ul'); lista.className = 'agenda-eventos';
+            for (const evento of eventos) {
+                const dia = evento.inicio.slice(0, 10);
+                const linha = document.createElement('li'); linha.className = 'agenda-evento';
+                const info = document.createElement('div'); info.className = 'agenda-evento-info';
+                const data = document.createElement('span'); data.className = 'agenda-data';
+                data.textContent = rotuloDataAgenda(dia);
+                const horario = document.createElement('div'); horario.className = 'agenda-horario';
+                const temFim = dataAgenda(evento.fim) && evento.fim > evento.inicio;
+                if (evento.dia_inteiro === true) {
+                    horario.textContent = 'Dia inteiro';
+                    if (temFim) {
+                        const ultimoDia = dataAgenda(evento.fim); ultimoDia.setUTCDate(ultimoDia.getUTCDate() - 1);
+                        if (ultimoDia.toISOString().slice(0, 10) > dia)
+                            horario.textContent += '\naté ' + rotuloDataAgenda(ultimoDia.toISOString());
+                    }
+                } else {
+                    // O servidor já converte para o fuso da Luna: horário visual e falado precisam concordar.
+                    horario.textContent = evento.inicio.slice(11, 16);
+                    if (temFim && Number.isFinite(Date.parse(evento.fim))) {
+                        horario.textContent += ' – ' + evento.fim.slice(11, 16);
+                        if (evento.fim.slice(0, 10) !== dia)
+                            horario.textContent += '\n' + rotuloDataAgenda(evento.fim);
+                    }
+                }
+                const corpo = document.createElement('div');
+                const nome = document.createElement('div'); nome.className = 'agenda-evento-titulo';
+                nome.textContent = evento.titulo; corpo.appendChild(nome);
+                if (typeof evento.local === 'string' && evento.local) {
+                    const local = document.createElement('div'); local.className = 'agenda-local';
+                    local.textContent = evento.local; corpo.appendChild(local);
+                }
+                const link = linkNovidade(evento.url, false, 'Abrir no Calendar ↗');
+                if (link) {
+                    try { if (new URL(evento.url).hostname) corpo.appendChild(link); }
+                    catch (_) { /* O evento continua legível sem o link. */ }
+                }
+                info.append(data, horario); linha.append(info, corpo); lista.appendChild(linha);
+            }
+            if (eventos.length) card.appendChild(lista);
+            if (!eventos.length) {
+                const vazio = document.createElement('p'); vazio.className = 'agenda-vazia';
+                vazio.textContent = dados.total > 0 || dados.mais ? 'Não foi possível mostrar os compromissos.' :
+                    'Sem compromissos neste período.';
+                card.appendChild(vazio);
+            }
+            if (dados.total > eventos.length || dados.mais === true) {
+                const limite = document.createElement('p'); limite.className = 'agenda-limite';
+                limite.textContent = 'Exibindo ' + eventos.length + ' compromissos. Há mais na agenda.';
+                card.appendChild(limite);
+            }
+            return card;
+        }
+
+        function criarPropostaFonteWeb(dados) {
+            if (typeof dados.id !== 'string' || !/^[a-f0-9]{16}$/.test(dados.id) ||
+                !Array.isArray(dados.fontes) || !dados.fontes.length || dados.fontes.length > 3 ||
+                dados.fontes.some(u => !linkNovidade(u))) return null;
+            // A reconexão reconstrói o histórico; preserve as edições ainda não confirmadas.
+            const rascunhos = criarPropostaFonteWeb.rascunhos || (criarPropostaFonteWeb.rascunhos = new Map());
+            const inicial = rascunhos.get(dados.id) || { assunto: dados.titulo, interesse: dados.interesse || '',
+                situacao: dados.situacao || '', fontes: dados.fontes.join('\n') };
+            const card = document.createElement('article');
+            card.className = 'cartao-web cartao-proposta-fonte'; card.dataset.tipo = dados.tipo;
+            card.dataset.id = dados.id;
+            const titulo = document.createElement('h4'); titulo.className = 'cartao-web-titulo';
+            titulo.textContent = 'Preparar acompanhamento'; card.appendChild(titulo);
+            const explicacao = document.createElement('p'); explicacao.className = 'cartao-web-fonte';
+            explicacao.textContent = 'Confira o rascunho. A consulta começa após sua confirmação.';
+            card.appendChild(explicacao);
+            const campos = {};
+            function valores() { return Object.fromEntries(Object.entries(campos).map(([k, el]) => [k, el.value])); }
+            for (const [chave, rotulo, limite] of [['assunto', 'Assunto', 120],
+                ['interesse', 'Qual mudança você quer acompanhar?', 400],
+                ['fontes', 'Fontes · um link por linha', 6005]]) {
+                const label = document.createElement('label'); label.className = 'proposta-fonte-campo';
+                const nome = document.createElement('span'); nome.textContent = rotulo;
+                const entrada = document.createElement(chave === 'assunto' ? 'input' : 'textarea');
+                if (chave === 'assunto') entrada.type = 'text'; else entrada.rows = chave === 'fontes' ? 2 : 3;
+                entrada.maxLength = limite; entrada.value = inicial[chave];
+                entrada.oninput = () => rascunhos.set(dados.id, { ...valores(), situacao: inicial.situacao });
+                campos[chave] = entrada; label.append(nome, entrada); card.appendChild(label);
+            }
+            const status = document.createElement('p'); status.className = 'cartao-web-fonte';
+            status.setAttribute('role', 'status'); card.appendChild(status);
+            const acoes = document.createElement('div'); acoes.className = 'cartao-web-acoes';
+            const confirmar = document.createElement('button'); confirmar.type = 'button';
+            confirmar.textContent = 'Confirmar acompanhamento';
+            const descartar = document.createElement('button'); descartar.type = 'button'; descartar.textContent = 'Descartar';
+            const ver = document.createElement('button'); ver.type = 'button'; ver.textContent = 'Ver acompanhamento'; ver.hidden = true;
+            acoes.append(confirmar, descartar, ver); card.appendChild(acoes);
+            let enviando = false, feedback = '';
+            function agir(acao) {
+                if (enviando || confirmar.disabled || socket.readyState !== 1) return;
+                const cadastro = { ...valores(), situacao: inicial.situacao };
+                if (acao === 'confirmar' && (cadastro.assunto.trim().length < 3 || cadastro.interesse.trim().length < 8)) {
+                    status.textContent = 'Preencha o assunto e explique qual mudança interessa.'; return;
+                }
+                rascunhos.set(dados.id, cadastro);
+                socket.send(JSON.stringify({ comando: 'fonte_proposta_acao', acao, id: dados.id, cadastro }));
+                enviando = true; feedback = 'Aguardando confirmação da Luna…';
+                card.atualizarEstado(cartoesEstadoRecebido ? acompanhamentoEstado : null);
+            }
+            confirmar.onclick = () => agir('confirmar'); descartar.onclick = () => agir('descartar');
+            card.receberFeedback = dadosFeedback => {
+                enviando = false; feedback = dadosFeedback.texto || '';
+                card.atualizarEstado(cartoesEstadoRecebido ? acompanhamentoEstado : null);
+            };
+            card.atualizarEstado = estado => {
+                const item = estado && estado.propostas_fontes &&
+                    (estado.propostas_fontes.itens || []).find(i => i.id === dados.id);
+                const atual = item ? item.status : estado && estado.propostas_fontes && !estado.propostas_fontes.erro ?
+                    'expirado' : 'desconhecido';
+                if (!estado) enviando = false;
+                const editavel = atual === 'pendente';
+                const resolvido = ['confirmado', 'descartado', 'expirado'].includes(atual);
+                for (const label of card.querySelectorAll('.proposta-fonte-campo')) label.hidden = resolvido;
+                explicacao.hidden = resolvido;
+                titulo.textContent = atual === 'confirmado' ? item.cadastro && item.cadastro.assunto || dados.titulo :
+                    'Preparar acompanhamento';
+                ver.hidden = atual !== 'confirmado' || !item.acompanhamento_id;
+                if (!ver.hidden) ver.onclick = () => abrirAcompanhamentoDoCartao({origem:'fontes', id:item.acompanhamento_id}, ver);
+                if (atual === 'confirmado' && item.cadastro) {
+                    for (const [chave, el] of Object.entries(campos))
+                        el.value = chave === 'fontes' ? (item.cadastro.fontes || []).join('\n') : item.cadastro[chave] || '';
+                }
+                confirmar.disabled = descartar.disabled = !editavel || enviando || socket.readyState !== 1;
+                confirmar.hidden = descartar.hidden = !['pendente', 'desconhecido'].includes(atual);
+                Object.values(campos).forEach(el => el.disabled = enviando || !['pendente', 'desconhecido'].includes(atual));
+                status.textContent = atual === 'confirmado' ? 'Acompanhamento confirmado. Consulte-o em Acompanhamentos.' :
+                    atual === 'descartado' ? 'Rascunho descartado.' : atual === 'expirado' ? 'Rascunho expirado. Peça outro na conversa.' :
+                    atual === 'desconhecido' ? 'Aguardando conexão e estado da Luna.' : feedback;
+            };
+            card.atualizarEstado(cartoesEstadoRecebido ? acompanhamentoEstado : null);
+            return card;
+        }
+
+        function receberFeedbackPropostaFonte(dados) {
+            const lista = document.getElementById('historico-lista');
+            for (const card of lista.querySelectorAll('.cartao-proposta-fonte'))
+                if (card.dataset.id === dados.id) card.receberFeedback(dados);
+        }
+
+        function criarCartaoWeb(dados, nota=null) {
             if (!dados || typeof dados.titulo !== 'string' || !dados.titulo.trim()) return null;
+            if (dados.tipo === 'agenda') return criarAgendaWeb(dados);
+            if (dados.tipo === 'proposta_fonte') return criarPropostaFonteWeb(dados);
             const noticia = dados.tipo === 'noticia';
-            if (!noticia && (dados.tipo !== 'acompanhamento' ||
+            const promocao = dados.tipo === 'promocao';
+            const oferta = noticia || promocao;
+            if (!oferta && (dados.tipo !== 'acompanhamento' ||
                 !['sopro', 'fontes', 'conversa'].includes(dados.origem) ||
                 typeof dados.id !== 'string' || !/^[\w-]{1,80}$/.test(dados.id) ||
                 (dados.origem === 'sopro' && dados.id !== 'sopro_ptbr'))) return null;
-            let fonte = linkNovidade(dados.url, false, noticia ? 'Abrir notícia ↗' : 'Conferir fonte ↗');
+            let fonte = linkNovidade(dados.url, false, noticia ? 'Abrir notícia ↗' :
+                promocao ? 'Ver promoção ↗' : 'Conferir fonte ↗');
             let dominio = '';
             if (fonte) {
                 try { dominio = new URL(dados.url).hostname; if (!dominio) fonte = null; }
@@ -5387,42 +5839,67 @@
             }
             if (noticia && !fonte) return null;
             const card = document.createElement('article');
-            card.className = 'cartao-web ' + (noticia ? 'cartao-noticia' : 'cartao-acompanhamento');
+            card.className = 'cartao-web ' + (noticia ? 'cartao-noticia' :
+                promocao ? 'cartao-promocao' : 'cartao-acompanhamento');
             card.dataset.tipo = dados.tipo;
             if (fonte) card.dataset.url = dados.url;
             const cabecalho = document.createElement('div'); cabecalho.className = 'cartao-web-cabecalho';
             const rotulo = document.createElement('span'); rotulo.className = 'cartao-web-rotulo';
             const etapas = { plano: 'Plano anunciado', anuncio: 'Anúncio', mencao: 'Menção nova' };
-            rotulo.textContent = noticia ? 'Novidade' : 'Acompanhamento' +
+            rotulo.textContent = noticia ? 'Novidade' : promocao ? 'Promoção' : 'Acompanhamento' +
                 (etapas[dados.etapa] ? ' · ' + etapas[dados.etapa] : '');
             cabecalho.appendChild(rotulo); card.appendChild(cabecalho);
-            if (noticia && typeof dados.imagem === 'string' && /^https?:\/\//i.test(dados.imagem) && !/\s/.test(dados.imagem)) {
+            const imagemLocal = promocao && typeof dados.imagem === 'string' &&
+                /^\/imagens\/promocoes\/[\w-]{1,100}\.jpg$/.test(dados.imagem);
+            if (oferta && typeof dados.imagem === 'string' && (imagemLocal ||
+                (/^https?:\/\//i.test(dados.imagem) && !/\s/.test(dados.imagem)))) {
                 try {
-                    if (new URL(dados.imagem).hostname) {
+                    if (imagemLocal || new URL(dados.imagem).hostname) {
                         const imagem = document.createElement('img'); imagem.className = 'cartao-web-imagem';
                         // O título já identifica a notícia; a miniatura não precisa repeti-lo no leitor de tela.
                         imagem.alt = ''; imagem.loading = 'lazy'; imagem.decoding = 'async';
                         imagem.referrerPolicy = 'no-referrer';
-                        imagem.onerror = () => imagem.remove();
-                        imagem.src = dados.imagem; card.appendChild(imagem);
+                        imagem.tabIndex = 0; imagem.setAttribute('role', 'button');
+                        imagem.setAttribute('aria-label', 'Ampliar imagem: ' + dados.titulo);
+                        imagem.onclick = () => abrirImagem(imagem, dados.titulo);
+                        imagem.addEventListener('keydown', e => {
+                            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirImagem(imagem, dados.titulo); }
+                        });
+                        if (noticia) {
+                            const midia = document.createElement('div'); midia.className = 'cartao-noticia-midia';
+                            // O fundo só usa o arquivo carregado: antecipá-lo faria a imagem lazy baixar fora da tela.
+                            imagem.onload = () => midia.style.setProperty('--imagem-noticia',
+                                'url(' + JSON.stringify(imagem.currentSrc || imagem.src) + ')');
+                            imagem.onerror = () => midia.remove();
+                            midia.appendChild(imagem); card.appendChild(midia);
+                        } else {
+                            imagem.onerror = () => imagem.remove();
+                            card.appendChild(imagem);
+                        }
+                        imagem.src = dados.imagem;
                     }
-                } catch (_) { /* Uma URL inválida não deve impedir a notícia de aparecer. */ }
+                } catch (_) { /* Uma URL inválida não deve impedir o cartão de aparecer. */ }
             }
             const titulo = document.createElement('h4'); titulo.className = 'cartao-web-titulo';
             titulo.textContent = dados.titulo; card.appendChild(titulo);
-            if (fonte) {
+            if (fonte || (oferta && typeof dados.fonte === 'string' && dados.fonte.trim())) {
                 const origem = document.createElement('p'); origem.className = 'cartao-web-fonte';
                 origem.textContent = typeof dados.fonte === 'string' && dados.fonte.trim() ? dados.fonte :
                     dominio;
-                card.appendChild(origem);
+                if (noticia) cabecalho.appendChild(origem);
+                else card.appendChild(origem);
             }
             const acoes = document.createElement('div'); acoes.className = 'cartao-web-acoes';
             if (fonte) acoes.appendChild(fonte);
-            if (noticia) {
-                if (Number.isInteger(dados.mais) && dados.mais > 0) {
-                    const mais = document.createElement('span'); mais.className = 'cartao-web-mais';
-                    mais.textContent = '+' + dados.mais + ' na nota';
-                    acoes.appendChild(mais);
+            if (oferta) {
+                if (oferta) {
+                    nota = nota || document.createElement('button');
+                    nota.textContent = 'Ver todas';
+                    nota.className = 'link-novidade cartao-noticia-todas';
+                    nota.title = 'Ver todas ' + (noticia ? 'as notícias' : 'as promoções') + ' na Luna';
+                    nota.setAttribute('aria-label', nota.title);
+                    nota.onclick = e => { e.preventDefault(); abrirBiblioteca(dados.tipo); };
+                    acoes.appendChild(nota);
                 }
             } else {
                 const status = document.createElement('span'); status.className = 'cartao-web-status';
@@ -5487,10 +5964,156 @@
             if (!lista || !lista.querySelectorAll) return;
             for (const card of lista.querySelectorAll('.cartao-acompanhamento'))
                 card.atualizarEstado(cartoesEstadoRecebido ? acompanhamentoEstado : null);
+            for (const card of lista.querySelectorAll('.cartao-proposta-fonte'))
+                card.atualizarEstado(cartoesEstadoRecebido ? acompanhamentoEstado : null);
+        }
+
+        function criarSugestoesNovidade(turno) {
+            if (turno.origem_proativa !== 'radar_rss' || typeof turno.id !== 'string' || !turno.id) return null;
+            const noticia = (Array.isArray(turno.cartoes_web) ? turno.cartoes_web : [])
+                .find(c => c && c.tipo === 'noticia' && Array.isArray(c.sugestoes));
+            if (!noticia) return null;
+            const grupo = document.createElement('div'); grupo.className = 'novidade-sugestoes';
+            grupo.setAttribute('role', 'group'); grupo.setAttribute('aria-label', 'Continuar sobre esta notícia');
+            noticia.sugestoes.slice(0, 3).forEach((pergunta, indice) => {
+                if (typeof pergunta !== 'string' || pergunta.length < 8 || pergunta.length > 100 ||
+                    !pergunta.endsWith('?') || /[<>\[\]\r\n]|https?:\/\//i.test(pergunta)) return;
+                const botao = document.createElement('button'); botao.type = 'button';
+                botao.textContent = pergunta;
+                // O servidor resolve o id histórico: um clique antigo não usa a notícia atual.
+                botao.onclick = () => enviarPedidoTexto(pergunta, null, { turno_id: turno.id, indice });
+                grupo.appendChild(botao);
+            });
+            if (!grupo.children.length) return null;
+            const detalhe = document.createElement('details'); detalhe.className = 'novidade-continuacao';
+            const titulo = document.createElement('summary'); titulo.textContent = 'Continuar assunto';
+            detalhe.append(titulo, grupo);
+            return detalhe;
+        }
+
+        function criarInteresseRadar(turno) {
+            if (turno.origem_proativa !== 'radar_rss' || typeof turno.id !== 'string' || !turno.id ||
+                !(Array.isArray(turno.cartoes_web) ? turno.cartoes_web : []).some(c => c && c.tipo === 'noticia')) return null;
+            const detalhe = document.createElement('details'); detalhe.className = 'radar-interesse';
+            detalhe.dataset.turnoId = turno.id;
+            const titulo = document.createElement('summary'); titulo.textContent = 'Afinar radar';
+            const label = document.createElement('label'); label.textContent = 'Qual assunto desta notícia?';
+            const entrada = document.createElement('input'); entrada.type = 'text'; entrada.maxLength = 80;
+            entrada.placeholder = 'Ex.: OLED, IA em jogos, voz local'; label.appendChild(entrada);
+            const dica = document.createElement('p');
+            dica.textContent = 'Escolha palavras que devem aparecer no título ou resumo das próximas notícias.';
+            const feedback = document.createElement('p'); feedback.setAttribute('role', 'status');
+            const acoes = document.createElement('div'); acoes.className = 'cartao-web-acoes';
+            for (const [acao, rotulo] of [['mais', 'Mais desse assunto'], ['menos', 'Menos desse assunto']]) {
+                const botao = document.createElement('button'); botao.type = 'button'; botao.textContent = rotulo;
+                botao.onclick = () => {
+                    if (socket.readyState !== 1) { feedback.textContent = 'Sem conexão com a Luna. Tente novamente.'; return; }
+                    if (entrada.value.trim().length < 2) { feedback.textContent = 'Informe um assunto ou palavra-chave.'; entrada.focus(); return; }
+                    socket.send(JSON.stringify({ comando: 'radar_interesse', acao, assunto: entrada.value.trim(), turno_id: turno.id }));
+                    feedback.textContent = 'Salvando preferência…';
+                };
+                acoes.appendChild(botao);
+            }
+            detalhe.receberFeedback = dados => feedback.textContent = dados.texto || '';
+            detalhe.append(titulo, label, dica, acoes, feedback);
+            return detalhe;
+        }
+
+        function receberFeedbackInteresseRadar(dados) {
+            const lista = document.getElementById('historico-lista');
+            for (const el of lista.querySelectorAll('.radar-interesse'))
+                if (el.dataset.turnoId === dados.turno_id) el.receberFeedback(dados);
+            const erro = document.getElementById('radar-interesses-erro');
+            if (erro) erro.textContent = dados.texto || '';
+        }
+
+        function renderInteressesRadar(estado) {
+            const lista = document.getElementById('radar-interesses-lista');
+            if (!lista) return;
+            lista.innerHTML = '';
+            document.getElementById('radar-interesses-erro').textContent = estado && estado.erro || '';
+            for (const item of estado && estado.itens || []) {
+                const linha = document.createElement('div'); linha.className = 'cartao-web-acoes';
+                const texto = document.createElement('span');
+                texto.textContent = (item.preferencia === 'mais' ? 'Mais · ' : 'Menos · ') + item.assunto;
+                const remover = document.createElement('button'); remover.type = 'button'; remover.textContent = 'Remover';
+                remover.setAttribute('aria-label', 'Remover interesse: ' + item.assunto);
+                remover.onclick = () => {
+                    if (socket.readyState !== 1) {
+                        document.getElementById('radar-interesses-erro').textContent = 'Sem conexão com a Luna. Tente novamente.'; return;
+                    }
+                    socket.send(JSON.stringify({ comando: 'radar_interesse', acao: 'remover', assunto: item.assunto }));
+                };
+                linha.append(texto, remover); lista.appendChild(linha);
+            }
+            if (!lista.children.length) lista.textContent = 'Nenhum interesse escolhido ainda.';
+        }
+
+        function criarBotaoOuvir(turno) {
+            if (typeof turno.id !== 'string' || !turno.id) return null;
+            const botao = document.createElement('button'); botao.type = 'button';
+            botao.className = 'mensagem-ouvir'; botao.dataset.turnoId = turno.id;
+            function estado(dados) {
+                const ocupado = ['fila', 'gerando', 'falando'].includes(dados.estado);
+                botao.dataset.estado = dados.estado;
+                botao.textContent = ocupado ? '■' : '▷';
+                const rotulo = {fila: 'Áudio na fila · clique para parar', gerando: 'Gerando áudio · clique para parar',
+                    falando: 'Parar leitura', desconectado: 'Conexão caiu. Confira o áudio antes de ouvir novamente.'};
+                botao.title = dados.texto || rotulo[dados.estado] || 'Ouvir esta resposta';
+                botao.setAttribute('aria-label', botao.title);
+                atualizarOuvirUltimaResposta();
+            }
+            botao.receberEstado = dados => {
+                if (!dados.request_id || dados.request_id === botao.dataset.requestId) estado(dados);
+            };
+            botao.onclick = () => {
+                if (socket.readyState !== 1) { estado({estado:'erro', texto:'Sem conexão com a Luna. Tente novamente.'}); return; }
+                if (['fila', 'gerando', 'falando'].includes(botao.dataset.estado)) {
+                    socket.send(JSON.stringify({comando:'parar_leitura', request_id:botao.dataset.requestId})); return;
+                }
+                botao.dataset.requestId = 'audio-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+                socket.send(JSON.stringify({comando:'ouvir_resposta', turno_id:turno.id, request_id:botao.dataset.requestId}));
+                estado({estado:'fila'});
+            };
+            estado({estado:'fim'});
+            return botao;
+        }
+
+        function receberEstadoAudio(dados) {
+            const lista = document.getElementById('historico-lista');
+            for (const botao of lista.querySelectorAll('.mensagem-ouvir'))
+                if (!dados.turno_id || botao.dataset.turnoId === dados.turno_id) botao.receberEstado(dados);
+            atualizarOuvirUltimaResposta();
+        }
+
+        function botaoOuvirUltimaResposta() {
+            const lista = document.getElementById('historico-lista');
+            return lista && lista.querySelectorAll ? Array.from(lista.querySelectorAll('.mensagem-ouvir')).at(-1) : null;
+        }
+
+        function atualizarOuvirUltimaResposta() {
+            const barra = document.getElementById('btn-repetir');
+            if (!barra) return;
+            const resposta = botaoOuvirUltimaResposta();
+            const ocupado = resposta && ['fila', 'gerando', 'falando'].includes(resposta.dataset.estado);
+            barra.disabled = !resposta || socket.readyState !== 1;
+            barra.textContent = ocupado ? '⏹️' : '▶️';
+            barra.title = ocupado ? 'Parar leitura da última resposta' : 'Ouvir última resposta';
+            if (resposta && ['erro', 'desconectado'].includes(resposta.dataset.estado)) barra.title = resposta.title;
+            barra.setAttribute('aria-label', barra.title);
+        }
+
+        function ouvirUltimaResposta() {
+            // Repetir o WAV global podia tocar uma fala antiga em vez do texto visível.
+            // Delegar ao botão do balão mantém o mesmo pedido e o mesmo cancelamento.
+            const resposta = botaoOuvirUltimaResposta();
+            if (resposta && socket.readyState === 1) resposta.onclick();
+            atualizarOuvirUltimaResposta();
         }
 
         function criarTurnoEl(turno, pendente=false) {
             const div = document.createElement('div');
+            if (turno.id) div.dataset.turnoId = turno.id;
             div.className = 'turno' + (turno.usuario ? '' : ' turno-proativo') +
                 (pendente ? ' turno-pendente' : '');
             const tempo = document.createElement('div');
@@ -5517,19 +6140,38 @@
                 copiar.title = 'Copiar resposta'; copiar.textContent = '⎘';
                 copiar.onclick = () => copiarMensagem(turno.luna, copiar);
                 const links = turno.links_novidades || {};
-                const cartoes = (Array.isArray(turno.cartoes_web) ? turno.cartoes_web.slice(0, 3) : [])
-                    .map(criarCartaoWeb).filter(Boolean);
-                const noticia = cartoes.some(c => c.dataset.url === links.noticia) ? null : linkNovidade(links.noticia);
                 const nota = linkNovidade(links.nota, true, links.rotulo_nota);
-                for (const card of cartoes.filter(c => c.dataset.tipo === 'noticia')) luna.appendChild(card);
+                const cartoes = (Array.isArray(turno.cartoes_web) ? turno.cartoes_web.slice(0, 3) : [])
+                    .map(dados => criarCartaoWeb(dados, dados && ['noticia', 'promocao'].includes(dados.tipo) && nota && !nota.parentNode ? nota : null))
+                    .filter(Boolean);
+                const noticia = cartoes.some(c => c.dataset.url === links.noticia) ? null : linkNovidade(links.noticia);
+                for (const card of cartoes.filter(c => ['noticia', 'promocao'].includes(c.dataset.tipo))) luna.appendChild(card);
                 if (noticia) luna.appendChild(noticia);
                 for (const oferta of (Array.isArray(links.ofertas) ? links.ofertas : [])) {
+                    if (cartoes.some(c => c.dataset.url === oferta.url)) continue;
                     const link = linkNovidade(oferta.url, false, oferta.rotulo);
                     if (link) luna.appendChild(link);
                 }
                 luna.append(conteudo, copiar);
-                for (const card of cartoes.filter(c => c.dataset.tipo === 'acompanhamento')) luna.appendChild(card);
-                if (nota) luna.appendChild(nota);
+                if (turno.id && !pendente) {
+                    const responder = document.createElement('button'); responder.type = 'button';
+                    responder.className = 'mensagem-responder'; responder.textContent = '↩';
+                    responder.title = 'Responder a esta mensagem'; responder.setAttribute('aria-label', responder.title);
+                    responder.onclick = () => selecionarResposta({turno_id: turno.id}, turno.luna);
+                    luna.appendChild(responder);
+                }
+                const ouvir = criarBotaoOuvir(turno);
+                if (ouvir) luna.appendChild(ouvir);
+                for (const card of cartoes.filter(c => ['acompanhamento', 'agenda', 'proposta_fonte'].includes(c.dataset.tipo))) luna.appendChild(card);
+                if (nota && !nota.parentNode) luna.appendChild(nota);
+                const sugestoes = criarSugestoesNovidade(turno);
+                const interesse = criarInteresseRadar(turno);
+                if (sugestoes || interesse) {
+                    const controles = document.createElement('div'); controles.className = 'novidade-controles';
+                    if (sugestoes) controles.appendChild(sugestoes);
+                    if (interesse) controles.appendChild(interesse);
+                    luna.appendChild(controles);
+                }
                 div.appendChild(luna);
             }
             return div;
@@ -5552,40 +6194,88 @@
             balao.appendChild(detailsEl);
         }
 
+        function atualizarFilaTexto(mensagens) {
+            const ids = new Set(mensagens.map(m => m.id));
+            for (const [id, el] of textosWebPendentes) {
+                if (!ids.has(id)) {
+                    // A resposta final ou o evento de interrupção resolve o balão em execução.
+                    if (el.id !== 'turno-pendente' && !el.classList.contains('turno-incompleto')) el.remove();
+                    textosWebPendentes.delete(id);
+                }
+            }
+            for (const mensagem of mensagens) {
+                if (!mensagem.id || textosWebConcluidos.has(mensagem.id)) continue;
+                let el = textosWebPendentes.get(mensagem.id);
+                if (!el) {
+                    el = criarTurnoEl(mensagem);
+                    el.dataset.requestId = mensagem.id;
+                    el.classList.add('turno-fila');
+                    textosWebPendentes.set(mensagem.id, el);
+                    const vazio = document.getElementById('historico-vazio');
+                    if (vazio) vazio.remove();
+                    historicoLista.appendChild(el);
+                    historicoLista.scrollTop = historicoLista.scrollHeight;
+                }
+                if (mensagem.estado === 'respondendo' && el.id !== 'turno-pendente' &&
+                    !el.classList.contains('turno-incompleto'))
+                    mostrarUsuarioPendente(mensagem.usuario, mensagem.id);
+            }
+            atualizarFadeConversa();
+        }
+
         function adicionarTurno(turno) {
             definirAlvoAvaliacao(turno);
             const vazio = document.getElementById('historico-vazio');
             if (vazio) vazio.remove();
-            const pendente = document.getElementById('turno-pendente');
+            const atual = document.getElementById('turno-pendente');
+            const pendente = turno.request_id ? textosWebPendentes.get(turno.request_id) ||
+                (atual && atual.dataset.requestId === turno.request_id ? atual : null) :
+                (turno.usuario ? atual : null);
             const tinhaPrevia = !!(pendente && pendente.querySelector('.turno-luna'));
-            pararBraileStream();
-            if (pendente) pendente.remove();
+            if (pendente === atual) pararBraileStream();
             const estavaNoFim = historicoLista.scrollHeight - historicoLista.scrollTop -
                 historicoLista.clientHeight < 80;
             const turnoEl = criarTurnoEl(turno);
             document.querySelectorAll('.btn-aval[data-rating]').forEach(b => b.disabled = false);
             const lunaNova = turnoEl.querySelector('.turno-luna');
             if (lunaNova && !tinhaPrevia) lunaNova.classList.add('balao-entrando');
-            historicoLista.appendChild(turnoEl);
+            if (pendente) {
+                historicoLista.insertBefore(turnoEl, pendente);
+                pendente.remove();
+            } else historicoLista.appendChild(turnoEl);
+            if (turno.request_id) {
+                textosWebPendentes.delete(turno.request_id);
+                textosWebConcluidos.add(turno.request_id);
+                if (textosWebConcluidos.size > 120)
+                    textosWebConcluidos.delete(textosWebConcluidos.values().next().value);
+            }
             anexarDetalhesAoTurno(turnoEl);
+            atualizarOuvirUltimaResposta();
             if (estavaNoFim) historicoLista.scrollTop = historicoLista.scrollHeight;
             atualizarFadeConversa();
         }
 
-        function mostrarUsuarioPendente(texto) {
+        function mostrarUsuarioPendente(texto, requestId='') {
             if (!texto || texto === 'Aguardando...') return;
-            pararBraileStream();
             const anterior = document.getElementById('turno-pendente');
+            if (requestId && anterior && anterior.dataset.requestId === requestId) return;
+            pararBraileStream();
             if (anterior) anterior.remove();
             const agora = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
-            const el = criarTurnoEl({usuario: texto, luna: '', tempo: agora}, true);
+            const el = textosWebPendentes.get(requestId) || criarTurnoEl({usuario: texto, luna: '', tempo: agora}, true);
+            el.classList.remove('turno-fila');
+            el.classList.add('turno-pendente');
+            if (requestId) {
+                el.dataset.requestId = requestId;
+                textosWebPendentes.set(requestId, el);
+            }
             document.querySelectorAll('.btn-aval[data-rating]').forEach(b => b.disabled = true);
             el.id = 'turno-pendente';
             const balaoUsuario = el.querySelector('.turno-usuario');
             if (balaoUsuario) balaoUsuario.classList.add('balao-entrando');
             const vazio = document.getElementById('historico-vazio');
             if (vazio) vazio.remove();
-            historicoLista.appendChild(el);
+            if (!el.parentNode) historicoLista.appendChild(el);
             historicoLista.scrollTop = historicoLista.scrollHeight;
         }
 
@@ -5698,6 +6388,7 @@
         }
 
         function fecharConfig() {
+            fecharMenuVoz();
             for (const nome of ['config-panel', 'acompanhamentos-panel']) {
                 const painel = document.getElementById(nome);
                 painel.classList.remove('aberto');
@@ -5713,6 +6404,7 @@
 
         function selecionarGrupoConfig(grupo) {
             if (!['uso', 'proatividade', 'memoria', 'avancado'].includes(grupo)) grupo = 'uso';
+            if (grupo !== 'uso') fecharMenuVoz();
             document.querySelectorAll('[data-config-grupo]').forEach(botao =>
                 botao.setAttribute('aria-pressed', String(botao.dataset.configGrupo === grupo)));
             document.querySelectorAll('.config-grupo').forEach(secao => {
@@ -5730,6 +6422,7 @@
             if (!painel) return;
             if (e.key === 'Escape') {
                 e.preventDefault();
+                if (!document.getElementById('cfg-voz-menu').hidden) { fecharMenuVoz(true); return; }
                 fecharConfig();
             } else if (e.key === 'Tab') {
                 const itens = Array.from(painel.querySelectorAll('button, input, select, textarea, summary, a[href], [tabindex="0"]'))
@@ -5787,6 +6480,8 @@
 
         function aplicarEstadoConfig(estado) {
             atualizarControleDarkSouls(estado);
+            atualizarControlePersonalidade(estado);
+            atualizarControleVoz(estado);
             if (estado.tarefas) {
                 for (const [nome, val] of Object.entries(estado.tarefas)) {
                     const el = document.getElementById('cfg-tarefa-' + nome);
@@ -5800,10 +6495,6 @@
                     if (el) el.value = combo;
                 }
             }
-
-            document.querySelectorAll('.btn-voz').forEach(btn => {
-                btn.classList.toggle('ativo', btn.dataset.voz === estado.voz);
-            });
 
             if (estado.volume !== undefined) {
                 const volume = Math.round(Number(estado.volume) * 100);
@@ -5820,6 +6511,36 @@
             document.getElementById('cfg-proativo-pausado').hidden = estado.proativo !== false;
             if (estado.proativo !== undefined) atualizarBtnProativo(estado.proativo);
         }
+
+        function atualizarControlePersonalidade(estado) {
+            const seletor = document.getElementById('cfg-personalidade');
+            const status = document.getElementById('cfg-personalidade-status');
+            const disponivel = estado.personalidade_disponivel === true
+                && Number.isInteger(estado.personalidade) && estado.personalidade >= 0 && estado.personalidade <= 3;
+            seletor.disabled = !disponivel || estado.personalidade_pendente === true;
+            if (disponivel) seletor.value = String(estado.personalidade);
+            status.className = 'oficina-dica' + (estado.personalidade_erro ? ' erro' : '');
+            if (estado.personalidade_erro) status.textContent = estado.personalidade_erro;
+            else if (!disponivel) status.textContent = 'Reinicie a Luna para disponibilizar este controle.';
+            else if (estado.personalidade_pendente) status.textContent = 'Aguardando a resposta atual terminar para trocar...';
+            else status.textContent = [
+                'Sem personagem imposta; mantém as regras de ferramentas e formato.',
+                'Amiga próxima, calorosa, com humor e provocação.',
+                'Companheira de equipe: humor seco, franqueza e cumplicidade.',
+                'Sarcasmo ácido e ironia impassível no estilo GLaDOS.'
+            ][estado.personalidade];
+        }
+
+        document.getElementById('cfg-personalidade').onchange = function() {
+            if (socket.readyState !== WebSocket.OPEN) {
+                document.getElementById('cfg-personalidade-status').textContent = 'Sem conexão. Aguarde reconectar antes de trocar.';
+                this.disabled = true;
+                return;
+            }
+            this.disabled = true;
+            document.getElementById('cfg-personalidade-status').textContent = 'Aplicando personalidade...';
+            enviarConfig({ config: 'personalidade', valor: Number(this.value) });
+        };
 
         function renderModelos(estado) {
             const selecionado = estado.selecionado || '';
@@ -5906,13 +6627,164 @@
             });
         });
 
-        // Voice buttons
-        document.querySelectorAll('.btn-voz').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.btn-voz').forEach(b => b.classList.remove('ativo'));
-                this.classList.add('ativo');
-                enviarConfig({ config: 'voz', valor: this.dataset.voz });
+        function atualizarControleVoz(estado) {
+            const seletor = document.getElementById('cfg-voz');
+            const status = document.getElementById('cfg-voz-status');
+            const menu = document.getElementById('cfg-voz-menu');
+            if (Array.isArray(estado.vozes) && !seletor._catalogoVozes) seletor._catalogoVozes = estado.vozes;
+            const favoritas = Array.isArray(estado.vozes_favoritas)
+                ? estado.vozes_favoritas : JSON.parse(seletor.dataset.favoritas || '[]');
+            const favoritasSet = new Set(favoritas);
+            const assinatura = JSON.stringify(favoritas);
+            const todas = (seletor._catalogoVozes || []).flatMap(grupo =>
+                grupo.vozes.map(voz => ({ ...voz, origem: grupo.idioma })));
+            // Reordena só ao mudar as estrelas; favoritar mantém o menu aberto e não escolhe uma voz.
+            if (seletor._catalogoVozes && (!seletor.dataset.catalogo || seletor.dataset.favoritas !== assinatura)) {
+                const foco = menu.contains(document.activeElement) ? document.activeElement : null;
+                const scroll = menu.scrollTop;
+                menu.innerHTML = '';
+                function adicionarGrupo(nome, vozes) {
+                    if (!vozes.length) return;
+                    const grupo = document.createElement('div');
+                    grupo.className = 'voz-menu-grupo';
+                    const titulo = document.createElement('div');
+                    titulo.className = 'voz-menu-titulo';
+                    titulo.textContent = nome;
+                    grupo.appendChild(titulo);
+                    for (const voz of vozes) {
+                        const linha = document.createElement('div');
+                        linha.className = 'voz-menu-linha';
+                        const opcao = document.createElement('button');
+                        opcao.type = 'button';
+                        opcao.className = 'voz-menu-opcao';
+                        opcao.dataset.voz = voz.id;
+                        opcao.dataset.origem = voz.origem;
+                        opcao.setAttribute('aria-label', voz.nome + ' · ' + voz.genero + ' · ' + voz.origem);
+                        const nomeVoz = document.createElement('span');
+                        nomeVoz.className = 'voz-menu-nome';
+                        nomeVoz.textContent = voz.nome;
+                        const detalhe = document.createElement('span');
+                        detalhe.className = 'voz-menu-detalhe';
+                        detalhe.textContent = voz.genero + ' · ' + voz.origem;
+                        opcao.appendChild(nomeVoz);
+                        opcao.appendChild(detalhe);
+                        opcao.onclick = () => escolherVoz(voz.id);
+                        const estrela = document.createElement('button');
+                        estrela.type = 'button';
+                        estrela.className = 'voz-menu-favorita';
+                        estrela.dataset.voz = voz.id;
+                        estrela.onclick = () => favoritarVoz(voz.id, estrela);
+                        linha.appendChild(opcao);
+                        linha.appendChild(estrela);
+                        grupo.appendChild(linha);
+                    }
+                    menu.appendChild(grupo);
+                }
+                adicionarGrupo('★ Favoritas', favoritas.map(id => todas.find(voz => voz.id === id)).filter(Boolean));
+                for (const grupo of seletor._catalogoVozes) {
+                    adicionarGrupo(grupo.idioma, todas.filter(voz => voz.origem === grupo.idioma && !favoritasSet.has(voz.id)));
+                }
+                seletor.dataset.catalogo = '1';
+                seletor.dataset.favoritas = assinatura;
+                if (foco && !menu.hidden) {
+                    const novo = Array.from(menu.querySelectorAll('.' + foco.className.split(' ')[0]))
+                        .find(botao => botao.dataset.voz === foco.dataset.voz);
+                    if (novo) novo.focus({ preventScroll: true });
+                }
+                menu.scrollTop = scroll;
+            }
+            const opcao = todas.find(voz => voz.id === estado.voz);
+            seletor.disabled = !opcao;
+            menu.querySelectorAll('.voz-menu-opcao').forEach(botao => {
+                botao.disabled = !opcao;
+                botao.classList.toggle('ativo', botao.dataset.voz === estado.voz);
+                botao.setAttribute('aria-pressed', String(botao.dataset.voz === estado.voz));
             });
+            menu.querySelectorAll('.voz-menu-favorita').forEach(estrela => {
+                const marcada = favoritasSet.has(estrela.dataset.voz);
+                estrela.disabled = !opcao || !Array.isArray(estado.vozes_favoritas);
+                estrela.textContent = marcada ? '★' : '☆';
+                estrela.classList.toggle('ativo', marcada);
+                estrela.setAttribute('aria-pressed', String(marcada));
+                const voz = todas.find(item => item.id === estrela.dataset.voz);
+                const acao = (marcada ? 'Remover favorita: ' : 'Favoritar: ') + voz.nome + ' (' + voz.origem + ')';
+                estrela.title = acao;
+                estrela.setAttribute('aria-label', acao);
+            });
+            if (opcao) {
+                seletor.value = estado.voz;
+                seletor.dataset.confirmada = estado.voz;
+                document.getElementById('cfg-voz-nome').textContent = opcao.nome + ' · ' + opcao.genero;
+                status.textContent = 'Origem: ' + opcao.origem + ' · usada nas próximas falas.';
+            } else status.textContent = 'Reinicie a Luna para disponibilizar todas as vozes.';
+        }
+
+        function fecharMenuVoz(focar = false) {
+            document.getElementById('cfg-voz-menu').hidden = true;
+            const seletor = document.getElementById('cfg-voz');
+            seletor.setAttribute('aria-expanded', 'false');
+            if (focar) seletor.focus();
+        }
+
+        function abrirMenuVoz(focar = false) {
+            const seletor = document.getElementById('cfg-voz');
+            if (seletor.disabled) return;
+            const menu = document.getElementById('cfg-voz-menu');
+            menu.hidden = false;
+            seletor.setAttribute('aria-expanded', 'true');
+            if (focar) {
+                const opcoes = Array.from(menu.querySelectorAll('.voz-menu-opcao'));
+                const atual = opcoes.find(botao => botao.dataset.voz === seletor.value) || opcoes[0];
+                if (atual) atual.focus();
+            }
+        }
+
+        function escolherVoz(voz) {
+            const seletor = document.getElementById('cfg-voz');
+            if (seletor.disabled) return;
+            if (socket.readyState !== WebSocket.OPEN) {
+                document.getElementById('cfg-voz-status').textContent = 'Sem conexão. Aguarde reconectar antes de trocar.';
+                return;
+            }
+            fecharMenuVoz(true);
+            if (voz === seletor.value) return;
+            seletor.disabled = true;
+            document.getElementById('cfg-voz-status').textContent = 'Aplicando voz...';
+            enviarConfig({ config: 'voz', valor: voz });
+        }
+
+        function favoritarVoz(voz, estrela) {
+            const seletor = document.getElementById('cfg-voz');
+            if (seletor.disabled || estrela.disabled) return;
+            if (socket.readyState !== WebSocket.OPEN) {
+                document.getElementById('cfg-voz-status').textContent = 'Sem conexão. Aguarde reconectar antes de favoritar.';
+                return;
+            }
+            estrela.disabled = true;
+            document.getElementById('cfg-voz-status').textContent = 'Salvando favorita...';
+            enviarConfig({ config: 'voz_favorita', voz, valor: estrela.getAttribute('aria-pressed') !== 'true' });
+        }
+
+        document.getElementById('cfg-voz').onclick = function() {
+            if (document.getElementById('cfg-voz-menu').hidden) abrirMenuVoz();
+            else fecharMenuVoz();
+        };
+        document.getElementById('cfg-voz').addEventListener('keydown', e => {
+            if (['ArrowDown', 'ArrowUp'].includes(e.key)) { e.preventDefault(); abrirMenuVoz(true); }
+        });
+        document.getElementById('cfg-voz-menu').addEventListener('keydown', e => {
+            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fecharMenuVoz(true); return; }
+            if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
+            const opcoes = Array.from(document.getElementById('cfg-voz-menu').querySelectorAll('.voz-menu-opcao'))
+                .filter(botao => !botao.disabled);
+            if (!opcoes.length) return;
+            const indice = opcoes.findIndex(botao => botao.dataset.voz === e.target.dataset.voz);
+            const proximo = e.key === 'Home' ? 0 : e.key === 'End' ? opcoes.length - 1
+                : (indice + (e.key === 'ArrowDown' ? 1 : -1) + opcoes.length) % opcoes.length;
+            e.preventDefault(); opcoes[proximo].focus();
+        });
+        document.addEventListener('click', e => {
+            if (!document.getElementById('cfg-voz-seletor').contains(e.target)) fecharMenuVoz();
         });
 
         // Avaliação 👍/👎
@@ -5999,12 +6871,8 @@
         avalMotivoInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') { e.preventDefault(); enviarMotivo(); }
         });
-        // 🔊 Repetir a última fala da Luna (toca de novo o áudio, sem re-sintetizar)
-        document.getElementById('btn-repetir').onclick = function() {
-            socket.send(JSON.stringify({ comando: 'repetir_fala' }));
-            this.style.opacity = '1';
-            setTimeout(() => { this.style.opacity = ''; }, 200);
-        };
+        document.getElementById('btn-repetir').onclick = ouvirUltimaResposta;
+        atualizarOuvirUltimaResposta();
 
         const volumeSlider = document.getElementById('cfg-volume');
         volumeSlider.addEventListener('input', function() {
@@ -6085,6 +6953,10 @@
                 receberConfirmacaoTexto(dados);
                 return;
             }
+            if (dados.tipo === 'fila_texto') {
+                atualizarFilaTexto(dados.mensagens || []);
+                return;
+            }
             if (dados.tipo === 'evento_visual') {
                 if (dados.destino === PAPEL_MASCOTE) executarEventoVisual(dados.evento);
                 return;
@@ -6104,6 +6976,11 @@
                 // O painel de detalhes mora dentro do último balão, então precisa ser
                 // destacado antes de reconstruir a lista para não ser destruído pelo innerHTML.
                 if (detailsEl.parentNode && detailsEl.remove) detailsEl.remove();
+                pararBraileStream();
+                textosWebPendentes.clear();
+                textosWebConcluidos.clear();
+                for (const turno of dados.turnos)
+                    if (turno.request_id) textosWebConcluidos.add(turno.request_id);
                 historicoLista.innerHTML = '';
                 if (dados.turnos.length === 0) {
                     historicoLista.innerHTML = '<div id="historico-vazio">A conversa aparece aqui.</div>';
@@ -6117,6 +6994,8 @@
                     anexarDetalhesAoTurno(ultimoTurno);
                     historicoLista.scrollTop = historicoLista.scrollHeight;
                 }
+                atualizarFilaTexto(dados.pendentes || []);
+                atualizarOuvirUltimaResposta();
                 atualizarFadeConversa();
                 return;
             }
@@ -6194,6 +7073,18 @@
                 atualizarCartoesAcompanhamento();
                 return;
             }
+            if (dados.tipo === 'audio_resposta') {
+                receberEstadoAudio(dados);
+                return;
+            }
+            if (dados.tipo === 'radar_interesse_feedback') {
+                receberFeedbackInteresseRadar(dados);
+                return;
+            }
+            if (dados.tipo === 'fonte_proposta_feedback') {
+                receberFeedbackPropostaFonte(dados);
+                return;
+            }
             if (dados.tipo === 'fonte_feedback') {
                 receberFeedbackFonte(dados);
                 return;
@@ -6231,7 +7122,7 @@
             }
             if (dados.usuario !== undefined) {
                 typewriter('usuario-texto', dados.usuario || 'Aguardando...', 18, 'voce');
-                mostrarUsuarioPendente(dados.usuario || '');
+                mostrarUsuarioPendente(dados.usuario || '', dados.request_id || '');
             }
             if (dados.jogo !== undefined) modoJogo(dados.jogo);
             if (typeof dados.estado === 'string')      // ouvindo/pensando/falando/dormindo
@@ -6261,6 +7152,7 @@
             aplicarPresenca('dormindo');
         });
         socket.addEventListener('close', function() {
+            receberEstadoAudio({estado:'desconectado'});
             cartoesEstadoRecebido = false;
             atualizarCartoesAcompanhamento();
             avisarQuedaConexaoTexto();

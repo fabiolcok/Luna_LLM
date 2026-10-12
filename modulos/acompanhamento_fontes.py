@@ -100,7 +100,21 @@ def _encontrar(dados, identificador):
     return next((i for i in dados["itens"] if i["id"] == identificador), None)
 
 
-def agir(acao, *, identificador="", cadastro=None, novidade_id=""):
+def validar_cadastro(cadastro):
+    c = cadastro if isinstance(cadastro, dict) else {}
+    assunto, interesse = _texto(c.get("assunto"), 120), _texto(c.get("interesse"), 400)
+    if len(assunto) < 3 or len(interesse) < 8:
+        raise ValueError("Preencha o assunto e explique qual mudança interessa.")
+    fontes = c.get("fontes", [])
+    if isinstance(fontes, str):
+        fontes = [u.strip() for u in fontes.splitlines() if u.strip()]
+    if not isinstance(fontes, list) or not 1 <= len(fontes) <= 3:
+        raise ValueError("Informe de um a três links, um por linha.")
+    return {"assunto": assunto, "interesse": interesse, "situacao": _texto(c.get("situacao"), 300),
+            "fontes": list(dict.fromkeys(validar_url(u) for u in fontes))}
+
+
+def agir(acao, *, identificador="", cadastro=None, novidade_id="", criacao_id=""):
     try:
         if acao == "verificar":
             ok = agendar_verificacao(identificador=identificador, forcar=True)
@@ -110,22 +124,19 @@ def agir(acao, *, identificador="", cadastro=None, novidade_id=""):
             dados = _carregar()
             item = _encontrar(dados, identificador)
             if acao in {"criar", "editar"}:
+                # Uma confirmação reenviada após queda de conexão não cria outro monitor.
+                if acao == "criar" and criacao_id:
+                    anterior = _encontrar(dados, criacao_id)
+                    if anterior:
+                        return {"ok": True, "texto": "Esse acompanhamento já foi cadastrado.", "id": anterior["id"]}
                 if acao == "editar" and not item:
                     raise ValueError("Esse acompanhamento não existe mais.")
                 if acao == "criar" and len(dados["itens"]) >= MAX_ITENS:
                     raise ValueError("O limite é de dez acompanhamentos de fontes.")
-                c = cadastro if isinstance(cadastro, dict) else {}
-                assunto, interesse = _texto(c.get("assunto"), 120), _texto(c.get("interesse"), 400)
-                if len(assunto) < 3 or len(interesse) < 8:
-                    raise ValueError("Preencha o assunto e explique qual mudança interessa.")
-                fontes = c.get("fontes", [])
-                if isinstance(fontes, str):
-                    fontes = [u.strip() for u in fontes.splitlines() if u.strip()]
-                if not isinstance(fontes, list) or not 1 <= len(fontes) <= 3:
-                    raise ValueError("Informe de um a três links, um por linha.")
-                fontes = list(dict.fromkeys(validar_url(u) for u in fontes))
+                c = validar_cadastro(cadastro)
+                assunto, interesse, fontes = c["assunto"], c["interesse"], c["fontes"]
                 if not item:
-                    item = {"id": uuid.uuid4().hex[:16], "revisao": 0, "status": "ativo",
+                    item = {"id": criacao_id or uuid.uuid4().hex[:16], "revisao": 0, "status": "ativo",
                             "novidades": [], "verificado_em": 0, "adiado_ate": 0}
                     dados["itens"].append(item)
                 item.update({"assunto": assunto, "interesse": interesse,

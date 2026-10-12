@@ -21,6 +21,10 @@ _STOP = {
     "seu", "sua", "esse", "essa", "isso", "ainda", "agora", "projeto", "ideia",
 }
 _GENERICAS = {"coisa", "fazer", "sistema", "aplicativo", "app", "servidor", "projeto"}
+_CUMPRIMENTO = re.compile(
+    r"^(?:luna )?(?:bom dia|boa tarde|boa noite|oi|ola|opa|eae|e ai)"
+    r"(?: luna)?(?: tudo bem)?(?: |$)"
+)
 
 
 def _agora() -> str:
@@ -160,11 +164,14 @@ def registrar_candidato(item: dict, texto_editado: str = "") -> bool:
 
 
 def buscar_relacionados(pergunta: str, limite: int = 2) -> list:
-    if not str(pergunta or "").strip():
+    # "Boa noite" recuperava um notebook por "boa bateria" e trazia plantões à saudação.
+    # Em pedido misto, o assunto depois do cumprimento continua sendo pesquisado.
+    consulta = _CUMPRIMENTO.sub("", _norm(pergunta), count=1).strip()
+    if not consulta:
         return []
     candidatos = []
     for item in carregar()["assuntos"]:
-        nota = _pontuar(pergunta, item)
+        nota = _pontuar(consulta, item)
         if nota >= 0.5:
             candidatos.append((nota, item))
     candidatos.sort(key=lambda par: (par[0], par[1].get("atualizado_em", "")), reverse=True)

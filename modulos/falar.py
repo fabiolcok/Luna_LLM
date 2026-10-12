@@ -10,6 +10,7 @@ import sounddevice as sd
 import modelos.cores as cor
 from modulos.stream_voz import SegmentadorFrases
 from modulos.execucoes import controle, vincular
+from modulos.vozes_kokoro import VOZES_VALIDAS, VOZ_PADRAO
 
 controle.parar_audio = sd.stop
 
@@ -18,16 +19,19 @@ _log = logging.getLogger("luna.falar")
 
 def periodo_atual():
     """Retorna (nome, descrição de tom para a persona, fator) conforme a hora.
-    O tom (índice 1) é injetado no prompt da persona. O fator de velocidade é só
-    informativo/compat — a velocidade real vem da config."""
+    O índice 1 é injetado no prompt da persona e diz SÓ a saudação certa. Já carregou
+    tom por horário ("sem empolgação" à noite, "frases curtas" de madrugada) e isso
+    brigava com o EMOCAO: medido em 12/10/2026, tirar o tom deixou o papo curto mais
+    solto sem efeito colateral. O fator de velocidade é só informativo/compat — a
+    velocidade real vem da config."""
     h = datetime.datetime.now().hour
     if 0 <= h < 6:
-        return ("madrugada", "Agora é MADRUGADA (se for cumprimentar, use 'boa noite'): fale bem tranquila e baixo, frases curtas.", 0.88)
+        return ("madrugada", "Agora é MADRUGADA. SÓ SE for cumprimentar, a saudação certa é 'boa noite'.", 0.88)
     if 6 <= h < 12:
-        return ("manhã", "Agora é MANHÃ: tom disposto e animado. SÓ SE for cumprimentar, a saudação certa é 'bom dia'.", 1.0)
+        return ("manhã", "Agora é MANHÃ. SÓ SE for cumprimentar, a saudação certa é 'bom dia'.", 1.0)
     if 12 <= h < 18:
-        return ("tarde", "Agora é TARDE: tom normal e leve. SÓ SE for cumprimentar, a saudação certa é 'boa tarde'.", 1.0)
-    return ("noite", "Agora é NOITE: tom mais calmo e relaxado, sem empolgação. SÓ SE for cumprimentar, a saudação certa é 'boa noite'.", 0.95)
+        return ("tarde", "Agora é TARDE. SÓ SE for cumprimentar, a saudação certa é 'boa tarde'.", 1.0)
+    return ("noite", "Agora é NOITE. SÓ SE for cumprimentar, a saudação certa é 'boa noite'.", 0.95)
 
 
 """
@@ -40,10 +44,9 @@ Por que Kokoro: prosódia natural de ? e ! (entonação de pergunta/exclamação
 qualidade boa e leve na CPU (RTF ~0.3). O Supertonic ficou como plano B
 arquivado (ver G:\\Projetos\\TTS_teste), pra retomar fácil se sair um v4.
 
-Vozes disponíveis (timbre; a pronúncia é sempre pt-BR):
-  jf_alpha  — feminina (japonesa lendo pt-BR, com charme de sotaque) [padrão]
-  af_bella  — feminina (americana)
-  af_nicole — feminina (americana, tom mais sussurrado)
+Os 54 timbres estão em modulos/vozes_kokoro.py, agrupados por origem na web.
+Todos usam o pipeline pt-BR; vozes estrangeiras podem apresentar sotaque.
+O Kokoro baixa cada timbre na primeira síntese e reutiliza o cache nas próximas.
 
 Funções principais:
   falar_texto(texto, voz, velocidade, ao_iniciar, ao_terminar)
@@ -61,10 +64,10 @@ Funções principais:
 # Vozes e padrões
 # ==========================================
 SAMPLE_RATE = 24000                       # Kokoro sempre gera a 24 kHz
-_VOZES_VALIDAS = {"jf_alpha", "af_bella", "af_nicole"}
-_VOZ_FALLBACK  = "jf_alpha"
+_VOZES_VALIDAS = VOZES_VALIDAS
+_VOZ_FALLBACK  = VOZ_PADRAO
 
-_voz_padrao = "jf_alpha"
+_voz_padrao = VOZ_PADRAO
 _velocidade_padrao = 0.9
 _volume_padrao = 1.0
 _audio_volume_lock = threading.RLock()
@@ -268,7 +271,7 @@ class FalaEmFluxo:
         sd.stop()
 
     def aguardar(self, timeout=None):
-        self._terminou.wait(timeout)
+        return self._terminou.wait(timeout)
 
     def _foi_interrompida(self):
         return (not controle.valida(controle.contexto.get()) or self._cancelado

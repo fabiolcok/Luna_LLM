@@ -5,6 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 import numpy as np
 import threading
+from modulos.vozes_kokoro import VOZES_VALIDAS, VOZ_PADRAO
 
 
 class TestaVolume(unittest.TestCase):
@@ -17,9 +18,24 @@ class TestaVolume(unittest.TestCase):
         self.escopo = dict(np=np, _volume_padrao=1.0, _ultima_fala_wav=self.original,
                            _audio_volume_lock=threading.RLock(), _audio_volume_atual=None,
                            _pipe=True, SAMPLE_RATE=24000,
+                           _VOZES_VALIDAS=VOZES_VALIDAS, _VOZ_FALLBACK=VOZ_PADRAO,
+                           _voz_padrao=VOZ_PADRAO, _velocidade_padrao=0.9,
+                           cor=SimpleNamespace(amarelo=lambda _: None),
                            sd=SimpleNamespace(stop=lambda: None,
                                               play=lambda wav, rate: self.audios.append(wav.copy())))
         exec(compile(ast.Module(body=nos, type_ignores=[]), '<voz real>', 'exec'), self.escopo)
+
+    def test_todos_os_timbres_sao_aceitos_sem_alterar_volume_ou_audio(self):
+        for voz in VOZES_VALIDAS:
+            self.escopo['configurar_voz'](voz=voz)
+            self.assertEqual(voz, self.escopo['_voz_padrao'])
+        self.assertEqual(1.0, self.escopo['_volume_padrao'])
+        self.assertIs(self.original, self.escopo['_ultima_fala_wav'])
+        self.assertFalse(self.audios)
+
+    def test_voz_antiga_invalida_usa_fallback(self):
+        self.escopo['configurar_voz'](voz='F1')
+        self.assertEqual(VOZ_PADRAO, self.escopo['_voz_padrao'])
 
     def test_volume_muda_no_mesmo_buffer_sem_reiniciar_audio(self):
         tocados = []

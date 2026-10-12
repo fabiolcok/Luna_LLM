@@ -39,6 +39,10 @@ def codigo_sem_boot(fonte, arquivo):
 
 
 def carregar_pensar():
+    # Importar antes do isolamento mantém o mesmo controlador no diagnóstico e na persona;
+    # restaurar sys.modules e importar avaliações depois criava uma segunda instância.
+    import modulos.avaliacoes
+
     memoria = ModuleType("modulos.memoria")
     def bloqueado(*args, **kwargs):
         raise AssertionError("A bancada tentou acessar memória real sem fixture")
@@ -144,7 +148,7 @@ def preparar(destino):
             patch.object(pensar, "obter_janela_em_foco", return_value=c.get("janela", "bancada de teste")),
             patch.object(tom, "obter_hint", return_value=""),
             patch.object(momento, "_jogos", {}),
-            pensar.controle.executar(),
+            pensar.controle.executar() as execucao,
             redirect_stdout(saida),
         ):
             momento.observar_jogos("processos", c.get("jogos", []), agora)
@@ -158,9 +162,10 @@ def preparar(destino):
                 pass
         if not parametros:
             raise RuntimeError(f"{c['id']}: não chegou à chamada do modelo: {saida.getvalue()}")
-        # Os nomes dos ramos vêm do diagnóstico real, não da intenção do cenário.
-        ramo = re.search(r"Prompt: ([^ ·]+)", saida.getvalue())
-        ramo = "ROTEADOR" if c.get("roteador") else (ramo.group(1) if ramo else "DESCONHECIDO")
+        # O log lista os blocos para leitura humana; a classificação usa o diagnóstico
+        # estruturado para não transformar IDENTIDADE em um novo ramo da bancada.
+        ramo = "ROTEADOR" if c.get("roteador") else getattr(execucao, "diagnostico", {}).get(
+            "caminho_prompt", "DESCONHECIDO")
         parametros.update(parametros.pop("extra_body", {}))
         parametros.update(stream=True, stream_options={"include_usage": True}, cache_prompt=False)
         capturados.append({"id": c["id"], "ramo": ramo, "cenario": c, "pedido": parametros})

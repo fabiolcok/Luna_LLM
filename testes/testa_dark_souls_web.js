@@ -12,7 +12,8 @@ const document = {
     querySelectorAll() { return []; },
 };
 const fonte = html.slice(html.indexOf('function atualizarControleDarkSouls('), html.indexOf('function renderModelos('));
-const aplicar = new Function('document', 'atualizarBtnProativo', fonte + '; return aplicarEstadoConfig;')(document, () => {});
+const aplicar = new Function('document', 'atualizarBtnProativo', 'atualizarControleVoz',
+    fonte + '; return aplicarEstadoConfig;')(document, () => {}, () => {});
 const controle = document.getElementById('cfg-dark-souls');
 const status = document.getElementById('cfg-dark-souls-status');
 aplicar({proativo: true, tarefas: {jogos: true}, dark_souls: true});

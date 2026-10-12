@@ -48,13 +48,13 @@ class TestaGuardrailsPersona(unittest.TestCase):
     def test_zoeira_nao_inventa_a_premissa(self):
         self.exige("zoeira exagera o tom, nunca inventa a premissa",
                    ["colorem a premissa", "colore a premissa", "nunca a substituem",
-                    "nunca a substitui", "não substituem a premissa"],
-                   ["base factual", "a base tem que continuar", "os fatos continuam iguais"])
+                    "nunca a substitui", "não substituem a premissa", "nunca inventar a PREMISSA"],
+                   ["base factual", "a base tem que continuar", "os fatos continuam iguais", "mantendo os fatos"])
 
     def test_dado_nao_vira_intencao_inventada(self):
         self.exige("dado nao vira causa/intencao inventada",
                    ["inventar causa", "invente causa", "inventando causa"],
-                   ["previsão técnica", "previsao tecnica", "vai derreter"])
+                   ["previsão técnica", "previsao tecnica", "vai derreter", "efeito técnico que a observação não informou"])
 
     def test_memoria_precisa_ter_relacao_direta(self):
         self.exige("memoria so entra com relacao direta",

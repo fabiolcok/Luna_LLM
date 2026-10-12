@@ -206,9 +206,10 @@ def ler_agenda_google():
         creds = obter_creds_google()
         service = build('calendar', 'v3', credentials=creds)
         
-        agora = datetime.datetime.now()
-        inicio_iso = agora.isoformat() + 'Z'
-        fim_iso = (agora + datetime.timedelta(days=30)).isoformat() + 'Z'
+        # Colar Z no relógio local mudava a janela em três horas no Brasil.
+        agora = datetime.datetime.now(datetime.timezone.utc)
+        inicio_iso = agora.isoformat()
+        fim_iso = (agora + datetime.timedelta(days=30)).isoformat()
         
         events_result = service.events().list(
             calendarId='primary', 
@@ -217,18 +218,21 @@ def ler_agenda_google():
             singleEvents=True,
             orderBy='startTime').execute()
             
-        events = events_result.get('items', [])
+        from modulos import agenda_web
+        events = agenda_web.eventos_google(events_result.get('items', []))
         
         if not events:
-            return "A sua agenda está completamente vazia para os próximos 30 dias."
+            return agenda_web.resultado("A sua agenda está completamente vazia para os próximos 30 dias.",
+                                        [], inicio=inicio_iso, fim=fim_iso)
             
         agenda_texto = "Aqui estão os seus compromissos:\n"
         for event in events:
-            inicio_raw = event['start'].get('dateTime', event['start'].get('date'))
-            resumo = event['summary']
+            inicio_raw = event['inicio']
+            resumo = event['titulo']
             agenda_texto += f"- {resumo} — {_data_falavel(inicio_raw)}\n"
             
-        return agenda_texto
+        return agenda_web.resultado(agenda_texto, events, inicio=inicio_iso, fim=fim_iso,
+                                    mais=bool(events_result.get('nextPageToken')))
         
     except Exception as e:
         return f"Erro ao acessar a agenda: {e}"
@@ -248,8 +252,11 @@ def adicionar_evento_google(resumo, data_hora_iso):
             'end': {'dateTime': fim, 'timeZone': 'America/Sao_Paulo'},
         }
 
-        service.events().insert(calendarId='primary', body=evento).execute()
-        return f"Sucesso! O evento '{resumo}' foi criado para {_data_falavel(data_hora_iso)}."
+        criado = service.events().insert(calendarId='primary', body=evento).execute()
+        from modulos import agenda_web
+        eventos = agenda_web.eventos_google([criado]) if isinstance(criado, dict) else []
+        texto = f"Sucesso! O evento '{resumo}' foi criado para {_data_falavel(data_hora_iso)}."
+        return agenda_web.resultado(texto, eventos, titulo='Compromisso criado') if eventos else texto
 
     except Exception as e:
         return f"Erro ao adicionar evento: {e}"

@@ -32,7 +32,8 @@ assert.ok(pensar.includes('sem_emoji=not responder_completo'),
           'FALHA: o núcleo enxuto não distingue mais voz de texto');
 assert.ok(/regra_emoji = " e não use emoji" if sem_emoji else ""/.test(pensar),
           'FALHA: prompt curto voltou a proibir emoji também nos canais de texto');
-assert.ok(pensar.includes('return texto_luna if responder_completo else limpar_texto_para_voz(texto_luna)') &&
+assert.ok(pensar.includes('texto_luna = texto_luna if responder_completo else limpar_texto_para_voz(texto_luna)') &&
+          pensar.includes('return FalaComSugestoes(texto_luna, _sugestoes)') &&
           pensar.includes('return resposta_tecnica if responder_completo else limpar_texto_para_voz(resposta_tecnica)'),
           'FALHA: limpeza final do TTS voltou a apagar o Markdown do Web/Telegram');
 

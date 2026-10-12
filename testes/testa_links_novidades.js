@@ -17,5 +17,6 @@ assert.strictEqual(noticia.href, 'https://example.org/materia');
 assert.strictEqual(noticia.rel, 'noopener noreferrer');
 assert.strictEqual(criar('obsidian://open?path=nota', true).textContent, 'Ver todas as novidades no Obsidian ↗');
 assert.ok(html.indexOf('if (noticia) luna.appendChild(noticia)') < html.indexOf('luna.append(conteudo, copiar)'));
-assert.ok(html.indexOf('if (nota) luna.appendChild(nota)') > html.indexOf('luna.append(conteudo, copiar)'));
+assert.ok(html.indexOf('if (nota && !nota.parentNode) luna.appendChild(nota)') > html.indexOf('luna.append(conteudo, copiar)'),
+    'Notas sem cartão, incluindo promoções antigas, continuam depois da fala');
 console.log('ok');

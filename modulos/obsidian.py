@@ -5,6 +5,7 @@
 # Pastas de "dev" (Luna/Criar, Luna/Talvez) e internas (.obsidian/.trash) são ignoradas.
 
 import os
+import logging
 import re
 import datetime
 import unicodedata
@@ -670,6 +671,11 @@ def adicionar_promocoes(itens: list, max_horas: int = 168) -> None:
     """Gêmeo do adicionar_novidades, mas escreve em Promocoes.md (janela padrão de 7 dias —
     promoção dura mais que notícia). itens = lista de (produto, link, canal[, texto[, imagem]]).
     Compartilha o CSS de cards do Novidades (mesma cssclass 'novidades-grid')."""
+    from modulos.biblioteca_web import registrar_itens
+    try:
+        registrar_itens(itens, 'promocao')
+    except OSError:
+        logging.getLogger(__name__).exception('Não foi possível salvar as promoções na web')
     if not itens or not os.path.isdir(_VAULT):
         return
     caminho = os.path.join(_VAULT, "Promocoes.md")
@@ -986,6 +992,11 @@ def adicionar_novidades(itens: list, max_horas: int = 72) -> None:
     """Prepende novidades em Novidades.md (raiz do vault), AGRUPADAS POR DIA (um '## dia'
     com vários callouts — pro snippet de colunas funcionar). itens = lista de
     (titulo, link, fonte[, resumo[, imagem]]). Mantém só as últimas max_horas (janela rolante)."""
+    from modulos.biblioteca_web import registrar_itens
+    try:
+        registrar_itens(itens, 'noticia')
+    except OSError:
+        logging.getLogger(__name__).exception('Não foi possível salvar as novidades na web')
     if not itens or not os.path.isdir(_VAULT):
         return
     caminho = os.path.join(_VAULT, "Novidades.md")

@@ -11,7 +11,8 @@ const servidor = fs.readFileSync(path.join(raiz, 'servidor.py'), 'utf8');
 const html = fs.readFileSync(path.join(raiz, 'templates', 'Index.html'), 'utf8');
 
 assert.ok(proativa.includes('class _FalaProativa(str)') &&
-          proativa.includes('return _FalaProativa(resposta, tarefa, obter_clima_resposta()) if resposta else None') &&
+          proativa.includes('fala = _FalaProativa(resposta, tarefa, obter_clima_resposta())') &&
+          proativa.includes('return fala') &&
           proativa.includes('origem_proativa=getattr(texto_resposta, "origem_proativa", "")') &&
           proativa.includes('clima=getattr(texto_resposta, "clima", "")'),
           'FALHA: tarefa proativa não acompanha o texto até o servidor');

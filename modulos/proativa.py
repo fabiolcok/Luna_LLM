@@ -8,7 +8,8 @@ import random
 import requests
 import ctypes
 from modulos.habilidades import checar_emails_nao_lidos, ler_agenda_google, obter_previsao_tempo, obter_janela_em_foco, controlar_firefox_via_extensao, NOME_USUARIO
-from modulos.pensar import gerar_resposta, aquecer_modelo, obter_clima_resposta
+from modulos.pensar import (gerar_resposta, aquecer_modelo, obter_clima_resposta,
+                           registrar_historico_personalidade)
 from modulos.falar import falar_texto
 from modulos.memoria import carregar_vistos, salvar_vistos, atualizar_estado_luna
 from modulos import obsidian, animes, momento
@@ -208,6 +209,7 @@ _emails_vistos = set()
 _compromissos_avisados = set()
 _luna_ocupada = threading.Event()
 _historico_proativo = []
+registrar_historico_personalidade(_historico_proativo)
 _thread_rodando = False
 _ultimo_clima = {"chuva": None}
 _sessao_inicio: float = 0.0
@@ -498,6 +500,8 @@ _falas_recentes = []
 # Separadas do radar: outras rotinas nao devem apagar as mortes ja comentadas.
 # Inclui geracoes validas que perderam a janela de entrega depois.
 _falas_morte_recentes = []
+registrar_historico_personalidade(_falas_recentes)
+registrar_historico_personalidade(_falas_morte_recentes)
 
 def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150, variar=True,
                          respeitar_intervalo=True, ainda_valido=None):
@@ -552,7 +556,7 @@ def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150, variar=True,
                 tarefa_proativa=tarefa,
             )
             _execucoes.verificar()
-            _historico_proativo = []
+            _historico_proativo.clear()
             if tarefa != "dark_souls_morte" or not resposta:
                 break
             from modulos.antirrepeticao import repete_fala
@@ -588,10 +592,15 @@ def _gerar_fala_proativa(prompt_sistema, tarefa="", max_tokens=150, variar=True,
                 _falas_recentes.pop(0)
         if not resposta:
             _limpar_visual_proativo()
-        return _FalaProativa(resposta, tarefa, obter_clima_resposta()) if resposta else None
+        if not resposta:
+            return None
+        fala = _FalaProativa(resposta, tarefa, obter_clima_resposta())
+        if tarefa == "radar_rss":
+            fala.sugestoes_novidade = getattr(resposta, "sugestoes_novidade", [])
+        return fala
     except Exception as e:
         cor.vermelho(f"[Erro na geração proativa: {e}]")
-        _historico_proativo = []
+        _historico_proativo.clear()
         _limpar_visual_proativo()
         return None
 
@@ -1203,41 +1212,11 @@ def _tarefa_checar_agenda():
     
     try:
         dados_agenda = ler_agenda_google()
-        if not dados_agenda or "nenhum" in dados_agenda.lower(): return
-
-        agora = datetime.datetime.now()
-        limite_min = cfg['antecedencia_aviso_minutos']
-        urgentes = []
-
-        # Analisa linha a linha ("- Nome | data"). Distingue evento com hora de evento de dia inteiro.
-        for linha in dados_agenda.splitlines():
-            if "|" not in linha:
-                continue
-            nome, _, data_str = linha.partition("|")
-            nome = nome.strip(" -\t")
-            data_str = data_str.strip()
-
-            m_hora = re.search(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", data_str)
-            if m_hora:
-                # Evento com hora marcada: urgente só se faltar <= antecedência (ex: 30 min)
-                try:
-                    data_evento = datetime.datetime.strptime(m_hora.group()[:19], "%Y-%m-%dT%H:%M:%S")
-                except ValueError:
-                    continue
-                minutos = (data_evento - agora).total_seconds() / 60
-                if 0 <= minutos <= limite_min:
-                    urgentes.append(f"{nome} (em {int(minutos)} min)")
-            else:
-                # Evento de dia inteiro (só data): urgente APENAS se for hoje
-                m_dia = re.search(r"\d{4}-\d{2}-\d{2}", data_str)
-                if not m_dia:
-                    continue
-                try:
-                    dia_evento = datetime.datetime.strptime(m_dia.group(), "%Y-%m-%d").date()
-                except ValueError:
-                    continue
-                if dia_evento == agora.date():
-                    urgentes.append(f"{nome} (hoje)")
+        from modulos import agenda_web
+        # O texto falável já não contém ISO; horários vêm do mesmo dado usado no cartão.
+        proximos = agenda_web.proximos(getattr(dados_agenda, 'eventos_agenda', []),
+            datetime.datetime.now().astimezone(), cfg['antecedencia_aviso_minutos'])
+        urgentes = [f"{evento['titulo']} ({quando})" for evento, quando in proximos]
 
         # Silêncio absoluto se nada está realmente próximo
         if not urgentes:
@@ -1250,6 +1229,8 @@ def _tarefa_checar_agenda():
 
         fala = _gerar_fala_proativa(prompt, "checar_agenda", variar=False)
         if fala:
+            fala.cartoes_web = agenda_web.resultado('', [evento for evento, _ in proximos],
+                titulo='Compromissos próximos').cartoes_web
             _falar_proativamente(fala)
             registrar_tentativa()
 
@@ -1417,7 +1398,8 @@ def _tarefa_radar_rss():
 
     n = len(novos)
     # Teaser: resume UMA novidade em destaque e diz que tem mais na nota.
-    destaque = random.choice(novos)
+    from modulos import interesses_radar
+    destaque = interesses_radar.escolher(novos, rng=random)
     titulo_d, resumo_d = destaque[0], destaque[3]
     amostra = f"Título: {titulo_d}." + (f" Resumo: {resumo_d}" if resumo_d else "")
     if n == 1:
@@ -1432,12 +1414,15 @@ def _tarefa_radar_rss():
             f"Avise-o resumindo SÓ essa principal em 1-2 frases (sem copiar o texto acima) e, no fim, "
             f"diga que tem mais {n - 1} esperando na nota Novidades. {REGRA_PERSONA}"
         )
-    fala = _gerar_fala_proativa(prompt, "radar_rss", max_tokens=220)
+    # Reserva saída para os botões sem tirar o espaço que o comentário já tinha.
+    fala = _gerar_fala_proativa(prompt, "radar_rss", max_tokens=360)
     if fala:
         # Os endereços pertencem ao item sorteado, nunca ao texto inventado pelo modelo.
         fala.links_novidades = {"noticia": destaque[1], "nota": obsidian.link_novidades()}
         from modulos import cartoes_web
-        fala.cartoes_web = [cartoes_web.noticia(destaque[0], destaque[2], destaque[1], n - 1, destaque[4])]
+        fala.cartoes_web = [cartoes_web.noticia(
+            destaque[0], destaque[2], destaque[1], n - 1, destaque[4],
+            resumo=resumo_d, sugestoes=getattr(fala, "sugestoes_novidade", []))]
     apresentado = False
     def registrar_apresentacao():
         nonlocal apresentado
@@ -1541,6 +1526,10 @@ def _tarefa_radar_promocoes():
     # ficava na nota mas a voz era engolida no boot. Não falou = não comita e re-tenta no próximo ciclo.
     fala = _gerar_fala_proativa(prompt, "radar_promocoes", max_tokens=200)
     if fala:
+        from modulos import cartoes_web
+        fala.cartoes_web = [cartoes_web.promocao(
+            destaque[0], destaque[2], destaque[1], n - 1, cartoes_web.imagem_promocao(destaque[4])
+        )]
         fala.links_novidades = {
             "ofertas": [{"url": destaque[1], "rotulo": "Ver esta promoção no Telegram ↗"}],
             "nota": obsidian.link_promocoes(),
@@ -1643,6 +1632,16 @@ def _tarefa_bom_dia():
                 dados_agenda = ler_agenda_google()
             except:
                 dados_agenda = "Não foi possível acessar a agenda."
+            agenda_hoje = None
+            if hasattr(dados_agenda, 'eventos_agenda'):
+                from modulos import agenda_web
+                from modulos.habilidades import _data_falavel
+                eventos = agenda_web.eventos_do_dia(dados_agenda.eventos_agenda, agora.date())
+                dados_agenda = '\n'.join(f"- {e['titulo']} — {_data_falavel(e['inicio'])}"
+                    for e in eventos) or 'Nenhum compromisso para hoje.'
+                inicio = agora.astimezone().replace(hour=0, minute=0, second=0, microsecond=0)
+                agenda_hoje = agenda_web.resultado('', eventos, titulo='Agenda de hoje',
+                    inicio=inicio.isoformat(), fim=(inicio + datetime.timedelta(days=1)).isoformat())
                 
             # 2. Tenta ler os emails isoladamente
             try:
@@ -1659,6 +1658,8 @@ Dê um 'bom dia' usando sua personalidade {REGRA_PERSONA} EXCEÇÃO ao limite de
             texto = _gerar_fala_proativa(prompt_matinal, "bom_dia", max_tokens=400, variar=False)
             
             if texto:
+                if agenda_hoje is not None:
+                    texto.cartoes_web = agenda_hoje.cartoes_web
                 _falar_proativamente(texto)
                 
                 # 4. SALVA NO DISCO: A Luna nunca mais vai esquecer que já falou hoje
