@@ -1,4 +1,4 @@
-"""Confere os backups e exercita os quatro níveis sem iniciar Luna, áudio ou serviços."""
+"""Exercita os quatro níveis sem iniciar Luna, áudio ou serviços."""
 import argparse
 from contextlib import contextmanager, redirect_stdout
 from copy import deepcopy
@@ -30,36 +30,6 @@ def montagens(pensar):
     with runtime(pensar):
         return {c['id']: hashlib.sha256(normalizar(capturar(c)).encode()).hexdigest()
                 for c in CENARIOS}
-
-
-def comparar_backups():
-    """Só a preparação lê backups; os testes futuros usam hashes públicos normalizados."""
-    from modulos import prompts
-    p = preparar_runtime()
-    salvo = prompts.personalidade_ativa()
-    fixture = {'origem': 'Backups fornecidos pelo usuário; montagem completa e enxuta, 44 cenários.',
-               'perfis': {}}
-    try:
-        for nivel, nome in [(1, 'LUNA'), (2, 'TARS'), (3, 'GLADOS')]:
-            spec = importlib.util.spec_from_file_location('_backup_persona', RAIZ / f'modulos/prompts - {nome}.py')
-            backup = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(backup)
-            backup.personalidade_ativa = lambda: nivel
-            backup.nome_personalidade = lambda: nome
-            with patch.object(p, '_prompts', backup):
-                esperado = montagens(p)
-            prompts.selecionar_personalidade(nivel)
-            atual = montagens(p)
-            divergentes = [c for c in esperado if esperado[c] != atual[c]]
-            if divergentes:
-                raise AssertionError(f'{nome}: montagem mudou em {divergentes}')
-            fixture['perfis'][str(nivel)] = esperado
-            print(f'{nome}: {len(atual)}/{len(esperado)} montagens idênticas ao backup.', flush=True)
-        prompts.selecionar_personalidade(0)
-        fixture['perfis']['0'] = montagens(p)
-        gravar_json(FIXTURE, fixture)
-    finally:
-        prompts.selecionar_personalidade(salvo)
 
 
 def atualizar_fixture():
@@ -128,13 +98,10 @@ def executar(destino):
 if __name__ == '__main__':
     ap = argparse.ArgumentParser(description=__doc__)
     acao = ap.add_mutually_exclusive_group(required=True)
-    acao.add_argument('--comparar-backups', action='store_true')
     acao.add_argument('--atualizar-fixture', action='store_true')
     acao.add_argument('--executar', type=Path)
     args = ap.parse_args()
-    if args.comparar_backups:
-        comparar_backups()
-    elif args.atualizar_fixture:
+    if args.atualizar_fixture:
         atualizar_fixture()
     elif args.executar:
         executar(args.executar)

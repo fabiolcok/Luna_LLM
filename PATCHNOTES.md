@@ -8,6 +8,40 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 13/10/2026
+
+- ✨ **"O que eu fiz" em cada resposta.** O novo botão ⓘ, ao lado de responder, ouvir e
+  copiar, mostra o caminho daquela resposta: qual ferramenta ela usou e se deu certo, o que
+  foi pedido e o que voltou, a personalidade e o tipo de prompt, o tamanho, os tempos do
+  roteador e da resposta, e o clima. Funciona no celular. Os detalhes ficam guardados para
+  as últimas 200 respostas, até a Luna reiniciar.
+- ✨ **Atividade no modo Web.** Em Configurações → Avançado, o painel mostra ao vivo o mesmo
+  que aparece no CMD, com horário, cor por tipo, filtro (erros, conversa, ferramentas,
+  proativo, modelo, voz, memória, visual) e busca. As linhas do rosto ficam escondidas por
+  padrão. Avisos e erros que só iam para o `luna.log` também aparecem. Só a janela com o
+  painel aberto recebe as linhas, então o celular não fica recebendo o terminal inteiro.
+- ✨ **Intensidade do proativo.** Em Tarefas proativas, escolha Desligado, Discreto (fala a
+  cada 4 a 8 minutos e pausa após 3 falas sem resposta) ou Normal (a cada 1 a 2,5 minutos e
+  pausa após 6). O Normal passou de 3 para 6 tentativas, porque às vezes você só lê sem
+  responder. O atalho do modo suspenso religa no nível escolhido.
+- 🔧 **Configurações com largura ajustável.** Arraste a borda esquerda do painel para
+  alargar, útil para ler a Atividade. A largura fica salva; duplo clique volta ao padrão.
+
+## 12/10/2026 — personalidade
+
+- 🔧 **A LUNA voltou a ter graça no papo curto.** Em mensagens como "eae" ou "que bom", ela
+  respondia como atendente. A investigação mostrou que o modelo imita as próprias falas
+  anteriores mais do que segue a descrição da personalidade: depois de um reinício, a primeira
+  resposta morna virava o modelo das seguintes. Agora o prompt mostra o tom com exemplos curtos,
+  três sorteados a cada resposta para ela não decorar nem copiar. O texto da emoção ficou
+  menor, sem perder as regras que impedem inventar fatos.
+- 🔧 **O horário não manda mais no humor.** À noite o prompt pedia "sem empolgação" e de
+  madrugada "fale baixo, frases curtas", o que brigava com a personalidade. Agora o horário só
+  define a saudação certa: bom dia, boa tarde ou boa noite.
+- 🔧 **Prompt mais enxuto.** Saíram instruções repetidas entre o prompt e a mensagem de cada
+  turno, sem mudar o comportamento medido. Foram cerca de 1.700 caracteres a menos por
+  resposta. Detalhes em `testes/resultado_tom_generico.md`.
+
 ## 12/10/2026
 
 - ✨ **Personalidade escolhida no modo Web.** Em Configurações → Avançado, escolha

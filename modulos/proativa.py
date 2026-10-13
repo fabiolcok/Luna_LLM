@@ -37,8 +37,8 @@ _loop_proativo() — roda a cada 30 segundos em thread separada.
     └─ emails, agenda, pausa, clima, steam_wishlist, bom_dia.
 
 Suspensão automática:
-  Cada fala proativa chama registrar_tentativa(). Após MAX_TENTATIVAS (3) sem
-  resposta do usuário, _suspensa = True e a Camada 2 é bloqueada.
+  Cada fala proativa chama registrar_tentativa(). Após MAX_TENTATIVAS sem resposta
+  do usuário (3 no Discreto, 6 no Normal), _suspensa = True e a Camada 2 é bloqueada.
   Resetado por: qualquer fala do usuário (registrar_interacao()) ou abertura de jogo.
 
 Memória física (modelos/estado_proativo.json):
@@ -202,7 +202,7 @@ REGRA_PERSONA = (
 # ESTADO GLOBAL
 # ============================================================
 _tentativas_sem_resposta = 0
-MAX_TENTATIVAS = 3
+MAX_TENTATIVAS = 6   # ajustado por configurar_intensidade(); o valor aqui é o do Normal
 _suspensa = False
 _ultima_execucao = {}
 _emails_vistos = set()
@@ -232,6 +232,38 @@ ARQUIVO_ESTADO_PROATIVO = "modelos/estado_proativo.json"
 def configurar_proativo(ativo: bool):
     global _proativo_ativo
     _proativo_ativo = bool(ativo)
+
+# Intensidade só muda a FREQUÊNCIA (espera entre falas e quantas falas sem resposta até
+# suspender), nunca o conteúdo: proativo rico vale mais que rápido (AGENTS.md). As tentativas
+# subiram de 3 para 6 no Normal porque o usuário às vezes só lê sem responder.
+# "Desligado" não mora aqui: é o próprio configurar_proativo(False), assim o atalho do modo
+# suspenso religa na intensidade escolhida em vez de voltar ao Normal.
+INTENSIDADES = {
+    "discreto": {"espera_s": (240, 480), "tentativas": 3},
+    "normal":   {"espera_s": (60, 150),  "tentativas": 6},
+}
+INTENSIDADE_PADRAO = "normal"
+_intensidade = INTENSIDADE_PADRAO
+
+def configurar_intensidade(nivel: str):
+    global _intensidade, _CD_PROATIVO_MIN, _CD_PROATIVO_MAX, MAX_TENTATIVAS, _cd_proativo_atual
+    if nivel not in INTENSIDADES:
+        raise ValueError(f"Intensidade inválida: {nivel!r}")
+    _intensidade = nivel
+    _CD_PROATIVO_MIN, _CD_PROATIVO_MAX = INTENSIDADES[nivel]["espera_s"]
+    MAX_TENTATIVAS = INTENSIDADES[nivel]["tentativas"]
+    if _cd_proativo_atual:   # a espera em curso já obedece ao nível novo
+        _cd_proativo_atual = random.uniform(_CD_PROATIVO_MIN, _CD_PROATIVO_MAX)
+
+def intensidade_atual() -> str:
+    return _intensidade
+
+def suspender():
+    """Modo suspenso/jogo. Antes o main.py chamava registrar_tentativa() MAX_TENTATIVAS
+    vezes com o valor importado no boot; com o limite variável isso deixaria de suspender."""
+    global _tentativas_sem_resposta, _suspensa
+    _tentativas_sem_resposta = MAX_TENTATIVAS
+    _suspensa = True
 
 def configurar_tarefa(nome: str, ativo: bool):
     if nome in TAREFAS_ATIVAS:

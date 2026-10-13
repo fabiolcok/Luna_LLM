@@ -1403,6 +1403,38 @@
         }
         .mensagem-responder:hover { color: #b4f9f8; background: #1b2135; }
         .turno-luna:has(.mensagem-responder)::before { padding-right: 80px; }
+        .mensagem-detalhes {
+            position: absolute; top: 8px; right: 86px; border: 0; border-radius: 6px;
+            padding: 4px 6px; color: #8995b8; background: transparent; cursor: pointer;
+            opacity: 0; transition: opacity .2s, color .2s, background .2s;
+        }
+        .turno-luna:hover .mensagem-detalhes, .mensagem-detalhes:focus,
+        .mensagem-detalhes[aria-expanded="true"] { opacity: 1; }
+        .mensagem-detalhes:hover { color: #b4f9f8; background: #1b2135; }
+        .mensagem-detalhes:focus-visible { outline: 2px solid #bb9af7; }
+        .turno-luna:has(.mensagem-detalhes)::before { padding-right: 106px; }
+        .mensagem-diagnostico {
+            margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: #151a2a;
+            border: 1px solid #252b42; font-size: .75rem; color: #a3adc9;
+            display: grid; grid-template-columns: max-content 1fr; gap: 3px 10px;
+        }
+        .mensagem-diagnostico dt { color: #7aa2f7; }
+        .mensagem-diagnostico dd { margin: 0; min-width: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+        .mensagem-diagnostico .diag-aviso { grid-column: 1 / -1; }
+        .atividade-filtros { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+        .atividade-filtros > * { flex: 1 1 140px; min-width: 0; }
+        #atividade-lista {
+            max-height: 340px; overflow: auto; background: #10131f; border: 1px solid #252b42;
+            border-radius: 8px; padding: 6px 8px; font: .72rem/1.45 ui-monospace, Consolas, monospace;
+        }
+        .atividade-linha { white-space: pre-wrap; overflow-wrap: anywhere; color: #a3adc9; }
+        .atividade-linha .hora { color: #565f89; margin-right: 6px; }
+        .atividade-linha[data-categoria="erro"] { color: #f7768e; }
+        .atividade-linha[data-categoria="ferramenta"] { color: #e0af68; }
+        .atividade-linha[data-categoria="proativo"] { color: #7dcfff; }
+        .atividade-linha[data-categoria="conversa"] { color: #c0caf5; }
+        .atividade-linha[data-categoria="modelo"] { color: #bb9af7; }
+        .atividade-linha[data-categoria="visual"] { color: #565f89; }
         .turno-localizado .turno-luna { outline: 2px solid #bb9af7; outline-offset: -2px; }
         #atalhos-web { position: fixed; top: 16px; right: 16px; z-index: 100; display: flex; gap: 8px; }
         #atalhos-web > button { position: relative; top: auto; right: auto; }
@@ -1760,6 +1792,15 @@
             overflow: hidden;
         }
         #config-panel.aberto, #acompanhamentos-panel.aberto { transform: translateX(0); }
+        #config-panel { width: min(var(--largura-config, 480px), 100%); }
+        #config-panel.redimensionando { transition: none; user-select: none; }
+        #config-redimensionar {
+            position: absolute; top: 0; bottom: 0; left: 0; width: 8px; z-index: 2;
+            cursor: ew-resize; touch-action: none; background: transparent; transition: background .2s;
+        }
+        #config-redimensionar:hover, #config-redimensionar:focus-visible,
+        #config-panel.redimensionando #config-redimensionar { background: #2a3150; outline: none; }
+        @media (max-width: 640px) { #config-redimensionar { display: none; } }
 
         .config-header {
             display: flex;
@@ -2192,6 +2233,9 @@
     <div id="config-overlay"></div>
 
     <div id="config-panel" class="painel-lateral" role="dialog" aria-modal="true" aria-labelledby="config-titulo" aria-hidden="true" inert>
+        <div id="config-redimensionar" role="separator" aria-orientation="vertical" tabindex="0"
+             aria-label="Largura das configurações: arraste ou use as setas; duplo clique volta ao padrão"
+             title="Arraste para alargar · duplo clique volta ao padrão"></div>
         <div class="config-header">
             <span id="config-titulo">Configurações</span>
             <button id="btn-config-fechar" class="painel-fechar" aria-label="Fechar configurações">✕</button>
@@ -2263,6 +2307,12 @@
             <div id="config-grupo-proatividade" class="config-grupo" hidden>
         <div class="config-secao" id="secao-tarefas">
             <div class="config-secao-titulo">⚡ Tarefas proativas</div>
+            <label for="cfg-proativo-nivel" class="oficina-dica">Quanto ela puxa conversa sozinha</label>
+            <select class="modelo-campo" id="cfg-proativo-nivel">
+                <option value="desligado">Desligado</option>
+                <option value="discreto">Discreto — a cada 4 a 8 min, pausa após 3 sem resposta</option>
+                <option value="normal">Normal — a cada 1 a 2,5 min, pausa após 6 sem resposta</option>
+            </select>
             <div class="oficina-dica" id="cfg-proativo-pausado" hidden>Proativo desligado: as preferências ficam salvas, mas as falas automáticas estão pausadas.</div>
 
             <details class="config-subgrupo">
@@ -2444,6 +2494,28 @@
             <div class="atalhos-grid">
                 <button class="btn-oficina btn-abrir" data-alvo="env">Abrir .env</button>
             </div>
+        </div>
+        <div class="config-secao config-recolhivel" id="secao-atividade">
+            <div class="config-secao-titulo">📜 Atividade</div>
+            <div class="oficina-dica">O mesmo que aparece no CMD, ao vivo. Fica só na memória (últimas 600 linhas).</div>
+            <div class="atividade-filtros">
+                <select class="modelo-campo" id="atividade-filtro" aria-label="Tipo de atividade">
+                    <option value="">Tudo menos visual</option>
+                    <option value="*">Tudo</option>
+                    <option value="erro">Erros e avisos</option>
+                    <option value="conversa">Conversa</option>
+                    <option value="ferramenta">Ferramentas</option>
+                    <option value="proativo">Proativo</option>
+                    <option value="modelo">Modelo e prompt</option>
+                    <option value="voz">Voz</option>
+                    <option value="memoria">Memória</option>
+                    <option value="visual">Visual (rosto)</option>
+                    <option value="outros">Outros</option>
+                </select>
+                <input class="oficina-input" id="atividade-busca" type="search" placeholder="Buscar…" aria-label="Buscar na atividade">
+            </div>
+            <div id="atividade-lista" role="log" aria-live="off"></div>
+            <div class="oficina-dica" id="atividade-status" role="status"></div>
         </div>
         <div class="config-secao">
 <div class="config-secao-titulo">Interface</div>
@@ -6079,6 +6151,62 @@
             return botao;
         }
 
+        // "O que eu fiz": mostra o caminho da resposta (ferramenta, prompt, tempos) que antes só
+        // aparecia no CMD. O servidor lê o snapshot da avaliação, que some ao reiniciar a Luna.
+        function criarBotaoDetalhes(turno, luna) {
+            const botao = document.createElement('button'); botao.type = 'button';
+            botao.className = 'mensagem-detalhes'; botao.textContent = 'ⓘ';
+            botao.dataset.turnoId = turno.id;
+            botao.title = 'O que eu fiz nesta resposta'; botao.setAttribute('aria-label', botao.title);
+            botao.setAttribute('aria-expanded', 'false');
+            botao.onclick = () => {
+                const aberto = luna.querySelector('.mensagem-diagnostico');
+                if (aberto) { aberto.remove(); botao.setAttribute('aria-expanded', 'false'); return; }
+                const painel = document.createElement('dl');
+                painel.className = 'mensagem-diagnostico'; painel.dataset.turnoId = turno.id;
+                luna.appendChild(painel);
+                botao.setAttribute('aria-expanded', 'true');
+                if (socket.readyState !== 1) {
+                    preencherDiagnostico(painel, undefined, 'Sem conexão com a Luna. Tente novamente.');
+                    return;
+                }
+                preencherDiagnostico(painel, undefined, 'Consultando…');
+                socket.send(JSON.stringify({comando: 'diagnostico_turno', turno_id: turno.id}));
+            };
+            return botao;
+        }
+
+        function preencherDiagnostico(painel, dados, aviso) {
+            painel.textContent = '';
+            function linha(rotulo, valor) {
+                if (valor === undefined || valor === null || valor === '') return;
+                const dt = document.createElement('dt'); dt.textContent = rotulo;
+                const dd = document.createElement('dd'); dd.textContent = String(valor);
+                painel.append(dt, dd);
+            }
+            if (aviso || !dados) {
+                const p = document.createElement('dd'); p.className = 'diag-aviso';
+                p.textContent = aviso || 'Os detalhes desta resposta não estão mais disponíveis: a Luna foi reiniciada ou a mensagem é antiga.';
+                painel.appendChild(p);
+                return;
+            }
+            const f = dados.ferramenta;
+            linha('Origem', dados.origem === 'conversa' ? 'resposta a você' : (dados.origem ? 'proativo: ' + dados.origem : ''));
+            linha('Ferramenta', f ? `${f.nome} — ${f.sucesso ? 'deu certo' : 'falhou'} · ${f.segundos}s` : 'nenhuma (só conversa)');
+            if (f && f.argumentos && f.argumentos !== '{}') linha('Pedido', f.argumentos);
+            if (f) linha('O que voltou', dados.dados_origem);
+            const caminho = (dados.caminho_prompt || '').replace('PROMPT_COMPLETO', 'completo')
+                .replace(/^ENXUTO_(.+)$/, (_, m) => 'enxuto: ' + m.toLowerCase().replace(/_/g, ' '));
+            linha('Prompt', [dados.personalidade, caminho, dados.emocao].filter(Boolean).join(' · '));
+            if (dados.sistema_chars) linha('Tamanho', `${dados.sistema_chars} caracteres` +
+                (dados.memoria_chars ? ` · memória ${dados.memoria_chars}` : ''));
+            const t = dados.tempos || {};
+            linha('Tempo', [t.roteador !== undefined ? `roteador ${t.roteador}s` : '',
+                t.persona !== undefined ? `resposta ${t.persona}s` + (dados.persona_tokens ? ` (${dados.persona_tokens} tokens)` : '') : '']
+                .filter(Boolean).join(' · '));
+            linha('Clima', dados.clima);
+        }
+
         function receberEstadoAudio(dados) {
             const lista = document.getElementById('historico-lista');
             for (const botao of lista.querySelectorAll('.mensagem-ouvir'))
@@ -6162,6 +6290,7 @@
                 }
                 const ouvir = criarBotaoOuvir(turno);
                 if (ouvir) luna.appendChild(ouvir);
+                if (turno.id && !pendente) luna.appendChild(criarBotaoDetalhes(turno, luna));
                 for (const card of cartoes.filter(c => ['acompanhamento', 'agenda', 'proposta_fonte'].includes(c.dataset.tipo))) luna.appendChild(card);
                 if (nota && !nota.parentNode) luna.appendChild(nota);
                 const sugestoes = criarSugestoesNovidade(turno);
@@ -6383,6 +6512,7 @@
             document.getElementById('btn-config').setAttribute('aria-expanded', String(id === 'config-panel'));
             document.getElementById('btn-acompanhamentos').setAttribute('aria-expanded', String(id === 'acompanhamentos-panel'));
             if (id === 'config-panel') ajustarCaixasMemoria();
+            sincronizarAtividade();
             const fechar = document.getElementById(id === 'config-panel' ? 'btn-config-fechar' : 'btn-acompanhamentos-fechar');
             if (fechar && typeof fechar.focus === 'function') fechar.focus();
         }
@@ -6396,11 +6526,69 @@
                 painel.setAttribute('aria-hidden', 'true');
             }
             configOverlay.classList.remove('ativo');
+            sincronizarAtividade();
             document.getElementById('btn-config').setAttribute('aria-expanded', 'false');
             document.getElementById('btn-acompanhamentos').setAttribute('aria-expanded', 'false');
             if (painelOrigem && typeof painelOrigem.focus === 'function') painelOrigem.focus();
             painelOrigem = null;
         }
+
+        // Atividade: assina só com a configuração aberta no Avançado; fora disso o servidor
+        // não manda nada (o celular não precisa receber o CMD inteiro o tempo todo).
+        let atividadeAssinada = false;
+        let atividadeLinhas = [];
+        function sincronizarAtividade() {
+            const painel = document.getElementById('config-panel');
+            const grupo = document.getElementById('config-grupo-avancado');
+            const querer = !!(painel && painel.classList.contains('aberto') && grupo && !grupo.hidden);
+            if (querer === atividadeAssinada || socket.readyState !== 1) return;
+            atividadeAssinada = querer;
+            socket.send(JSON.stringify({comando: querer ? 'atividade_abrir' : 'atividade_fechar'}));
+        }
+        function atividadeVisivel(linha) {
+            const filtro = document.getElementById('atividade-filtro').value;
+            const busca = document.getElementById('atividade-busca').value.trim().toLowerCase();
+            if (filtro === '' && linha.categoria === 'visual') return false;
+            if (filtro && filtro !== '*' && linha.categoria !== filtro) return false;
+            return !busca || linha.texto.toLowerCase().includes(busca);
+        }
+        function linhaAtividade(linha) {
+            const div = document.createElement('div');
+            div.className = 'atividade-linha'; div.dataset.categoria = linha.categoria;
+            const hora = document.createElement('span'); hora.className = 'hora'; hora.textContent = linha.hora;
+            div.append(hora, document.createTextNode(linha.texto));
+            return div;
+        }
+        function renderizarAtividade() {
+            const lista = document.getElementById('atividade-lista');
+            const visiveis = atividadeLinhas.filter(atividadeVisivel);
+            lista.textContent = '';
+            for (const linha of visiveis) lista.appendChild(linhaAtividade(linha));
+            lista.scrollTop = lista.scrollHeight;
+            document.getElementById('atividade-status').textContent =
+                visiveis.length + ' de ' + atividadeLinhas.length + ' linhas';
+        }
+        function receberAtividade(dados) {
+            if (dados.tipo === 'atividade_inicio') {
+                atividadeLinhas = Array.isArray(dados.linhas) ? dados.linhas : [];
+                renderizarAtividade();
+                return;
+            }
+            const linha = dados.linha;
+            if (!linha) return;
+            atividadeLinhas.push(linha);
+            if (atividadeLinhas.length > 600) atividadeLinhas.shift();
+            const lista = document.getElementById('atividade-lista');
+            // Só rola junto se já estava no fim: lendo uma linha antiga, ela não foge.
+            const noFim = lista.scrollHeight - lista.scrollTop - lista.clientHeight < 24;
+            if (atividadeVisivel(linha)) lista.appendChild(linhaAtividade(linha));
+            while (lista.childElementCount > 600) lista.firstElementChild.remove();
+            if (noFim) lista.scrollTop = lista.scrollHeight;
+            document.getElementById('atividade-status').textContent =
+                lista.childElementCount + ' de ' + atividadeLinhas.length + ' linhas';
+        }
+        document.getElementById('atividade-filtro').addEventListener('change', renderizarAtividade);
+        document.getElementById('atividade-busca').addEventListener('input', renderizarAtividade);
 
         function selecionarGrupoConfig(grupo) {
             if (!['uso', 'proatividade', 'memoria', 'avancado'].includes(grupo)) grupo = 'uso';
@@ -6411,6 +6599,7 @@
                 secao.hidden = secao.id !== 'config-grupo-' + grupo;
             });
             if (grupo === 'memoria') ajustarCaixasMemoria();
+            sincronizarAtividade();
             // Um grupo pode estar rolado até o fim; o seguinte deve abrir pelo início.
             const corpo = configPanel.querySelector('.painel-corpo');
             if (corpo) corpo.scrollTop = 0;
@@ -6510,6 +6699,10 @@
 
             document.getElementById('cfg-proativo-pausado').hidden = estado.proativo !== false;
             if (estado.proativo !== undefined) atualizarBtnProativo(estado.proativo);
+            if (estado.proativo !== undefined) {
+                document.getElementById('cfg-proativo-nivel').value = estado.proativo === false
+                    ? 'desligado' : (estado.proativo_intensidade || 'normal');
+            }
         }
 
         function atualizarControlePersonalidade(estado) {
@@ -6606,6 +6799,15 @@
             atualizarBtnProativo(novoEstado);
             enviarConfig({ config: 'proativo', valor: novoEstado });
         };
+        // "Desligado" é o mesmo liga/desliga do botão acima; a intensidade fica salva à parte,
+        // então religar (pelo botão ou pelo atalho do modo suspenso) volta no nível escolhido.
+        document.getElementById('cfg-proativo-nivel').addEventListener('change', function() {
+            const ligado = this.value !== 'desligado';
+            if (ligado) enviarConfig({ config: 'proativo_intensidade', valor: this.value });
+            document.getElementById('cfg-proativo-pausado').hidden = ligado;
+            atualizarBtnProativo(ligado);
+            enviarConfig({ config: 'proativo', valor: ligado });
+        });
 
         document.getElementById('cfg-dark-souls').addEventListener('change', function() {
             this.disabled = true;
@@ -7009,6 +7211,16 @@
                 adicionarTurno(dados.turno);
                 return;
             }
+            if (dados.tipo === 'atividade_inicio' || dados.tipo === 'atividade_linha') {
+                receberAtividade(dados);
+                return;
+            }
+            if (dados.tipo === 'diagnostico_turno') {
+                const lista = document.getElementById('historico-lista');
+                for (const painel of lista.querySelectorAll('.mensagem-diagnostico'))
+                    if (painel.dataset.turnoId === dados.turno_id) preencherDiagnostico(painel, dados.dados);
+                return;
+            }
             if (dados.tipo === 'avaliacao_salva') {
                 if (!dados.ok && dados.turno_id === ultimoEnvioAval) {
                     document.getElementById('aval-alvo').textContent = 'Não foi possível salvar: a resposta pode ter expirado. Recarregue a página.';
@@ -7163,6 +7375,8 @@
 
         // ── Oficina: teste de fala, dicionário de pronúncia, atalhos, chaves ──
         socket.addEventListener('open', function() {
+            atividadeAssinada = false;
+            sincronizarAtividade();
             mostrarAvisoTexto('');
             socket.send(JSON.stringify({ comando: 'pronuncia_listar' }));
             socket.send(JSON.stringify({ comando: 'chaves_status' }));
@@ -7375,6 +7589,52 @@
                 t.classList.toggle('fechado');
                 w.classList.toggle('sub-fechado');
             });
+        })();
+
+        // Largura das configurações: a alça na borda esquerda alarga o painel (útil para ler a
+        // Atividade). Fica salva no navegador; duplo clique volta aos 480px.
+        (function() {
+            const painel = document.getElementById('config-panel');
+            const alca = document.getElementById('config-redimensionar');
+            if (!painel || !alca) return;
+            const PADRAO = 480, MINIMO = 360;
+            function aplicar(px) {
+                const max = Math.max(MINIMO, window.innerWidth - 40);
+                const largura = Math.round(Math.min(max, Math.max(MINIMO, px)));
+                painel.style.setProperty('--largura-config', largura + 'px');
+                alca.setAttribute('aria-valuenow', String(largura));
+                return largura;
+            }
+            function salvar(px) {
+                try { localStorage.setItem('luna_largura_config', String(px)); } catch (_) {}
+            }
+            let salva = PADRAO;
+            try { salva = Number(localStorage.getItem('luna_largura_config')) || PADRAO; } catch (_) {}
+            aplicar(salva);
+            alca.addEventListener('pointerdown', e => {
+                e.preventDefault();
+                painel.classList.add('redimensionando');
+                if (alca.setPointerCapture) alca.setPointerCapture(e.pointerId);
+                const mover = ev => aplicar(window.innerWidth - ev.clientX);
+                const soltar = ev => {
+                    painel.classList.remove('redimensionando');
+                    alca.removeEventListener('pointermove', mover);
+                    alca.removeEventListener('pointerup', soltar);
+                    alca.removeEventListener('pointercancel', soltar);
+                    salvar(aplicar(window.innerWidth - ev.clientX));
+                };
+                alca.addEventListener('pointermove', mover);
+                alca.addEventListener('pointerup', soltar);
+                alca.addEventListener('pointercancel', soltar);
+            });
+            alca.addEventListener('dblclick', () => salvar(aplicar(PADRAO)));
+            alca.addEventListener('keydown', e => {
+                const atual = painel.getBoundingClientRect().width || PADRAO;
+                if (e.key === 'ArrowLeft') { e.preventDefault(); salvar(aplicar(atual + 40)); }
+                if (e.key === 'ArrowRight') { e.preventDefault(); salvar(aplicar(atual - 40)); }
+            });
+            // Se a janela encolher, o painel não pode ficar maior que ela.
+            window.addEventListener('resize', () => aplicar(parseFloat(painel.style.getPropertyValue('--largura-config')) || PADRAO));
         })();
 
         // As seções recolhíveis lembram a expansão para não despejar todos os ajustes de uma vez.

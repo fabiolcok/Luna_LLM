@@ -1461,6 +1461,8 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         try:
             if _dur > 0 and _tk:
                 print(f"[🎭 Persona: {_tk} tokens em {_dur:.1f}s = {_tk/_dur:.1f} tok/s]")
+                from modulos import avaliacoes as _aval
+                _aval.registrar_contexto(persona_segundos=round(_dur, 1), persona_tokens=_tk)
                 import servidor as _srv
                 _srv.atualizar_metricas(persona={"tokens": _tk, "tps": round(_tk / _dur, 1), "segundos": round(_dur, 1)})
         except Exception:
@@ -1791,6 +1793,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
             if segundos > 0:
                 tps_r = tokens_gerados / segundos
                 print(f"[⚡ Roteador: {tokens_gerados} tokens em {segundos:.1f}s = {tps_r:.1f} tok/s]")
+                avaliacoes.registrar_contexto(roteador_segundos=round(segundos, 1))
                 import servidor as _srv
                 _srv.atualizar_metricas(roteador={"tokens": tokens_gerados, "tps": round(tps_r, 1), "segundos": round(segundos, 1)})
         except Exception:
@@ -2302,6 +2305,12 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 _sucesso = not _resultado.startswith(("Erro", "ERRO", "SISTEMA: Erro", "SISTEMA: Não consegui"))
                 if nome_funcao == "duvida_do_jogo":
                     _sucesso = _estado_pesquisa_jogo(_resultado) in ("dados", "sem_dados")
+                # O botão "o que eu fiz" da web lê isto; o resultado completo já vai em dados_origem.
+                avaliacoes.registrar_contexto(ferramenta={
+                    "nome": nome_funcao, "sucesso": _sucesso,
+                    "segundos": round(time.time() - inicio_ferramenta, 1),
+                    "argumentos": str(tool_call.function.arguments or "")[:400],
+                })
                 metricas_ferramentas.registrar_uso(
                     nome_funcao, _sucesso, time.time() - inicio_ferramenta,
                     prompt_usuario, texto_resposta,

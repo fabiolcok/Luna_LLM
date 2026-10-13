@@ -132,6 +132,17 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
       medir coleta com geração desligada antes de ativar falas. Coleta leve não elimina o custo
       do LLM na GPU. Retomar após o teste manual; nenhuma integração implementada nesta etapa.
 
+- [ ] **Ela falar duas vezes seguidas em algumas interações.** Combinado em 13/10/2026: em vez
+      do bate e volta de sempre, às vezes ela manda uma segunda mensagem curta logo depois.
+      Desenho conversado: roleta em Python (cerca de 1 a cada 5 respostas), só em papo leve —
+      prompt completo, sem ferramenta, fora dos modos enxutos e nunca em assunto sensível ou
+      cansaço. A segunda chamada pede para ACRESCENTAR algo sem repetir e tem uma saída
+      (`SEM_CONTINUACAO`) para quando não houver nada que valha: sem ela o modelo sempre
+      preenche com repetição ou palpite. Na web chega como outra bolha, depois de um
+      "digitando…" curto. Medir antes de ligar (quantas vezes usa a saída, repete ou inventa),
+      com histórico morno, como em `testes/resultado_tom_generico.md`.
+- [ ] **Botão no avatar para desligar o modo jogo na hora** (LoL, Dark Souls), sem mexer na
+      intensidade do proativo. Combinado em 12/10/2026, para depois.
 - [ ] **Barge-in.** Interromper a fala dela falando por cima, em vez de esperar terminar.
 - [ ] **Radar de encomendas.** Mesma ideia do radar de promoções, para rastreio de pedidos.
 - [ ] **Luz ambiente da Luna.** Testar a integração com uma lâmpada RGB Positivo em um bocal ou
@@ -155,6 +166,13 @@ esperam a vez. Confirme com o usuário antes de pegar uma.
 
 > Combine antes de mexer neste arquivo: são ~4100 linhas com CSS, HTML e todo o JS juntos, e é
 > onde dois agentes colidem. Rode `node testes/rodar.js` antes e depois.
+
+- [ ] **Mais animação no modo Web.** Pedido em 13/10/2026: deixar a interface mais fluida —
+      por exemplo, a caixa de resposta entrando e crescendo de forma suave enquanto ela digita,
+      com os efeitos do anime.js (aqui é a v3.2.2; ver AGENTS.md). Incluir as bolhas de
+      status no chat: "pensando…", "falando…" e "digitando…", vindas dos mesmos estados
+      visuais que já movem o rosto, e que somem quando a resposta termina. Respeitar
+      `prefers-reduced-motion`.
 
 - [ ] **Comparações interativas na conversa.** Na fila por escolha do usuário em 09/10.
       Explorar cartões para comparar opções quando surgir uma dúvida que justifique isso.

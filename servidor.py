@@ -113,6 +113,8 @@ _imagem_anexada_pendente = None  # {"nome": str, "dados": bytes, "ext": str} —
 _config_handlers = {}
 _estado_config = {
     "proativo": True,
+    # Ligado/desligado continua em "proativo" (o atalho do modo suspenso alterna só ele).
+    "proativo_intensidade": "normal",
     "memoria": False,
     "tarefas": {"jogos": True, "emails": True, "agenda": True, "pausa": True,
                 "clima": True, "bom_dia": True, "retomar": True, "steam": True, "navegador": True,
@@ -161,13 +163,16 @@ def carregar_e_aplicar_config():
     if not isinstance(_estado_config.get("voz"), str) or _estado_config["voz"] not in VOZES_VALIDAS:
         _estado_config["voz"] = VOZ_PADRAO
     _estado_config["vozes_favoritas"] = normalizar_favoritas(_estado_config.get("vozes_favoritas"))
+    from modulos.proativa import INTENSIDADES, INTENSIDADE_PADRAO
+    if _estado_config.get("proativo_intensidade") not in INTENSIDADES:
+        _estado_config["proativo_intensidade"] = INTENSIDADE_PADRAO
     from modulos import prompts
     try:
         _estado_config["personalidade"] = prompts.validar_personalidade(_estado_config["personalidade"])
     except (KeyError, ValueError):
         _estado_config["personalidade"] = prompts.PERSONALIDADE_PADRAO
     # Aplica os valores carregados nos módulos reais
-    for chave in ("proativo", "memoria", "voz", "velocidade", "volume", "personalidade"):
+    for chave in ("proativo", "proativo_intensidade", "memoria", "voz", "velocidade", "volume", "personalidade"):
         fn = _config_handlers.get(chave)
         if fn and chave in _estado_config:
             try: fn(_estado_config[chave])
@@ -334,6 +339,11 @@ def _aplicar_config(dados: dict):
         if chave == 'voz' and (not isinstance(valor, str) or valor not in VOZES_VALIDAS):
             _broadcast({"tipo": "config_estado", "estado": _config_para_web()})
             return
+        if chave == 'proativo_intensidade':
+            from modulos.proativa import INTENSIDADES
+            if valor not in INTENSIDADES:
+                _broadcast({"tipo": "config_estado", "estado": _config_para_web()})
+                return
         if chave == 'volume':
             try:
                 valor = float(valor)
@@ -843,6 +853,13 @@ def websocket(ws):
                         turno_id=dados.get('turno_id'), categorias=dados.get('categorias', []))
                     ws.send(json.dumps({"tipo": "avaliacao_salva", "ok": bool(resultado),
                                         "turno_id": dados.get('turno_id')}))
+                elif dados.get('comando') in ('atividade_abrir', 'atividade_fechar'):
+                    _assinar_atividade(ws, dados.get('comando') == 'atividade_abrir')
+                elif dados.get('comando') == 'diagnostico_turno':
+                    from modulos import avaliacoes
+                    ws.send(json.dumps({"tipo": "diagnostico_turno", "turno_id": dados.get('turno_id'),
+                                        "dados": avaliacoes.resumo_diagnostico(dados.get('turno_id'))},
+                                       ensure_ascii=False))
                 elif dados.get('comando') == 'repetir_fala':
                     try:
                         from modulos import falar
@@ -1029,6 +1046,29 @@ def _receber_interesse_radar(dados):
         if not turno or not any(c.get('tipo') == 'noticia' for c in turno.get('cartoes_web', [])):
             return {'ok': False, 'texto': 'Esta notícia não está mais no histórico. Use uma notícia recente.'}
     return interesses_radar.agir(dados.get('acao'), dados.get('assunto'))
+
+
+# Painel Atividade: só quem está com ele aberto recebe as linhas do CMD — sem isso o
+# celular receberia o terminal inteiro o tempo todo. A marca fica no próprio cliente:
+# quem desconecta sai de _clientes e, com isso, da atividade.
+def _enviar_linha_atividade(linha):
+    payload = json.dumps({"tipo": "atividade_linha", "linha": linha}, ensure_ascii=False)
+    with _clientes_lock:
+        alvos = [ws for ws in _clientes if getattr(ws, "atividade", False)]
+    for ws in alvos:
+        try:
+            ws.send(payload)   # _ClienteWeb só enfileira: não trava quem deu o print
+        except Exception:
+            ws.atividade = False
+
+
+def _assinar_atividade(ws, assinar: bool):
+    from modulos import atividade
+    atividade.ouvir(_enviar_linha_atividade)
+    ws.atividade = bool(assinar)
+    if assinar:
+        ws.send(json.dumps({"tipo": "atividade_inicio", "linhas": atividade.instantaneo()},
+                           ensure_ascii=False))
 
 
 def _broadcast(dados: dict):

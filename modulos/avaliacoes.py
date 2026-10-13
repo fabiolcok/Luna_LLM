@@ -89,6 +89,39 @@ def obter_turno(identificador):
         return deepcopy(_turnos.get(identificador))
 
 
+def resumo_diagnostico(identificador):
+    """O que o botão "o que eu fiz" da web mostra. Só lê o snapshot em memória: depois de
+    reiniciar a Luna (ou de 200 respostas) ele não existe mais, e a web avisa isso."""
+    turno = obter_turno(identificador)
+    if not turno:
+        return None
+    ctx = turno.get("contexto") or {}
+    nome_perfil = ""
+    if isinstance(ctx.get("personalidade"), int):
+        try:
+            from modulos import prompts
+            nome_perfil = prompts._PERFIS_PERSONALIDADE[ctx["personalidade"]]["nome"]
+        except (ImportError, KeyError):
+            pass
+    chamadas = ctx.get("chamadas") or []
+    ferramenta = ctx.get("ferramenta")
+    return {
+        "origem": turno.get("origem_proativa") or ("conversa" if turno.get("usuario") else ""),
+        "ferramenta": deepcopy(ferramenta) if ferramenta else None,
+        "dados_origem": _texto(ctx.get("dados_origem"), 600) if ferramenta else "",
+        "personalidade": nome_perfil,
+        "caminho_prompt": ctx.get("caminho_prompt", ""),
+        "emocao": ctx.get("emocao", ""),
+        "canal": ctx.get("canal_resposta", ""),
+        "memoria_chars": ctx.get("memoria_chars") or 0,
+        "sistema_chars": chamadas[-1].get("prompt_sistema_chars") if chamadas else None,
+        "clima": turno.get("clima", ""),
+        "tempos": {k: ctx.get(f"{k}_segundos") for k in ("roteador", "persona")
+                   if ctx.get(f"{k}_segundos") is not None},
+        "persona_tokens": ctx.get("persona_tokens"),
+    }
+
+
 def salvar(registro):
     """Complementos são revisões do mesmo voto; o JSONL antigo nunca é reescrito."""
     with _lock:

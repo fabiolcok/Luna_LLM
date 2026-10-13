@@ -14,10 +14,20 @@ _log_setup.configurar()
 # (o luna.log já tem hora via logging; isto é só pro terminal.) Envolve o print global,
 # então pega tanto os cor.xxx() quanto os print() crus.
 import builtins as _bi, datetime as _dt_ts
+import logging as _logging_ativ
+from modulos import atividade as _atividade
 _print_orig = _bi.print
 def _print_com_hora(*a, **k):
-    _print_orig(_dt_ts.datetime.now().strftime("[%H:%M:%S]"), *a, **k)
+    hora = _dt_ts.datetime.now().strftime("%H:%M:%S")
+    _print_orig(f"[{hora}]", *a, **k)
+    # O painel Atividade da web mostra o mesmo que o CMD (só a saída padrão, não arquivos).
+    if k.get("file") in (None, sys.stdout):
+        try:   # nada daqui pode quebrar um print
+            _atividade.registrar((k.get("sep") or " ").join(map(str, a)), hora)
+        except Exception:
+            pass
 _bi.print = _print_com_hora
+_logging_ativ.getLogger().addHandler(_atividade.HandlerLog())
 
 import os
 import json
@@ -37,7 +47,7 @@ from modulos.pensar import (GeracaoInterrompida, gerar_resposta, continuar_apos_
                             obter_clima_resposta)
 from modulos.falar import FalaEmFluxo, falar_texto
 from modulos.habilidades import ler_agenda_google, capturar_tela_base64, iniciar_servidor_extensao, pausar_spotify, proxima_musica_spotify, alternar_mute, ler_texto_selecionado
-from modulos.proativa import iniciar_modo_proativo, registrar_interacao, registrar_tentativa, MAX_TENTATIVAS, marcar_luna_ocupada, luna_esta_livre, configurar_proativo, configurar_tarefa
+from modulos.proativa import iniciar_modo_proativo, registrar_interacao, suspender, marcar_luna_ocupada, luna_esta_livre, configurar_proativo, configurar_tarefa, configurar_intensidade
 from modulos.telegram_bot import iniciar_bot_telegram
 from modulos.falar import configurar_voz
 from modulos.pensar import (configurar_memoria, configurar_personalidade,
@@ -160,8 +170,7 @@ def _listener_global():
         if TECLA_MODO_JOGO.issubset(_pressionadas):
             if not _modo_jogo_ativo:
                 _modo_jogo_ativo = True
-                for _ in range(MAX_TENTATIVAS):
-                    registrar_tentativa()
+                suspender()
                 sincronizar_config("proativo", False)
                 cor.vermelho("Modo Suspenso.")
             else:
@@ -437,8 +446,7 @@ def loop_voz():
                         imagem_tela = capturar_tela_base64()
 
                     elif any(p in texto_lower for p in ATIVAR_MODO_JOGO):
-                        for _ in range(MAX_TENTATIVAS):
-                            registrar_tentativa()
+                        suspender()
                         _falar_atalho("Modo jogo ativado. Pode jogar em paz, bot.")
                         continue
 
@@ -740,6 +748,7 @@ def main():
     registrar_handler_conclusao_web(responder_clique_conclusao)
     registrar_handler_ouvir_web(ouvir_resposta_web)
     registrar_config_handler("proativo", configurar_proativo)
+    registrar_config_handler("proativo_intensidade", configurar_intensidade)
     registrar_config_handler("memoria", configurar_memoria)
     registrar_config_handler("personalidade", configurar_personalidade)
     registrar_config_handler("voz", lambda v: configurar_voz(voz=v))
