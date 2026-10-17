@@ -66,8 +66,22 @@ class TestaPersonalidade(unittest.TestCase):
                 self.assertEqual(prompts.personalidade_ativa(), 2)
                 self.assertEqual(len(hist), 1)
 
+    def test_nome_luna_em_todos_os_perfis_e_canais(self):
+        for nivel in range(4):
+            prompts.selecionar_personalidade(nivel)
+            for voz in (False, True):
+                with self.subTest(nivel=nivel, voz=voz):
+                    self.assertIn('Você é Luna', prompts.persona())
+                    self.assertIn('Você é Luna', prompts.nucleo_enxuto(prompts.ENXUTO_SAUDACAO, voz))
+                    self.assertIn('Luna', prompts.INTRO_PERFIL)
+                    self.assertNotIn('Você é GLaDOS', prompts.persona())
+                    self.assertEqual(prompts.sortear_exemplos_tom('oi'), [])
+        prompts.selecionar_personalidade(1)
+        self.assertEqual(prompts.nome_personalidade(), 'HAL 9000')
+        self.assertNotIn('amiga calorosa', prompts.nucleo_enxuto(prompts.ENXUTO_COTIDIANO, False))
+
     def test_selecao_isola_os_textos_e_atualiza_confirmacao(self):
-        for nivel, marco in [(1, 'amiga próxima'), (2, 'TARS'), (3, 'GLaDOS'), (0, '')]:
+        for nivel, marco in [(1, 'HAL 9000'), (2, 'TARS'), (3, 'GLaDOS'), (0, '')]:
             prompts.selecionar_personalidade(nivel)
             captura = []
             def chamar(**kw):
@@ -79,7 +93,7 @@ class TestaPersonalidade(unittest.TestCase):
             self.assertEqual(sistema, prompts.persona())
             if marco:
                 self.assertIn(marco, sistema)
-            for outro in ('TARS', 'GLaDOS'):
+            for outro in ('HAL 9000', 'TARS', 'GLaDOS'):
                 if outro != marco:
                     self.assertNotIn(outro, sistema)
             self.assertEqual(prompts.CANAL_WEB, prompts.CANAL_TEXTO + prompts.APRESENTACAO_WEB)

@@ -7,6 +7,9 @@ if ctypes.windll.kernel32.GetLastError() == 183:   # ERROR_ALREADY_EXISTS
     ctypes.windll.user32.MessageBoxW(0, "Luna já está rodando.", "Luna", 0x30)
     sys.exit(0)
 
+# Evita que a barra de tarefas agrupe a interface com outras janelas do Python.
+ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("LunaLLM.Interface")
+
 import modelos.log as _log_setup
 _log_setup.configurar()
 
@@ -782,6 +785,14 @@ def main():
         "Luna", url_web, js_api=api_interface, **janela_kwargs
     )
     api_interface._janela_principal = janela
+    def configurar_identidade_janela():
+        from modulos.identidade_janela import aplicar_identidade
+        try:
+            aplicar_identidade(janela.native.Handle.ToInt64())
+        except Exception:
+            _log.exception("Não foi possível definir a identidade da janela na barra de tarefas")
+
+    janela.events.before_show += configurar_identidade_janela
     janela.events.moved += geometria.mover
     janela.events.resized += geometria.redimensionar
 
@@ -799,6 +810,7 @@ def main():
     webview.start(
         func=_iniciar_bandeja,
         args=(janela, api_interface),
+        icon=os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "luna.ico"),
         private_mode=False,
         storage_path=os.path.join(os.path.dirname(__file__), "modelos", "webview_dados"),
     )

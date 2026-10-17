@@ -5,6 +5,13 @@ definitiva. Itens daqui não estão automaticamente aprovados para commit.
 
 ## Em teste
 
+- [ ] **HAL 9000 no lugar do perfil LUNA.** Implementado em 16/10: nível 1 com
+      registro calmo, preciso e impassível, incluindo modos enxutos e proativos.
+      O nome da assistente continua Luna nos quatro perfis; corrigida a identidade
+      do GLaDOS e do padrão do modelo. TARS preservado. Identidade conferida em
+      quatro respostas reais; avaliar naturalidade e humor no uso, sem tomar a
+      amostra pequena como aprovação definitiva. [Bancada](testes/resultado_hal9000.md).
+
 - [ ] **Responder a mensagens, biblioteca do radar, busca e imagens ampliadas.** Implementados
       em 11/10: controles discretos acima da conversa, seleção de referência sem apagar o
       rascunho, consultas locais sem LLM e biblioteca com lidas/não lidas. Histórico salvo

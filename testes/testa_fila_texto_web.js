@@ -46,6 +46,7 @@ function trecho(inicio, fim) {
     assert.ok(i >= 0 && j > i, 'Trecho não encontrado: ' + inicio);
     return html.slice(i, j);
 }
+vm.runInContext(trecho('        function iconeCopiarMensagem()', '        function copiarMensagem('), contexto);
 vm.runInContext(trecho('        const historicoLista ', '        const fonteConversa '), contexto);
 vm.runInContext(trecho('        function criarSugestoesNovidade(', '        // --- Config panel ---'), contexto);
 vm.runInContext(trecho('        socket.onmessage = function(event)', "            if (dados.tipo === 'avaliacao_salva')") + '};', contexto);

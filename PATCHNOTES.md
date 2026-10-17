@@ -8,6 +8,22 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 16/10/2026
+
+- ✨ **HAL 9000 entre as personalidades.** Substitui o perfil LUNA com um jeito calmo,
+  preciso e de humor impassível. A assistente continua se chamando Luna nos quatro
+  perfis, inclusive GLaDOS e Padrão do modelo. TARS permanece como padrão.
+- 🔧 **Interface mais leve.** Os atalhos do canto superior ficam em um menu ☰ com
+  nomes. Botões e mensagens ganham movimentos suaves, respeitando movimento reduzido.
+  As ações nas respostas ficam alinhadas, com um novo ícone de copiar, e a caixa de
+  escrita mostra apenas “Digite aqui…”.
+- 🔧 **Mais espaço para conversar.** As mensagens sobem até perto do mascote e somem
+  gradualmente em um fade mais forte, preservando o tamanho e as animações da Luna.
+- 🐛 **Interações do mascote restauradas.** Uma camada transparente interceptava cliques
+  depois do ajuste de layout; as pequenas surpresas voltam a receber as interações.
+- 🐛 **Identidade da janela no Windows.** A barra de tarefas usa o nome Luna e a mesma
+  lua crescente da bandeja, em vez do nome e do ícone do Python.
+
 ## 13/10/2026
 
 - ✨ **"O que eu fiz" em cada resposta.** O novo botão ⓘ, ao lado de responder, ouvir e

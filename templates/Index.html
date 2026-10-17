@@ -2080,6 +2080,141 @@
         .radar-interesse input { margin-top: 5px; }
         .radar-interesse p { font-size: .75rem; color: #8ba2c3; }
         #radar-interesses-lista .cartao-web-acoes { margin: 8px 0; }
+        /* Escopo web: o widget tem movimentos próprios controlados pelo mascote. */
+        body:not(.widget) #texto-input {
+            transition: border-color .2s ease, background-color .2s ease, box-shadow .25s ease;
+        }
+        body:not(.widget) #texto-input:focus {
+            background: #1a1824;
+            box-shadow: 0 0 0 3px #bb9af714, 0 4px 20px #00000020;
+        }
+        body:not(.widget) :is(#texto-enviar, #avaliacao-bar button, #atalhos-web button,
+                #jogo-controle button, #historico-lista button, #anexo-bar button,
+                #resposta-selecionada-remover) {
+            transition: translate .18s ease, scale .14s ease, opacity .2s ease,
+                background-color .2s ease, border-color .2s ease, color .2s ease,
+                box-shadow .2s ease;
+        }
+        @media (hover: hover) and (pointer: fine) {
+            body:not(.widget) :is(#texto-enviar, #avaliacao-bar button, #atalhos-web button,
+                    #jogo-controle button, #historico-lista button, #anexo-bar button,
+                    #resposta-selecionada-remover):not(:disabled):hover {
+                translate: 0 -2px;
+            }
+            body:not(.widget) #texto-enviar:not(:disabled):hover {
+                box-shadow: 0 4px 14px #bb9af72b;
+            }
+        }
+        body:not(.widget) :is(#texto-enviar, #avaliacao-bar button, #atalhos-web button,
+                #jogo-controle button, #historico-lista button, #anexo-bar button,
+                #resposta-selecionada-remover):not(:disabled):active {
+            translate: 0 0;
+            scale: .96;
+        }
+        body:not(.widget) :is(#texto-enviar, #avaliacao-bar button, #atalhos-web button,
+                #jogo-controle button, #historico-lista button, #anexo-bar button,
+                #resposta-selecionada-remover):focus-visible {
+            outline: 2px solid #bb9af7;
+            outline-offset: 3px;
+        }
+        body:not(.widget) .balao-entrando {
+            animation: conversa-entra .32s cubic-bezier(.22,1,.36,1) both;
+            transform-origin: bottom left;
+        }
+        body:not(.widget) .turno-usuario.balao-entrando { transform-origin: bottom right; }
+        @keyframes conversa-entra {
+            from { opacity: 0; transform: translateY(8px) scale(.985); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            body:not(.widget) .balao-entrando { animation: none; }
+            body:not(.widget) #historico-lista { scroll-behavior: auto; }
+            body:not(.widget) #texto-input,
+            body:not(.widget) :is(#texto-enviar, #avaliacao-bar button, #atalhos-web button,
+                    #jogo-controle button, #historico-lista button, #anexo-bar button,
+                    #resposta-selecionada-remover) {
+                transition: none;
+                translate: none !important;
+                scale: none !important;
+            }
+        }
+        #atalhos-web { display: block; }
+        #menu-atalhos > summary {
+            list-style: none; width: 40px; height: 40px; display: grid; place-items: center;
+            border: 1px solid #2a2a4a; border-radius: 8px; cursor: pointer;
+            background: #11111a; color: #b4b9d3; font-size: 22px;
+            transition: background .18s ease, border-color .18s ease;
+        }
+        #menu-atalhos > summary::-webkit-details-marker { display: none; }
+        #menu-atalhos > summary:hover, #menu-atalhos[open] > summary {
+            background: #201b2d; border-color: #8067a6; color: #d9c5ff;
+        }
+        #menu-atalhos > summary:focus-visible { outline: 2px solid #bb9af7; outline-offset: 3px; }
+        #menu-atalhos[open] > summary .menu-hamburguer { display: none; }
+        #menu-atalhos:not([open]) > summary .menu-fechar { display: none; }
+        #menu-atalhos:has(#config-badge.ativo) > summary,
+        #menu-atalhos:has(#acompanhamentos-badge:not([hidden])) > summary {
+            box-shadow: inset 0 0 0 1px #bb9af7;
+        }
+        #menu-atalhos-itens {
+            position: absolute; right: 0; top: 48px; width: min(280px, calc(100vw - 32px));
+            padding: 6px; box-sizing: border-box; border: 1px solid #34304b;
+            border-radius: 12px; background: #14131e; box-shadow: 0 12px 36px #00000066;
+            max-height: calc(100dvh - 90px); overflow-y: auto;
+        }
+        #menu-atalhos[open] #menu-atalhos-itens { animation: conversa-entra .18s ease-out; }
+        #atalhos-web #menu-atalhos-itens > button {
+            position: relative; inset: auto; width: 100%; height: auto; min-height: 42px;
+            display: flex; align-items: center; justify-content: flex-start; gap: 12px;
+            padding: 10px 12px; border: 1px solid transparent; border-radius: 7px;
+            background: transparent; color: #b4b9d3; text-align: left; cursor: pointer;
+            translate: none;
+        }
+        #menu-atalhos-itens > button::after { content: attr(aria-label); font: 13px/1.4 system-ui, sans-serif; }
+        #atalhos-web #menu-atalhos-itens > button:hover { background: #252035; color: #e1d3ff; }
+        @media (prefers-reduced-motion: reduce) {
+            #menu-atalhos > summary { transition: none; }
+            #menu-atalhos[open] #menu-atalhos-itens { animation: none; }
+        }
+        /* Uma caixa fixa evita que a métrica de cada símbolo desalinhe as ações. */
+        .turno-luna :is(.mensagem-detalhes, .mensagem-responder, .mensagem-ouvir, .mensagem-copiar) {
+            top: 6px; width: 26px; height: 26px; padding: 0; box-sizing: border-box;
+            display: grid; place-items: center; font: 16px/1 Arial, sans-serif;
+            color: #8995b8;
+        }
+        .turno-luna .mensagem-copiar { right: 6px; }
+        .turno-luna .mensagem-ouvir { right: 34px; }
+        .turno-luna .mensagem-responder { right: 62px; }
+        .turno-luna .mensagem-detalhes { right: 90px; }
+        .mensagem-copiar svg { width: 15px; height: 15px; display: block; }
+        .turno-luna:has(.mensagem-ouvir)::before { padding-right: 52px; min-height: 20px; }
+        .turno-luna:has(.mensagem-responder)::before { padding-right: 80px; }
+        .turno-luna:has(.mensagem-detalhes)::before { padding-right: 108px; }
+        /* A conversa ocupa a margem inferior da animação sem reduzir o SVG ou cortar gestos. */
+        body:not(.widget) .container { --conversa-sobreposicao: 80px; --conversa-fade: 112px; --conversa-fade-inicio: 24px; }
+        body:not(.widget) .container:has(#jogo-controle:not([hidden])),
+        body:not(.widget) .container:has(#gif-container.ativo) {
+            --conversa-sobreposicao: 0px;
+            --conversa-fade: 28px;
+            --conversa-fade-inicio: 0px;
+        }
+        body:not(.widget) #presenca { z-index: 1; pointer-events: none; }
+        /* O rosto cobre o SVG inteiro: manter sua camada transparente aos cliques
+           permite acertar os satélites e outros elementos interativos abaixo dela. */
+        body:not(.widget) #presenca > svg { pointer-events: auto; }
+        body:not(.widget) #historico-panel {
+            margin-top: calc(-1 * var(--conversa-sobreposicao));
+            height: calc(clamp(180px, calc(100dvh - 520px), 760px) + var(--conversa-sobreposicao));
+            max-height: calc(760px + var(--conversa-sobreposicao));
+        }
+        body:not(.widget) #historico-lista.fade-topo {
+            -webkit-mask-image: linear-gradient(to bottom, transparent var(--conversa-fade-inicio), #000 var(--conversa-fade), #000 100%);
+            mask-image: linear-gradient(to bottom, transparent var(--conversa-fade-inicio), #000 var(--conversa-fade), #000 100%);
+        }
+        body:not(.widget) #historico-lista.fade-topo.fade-fundo {
+            -webkit-mask-image: linear-gradient(to bottom, transparent var(--conversa-fade-inicio), #000 var(--conversa-fade), #000 calc(100% - 28px), transparent);
+            mask-image: linear-gradient(to bottom, transparent var(--conversa-fade-inicio), #000 var(--conversa-fade), #000 calc(100% - 28px), transparent);
+        }
     </style>
 </head>
 <body class="{{ 'widget' if request.args.get('widget') == '1' else '' }}">
@@ -2161,11 +2296,18 @@
     </div>
 
     <nav id="atalhos-web" aria-label="Atalhos da Luna">
+      <details id="menu-atalhos">
+        <summary id="menu-atalhos-toggle" aria-label="Menu da Luna" title="Menu da Luna">
+            <span class="menu-hamburguer" aria-hidden="true">☰</span><span class="menu-fechar" aria-hidden="true">×</span>
+        </summary>
+        <div id="menu-atalhos-itens">
         <button id="btn-biblioteca-web" type="button" title="Notícias e promoções" aria-label="Notícias e promoções">▤</button>
         <button id="btn-buscar-conversa" type="button" title="Buscar conversas" aria-label="Buscar conversas">⌕</button>
         <button id="btn-acompanhamentos" type="button" title="Acompanhamentos" aria-label="Acompanhamentos" aria-controls="acompanhamentos-panel" aria-expanded="false">↪<span id="acompanhamentos-badge" hidden></span></button>
         <button id="btn-soltar-mascote" type="button" title="Soltar Luna na área de trabalho" aria-label="Soltar Luna na área de trabalho">◲</button>
         <button id="btn-config" type="button" title="Configurações" aria-label="Configurações" aria-controls="config-panel" aria-expanded="false">⚙<span id="config-badge"></span></button>
+        </div>
+      </details>
     </nav>
     <div id="acompanhamentos-panel" class="painel-lateral" role="dialog" aria-modal="true" aria-labelledby="acompanhamentos-titulo" aria-hidden="true" inert>
         <div class="config-header">
@@ -2433,7 +2575,7 @@
             <label for="cfg-personalidade" class="oficina-dica">Escolha o jeito de conversar</label>
             <select class="modelo-campo" id="cfg-personalidade" disabled aria-describedby="cfg-personalidade-status">
                 <option value="0">0 — Padrão do modelo</option>
-                <option value="1">1 — LUNA</option>
+                <option value="1">1 — HAL 9000</option>
                 <option value="2">2 — TARS</option>
                 <option value="3">3 — GLaDOS</option>
             </select>
@@ -2749,7 +2891,7 @@
             <button id="resposta-selecionada-remover" type="button" title="Cancelar referência" aria-label="Cancelar referência">✕</button>
         </div>
         <div id="texto-input-bloco">
-            <textarea id="texto-input" rows="1" placeholder="Digite aqui · Shift+Enter pula linha…" maxlength="2000" autocomplete="off"></textarea>
+            <textarea id="texto-input" rows="1" placeholder="Digite aqui…" maxlength="2000" autocomplete="off"></textarea>
             <button id="texto-enviar" title="Enviar">➤</button>
         </div>
         <div id="texto-envio-aviso" role="status" aria-live="polite" hidden></div>
@@ -5647,8 +5789,12 @@
             return blocos.join('');
         }
 
+        function iconeCopiarMensagem() {
+            return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>';
+        }
+
         function copiarMensagem(texto, botao) {
-            const pronto = () => { botao.textContent = '✓'; setTimeout(() => botao.textContent = '⎘', 1200); };
+            const pronto = () => { botao.textContent = '✓'; setTimeout(() => botao.innerHTML = iconeCopiarMensagem(), 1200); };
             const copiarLegado = () => {
                 const area = document.createElement('textarea');
                 area.value = texto; document.body.appendChild(area); area.select();
@@ -6265,7 +6411,8 @@
                 conteudo.innerHTML = renderizarMarkdownSeguro(turno.luna);
                 const copiar = document.createElement('button');
                 copiar.className = 'mensagem-copiar'; copiar.type = 'button';
-                copiar.title = 'Copiar resposta'; copiar.textContent = '⎘';
+                copiar.title = 'Copiar resposta'; copiar.setAttribute('aria-label', 'Copiar resposta');
+                copiar.innerHTML = iconeCopiarMensagem();
                 copiar.onclick = () => copiarMensagem(turno.luna, copiar);
                 const links = turno.links_novidades || {};
                 const nota = linkNovidade(links.nota, true, links.rotulo_nota);
@@ -6529,7 +6676,11 @@
             sincronizarAtividade();
             document.getElementById('btn-config').setAttribute('aria-expanded', 'false');
             document.getElementById('btn-acompanhamentos').setAttribute('aria-expanded', 'false');
-            if (painelOrigem && typeof painelOrigem.focus === 'function') painelOrigem.focus();
+            if (painelOrigem && typeof painelOrigem.focus === 'function') {
+                const origemNoMenu = ['btn-config', 'btn-acompanhamentos'].includes(painelOrigem.id);
+                const destino = origemNoMenu ? document.getElementById('menu-atalhos-toggle') : painelOrigem;
+                destino.focus();
+            }
             painelOrigem = null;
         }
 
@@ -7912,6 +8063,32 @@
         })();
 
 
+        (function iniciarMenuAtalhos() {
+            const menu = document.getElementById('menu-atalhos');
+            const toggle = document.getElementById('menu-atalhos-toggle');
+            const itens = document.getElementById('menu-atalhos-itens');
+            function fechar(devolverFoco) {
+                menu.open = false;
+                if (devolverFoco) toggle.focus();
+            }
+            itens.addEventListener('click', function(e) {
+                if (e.target.closest('button')) fechar(false);
+            });
+            document.addEventListener('click', function(e) {
+                if (menu.open && !menu.contains(e.target)) fechar(false);
+            });
+            document.addEventListener('keydown', function(e) {
+                if (menu.open && e.key === 'Escape') {
+                    e.preventDefault(); fechar(true);
+                }
+            });
+            menu.addEventListener('focusout', function() {
+                // Espera o navegador concluir a troca de foco antes de recolher as opções.
+                setTimeout(function() {
+                    if (menu.open && !menu.contains(document.activeElement)) fechar(false);
+                }, 0);
+            });
+        })();
     </script>
 </body>
 </html>

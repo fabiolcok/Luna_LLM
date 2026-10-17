@@ -292,13 +292,13 @@ document.activeElement = root;
 assert.ok(key('Tab').prevented, 'Atualização que perdeu foco deixou o Tab escapar da gaveta.');
 assert.equal(document.activeElement, visible[0]);
 assert.ok(key('Escape').prevented);
-assert.equal(document.activeElement, ids['btn-config']);
+assert.equal(document.activeElement, ids['menu-atalhos-toggle']);
 assert.ok(ids['config-panel'].inert);
 ids['btn-acompanhamentos'].onclick.call(ids['btn-acompanhamentos']);
 assert.ok(ids['acompanhamentos-panel'].classList.contains('aberto'));
 assert.ok(!ids['config-panel'].classList.contains('aberto'));
 ids['config-overlay'].onclick();
-assert.equal(document.activeElement, ids['btn-acompanhamentos']);
+assert.equal(document.activeElement, ids['menu-atalhos-toggle']);
 const inicio = html.indexOf('        let acompanhamentoEstado =');
 const fim = html.indexOf('\n        }', html.indexOf('function renderAcompanhamentos(', inicio)) + '\n        }'.length;
 const render = new Function('document', 'socket', 'linkNovidade',

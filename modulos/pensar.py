@@ -1340,6 +1340,13 @@ def _reescrever_como_luna(resposta_tecnica: str, prompt_usuario: str, historico:
         elif is_proativo:
             user_msg += _prompts.ESTILO_MODELO_PROATIVO
 
+    if _prompts.personalidade_ativa() == 1:
+        # Os briefs antigos pedem uma amiga provocadora e contradizem o registro HAL.
+        if modo_enxuto and not is_proativo:
+            user_msg = _prompts.MENSAGEM_MODO_MODELO.format(mensagem=prompt_usuario)
+        elif is_proativo:
+            user_msg += _prompts.ESTILO_HAL_PROATIVO
+
     if referencia_sem_nome:
         user_msg += (
             "\nFATO OBRIGATÓRIO PARA ESTA RESPOSTA: você introduziu uma referência vaga e o "
