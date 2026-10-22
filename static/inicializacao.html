@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Luna — iniciando</title>
+<style>
+body{margin:0;background:#0d0d12;color:#d8d5e5;font:16px system-ui;min-height:100vh;display:grid;place-items:center}
+main{padding:32px;max-width:420px;text-align:center} .lua{font-size:64px;color:#b4f9f8}
+h1{font-size:24px;font-weight:500}p{line-height:1.6}small{color:#9993ac}
+.barra{height:3px;background:#252133;border-radius:4px;overflow:hidden;margin:28px 0}
+.barra:after{content:'';display:block;width:35%;height:100%;background:#b89af3;animation:passar 1.8s ease-in-out infinite alternate}
+@keyframes passar{to{transform:translateX(190%)}}@media(prefers-reduced-motion:reduce){.barra:after{animation:none;width:100%}}
+.erro .barra:after{animation:none;background:#e99292;width:100%}#etapa{overflow-wrap:anywhere}
+</style>
+<main><div class="lua" aria-hidden="true">☾</div><h1>A Luna está chegando</h1>
+<p id="etapa" role="status" aria-live="polite">Preparando a inicialização…</p>
+<div class="barra" aria-hidden="true"></div><small id="ajuda">A primeira abertura pode levar um pouco mais de tempo.</small>
+</main>
+<script>
+function mostrarErro(texto){document.body.classList.add('erro');document.querySelector('h1').textContent='Não foi possível iniciar';document.getElementById('etapa').textContent=texto;document.getElementById('ajuda').textContent='Feche esta janela e tente novamente. Detalhes em logs/luna.log.';}
+</script>
+</html>

@@ -2,9 +2,9 @@
 
 import ctypes, sys
 
-_mutex = ctypes.windll.kernel32.CreateMutexW(None, True, "Luna_LLM_SingleInstance")
-if ctypes.windll.kernel32.GetLastError() == 183:   # ERROR_ALREADY_EXISTS
-    ctypes.windll.user32.MessageBoxW(0, "Luna já está rodando.", "Luna", 0x30)
+if __name__ == "__main__":
+    from modulos.inicializacao_web import iniciar
+    iniciar()
     sys.exit(0)
 
 # Evita que a barra de tarefas agrupe a interface com outras janelas do Python.
@@ -45,7 +45,10 @@ import pystray
 from PIL import Image, ImageDraw
 
 _log = logging.getLogger("luna.main")
+from modulos.inicializacao_web import progresso
+progresso("Carregando escuta e áudio…")
 from modulos.ouvir import escutar_usuario
+progresso("Carregando voz, memória e modelo…")
 from modulos.pensar import (GeracaoInterrompida, gerar_resposta, continuar_apos_acompanhamento,
                             obter_clima_resposta)
 from modulos.falar import FalaEmFluxo, falar_texto
@@ -740,7 +743,9 @@ class _GeometriaJanela:
             self.dados.update(width=width, height=height)
             self._salvar()
 
-def main():
+def main(janela=None):
+    janela_antecipada = janela is not None
+    progresso("Preparando configurações e serviços…")
     _log.info("Luna iniciando...")
     threading.Thread(target=_listener_global, daemon=True).start()
     iniciar_modo_proativo()
@@ -781,9 +786,13 @@ def main():
     # A query muda a cada boot sem mudar a origem do localStorage. O WebView2 persistente
     # não pode reaproveitar um Index.html antigo depois de uma atualização da Luna.
     url_web = f"http://localhost:5000/?boot={int(time.time())}"
-    janela = webview.create_window(
-        "Luna", url_web, js_api=api_interface, **janela_kwargs
-    )
+    if janela is None:
+        janela = webview.create_window(
+            "Luna", url_web, js_api=api_interface, **janela_kwargs
+        )
+    else:
+        janela.expose(api_interface.soltar_mascote, api_interface.recolher_mascote,
+                      api_interface.encerrar_widget)
     api_interface._janela_principal = janela
     def configurar_identidade_janela():
         from modulos.identidade_janela import aplicar_identidade
@@ -801,6 +810,15 @@ def main():
         janela.hide()
         return False  # cancela o fechamento real
 
+    if janela_antecipada:
+        from modulos.inicializacao_web import esperar_servidor
+        progresso("Abrindo a conversa…")
+        esperar_servidor(url_web)
+        _iniciar_bandeja(janela, api_interface)
+        janela.load_url(url_web)
+        janela.events.closing += ao_fechar_janela
+        return
+
     janela.events.closing += ao_fechar_janela
 
     # Bandeja inicia junto com o webview
@@ -814,6 +832,3 @@ def main():
         private_mode=False,
         storage_path=os.path.join(os.path.dirname(__file__), "modelos", "webview_dados"),
     )
-
-if __name__ == "__main__":
-    main()

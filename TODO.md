@@ -5,6 +5,13 @@ definitiva. Itens daqui não estão automaticamente aprovados para commit.
 
 ## Em teste
 
+- [ ] **Janela antecipada com carregamento visível.** Implementada em 22/10:
+      o WebView abre antes dos imports de escuta, voz e modelo; a conversa carrega
+      na mesma janela após os serviços. Erros de inicialização aparecem na tela.
+      Validar abertura real pelos atalhos com e sem CMD, identidade na barra,
+      fechar durante carregamento e comportamento da bandeja após abrir.
+      Testes isolados em `testes/testa_inicializacao_web.py`; sem abrir outra Luna na bancada.
+
 - [ ] **HAL 9000 no lugar do perfil LUNA.** Implementado em 16/10: nível 1 com
       registro calmo, preciso e impassível, incluindo modos enxutos e proativos.
       O nome da assistente continua Luna nos quatro perfis; corrigida a identidade

@@ -8,6 +8,12 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 22/10/2026
+
+- ✨ **Carregamento visível ao abrir.** A janela aparece antes de carregar voz e modelo,
+  mostra as etapas da inicialização e abre a conversa na mesma janela quando tudo está
+  pronto. Se a inicialização falhar, a mensagem aparece ali, sem precisar abrir o CMD.
+
 ## 16/10/2026
 
 - ✨ **HAL 9000 entre as personalidades.** Substitui o perfil LUNA com um jeito calmo,
