@@ -43,6 +43,8 @@ def registrar_chamada(modelo, parametros):
     diagnostico = deepcopy(getattr(turno, "diagnostico", {}))
     chamadas = diagnostico.get("chamadas", [])[-3:]
     chamadas.append({
+        "etapa": "roteador" if parametros.get("tools") else "resposta",
+        "thinking": (parametros.get("extra_body") or {}).get("chat_template_kwargs", {}).get("enable_thinking"),
         "modelo": _texto(modelo, 200),
         "prompt_sistema_chars": len(sistema),
         "prompt_sha256": hashlib.sha256(sistema.encode("utf-8")).hexdigest(),
@@ -81,6 +83,12 @@ def capturar_turno(turno, anteriores=(), canal="web"):
         while len(_turnos) > _LIMITE:
             antigo, _ = _turnos.popitem(last=False)
             _revisoes.pop(antigo, None)
+    try:
+        from modulos import avaliacao_ferramentas
+        avaliacao_ferramentas.registrar(dados)
+    except (OSError, ValueError):
+        import logging
+        logging.getLogger(__name__).exception('Não foi possível guardar avaliação da ferramenta')
     return identificador
 
 

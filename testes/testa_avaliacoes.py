@@ -18,6 +18,8 @@ class TestaAvaliacoes(unittest.TestCase):
         pasta = tempfile.TemporaryDirectory()
         self.addCleanup(pasta.cleanup)
         self.arquivo = Path(pasta.name) / "avaliacoes.jsonl"
+        p = patch('modulos.avaliacao_ferramentas.ARQUIVO', Path(pasta.name) / 'acoes.json')
+        p.start(); self.addCleanup(p.stop)
         self.controle = Coordenador(pausa=0)
         for nome, valor in (("ARQUIVO", self.arquivo), ("_turnos", OrderedDict()),
                             ("_revisoes", {}), ("controle", self.controle)):

@@ -392,6 +392,51 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/api/discord-voz', methods=['GET', 'POST'])
+def discord_voz_web():
+    from integracoes.discord import ponte
+    if request.method == 'GET':
+        return ponte.estado()
+    # A transmissão para um servidor externo só pode ser comandada neste PC.
+    if request.remote_addr not in ('127.0.0.1', '::1'):
+        return {'erro': 'Controle o Discord pela Luna neste PC.'}, 403
+    dados = request.get_json(silent=True)
+    if not isinstance(dados, dict): return {'erro': 'Pedido inválido.'}, 400
+    try:
+        acao = dados.get('acao')
+        if acao == 'conectar': ponte.conectar()
+        elif acao == 'desconectar': ponte.desconectar()
+        elif acao == 'jogos': ponte.jogos(dados.get('valor'))
+        elif acao == 'falar':
+            turno = next((t for t in tuple(_historico_web) if t.get('id') == dados.get('turno_id')), None)
+            if not turno or not turno.get('luna'): raise ValueError('Essa resposta não está mais disponível.')
+            envio = ponte.enviar(texto=str(turno['luna'])[:6000])
+            return {**ponte.estado(), 'envio_id': envio.envio_id}
+        else: raise ValueError('Ação inválida.')
+        return ponte.estado()
+    except ValueError as erro:
+        return {'erro': str(erro)}, 400
+
+
+@app.route('/api/avaliacoes-ferramentas', methods=['GET', 'POST'])
+def avaliacoes_ferramentas_web():
+    from modulos import avaliacoes
+    from modulos import avaliacao_ferramentas as af
+    try:
+        if request.method == 'GET':
+            return {'itens': af.listar()}
+        dados = request.get_json(silent=True)
+        if not isinstance(dados, dict) or not isinstance(dados.get('turno_id'), str):
+            return {'erro': 'Avaliação inválida.'}, 400
+        item = af.votar(dados['turno_id'], dados.get('rating'), dados.get('motivo', ''),
+                       dados.get('comentario', ''), avaliacoes.obter_turno(dados['turno_id']))
+        return {'item': item}
+    except (ValueError, TypeError):
+        return {'erro': 'Não foi possível validar esta avaliação.'}, 400
+    except OSError:
+        return {'erro': 'Não foi possível salvar. Tente novamente.'}, 503
+
+
 @app.get('/api/biblioteca')
 @app.get('/api/historico')
 def consultar_biblioteca_web():

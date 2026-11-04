@@ -8,6 +8,22 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 04/11/2026
+
+- ✨ **Voz da Luna no Discord.** Integração opcional por bot próprio, sem placa de som
+  virtual. Pelo menu, entre no canal e compartilhe respostas escolhidas ou os comentários
+  dos jogos. O bot só transmite voz; comentários automáticos continuam tocando no PC.
+  O guia de instalação explica a criação do bot, as permissões e a configuração do canal.
+- 🐛 **Áudio do Discord compatível.** As dependências de voz ficam limitadas a versões
+  compatíveis para evitar o bot aparecer falando sem produzir som. O envio acompanha
+  fila, preparação, reprodução e falha ao lado de “Falar no Discord”, sem abrir o painel.
+- ✨ **Avaliações das ferramentas.** Vote na ação separadamente da resposta, confira
+  parâmetros, duração e modelo usado, e encontre avaliações pendentes pelo menu.
+  Corrigida a falha que impedia salvar votos; o painel agora abre centralizado.
+- 🔧 **Menu reorganizado.** Discord aparece primeiro e Avaliações pendentes fica abaixo
+  de Acompanhamentos, ambos com ícones. Recarregar e Fechar Luna ficam lado a lado sob
+  Configurações, em azul e vermelho, com Confirmar/Cancelar ocupando o lugar das ações.
+
 ## 22/10/2026
 
 - ✨ **Carregamento visível ao abrir.** A janela aparece antes de carregar voz e modelo,

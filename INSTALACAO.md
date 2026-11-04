@@ -207,6 +207,7 @@ quebra. Todas as chaves e dicas também estão no `.env.example`.
 | ☁️ **Clima** | `CLIMA_LAT` / `CLIMA_LON` | sua lat/long em [latlong.net](https://www.latlong.net/) |
 | 🌐 **Controle do Firefox** (resumir/comentar aba) | *(extensão — veja abaixo)* | já incluída em `modelos/Extensao_Luna/` |
 | 🏷️ **Radar de promoções** | `TELEGRAM_API_ID` / `TELEGRAM_API_HASH` | veja a seção 6 |
+| 🔊 **Voz no Discord** | `DISCORD_BOT_TOKEN` / `DISCORD_VOICE_CHANNEL_ID` | bot próprio + dependências opcionais — veja a seção 7 |
 
 **Google Agenda (OAuth2):** ative a *Google Calendar API* no [Google Cloud Console](https://console.cloud.google.com/),
 crie uma credencial *OAuth Desktop*, baixe o `credentials.json` e coloque em `modelos/`. Na 1ª
@@ -253,7 +254,66 @@ avisa quando cai uma oferta do que você quer. Precisa de um **login único**:
 
 ---
 
-## 7. Problemas comuns
+## 7. Voz no Discord (opcional)
+
+A Luna pode falar em um canal de voz pelo seu próprio bot, usando a voz do Kokoro.
+Não precisa de placa de som virtual. O bot **não escuta seus amigos nem lê mensagens**.
+Cada pessoa que quiser usar a integração configura seu próprio bot.
+
+### Instalar as dependências
+
+Na pasta do projeto, execute no PowerShell:
+
+```powershell
+.\venv\Scripts\python.exe -m pip install -r integracoes/discord/requirements.txt
+```
+
+### Criar e convidar o bot
+
+1. Entre no [Discord Developer Portal](https://discord.com/developers/applications),
+   clique em **New Application** e dê um nome, como **Luna**.
+2. Na página **Bot**, gere e copie o token usando **Reset Token**, se necessário.
+   Guarde esse token somente no `.env`: ele é a senha do bot. Não use token da sua conta pessoal.
+3. Em **OAuth2 → URL Generator**, marque o escopo **bot** e as permissões
+   **View Channels**, **Connect** e **Speak**. Não precisa de **Administrator** nem
+   de ativar **Privileged Gateway Intents**.
+4. Abra a URL gerada, escolha o servidor e autorize o bot. Sua conta precisa ter
+   permissão para adicionar aplicativos nesse servidor.
+5. Confira se o bot pode **ver, conectar e falar** no canal escolhido, inclusive
+   nas permissões específicas do canal. Use um canal de voz comum de servidor,
+   não uma chamada privada nem um canal de palco (*Stage*).
+
+### Configurar o canal na Luna
+
+1. No Discord, abra **Configurações de usuário → Avançado → Modo desenvolvedor**.
+2. Clique com o botão direito no **canal de voz** e escolha **Copiar ID do canal**.
+   Não é o ID do servidor nem do canal de texto.
+3. Preencha estas duas chaves no `.env` da Luna:
+
+   ```dotenv
+   DISCORD_BOT_TOKEN=cole_aqui_o_token_do_bot
+   DISCORD_VOICE_CHANNEL_ID=cole_aqui_o_id_do_canal_de_voz
+   ```
+
+4. **Feche e abra a Luna novamente** depois de instalar e configurar.
+
+### Usar durante o jogo
+
+1. Entre no canal de voz com sua conta do Discord.
+2. Na interface web da Luna, abra o **menu → Discord → Entrar**.
+3. Use **Falar no Discord** em uma resposta para compartilhá-la com seus amigos.
+4. Se quiser, ative **Compartilhar comentários dos jogos**. Essa opção envia os
+   comentários de jogo; não compartilha automaticamente toda a conversa, agenda ou notícias.
+5. Clique em **Sair** para desconectar e interromper os envios. A conexão é manual
+   a cada sessão e o compartilhamento dos jogos fica desligado ao sair.
+
+Se o bot não entrar, confira o token, o ID do canal e as permissões acima.
+Para dependências de voz, limites e diagnóstico, consulte o
+[guia da integração Discord](integracoes/discord/README.md).
+
+---
+
+## 8. Problemas comuns
 
 | Sintoma | Causa provável |
 |---------|----------------|

@@ -5,10 +5,36 @@ from pathlib import Path
 from types import SimpleNamespace
 import numpy as np
 import threading
+from unittest.mock import Mock, patch
 from modulos.vozes_kokoro import VOZES_VALIDAS, VOZ_PADRAO
 
 
 class TestaVolume(unittest.TestCase):
+    def test_comentario_compartilhado_tambem_toca_no_pc(self):
+        arvore = ast.parse((Path(__file__).parents[1] / 'modulos/falar.py').read_text(encoding='utf-8'))
+        fn = next(n for n in arvore.body if isinstance(n, ast.FunctionDef) and n.name == 'falar_texto')
+        audio = np.array([.2, -.2], dtype=np.float32)
+        eventos = []
+        controle = SimpleNamespace(valida=lambda _: True, contexto=SimpleNamespace(get=lambda: None))
+        scope = dict(controle=controle, _pipe=True, _voz_padrao=VOZ_PADRAO,
+                     _VOZES_VALIDAS=VOZES_VALIDAS, _VOZ_FALLBACK=VOZ_PADRAO,
+                     _velocidade_padrao=1, _volume_padrao=1,
+                     limpar_texto_para_voz=lambda x:x, _sintetizar_wav=lambda *a:audio,
+                     cor=SimpleNamespace(ciano=lambda *a:None), print=lambda *a:None,
+                     _log=Mock(), _tocar_com_volume=lambda a:eventos.append('pc'),
+                     sd=SimpleNamespace(wait=lambda:eventos.append('aguardar')))
+        exec(compile(ast.Module(body=[fn], type_ignores=[]), '<fala real>', 'exec'), scope)
+        from integracoes.discord import ponte
+        for compartilhou in (True, False):
+            eventos.clear()
+            def compartilhar(*args):
+                eventos.append('discord')
+                return compartilhou
+            with patch.object(ponte, 'compartilhar_jogo', side_effect=compartilhar):
+                scope['falar_texto']('Teste')
+            self.assertEqual(eventos, ['pc', 'discord', 'aguardar'])
+            scope['_log'].exception.assert_not_called()
+
     def setUp(self):
         arvore = ast.parse((Path(__file__).parents[1] / 'modulos/falar.py').read_text(encoding='utf-8'))
         nos = [n for n in arvore.body if isinstance(n, ast.FunctionDef)

@@ -21,6 +21,7 @@ class Execucao:
     # Avisos já apresentados não voltam à fila quando o usuário corta o áudio.
     intervalos_confirmados: dict = field(default_factory=dict)
     leitura: bool = False
+    comentario_jogo: bool = False
 
 
 class Coordenador:

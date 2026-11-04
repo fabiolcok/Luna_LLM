@@ -1418,6 +1418,24 @@
             border: 1px solid #252b42; font-size: .75rem; color: #a3adc9;
             display: grid; grid-template-columns: max-content 1fr; gap: 3px 10px;
         }
+        .af-linha { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:14px; font-size:.78rem; color:#aaaac2; }
+        .af-linha button, .af-dialog button { background:#171722; color:#c9c4df; border:1px solid #34334c; border-radius:6px; padding:5px 9px; cursor:pointer; }
+        .discord-dialog { background:#101018; color:#c9c4df; border:1px solid #34334c; border-radius:12px; width:min(540px,85vw); max-height:85vh; margin:auto; padding:22px; font:14px/1.6 system-ui,sans-serif; }
+        .discord-dialog h2, .discord-dialog p { margin:12px 0; }
+        .discord-dialog::backdrop { background:#0009; }
+        .discord-dialog label { display:block; margin:16px 0; text-transform:none; letter-spacing:normal; }
+        .discord-dialog button, .discord-compartilhar { background:#171722; color:#c9c4df; border:1px solid #34334c; border-radius:6px; padding:6px 10px; cursor:pointer; margin:4px; }
+        .discord-compartilhar { display:block; font-size:.75rem; margin-top:10px; }
+        .discord-compartilhar[hidden] { display:none; }
+        .af-votos { display:inline-flex; gap:6px; white-space:nowrap; }
+        .af-form { flex-basis:100%; display:flex; flex-wrap:wrap; gap:8px; }
+        .af-form textarea, .af-form select { background:#14141e; color:#d0d4df; border:1px solid #34334c; border-radius:6px; padding:7px; max-width:100%; }
+        .af-form textarea { width:100%; }
+        .af-dialog { background:#101018; color:#c9c4df; border:1px solid #34334c; border-radius:12px; width:min(650px,85vw); max-height:80vh; margin:auto; padding:22px; overflow-y:auto; }
+        .af-dialog::backdrop { background:#0009; }
+        .af-dialog article { border-bottom:1px solid #34334c; padding:12px 0; }
+        .af-dialog pre, .turno-luna details pre { white-space:pre-wrap; overflow-wrap:anywhere; font-size:.75rem; }
+        .turno-luna > details { margin-top:10px; font-size:.75rem; color:#aaaac2; }
         .mensagem-diagnostico dt { color: #7aa2f7; }
         .mensagem-diagnostico dd { margin: 0; min-width: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
         .mensagem-diagnostico .diag-aviso { grid-column: 1 / -1; }
@@ -2171,6 +2189,18 @@
             translate: none;
         }
         #menu-atalhos-itens > button::after { content: attr(aria-label); font: 13px/1.4 system-ui, sans-serif; }
+        #menu-acoes-sessao { border-top:1px solid #34334c; padding-top:8px; }
+        .menu-acoes-linha { display:flex; gap:8px; }
+        .menu-acoes-linha[hidden] { display:none; }
+        #atalhos-web #menu-acoes-sessao button { position:static; inset:auto; translate:none; width:auto; height:auto; min-height:36px; margin:0; padding:7px 9px; border:1px solid #34334c; border-radius:6px; background:#171722; color:#b4b9d3; font:12px/1.4 system-ui,sans-serif; cursor:pointer; }
+        #menu-acoes-sessao .menu-acoes-linha > button { flex:1 1 0; min-width:0; }
+        #atalhos-web #menu-acoes-sessao #btn-reload { color:#9dbfff; background:#1b263d; border-color:#405b87; }
+        #atalhos-web #menu-acoes-sessao #btn-reload:hover { background:#263754; border-color:#7aa2f7; }
+        #atalhos-web #menu-acoes-sessao #btn-fechar-luna { color:#ffacbc; background:#321e29; border-color:#704052; }
+        #atalhos-web #menu-acoes-sessao #btn-fechar-luna:hover { background:#472837; border-color:#f7768e; }
+        #menu-confirmacao { font:12px/1.5 system-ui,sans-serif; color:#c9c4df; }
+        #menu-confirmacao p { margin-bottom:8px; }
+        #atalhos-web #menu-confirmar-acao { border-color:#9d7bd8; }
         #atalhos-web #menu-atalhos-itens > button:hover { background: #252035; color: #e1d3ff; }
         @media (prefers-reduced-motion: reduce) {
             #menu-atalhos > summary { transition: none; }
@@ -2306,6 +2336,19 @@
         <button id="btn-acompanhamentos" type="button" title="Acompanhamentos" aria-label="Acompanhamentos" aria-controls="acompanhamentos-panel" aria-expanded="false">↪<span id="acompanhamentos-badge" hidden></span></button>
         <button id="btn-soltar-mascote" type="button" title="Soltar Luna na área de trabalho" aria-label="Soltar Luna na área de trabalho">◲</button>
         <button id="btn-config" type="button" title="Configurações" aria-label="Configurações" aria-controls="config-panel" aria-expanded="false">⚙<span id="config-badge"></span></button>
+        <div id="menu-acoes-sessao">
+            <div id="menu-acoes-originais" class="menu-acoes-linha">
+                <button id="btn-reload" type="button">↺ Recarregar</button>
+                <button id="btn-fechar-luna" type="button">⏻ Fechar Luna</button>
+            </div>
+            <div id="menu-confirmacao" hidden>
+                <p id="menu-confirmacao-texto" role="status" hidden></p>
+                <div class="menu-acoes-linha">
+                    <button id="menu-confirmar-acao" type="button">Confirmar</button>
+                    <button id="menu-cancelar-acao" type="button">Cancelar</button>
+                </div>
+            </div>
+        </div>
         </div>
       </details>
     </nav>
@@ -2662,8 +2705,6 @@
         <div class="config-secao">
 <div class="config-secao-titulo">Interface</div>
             <a id="btn-patchnotes-config" href="/patchnotes" target="_blank">📜 Novidades (patch notes)</a>
-            <button id="btn-reload" onclick="window.location.reload()">↺ Recarregar interface</button>
-            <button id="btn-fechar-luna">⏻ Fechar Luna</button>
         </div>
             </div>
         </div>
@@ -5064,8 +5105,41 @@
             socket.send(JSON.stringify({ comando: 'interromper' }));
         };
 
-        document.getElementById('btn-fechar-luna').onclick = function() {
-            socket.send(JSON.stringify({ comando: 'fechar' }));
+        let acaoMenuPendente = null;
+        function limparConfirmacaoMenu() {
+            acaoMenuPendente = null;
+            document.getElementById('menu-confirmacao').hidden = true;
+            document.getElementById('menu-acoes-originais').hidden = false;
+            document.getElementById('menu-confirmacao-texto').hidden = true;
+        }
+        function prepararAcaoMenu(acao) {
+            acaoMenuPendente = acao;
+            document.getElementById('menu-confirmacao-texto').textContent = acao === 'fechar'
+                ? 'Fechar a Luna completamente?' : 'Recarregar a interface agora?';
+            document.getElementById('menu-confirmar-acao').textContent = acao === 'fechar'
+                ? 'Confirmar fechamento' : 'Confirmar recarga';
+            document.getElementById('menu-acoes-originais').hidden = true;
+            document.getElementById('menu-confirmacao').hidden = false;
+            document.getElementById('menu-confirmar-acao').focus();
+        }
+        document.getElementById('btn-fechar-luna').onclick = () => prepararAcaoMenu('fechar');
+        document.getElementById('btn-reload').onclick = () => prepararAcaoMenu('recarregar');
+        document.getElementById('menu-cancelar-acao').onclick = function() {
+            const origem = acaoMenuPendente === 'fechar' ? 'btn-fechar-luna' : 'btn-reload';
+            limparConfirmacaoMenu(); document.getElementById(origem).focus();
+        };
+        document.getElementById('menu-confirmar-acao').onclick = function() {
+            const acao = acaoMenuPendente;
+            if (!acao) return;
+            if (acao === 'fechar' && socket.readyState !== WebSocket.OPEN) {
+                document.getElementById('menu-confirmacao-texto').textContent = 'Sem conexão com a Luna. Tente novamente.';
+                document.getElementById('menu-confirmacao-texto').hidden = false;
+                return;
+            }
+            limparConfirmacaoMenu();
+            document.getElementById('menu-atalhos').open = false;
+            if (acao === 'fechar') socket.send(JSON.stringify({ comando: 'fechar' }));
+            else window.location.reload();
         };
 
         // --- Caixa de texto (digitar em vez de falar) ---
@@ -8068,11 +8142,16 @@
             const toggle = document.getElementById('menu-atalhos-toggle');
             const itens = document.getElementById('menu-atalhos-itens');
             function fechar(devolverFoco) {
+                limparConfirmacaoMenu();
                 menu.open = false;
                 if (devolverFoco) toggle.focus();
             }
             itens.addEventListener('click', function(e) {
+                if (e.target.closest('#menu-acoes-sessao')) return;
                 if (e.target.closest('button')) fechar(false);
+            });
+            menu.addEventListener('toggle', function() {
+                if (!menu.open) limparConfirmacaoMenu();
             });
             document.addEventListener('click', function(e) {
                 if (menu.open && !menu.contains(e.target)) fechar(false);
@@ -8090,5 +8169,7 @@
             });
         })();
     </script>
+    <script src="/static/avaliacao-ferramentas.js"></script>
+    <script src="/static/discord-voz.js"></script>
 </body>
 </html>

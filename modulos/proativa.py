@@ -2859,6 +2859,7 @@ def _execucao_proativa(fn):
     def executar(*args, **kwargs):
         try:
             with _execucoes.executar(proativa=True) as turno:
+                turno.comentario_jogo = getattr(fn, "comentario_jogo", False)
                 intervalos = _ultima_execucao.copy()
                 try:
                     return fn(*args, **kwargs)
@@ -2886,6 +2887,10 @@ _tarefa_acompanhamento_fontes = _execucao_proativa(_tarefa_acompanhamento_fontes
 _tarefa_acompanhamentos = _execucao_proativa(_tarefa_acompanhamentos)
 _tarefa_retomar_assunto = _execucao_proativa(_tarefa_retomar_assunto)
 _tarefa_detectar_habito = _execucao_proativa(_tarefa_detectar_habito)
+for _tarefa_jogo in (_comentar_morte_lol, _comentar_evento_dark_souls,
+                     _tarefa_monitorar_jogos, _tarefa_monitorar_steam):
+    _tarefa_jogo.comentario_jogo = True
+
 _comentar_morte_lol = _execucao_proativa(_comentar_morte_lol)
 _comentar_evento_dark_souls = _execucao_proativa(_comentar_evento_dark_souls)
 _tarefa_monitorar_jogos = _execucao_proativa(_tarefa_monitorar_jogos)

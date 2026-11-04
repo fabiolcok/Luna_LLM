@@ -208,13 +208,24 @@ def _corrigir_pronuncia(texto):
 # ==========================================
 # Função Principal
 # ==========================================
+_sintese_lock = threading.RLock()
+
+
+def sintetizar_para_discord(texto):
+    audio = _sintetizar_wav(texto, _voz_padrao, _velocidade_padrao)
+    if audio is None:
+        raise RuntimeError('Voz indisponível.')
+    return audio * _volume_padrao
+
+
 def _sintetizar_wav(texto, voz, velocidade):
     """Sintetiza sem tocar; compartilhado pela fala inteira e pelo pipeline em frases."""
     texto_limpo = limpar_texto_para_voz(texto)
     if not texto_limpo.strip() or _pipe is None:
         return None
     texto_falar = _corrigir_pronuncia(texto_limpo)
-    partes = [a for _, _, a in _pipe(texto_falar, voice=voz, speed=velocidade)]
+    with _sintese_lock:
+        partes = [a for _, _, a in _pipe(texto_falar, voice=voz, speed=velocidade)]
     if not partes:
         return None
     wav = np.concatenate([a if hasattr(a, 'shape') else a.numpy() for a in partes])
@@ -356,8 +367,13 @@ def falar_texto(texto, voz=None, velocidade=None, ao_iniciar=None, ao_terminar=N
         if ao_iniciar:
             ao_iniciar()
 
+        from integracoes.discord import ponte as discord_voz
+        # O Discord é uma saída adicional; o usuário continua ouvindo no PC.
         _tocar_com_volume(wav_achatado)
-        sd.wait()
+        try:
+            discord_voz.compartilhar_jogo(wav_achatado * _volume_padrao, controle.contexto.get(), controle)
+        finally:
+            sd.wait()
 
         if ao_terminar:
             ao_terminar()

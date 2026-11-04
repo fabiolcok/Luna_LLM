@@ -541,3 +541,8 @@ mas ferramentas também precisam ser testadas porque dependem do suporte a tool 
 ---
 
 *Novidades e histórico de mudanças: veja [`PATCHNOTES.md`](PATCHNOTES.md).*
+
+**Voz no Discord (opcional):** transmita respostas escolhidas e comentários dos
+jogos por um bot, sem placa de som virtual e sem escutar o canal. Cada pessoa
+configura seu próprio bot; dependências e instruções em
+[`integracoes/discord/README.md`](integracoes/discord/README.md).

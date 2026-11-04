@@ -1811,6 +1811,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
         resultado_ferramenta = ""
         ferramenta_chamada = False
         inicio_ferramenta = None
+        argumentos_dit = {}
 
         raciocinio = getattr(mensagem_modelo, 'reasoning_content', None) or ""
         if raciocinio:
@@ -2002,6 +2003,7 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                         f"{resultado_ferramenta}]"
                     )
 
+        fim_ferramenta = time.time()
         if modo_memoria:
             texto_resposta = str(resultado_ferramenta).strip()
             texto_resposta = re.sub(r'^```(?:json)?\s*(.*?)\s*```$', r'\1', texto_resposta, flags=re.DOTALL | re.MULTILINE).strip()
@@ -2315,8 +2317,8 @@ def gerar_resposta(prompt_usuario, historico, imagem_base64=None, analisar=True,
                 # O botão "o que eu fiz" da web lê isto; o resultado completo já vai em dados_origem.
                 avaliacoes.registrar_contexto(ferramenta={
                     "nome": nome_funcao, "sucesso": _sucesso,
-                    "segundos": round(time.time() - inicio_ferramenta, 1),
-                    "argumentos": str(tool_call.function.arguments or "")[:400],
+                    "segundos": round(max(0, fim_ferramenta - inicio_ferramenta), 1),
+                    "argumentos": argumentos_dit,
                 })
                 metricas_ferramentas.registrar_uso(
                     nome_funcao, _sucesso, time.time() - inicio_ferramenta,

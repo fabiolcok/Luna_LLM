@@ -5,6 +5,19 @@ definitiva. Itens daqui não estão automaticamente aprovados para commit.
 
 ## Em teste
 
+- [x] **Voz no Discord (opcional).** Implementada em 03/11/2026: bot somente de saída,
+      painel para entrar/sair, envio explícito de respostas e opção para comentários
+      dos jogos. Dependências separadas, token/canal locais e guia em
+      `integracoes/discord/README.md`. Conexão e áudio no canal real validados pelo
+      usuário em 04/11 após corrigir a compatibilidade DAVE. Reprodução local dos
+      comentários também preservada; envio manual tem status ao lado do botão.
+
+- [ ] **Avaliação das ferramentas no chat.** Implementada em 01/11/2026: linha discreta
+      com ferramenta usada e votos, motivos no negativo, comentário opcional e
+      pendências persistidas acessíveis pelo menu. Detalhes incluem parâmetros,
+      estado, duração e modelo/thinking por etapa. Sem ferramenta, permite indicar
+      ação ausente em "Avaliar ação". Validar no uso após reiniciar; registros novos.
+
 - [ ] **Janela antecipada com carregamento visível.** Implementada em 22/10:
       o WebView abre antes dos imports de escuta, voz e modelo; a conversa carrega
       na mesma janela após os serviços. Erros de inicialização aparecem na tela.
