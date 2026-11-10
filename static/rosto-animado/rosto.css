@@ -1,0 +1,8 @@
+#rosto-animado{position:absolute;left:12.5%;top:12.5%;width:75%;height:75%;pointer-events:none;filter:drop-shadow(0 0 3px #b4f9f84d)}
+#presenca #rosto-animado svg{width:100%!important;height:100%!important;overflow:visible;animation:none!important}
+#rosto.com-rosto-animado #rosto-txt{visibility:hidden}
+#rosto-animado{opacity:1;transition:opacity .1s ease}
+#rosto-animado.trocando{opacity:0}
+#presenca.encarada-gigante #rosto-animado{transform:scale(2.65);transition:transform .22s cubic-bezier(.2,.9,.3,1.35)}
+#presenca.afago #rosto-animado{filter:drop-shadow(0 0 7px #ffd6a580)}
+@media(prefers-reduced-motion:reduce){#rosto-animado{transition:none!important}}

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Luna · piloto de expressões</title>
+<link rel="stylesheet" href="avatar.css"><link rel="stylesheet" href="piloto.css"><link rel="stylesheet" href="embed.css">
+</head><body>
+<header><div><h1>Luna · expressões animadas</h1><p>Piloto separado. Escolha uma carinha e compare no avatar.</p><a href="classificar.html">Classificar as 70 expressões selecionadas →</a></div><span id="contagem">Carregando catálogo…</span></header>
+<main><section class="preview" aria-label="Prévia do avatar">
+<div class="palco"><div id="presenca" class="est-dormindo"><div id="corpo"></div><div id="expressao"></div></div></div>
+<h2 id="nome">Carregando…</h2><p id="status" role="status"></p>
+<div class="linha"><button id="anterior" aria-label="Expressão anterior">← Anterior</button><button id="play">Pausar</button><button id="repetir">Recomeçar</button><button id="proximo" aria-label="Próxima expressão">Próxima →</button></div>
+<label>Visual <select id="modo"><option value="ciano">Expressão em ciano</option><option value="face">Expressão nas cores originais</option><option value="original">Emoji completo · referência</option></select></label>
+<label>Tamanho <input id="escala" type="range" min="40" max="90" value="64"><output id="escala-valor">64%</output></label>
+<label>Velocidade <select id="velocidade"><option value="0.5">0,5×</option><option value="0.75">0,75×</option><option value="1" selected>1×</option><option value="1.25">1,25×</option></select></label>
+<label>Presença <select id="estado"><option value="dormindo">Repouso</option><option value="pensando">Pensando</option><option value="falando">Falando</option><option value="ouvindo">Ouvindo</option></select></label>
+<label class="check"><input id="loop" type="checkbox" checked> Repetir animação</label>
+<label class="check"><input id="aplicar-correcoes" type="checkbox" checked> Aplicar correções visuais · desmarque para comparar</label>
+<div class="linha"><button id="favorito" aria-pressed="false">☆ Marcar favorita</button><button id="exportar">Exportar escolhas</button></div>
+<button id="problema" aria-pressed="false" aria-controls="problema-opcoes" aria-expanded="false">⚠ Marcar problema</button>
+<fieldset id="problema-opcoes" hidden><legend>O que precisa ajustar?</legend>
+<label class="check"><input type="checkbox" data-problema="cabeca"> Cabeça aparecendo</label>
+<label class="check"><input type="checkbox" data-problema="cor"> Cor estranha</label>
+<label class="check"><input type="checkbox" data-problema="outro"> Outro problema</label>
+<label>Observação <textarea id="problema-nota" rows="2" maxlength="1000" placeholder="Ex.: a boca some no final da animação"></textarea></label>
+<p class="nota">Salvo automaticamente neste navegador e incluído em Exportar escolhas. Pode ser favorita e ter problema ao mesmo tempo.</p></fieldset>
+<details><summary>Ajustar partes da expressão</summary><p>Desmarque partes que não combinam com a Luna. Ajustes ficam salvos neste navegador. No modo original, todas as partes são exibidas.</p><div id="camadas"></div><button id="restaurar">Restaurar esta expressão</button></details>
+<p class="nota">A remoção da cabeça e a cor ciano são adaptações experimentais. Algumas expressões podem precisar de trabalho manual. “Falando” muda os efeitos da Luna; não sincroniza a boca com áudio.</p>
+</section><section class="catalogo" aria-label="Escolher expressão"><div class="busca"><input id="busca" type="search" placeholder="Buscar: sorriso, medo, disfarçada…" aria-label="Buscar expressão"><label class="check"><input id="so-favoritas" type="checkbox"> Favoritas</label><label class="check"><input id="so-problemas" type="checkbox"> Com problema</label><label class="check"><input id="so-corrigidos" type="checkbox"> Corrigidos para revisar</label></div><div id="galeria"></div></section></main>
+<footer>Animated Noto Emoji © Google · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · <a href="https://googlefonts.github.io/noto-emoji-animation/">Originais</a> · <a href="CREDITOS.md">Créditos e adaptações</a>. Arquivos locais; nenhuma chamada ao modelo ou ao chat.</footer>
+<script src="lottie.min.js"></script><script src="correcoes.js"></script><script src="piloto.js"></script></body></html>

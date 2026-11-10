@@ -1,0 +1,6584 @@
+[
+  {
+    "code": "1f600",
+    "name": "Sorriso",
+    "emoji": "😀",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "mouth matte",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "Tongue 2",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth matte",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "Tongue",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "Eyes closed",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "eyes normal 2",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "mouth 4",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "mouth 1",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f603",
+    "name": "Sorriso aberto",
+    "emoji": "😃",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "mouth 3",
+        "type": 4
+      },
+      {
+        "ind": 2,
+        "name": "Tobgue",
+        "type": 4
+      },
+      {
+        "ind": 3,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "Null Tongue",
+        "type": 3
+      },
+      {
+        "ind": 5,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 6,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 7,
+        "name": "mouth 2",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "eye B1",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "eye B2",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "eyes normal 2",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f604",
+    "name": "Rindo de olhos fechados",
+    "emoji": "😄",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "mouth matte",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "tongue",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "close eyes",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "EYES 2",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "EYES",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "mouth 3",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f601",
+    "name": "Sorriso com dentes",
+    "emoji": "😁",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null All",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Grin",
+        "type": 0
+      },
+      {
+        "ind": 3,
+        "name": "Grin",
+        "type": 0
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f606",
+    "name": "Gargalhada",
+    "emoji": "😆",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "mouth 2",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "tongue",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "eye3",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "eye2",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f605",
+    "name": "Riso nervoso",
+    "emoji": "😅",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "emoji_grinning-with-sweat - 60 fps",
+        "type": 0
+      },
+      {
+        "ind": 2,
+        "name": "emoji_grinning-with-sweat - 60 fps",
+        "type": 0
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f602",
+    "name": "Lágrimas de alegria",
+    "emoji": "😂",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "laught_cry",
+        "type": 0
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f923",
+    "name": "Rolando de rir",
+    "emoji": "🤣",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "emoji_laugh-roll",
+        "type": 0
+      },
+      {
+        "ind": 2,
+        "name": "emoji_laugh-roll",
+        "type": 0
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f642",
+    "name": "Sorriso discreto",
+    "emoji": "🙂",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "mouth 3",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "mouth 1",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth 2",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f643",
+    "name": "De cabeça para baixo",
+    "emoji": "🙃",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Eyes",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "eyes shine",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "Null Mouth",
+        "type": 3
+      },
+      {
+        "ind": 6,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f609",
+    "name": "Piscadinha",
+    "emoji": "😉",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eye closed",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth 1 ",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "eyes normal 3",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "eyes normal 2",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f60a",
+    "name": "Sorriso tímido",
+    "emoji": "😊",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "eyes normal 2",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth 2",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "closed eyes",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "mouth 3",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "mouth 1",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "blush R",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "blush L",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f607",
+    "name": "Anjinho",
+    "emoji": "😇",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null HALO",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "base normal 4",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "Point",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "halo front",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "base normal 3",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "halo back L",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base normal top",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "HALO 3",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 11,
+        "name": "eyes normal 2",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "base",
+        "type": 4
+      },
+      {
+        "ind": 18,
+        "name": "HALO 4",
+        "type": 4
+      },
+      {
+        "ind": 19,
+        "name": "Dark Gray Solid 1",
+        "type": 1
+      },
+      {
+        "ind": 20,
+        "name": "halo back R",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f970",
+    "name": "Apaixonada",
+    "emoji": "🥰",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "heart matte",
+        "type": 4
+      },
+      {
+        "ind": 3,
+        "name": "heart 1 bevel",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "heart 1",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "heart 2 matte",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "heart 2 bevel",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "heart 2",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "heart 3 matte",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "heart 3 bevel",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "heart 3",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 12,
+        "name": "eyes ",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "Smile",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "Null blush",
+        "type": 3
+      },
+      {
+        "ind": 15,
+        "name": "blush L",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "blush R",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 18,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 19,
+        "name": "base",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f60d",
+    "name": "Olhos de coração",
+    "emoji": "😍",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "heart L 2",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "hearts L matte",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "heart L",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "heart R matte",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "hearts R bevel",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "heart R",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "Null blush",
+        "type": 3
+      },
+      {
+        "ind": 10,
+        "name": "blush L",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "blush R",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "mouth matte",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "tongue",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "base",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f929",
+    "name": "Deslumbrada",
+    "emoji": "🤩",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null All",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face Stars",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "STAR L",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "STAR R",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth matte",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "tongue",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "mouth 2",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "mouth ooh 2",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "tongue 2",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "mouth ooh",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "base",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f618",
+    "name": "Mandando beijo",
+    "emoji": "😘",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "emoji_blowing-kiss",
+        "type": 0
+      },
+      {
+        "ind": 2,
+        "name": "emoji_blowing-kiss",
+        "type": 0
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f617",
+    "name": "Beijo",
+    "emoji": "😗",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "emoji_Kissing Face",
+        "type": 0
+      },
+      {
+        "ind": 2,
+        "name": "emoji_Kissing Face",
+        "type": 0
+      },
+      {
+        "ind": 3,
+        "name": "emoji_Kissing Face",
+        "type": 0
+      },
+      {
+        "ind": 4,
+        "name": "emoji_Kissing Face",
+        "type": 0
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f61a",
+    "name": "Beijo de olhos fechados",
+    "emoji": "😚",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null All",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "mouth kiss",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "mouth normal 3",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth normal 2",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "Null Blush",
+        "type": 3
+      },
+      {
+        "ind": 10,
+        "name": "blush L",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "blush R",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "base",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f619",
+    "name": "Beijo sorridente",
+    "emoji": "😙",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null FACE",
+        "type": 1
+      },
+      {
+        "ind": 3,
+        "name": "closed eyes",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "kiss 3",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f972",
+    "name": "Sorriso emocionado",
+    "emoji": "🥲",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "emoji_smiling-with-tear - 60 fps",
+        "type": 0
+      },
+      {
+        "ind": 2,
+        "name": "emoji_smiling-with-tear - 60 fps",
+        "type": 0
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f60b",
+    "name": "Saboreando",
+    "emoji": "😋",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "Null Mouth",
+        "type": 3
+      },
+      {
+        "ind": 5,
+        "name": "mouth top mask",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "base tapa top",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "TONGUE matte",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "mouth shadow",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "TONGUE",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "mouth low mask",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "base tapa top",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "TONGUE LOW matte",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "TONGUE LOW shadow",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "TONGUE LOW",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 18,
+        "name": "base",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f61b",
+    "name": "Língua de fora",
+    "emoji": "😛",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "eyes closed",
+        "type": 4
+      },
+      {
+        "ind": 3,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "alpha tongue",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "tongue shadow",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "tongue 2",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "mouth 3",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "tongue 1 matte",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "tongue 1",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "mouth 2",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "mouth 1",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f61c",
+    "name": "Piscando com língua",
+    "emoji": "😜",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "emoji_30_winking_face_with_tongue - 60 fps",
+        "type": 0
+      },
+      {
+        "ind": 2,
+        "name": "emoji_30_winking_face_with_tongue - 60 fps",
+        "type": 0
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f92a",
+    "name": "Maluquinha",
+    "emoji": "🤪",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "emoji_zany_face - 60 fps",
+        "type": 0
+      },
+      {
+        "ind": 2,
+        "name": "emoji_zany_face - 60 fps",
+        "type": 0
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f61d",
+    "name": "Brincalhona",
+    "emoji": "😝",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "eyes closed 2",
+        "type": 4
+      },
+      {
+        "ind": 3,
+        "name": "eyes closed",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth alpha",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "mouth over tongue",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "tongue 3",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "shadow tonghe",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "tongue 2",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "mouth 3",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "mouth 2",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "mouth 1",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f911",
+    "name": "Dinheiro",
+    "emoji": "🤑",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "eyes closed",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "mouth 2",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyebrows 2",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "eyes 2",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "mouth 1",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "Null Face $$",
+        "type": 3
+      },
+      {
+        "ind": 11,
+        "name": "tongue 4",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "tongue 2",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "Magenta-Red Solid 3",
+        "type": 1
+      },
+      {
+        "ind": 14,
+        "name": "tongue",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "mouth 3",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "mouth $",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "eyebrowns",
+        "type": 4
+      },
+      {
+        "ind": 18,
+        "name": "eyes $",
+        "type": 4
+      },
+      {
+        "ind": 19,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 20,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 21,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f917",
+    "name": "Abraço",
+    "emoji": "🤗",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "eyes ",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "Null Hands",
+        "type": 3
+      },
+      {
+        "ind": 5,
+        "name": "Null Hands mirror",
+        "type": 3
+      },
+      {
+        "ind": 6,
+        "name": "hand L ",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "hand R ",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "hand L shadow",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "hand R shadow ",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "Smile",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "Null blush",
+        "type": 3
+      },
+      {
+        "ind": 14,
+        "name": "blush L",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "blush R",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 18,
+        "name": "base gradient",
+        "type": 4
+      },
+      {
+        "ind": 19,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f92d",
+    "name": "Mão na boca",
+    "emoji": "🤭",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "Hand ",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "Hand shadow ",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyes ",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "Null blush",
+        "type": 3
+      },
+      {
+        "ind": 7,
+        "name": "blush L",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "blush R",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "base gradient",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1fae2",
+    "name": "Surpresa com mão na boca",
+    "emoji": "🫢",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "HAND",
+        "type": 4
+      },
+      {
+        "ind": 3,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "base gradient",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1fae3",
+    "name": "Espiando",
+    "emoji": "🫣",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "emoji_peaking eyes",
+        "type": 0
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f92b",
+    "name": "Silêncio",
+    "emoji": "🤫",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Hand",
+        "type": 4
+      },
+      {
+        "ind": 2,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 4,
+        "name": "eyes sushing",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyes normal 2",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "mouth smile",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "mouth smile 2",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base normal 2",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "Hand Shadow",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "base border",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "base gradient",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "base",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f914",
+    "name": "Pensativa",
+    "emoji": "🤔",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null All",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "hand new",
+        "type": 4
+      },
+      {
+        "ind": 3,
+        "name": "hand details new",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "Face Ctrl",
+        "type": 3
+      },
+      {
+        "ind": 5,
+        "name": "mouth new",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "brow L new",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "brow R new",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "eye L new",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "Eye L",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "eye R new",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "Eye R",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "base normal",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "Body",
+        "type": 3
+      },
+      {
+        "ind": 16,
+        "name": "Mouth",
+        "type": 3
+      },
+      {
+        "ind": 17,
+        "name": "Brow L",
+        "type": 3
+      },
+      {
+        "ind": 18,
+        "name": "Brow R",
+        "type": 3
+      },
+      {
+        "ind": 19,
+        "name": "Hand R",
+        "type": 3
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1fae1",
+    "name": "Saudação",
+    "emoji": "🫡",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "HAND",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "eye R wink",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "eye R",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "eye L",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f910",
+    "name": "Boca fechada",
+    "emoji": "🤐",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "zipper mouth A",
+        "type": 0
+      },
+      {
+        "ind": 2,
+        "name": "zipper mouth A",
+        "type": 0
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f928",
+    "name": "Sobrancelha levantada",
+    "emoji": "🤨",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "eyebrows 6",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyebrows 5",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyebrows 2",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "eyebrows 3",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "eyebrows 4",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "Eye 2",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "Eye 1",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f610",
+    "name": "Neutra",
+    "emoji": "😐",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "closed eyes",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f611",
+    "name": "Sem expressão",
+    "emoji": "😑",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "closed eyes",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f636",
+    "name": "Sem boca",
+    "emoji": "😶",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "closed eyes",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1fae5",
+    "name": "Invisível",
+    "emoji": "🫥",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null FACE",
+        "type": 1
+      },
+      {
+        "ind": 3,
+        "name": "face",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "dot line mask",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "dot line",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f60f",
+    "name": "Sorriso malicioso",
+    "emoji": "😏",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyes moving",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f612",
+    "name": "Descontente",
+    "emoji": "😒",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyes moving",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f644",
+    "name": "Revirando os olhos",
+    "emoji": "🙄",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "blink eyes",
+        "type": 4
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "eyelids 2",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyelids",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyes matte",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "pupils",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "base",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f62c",
+    "name": "Careta",
+    "emoji": "😬",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "closed eyes",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "Null mouth",
+        "type": 3
+      },
+      {
+        "ind": 6,
+        "name": "mouth shape",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "mouth matte",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "mouth teeth",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "mouth shape",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f925",
+    "name": "Mentindo",
+    "emoji": "🤥",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null FACE",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "Null FACE 2",
+        "type": 3
+      },
+      {
+        "ind": 4,
+        "name": "eyebrown 5",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyebrown 4",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "eye 3",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "nose mask 2",
+        "type": 1
+      },
+      {
+        "ind": 8,
+        "name": "nose 3",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "eye 2",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base normal 3",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "mouth 2",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "closed eyes 2",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "eye",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "nose mask",
+        "type": 1
+      },
+      {
+        "ind": 15,
+        "name": "nose",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "closed eyes",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "eye",
+        "type": 4
+      },
+      {
+        "ind": 18,
+        "name": "eyebrown",
+        "type": 4
+      },
+      {
+        "ind": 19,
+        "name": "eyebrown",
+        "type": 4
+      },
+      {
+        "ind": 20,
+        "name": "base normal 2",
+        "type": 4
+      },
+      {
+        "ind": 21,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 22,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 23,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 24,
+        "name": "base normal",
+        "type": 4
+      },
+      {
+        "ind": 25,
+        "name": "nose 2",
+        "type": 4
+      },
+      {
+        "ind": 26,
+        "name": "eyebrown 2",
+        "type": 4
+      },
+      {
+        "ind": 27,
+        "name": "eyebrown 3",
+        "type": 4
+      },
+      {
+        "ind": 28,
+        "name": "closed eyes 3",
+        "type": 4
+      },
+      {
+        "ind": 29,
+        "name": "closed eyes 4",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1fae8",
+    "name": "Tremendo",
+    "emoji": "🫨",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "emoji_60_shaking-face B pre",
+        "type": 0
+      },
+      {
+        "ind": 2,
+        "name": "emoji_60_shaking-face B pre",
+        "type": 0
+      },
+      {
+        "ind": 3,
+        "name": "emoji_60_shaking-face B pre",
+        "type": 0
+      },
+      {
+        "ind": 4,
+        "name": "emoji_60_shaking-face B pre",
+        "type": 0
+      },
+      {
+        "ind": 5,
+        "name": "emoji_60_shaking-face B pre",
+        "type": 0
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f60c",
+    "name": "Aliviada",
+    "emoji": "😌",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyes closed",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth 3",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "mouth 2",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "mouth 1",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f614",
+    "name": "Desanimada",
+    "emoji": "😔",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null All",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "EYES",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f62a",
+    "name": "Sonolenta",
+    "emoji": "😪",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null particles",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "particle 4",
+        "type": 4
+      },
+      {
+        "ind": 3,
+        "name": "particle 3",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "particle 2",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "particle 1",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "Null 11",
+        "type": 3
+      },
+      {
+        "ind": 9,
+        "name": "DROP 2",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 11,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "EYES",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "base",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f924",
+    "name": "Babando",
+    "emoji": "🤤",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "eyebrows ",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyes ",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "drool",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f634",
+    "name": "Dormindo",
+    "emoji": "😴",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Z",
+        "type": 0
+      },
+      {
+        "ind": 2,
+        "name": "Z",
+        "type": 0
+      },
+      {
+        "ind": 3,
+        "name": "Z",
+        "type": 0
+      },
+      {
+        "ind": 4,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 5,
+        "name": "EYES",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f637",
+    "name": "Máscara",
+    "emoji": "😷",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null FACE",
+        "type": 1
+      },
+      {
+        "ind": 3,
+        "name": "base normal 2",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "mask",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "closed eyes",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f912",
+    "name": "Termômetro",
+    "emoji": "🤒",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null FACE",
+        "type": 1
+      },
+      {
+        "ind": 3,
+        "name": "eyes closed",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "thermometer",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth 3",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "thermometer",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "mouth 2",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "thermometer",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "eyesbrown",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "eyes normal 2",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "cheeks 2",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "cheeks",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f915",
+    "name": "Machucada",
+    "emoji": "🤕",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "bandage",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "closed eyes",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f922",
+    "name": "Enjoada",
+    "emoji": "🤢",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null FACE",
+        "type": 1
+      },
+      {
+        "ind": 3,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "eyes closed",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "cheeks 2",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "cheeks",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 18,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 19,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f92e",
+    "name": "Vomitando",
+    "emoji": "🤮",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null FACE",
+        "type": 1
+      },
+      {
+        "ind": 3,
+        "name": "closed eyes",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth mask",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "teeth",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "drops",
+        "type": 0
+      },
+      {
+        "ind": 8,
+        "name": "drops",
+        "type": 0
+      },
+      {
+        "ind": 9,
+        "name": "drops",
+        "type": 0
+      },
+      {
+        "ind": 10,
+        "name": "drops",
+        "type": 0
+      },
+      {
+        "ind": 11,
+        "name": "drops",
+        "type": 0
+      },
+      {
+        "ind": 12,
+        "name": "vomit 2",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "vomit",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "drops",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "drops",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "drops",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "drops",
+        "type": 4
+      },
+      {
+        "ind": 18,
+        "name": "drops",
+        "type": 4
+      },
+      {
+        "ind": 19,
+        "name": "drops",
+        "type": 4
+      },
+      {
+        "ind": 20,
+        "name": "drops",
+        "type": 4
+      },
+      {
+        "ind": 21,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 22,
+        "name": "mouth 2",
+        "type": 4
+      },
+      {
+        "ind": 23,
+        "name": "cheeks 4",
+        "type": 4
+      },
+      {
+        "ind": 24,
+        "name": "cheeks 3",
+        "type": 4
+      },
+      {
+        "ind": 25,
+        "name": "eyes 3",
+        "type": 4
+      },
+      {
+        "ind": 26,
+        "name": "eyes 1",
+        "type": 4
+      },
+      {
+        "ind": 27,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 28,
+        "name": "cheeks 2",
+        "type": 4
+      },
+      {
+        "ind": 29,
+        "name": "cheeks",
+        "type": 4
+      },
+      {
+        "ind": 30,
+        "name": "base matte 2",
+        "type": 4
+      },
+      {
+        "ind": 31,
+        "name": "base shadow 2",
+        "type": 4
+      },
+      {
+        "ind": 32,
+        "name": "base normal 2",
+        "type": 4
+      },
+      {
+        "ind": 33,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 34,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 35,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f927",
+    "name": "Espirrando",
+    "emoji": "🤧",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "tissue ",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "mouth 2",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth open",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f975",
+    "name": "Calor",
+    "emoji": "🥵",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null Drops",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "null drop 2",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "DROP 7",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "DROP 6",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "DROP 4",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "DROP 3",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "DROP 5",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "DROP",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 10,
+        "name": "Null FACE",
+        "type": 1
+      },
+      {
+        "ind": 11,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "shadow",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "tongue",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "slap",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 18,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 19,
+        "name": "base yellow",
+        "type": 4
+      },
+      {
+        "ind": 20,
+        "name": "base normal",
+        "type": 4
+      },
+      {
+        "ind": 21,
+        "name": "DROP 8",
+        "type": 4
+      },
+      {
+        "ind": 22,
+        "name": "DROP 9",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f976",
+    "name": "Frio",
+    "emoji": "🥶",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null FACE",
+        "type": 1
+      },
+      {
+        "ind": 3,
+        "name": "Upper teeth",
+        "type": 3
+      },
+      {
+        "ind": 4,
+        "name": "mouth 2",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth mask",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "teeth up",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "lower teeth",
+        "type": 3
+      },
+      {
+        "ind": 8,
+        "name": "mouth mask 2",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "teeth low",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "ice",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "face mask 3",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "face degrade inside",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "face mask 2",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "face degrade inside 2",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "face mask",
+        "type": 4
+      },
+      {
+        "ind": 18,
+        "name": "face degrade base",
+        "type": 4
+      },
+      {
+        "ind": 19,
+        "name": "face",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f974",
+    "name": "Tonta",
+    "emoji": "🥴",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyes ",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eybrows ",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "Null blush",
+        "type": 3
+      },
+      {
+        "ind": 7,
+        "name": "blush L",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "blush R",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f635",
+    "name": "Atordoada",
+    "emoji": "😵",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Face with crossed-out eyes",
+        "type": 0
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f92f",
+    "name": "Cabeça explodindo",
+    "emoji": "🤯",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "mouth neutral 2",
+        "type": 4
+      },
+      {
+        "ind": 3,
+        "name": "eyes neutral 3",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyes neutral 2",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "eyes closed end",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "eyes wiggle",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "Null mouth",
+        "type": 3
+      },
+      {
+        "ind": 11,
+        "name": "mouth shape",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "mouth matte",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "mouth teeth",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "mouth matte 2",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "eyes shut",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "mouth neutral",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "eyes neutral",
+        "type": 4
+      },
+      {
+        "ind": 18,
+        "name": "base top ",
+        "type": 4
+      },
+      {
+        "ind": 19,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 20,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 21,
+        "name": "base normal",
+        "type": 4
+      },
+      {
+        "ind": 22,
+        "name": "eyes neutral 4",
+        "type": 4
+      },
+      {
+        "ind": 23,
+        "name": "head-mask",
+        "type": 4
+      },
+      {
+        "ind": 24,
+        "name": "EXPLOSION 2",
+        "type": 0
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f920",
+    "name": "Cowboy",
+    "emoji": "🤠",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null All",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "HAT ",
+        "type": 4
+      },
+      {
+        "ind": 3,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 4,
+        "name": "Eyes ",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "Mouth matte",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "Tongue",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "Mouth",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "HAT Flip Back",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "HAT Back ",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f973",
+    "name": "Festa",
+    "emoji": "🥳",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Confetti Comp",
+        "type": 0
+      },
+      {
+        "ind": 2,
+        "name": "Confetti Comp",
+        "type": 0
+      },
+      {
+        "ind": 3,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 4,
+        "name": "hat pompom",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "hat matte",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "hat ",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 8,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "horn straight",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "horn ",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "blush 2",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f978",
+    "name": "Disfarçada",
+    "emoji": "🥸",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null FACE",
+        "type": 1
+      },
+      {
+        "ind": 3,
+        "name": "nose",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "moustaches",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "glasses",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "glasses 5",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "reflections 4",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "glasses 4",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "reflections 3",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "glasses 3",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "reflections 2",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "glasses 2",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "reflections",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "glasses",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "eyesbrown",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "base",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f60e",
+    "name": "Óculos escuros",
+    "emoji": "😎",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "SUNGLASSES 2",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "SUNGLASSES",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f913",
+    "name": "Nerd",
+    "emoji": "🤓",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null tongue",
+        "type": 1
+      },
+      {
+        "ind": 2,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "Null FACE",
+        "type": 1
+      },
+      {
+        "ind": 4,
+        "name": "glasses",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "closed eyes 2",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "closed eyes",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "mouth 4",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "mouth 1",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "lips",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "mouth 3",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "teeth",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "mouth 2",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "tongue",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 18,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f9d0",
+    "name": "Monóculo",
+    "emoji": "🧐",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null FACE",
+        "type": 1
+      },
+      {
+        "ind": 3,
+        "name": "monocle",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "monocle glass",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyebrow left 2",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "eyebrow left 3",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "eyebrow left",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "eyebrow right 3",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "eyebrow right 2",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "eyebrow right",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "chain 1",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "chain 2",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "chain 3",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "chain 4",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "chain 5",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "chain 6",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "chain 7",
+        "type": 4
+      },
+      {
+        "ind": 18,
+        "name": "chain 8",
+        "type": 4
+      },
+      {
+        "ind": 19,
+        "name": "chain 9",
+        "type": 4
+      },
+      {
+        "ind": 20,
+        "name": "chain 10",
+        "type": 4
+      },
+      {
+        "ind": 21,
+        "name": "chain 11",
+        "type": 4
+      },
+      {
+        "ind": 22,
+        "name": "chain 12",
+        "type": 4
+      },
+      {
+        "ind": 23,
+        "name": "chain 13",
+        "type": 4
+      },
+      {
+        "ind": 24,
+        "name": "chain 14",
+        "type": 4
+      },
+      {
+        "ind": 25,
+        "name": "chain 15",
+        "type": 4
+      },
+      {
+        "ind": 26,
+        "name": "chain 16",
+        "type": 4
+      },
+      {
+        "ind": 28,
+        "name": "mouth 2",
+        "type": 4
+      },
+      {
+        "ind": 30,
+        "name": "eyes normal 2",
+        "type": 4
+      },
+      {
+        "ind": 31,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 32,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 33,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 34,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f615",
+    "name": "Confusa",
+    "emoji": "😕",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "mouth 2",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "closed eyes",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1fae4",
+    "name": "Boca diagonal",
+    "emoji": "🫤",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null FACE",
+        "type": 1
+      },
+      {
+        "ind": 3,
+        "name": "eyes closed 2",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyes closed",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyes normal 2",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "eyes normal 3",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "Mouth Diagonal",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "Mouth Neutral 2",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "Mouth Neutral",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f61f",
+    "name": "Preocupada",
+    "emoji": "😟",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null FACE",
+        "type": 1
+      },
+      {
+        "ind": 3,
+        "name": "EYES",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f641",
+    "name": "Triste",
+    "emoji": "🙁",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null FACE",
+        "type": 1
+      },
+      {
+        "ind": 3,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "2639",
+    "name": "Muito triste",
+    "emoji": "☹",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null All",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "Null eyes",
+        "type": 3
+      },
+      {
+        "ind": 4,
+        "name": "eyes closed",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f62e",
+    "name": "Boca aberta",
+    "emoji": "😮",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null FACE",
+        "type": 1
+      },
+      {
+        "ind": 4,
+        "name": "eyes Closed",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyes normal 2",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f62f",
+    "name": "Surpresa",
+    "emoji": "😯",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null FACE",
+        "type": 1
+      },
+      {
+        "ind": 3,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyes closed 2",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyes closed",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "eyes 2",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "eyes 3",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f632",
+    "name": "Espantada",
+    "emoji": "😲",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Astonished face",
+        "type": 0
+      },
+      {
+        "ind": 2,
+        "name": "Astonished face",
+        "type": 0
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f633",
+    "name": "Envergonhada",
+    "emoji": "😳",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Face ctlr",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Mouth",
+        "type": 4
+      },
+      {
+        "ind": 3,
+        "name": "L Brow new",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "R Brow new",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "L Eye ",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "R Eye",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "L Blush",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "R Blush ",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "base normal",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "Body",
+        "type": 3
+      },
+      {
+        "ind": 13,
+        "name": "L Brow ",
+        "type": 3
+      },
+      {
+        "ind": 14,
+        "name": "R Brow",
+        "type": 3
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f97a",
+    "name": "Implorando",
+    "emoji": "🥺",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "glow 4",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "glow 3",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "glow 2",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "glow",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "EYES",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "EYES 2",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "eyebrow",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "eyebrow",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f979",
+    "name": "Segurando lágrimas",
+    "emoji": "🥹",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "glow",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "glow",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "glow",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "glow",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "EYES 3",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "tear",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "EYES",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "EYES 4",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "tear",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "EYES 2",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "mouth2",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 18,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 19,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f626",
+    "name": "Aflita",
+    "emoji": "😦",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "blink",
+        "type": 4
+      },
+      {
+        "ind": 3,
+        "name": "Null FACE",
+        "type": 1
+      },
+      {
+        "ind": 4,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f627",
+    "name": "Angustiada",
+    "emoji": "😧",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null FACE",
+        "type": 1
+      },
+      {
+        "ind": 3,
+        "name": "closed eyes 3",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "closed eyes 2",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "closed eyes",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "eyesbrown",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f628",
+    "name": "Medo",
+    "emoji": "😨",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null FACE",
+        "type": 1
+      },
+      {
+        "ind": 3,
+        "name": "eyes closed",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyesbrown",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "blue emoji",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f630",
+    "name": "Suor frio",
+    "emoji": "😰",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Anxious face with sweat",
+        "type": 0
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f625",
+    "name": "Triste com suor",
+    "emoji": "😥",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "DROP 3",
+        "type": 4
+      },
+      {
+        "ind": 2,
+        "name": "DROP",
+        "type": 4
+      },
+      {
+        "ind": 3,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 4,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyes closed",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "DROP Back",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f622",
+    "name": "Chorando",
+    "emoji": "😢",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "emoji_crying - 60 fps",
+        "type": 0
+      },
+      {
+        "ind": 2,
+        "name": "emoji_crying - 60 fps",
+        "type": 0
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f62d",
+    "name": "Choro intenso",
+    "emoji": "😭",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "R brown",
+        "type": 4
+      },
+      {
+        "ind": 2,
+        "name": "L brown",
+        "type": 4
+      },
+      {
+        "ind": 3,
+        "name": "L closed eye",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "R closed eye",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "Splash L",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "Splash R",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "L Puddle Hilit 02",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "R Puddle Hilit 02",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "L Puddle Hilit 03",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "R Puddle Hilit 01",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "Drop 02 R",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "Drop 01 L",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "Drop 01 R",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "Puddle 03 L",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "Puddle 03 R ",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "Puddle 01 L",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "Puddle 01 R",
+        "type": 4
+      },
+      {
+        "ind": 18,
+        "name": "Face ctrl",
+        "type": 3
+      },
+      {
+        "ind": 19,
+        "name": "L Tear ",
+        "type": 4
+      },
+      {
+        "ind": 20,
+        "name": "R Tear ",
+        "type": 4
+      },
+      {
+        "ind": 21,
+        "name": "R Eye ",
+        "type": 4
+      },
+      {
+        "ind": 22,
+        "name": "L Eye",
+        "type": 4
+      },
+      {
+        "ind": 23,
+        "name": "L Stream ",
+        "type": 4
+      },
+      {
+        "ind": 24,
+        "name": "R Stream",
+        "type": 4
+      },
+      {
+        "ind": 25,
+        "name": "Layer 2 Outlines 2",
+        "type": 4
+      },
+      {
+        "ind": 26,
+        "name": "0 Mouth",
+        "type": 4
+      },
+      {
+        "ind": 27,
+        "name": "Body",
+        "type": 3
+      },
+      {
+        "ind": 28,
+        "name": "Puddle 02 L",
+        "type": 4
+      },
+      {
+        "ind": 29,
+        "name": "Puddle 02 R ",
+        "type": 4
+      },
+      {
+        "ind": 30,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 31,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 32,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f631",
+    "name": "Grito",
+    "emoji": "😱",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Head",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "Null Hands",
+        "type": 3
+      },
+      {
+        "ind": 4,
+        "name": "HAND L 2",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "HAND R",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "base matte 3",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "Hand shadow L",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base matte 2",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "Hand shadow R",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 11,
+        "name": "eyes scream",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "mouth 2",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "base border",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "gradient orange",
+        "type": 4
+      },
+      {
+        "ind": 18,
+        "name": "gradient blue",
+        "type": 4
+      },
+      {
+        "ind": 19,
+        "name": "base",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f616",
+    "name": "Confusa e frustrada",
+    "emoji": "😖",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null Body",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "eye closed 1",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eye closed 2",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth 2",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "mouth 3",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "eyes 2",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f623",
+    "name": "Perseverante",
+    "emoji": "😣",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null All",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "EYES Top",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "EYES",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f61e",
+    "name": "Decepcionada",
+    "emoji": "😞",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "eyebrows 2",
+        "type": 4
+      },
+      {
+        "ind": 3,
+        "name": "eyes normal 2",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyes blink",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f613",
+    "name": "Suando",
+    "emoji": "😓",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "emoji_downcast-with-sweat",
+        "type": 0
+      },
+      {
+        "ind": 2,
+        "name": "emoji_downcast-with-sweat",
+        "type": 0
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f629",
+    "name": "Exausta",
+    "emoji": "😩",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyes closed",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f62b",
+    "name": "Cansada",
+    "emoji": "😫",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyes closed ",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f971",
+    "name": "Bocejo",
+    "emoji": "🥱",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "HAND",
+        "type": 4
+      },
+      {
+        "ind": 3,
+        "name": "eyes",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "mouth matte 2",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "Hand Shadow 2",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "mouth",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "base matte 2",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "Hand Shadow",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "base gradient",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f624",
+    "name": "Bufando",
+    "emoji": "😤",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null steam",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null steam mirror (R)",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "stteam bubbles R 2",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "stteam bubbles R",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "steam R matte 2",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "steam R shadow 2",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "steam R 2",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "steam R matte",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "steam R shadow",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "steam R",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "stteam bubbles L 2",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "stteam bubbles L",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "steam L matte 2",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "steam L shadow 2",
+        "type": 4
+      },
+      {
+        "ind": 18,
+        "name": "steam L 3",
+        "type": 4
+      },
+      {
+        "ind": 19,
+        "name": "steam L matte",
+        "type": 4
+      },
+      {
+        "ind": 20,
+        "name": "steam L shadow",
+        "type": 4
+      },
+      {
+        "ind": 21,
+        "name": "steam L",
+        "type": 4
+      },
+      {
+        "ind": 25,
+        "name": "Null All",
+        "type": 3
+      },
+      {
+        "ind": 26,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 27,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 28,
+        "name": "EYES",
+        "type": 4
+      },
+      {
+        "ind": 29,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 30,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 31,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 32,
+        "name": "base",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f621",
+    "name": "Furiosa",
+    "emoji": "😡",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "eyes ",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyebrows extra",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "mouth open matte",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "tongue",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "mouth open",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f620",
+    "name": "Brava",
+    "emoji": "😠",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null Face",
+        "type": 3
+      },
+      {
+        "ind": 3,
+        "name": "eyes ",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth open matte",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "tongue",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "mouth open",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "mouth ",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base matte",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base shadow",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "base normal",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1f92c",
+    "name": "Palavrões",
+    "emoji": "🤬",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null ALL",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "Null FACE",
+        "type": 1
+      },
+      {
+        "ind": 3,
+        "name": "eyebrows",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "@#$%^",
+        "type": 0
+      },
+      {
+        "ind": 5,
+        "name": "mouth neutral",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "mouth open 3",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "mouth open",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "eyes normal",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "base matte 2",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "base shadow 2",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "base normal 2",
+        "type": 4
+      }
+    ],
+    "available": true
+  },
+  {
+    "code": "1fae0",
+    "name": "Derretendo",
+    "emoji": "🫠",
+    "layers": [
+      {
+        "ind": 1,
+        "name": "Null Y Pos",
+        "type": 3
+      },
+      {
+        "ind": 2,
+        "name": "eye_L ",
+        "type": 4
+      },
+      {
+        "ind": 3,
+        "name": "eye_R ",
+        "type": 4
+      },
+      {
+        "ind": 4,
+        "name": "mouth 11",
+        "type": 4
+      },
+      {
+        "ind": 5,
+        "name": "mouth 4",
+        "type": 4
+      },
+      {
+        "ind": 6,
+        "name": "mouth 3",
+        "type": 4
+      },
+      {
+        "ind": 7,
+        "name": "mouth 2",
+        "type": 4
+      },
+      {
+        "ind": 8,
+        "name": "mouth 8",
+        "type": 4
+      },
+      {
+        "ind": 9,
+        "name": "mouth 7",
+        "type": 4
+      },
+      {
+        "ind": 10,
+        "name": "mouth smile",
+        "type": 4
+      },
+      {
+        "ind": 11,
+        "name": "mouth 1",
+        "type": 4
+      },
+      {
+        "ind": 12,
+        "name": "base gradient 2",
+        "type": 4
+      },
+      {
+        "ind": 13,
+        "name": "gradient mask 2",
+        "type": 4
+      },
+      {
+        "ind": 14,
+        "name": "base gradient 1",
+        "type": 4
+      },
+      {
+        "ind": 15,
+        "name": "base 2",
+        "type": 4
+      },
+      {
+        "ind": 16,
+        "name": "base round gradient 2",
+        "type": 4
+      },
+      {
+        "ind": 17,
+        "name": "gradient mask",
+        "type": 4
+      },
+      {
+        "ind": 18,
+        "name": "base round gradient 1",
+        "type": 4
+      },
+      {
+        "ind": 19,
+        "name": "base round",
+        "type": 4
+      },
+      {
+        "ind": 20,
+        "name": "base gradient 2",
+        "type": 4
+      },
+      {
+        "ind": 21,
+        "name": "gradient mask",
+        "type": 4
+      },
+      {
+        "ind": 22,
+        "name": "base gradient 1",
+        "type": 4
+      },
+      {
+        "ind": 23,
+        "name": "base",
+        "type": 4
+      },
+      {
+        "ind": 24,
+        "name": "bevel",
+        "type": 4
+      },
+      {
+        "ind": 25,
+        "name": "drop",
+        "type": 4
+      }
+    ],
+    "available": true
+  }
+]

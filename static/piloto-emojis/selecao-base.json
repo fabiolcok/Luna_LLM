@@ -1,0 +1,320 @@
+{
+  "versao": 1,
+  "escolhas": {
+    "2639": {
+      "favorita": true
+    },
+    "1f923": {
+      "problema": {
+        "tipos": [
+          "cabeca"
+        ],
+        "nota": "",
+        "modo": "ciano",
+        "escala": 64
+      }
+    },
+    "1f600": {
+      "camadas": {
+        "13:14": false
+      }
+    },
+    "1f603": {
+      "favorita": true
+    },
+    "1f604": {
+      "favorita": true
+    },
+    "1f601": {
+      "problema": {
+        "tipos": [
+          "cabeca"
+        ],
+        "nota": "",
+        "modo": "ciano",
+        "escala": 64
+      }
+    },
+    "1f606": {
+      "favorita": true
+    },
+    "1f605": {
+      "problema": {
+        "tipos": [
+          "cabeca"
+        ],
+        "nota": "",
+        "modo": "ciano",
+        "escala": 64
+      }
+    },
+    "1f602": {
+      "problema": {
+        "tipos": [
+          "cabeca"
+        ],
+        "nota": "",
+        "modo": "ciano",
+        "escala": 64
+      }
+    },
+    "1f642": {
+      "favorita": true
+    },
+    "1f643": {
+      "favorita": true
+    },
+    "1f609": {
+      "favorita": true
+    },
+    "1f60a": {
+      "favorita": true
+    },
+    "1f607": {
+      "favorita": true
+    },
+    "1f60d": {
+      "favorita": true
+    },
+    "1f929": {
+      "favorita": true
+    },
+    "1f61b": {
+      "favorita": true
+    },
+    "1f61c": {
+      "problema": {
+        "tipos": [
+          "cabeca"
+        ],
+        "nota": "",
+        "modo": "ciano",
+        "escala": 64
+      }
+    },
+    "1f92a": {
+      "problema": {
+        "tipos": [
+          "cabeca"
+        ],
+        "nota": "",
+        "modo": "ciano",
+        "escala": 64
+      }
+    },
+    "1f61d": {
+      "favorita": true
+    },
+    "1f911": {
+      "favorita": true
+    },
+    "1f917": {
+      "problema": {
+        "tipos": [
+          "outro"
+        ],
+        "nota": "mao nao esta na cor ciano",
+        "modo": "ciano",
+        "escala": 64
+      }
+    },
+    "1f92d": {
+      "problema": {
+        "tipos": [],
+        "nota": "mao nao esta na cor ciano",
+        "modo": "ciano",
+        "escala": 64
+      }
+    },
+    "1fae2": {
+      "problema": {
+        "tipos": [],
+        "nota": "mao nao esta na cor ciano",
+        "modo": "ciano",
+        "escala": 64
+      }
+    },
+    "1fae3": {
+      "problema": {
+        "tipos": [
+          "cabeca"
+        ],
+        "nota": "",
+        "modo": "ciano",
+        "escala": 64
+      }
+    },
+    "1f92b": {
+      "problema": {
+        "tipos": [],
+        "nota": "mao nao esta na cor ciano",
+        "modo": "ciano",
+        "escala": 64
+      }
+    },
+    "1f914": {
+      "problema": {
+        "tipos": [],
+        "nota": "mao nao esta na cor ciano",
+        "modo": "ciano",
+        "escala": 64
+      }
+    },
+    "1f910": {
+      "problema": {
+        "tipos": [
+          "cabeca"
+        ],
+        "nota": "",
+        "modo": "ciano",
+        "escala": 64
+      }
+    },
+    "1f928": {
+      "favorita": true
+    },
+    "1f610": {
+      "favorita": true
+    },
+    "1f636": {
+      "favorita": true
+    },
+    "1f611": {
+      "favorita": true
+    },
+    "1f60f": {
+      "favorita": true
+    },
+    "1f612": {
+      "favorita": true
+    },
+    "1f62c": {
+      "favorita": true
+    },
+    "1fae8": {
+      "problema": {
+        "tipos": [
+          "cabeca"
+        ],
+        "nota": "",
+        "modo": "ciano",
+        "escala": 64
+      }
+    },
+    "1f60c": {
+      "favorita": true
+    },
+    "1f614": {
+      "favorita": true
+    },
+    "1f62a": {
+      "favorita": true
+    },
+    "1f924": {
+      "favorita": true
+    },
+    "1f634": {
+      "favorita": true
+    },
+    "1f912": {
+      "favorita": true
+    },
+    "1f915": {
+      "favorita": true
+    },
+    "1f922": {
+      "favorita": false
+    },
+    "1f92e": {
+      "favorita": true
+    },
+    "1f927": {
+      "favorita": true
+    },
+    "1f974": {
+      "favorita": true
+    },
+    "1f635": {
+      "problema": {
+        "tipos": [
+          "cabeca"
+        ],
+        "nota": "",
+        "modo": "ciano",
+        "escala": 64
+      }
+    },
+    "1f973": {
+      "favorita": true
+    },
+    "1f978": {
+      "favorita": true
+    },
+    "1f60e": {
+      "favorita": true
+    },
+    "1f913": {
+      "favorita": true
+    },
+    "1f9d0": {
+      "favorita": true
+    },
+    "1f615": {
+      "favorita": true
+    },
+    "1f61f": {
+      "favorita": true
+    },
+    "1f641": {
+      "favorita": true
+    },
+    "1fae4": {
+      "favorita": true
+    },
+    "1f62e": {
+      "favorita": true
+    },
+    "1f62f": {
+      "favorita": true
+    },
+    "1f97a": {
+      "favorita": true
+    },
+    "1f979": {
+      "favorita": true
+    },
+    "1f627": {
+      "favorita": true
+    },
+    "1f62d": {
+      "favorita": true
+    },
+    "1f616": {
+      "favorita": true
+    },
+    "1f623": {
+      "favorita": true
+    },
+    "1f61e": {
+      "favorita": true
+    },
+    "1f629": {
+      "favorita": true
+    },
+    "1f62b": {
+      "favorita": true
+    },
+    "1f624": {
+      "favorita": true
+    },
+    "1f621": {
+      "favorita": true
+    },
+    "1f620": {
+      "favorita": true
+    },
+    "1f92c": {
+      "favorita": true
+    }
+  }
+}

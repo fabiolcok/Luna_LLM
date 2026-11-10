@@ -1,0 +1,110 @@
+<svg viewBox="0 0 200 200" aria-hidden="true">
+                <defs>
+                    <!-- a cor vem do CSS (var --cor-halo), pra mudar conforme a ferramenta.
+                         stop-color como ATRIBUTO não aceita var() — tem que ser via CSS. -->
+                    <radialGradient id="g-halo">
+                        <stop offset="52%"  stop-opacity="0"/>
+                        <stop offset="100%" stop-opacity="0.5"/>
+                    </radialGradient>
+                    <!-- LUAR: máscara que APAGA o brilho de um lado (tirar luz funciona;
+                         somar sombra sobre fundo escuro não muda nada — tentativa anterior) -->
+                    <linearGradient id="g-luar" x1="0.15" y1="0.1" x2="0.9" y2="0.95">
+                        <stop offset="0%"   stop-color="#fff" stop-opacity="1"/>
+                        <stop offset="45%"  stop-color="#fff" stop-opacity="0.6"/>
+                        <stop offset="100%" stop-color="#fff" stop-opacity="0.04"/>
+                    </linearGradient>
+                    <mask id="m-luar">
+                        <circle cx="100" cy="100" r="90" fill="url(#g-luar)"/>
+                    </mask>
+                    <linearGradient id="g-feixe" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%"   stop-color="#b4f9f8" stop-opacity="0.85"/>
+                        <stop offset="100%" stop-color="#7aa2f7" stop-opacity="0.05"/>
+                    </linearGradient>
+                    <linearGradient id="g-fogo" x1="0" y1="1" x2="0" y2="0">
+                        <stop offset="0%"   stop-color="#ffd580" stop-opacity="0.95"/>
+                        <stop offset="45%"  stop-color="#ff8a4d" stop-opacity="0.7"/>
+                        <stop offset="100%" stop-color="#ff3b30" stop-opacity="0"/>
+                    </linearGradient>
+                    <linearGradient id="g-cauda" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%"   stop-color="#dff0ff" stop-opacity="0"/>
+                        <stop offset="100%" stop-color="#ffffff" stop-opacity="0.9"/>
+                    </linearGradient>
+                    <radialGradient id="g-eclipse">
+                        <stop offset="0%"   stop-color="#ffd27a"/>
+                        <stop offset="68%"  stop-color="#ff922e"/>
+                        <stop offset="100%" stop-color="#d95716"/>
+                    </radialGradient>
+                </defs>
+                <!-- COMETA (easter egg): primeiro no SVG = passa ATRÁS de tudo, inclusive do
+                     brilho da cabeça, que é o que vende a profundidade. -->
+                <g id="estrelas"></g>
+                <g id="confete"></g>
+                <g id="eclipse" opacity="0">
+                    <circle cx="0" cy="0" r="90" fill="#ff8a32" opacity="0.18"/>
+                    <circle cx="0" cy="0" r="78" fill="url(#g-eclipse)"/>
+                </g>
+                <!-- A Luna normalmente é um halo transparente. No eclipse este disco temporário
+                     cria uma cabeça opaca ENTRE o Sol e o rosto, vendendo a profundidade real. -->
+                <circle id="nucleo-eclipse" cx="100" cy="100" r="68" fill="#0d0d12" opacity="0"/>
+                <!-- OVNI: aparece raro e fica ZANZANDO uns 10s antes de sumir -->
+                <g id="ovni" opacity="0">
+                    <ellipse cx="0" cy="0" rx="9" ry="2.5" fill="#9ecbff" opacity="0.85"/>
+                    <path d="M -5.2 -1.2 A 5.2 4.6 0 0 1 5.2 -1.2 Z" fill="#e6f3ff" opacity="0.9"/>
+                    <circle class="luz-ovni" cx="-4.4" cy="0.7" r="0.8" fill="#7bf98f"/>
+                    <circle class="luz-ovni" cx="0"    cy="1.0" r="0.8" fill="#ffd580"/>
+                    <circle class="luz-ovni" cx="4.4"  cy="0.7" r="0.8" fill="#ff9ecd"/>
+                </g>
+                <g id="cometa" opacity="0">
+                    <line x1="-30" y1="0" x2="0" y2="0" stroke="url(#g-cauda)" stroke-width="1.5" stroke-linecap="round"/>
+                    <circle cx="0" cy="0" r="1.7" fill="#ffffff"/>
+                </g>
+                <!-- CHUVA DE ASTEROIDES: passam atras dela; a historia se resolve NAO mexendo -->
+                <g id="asteroides"></g>
+                <!-- INVASAO: uma frota rondando; se voce se APROXIMAR eles fecham o cerco -->
+                <g id="frota"></g>
+                <g id="feixes"></g>
+                <circle id="halo" cx="100" cy="100" r="66" fill="url(#g-halo)"/>
+                <g id="orbita-escala"><g id="orbita-fidget">
+                    <g id="fidget-rastros">
+                        <g class="fidget-rastro"></g><g class="fidget-rastro"></g><g class="fidget-rastro"></g>
+                    </g>
+                    <g id="orbita"></g>
+                </g></g>
+                <path id="scanner" fill="none" stroke="#b4f9f8" stroke-width="1.8" stroke-linecap="round" opacity="0"/>
+                <g id="arcos">
+                    <path id="arco-1" fill="none" stroke="#7aa2f7" stroke-width="1.4" stroke-linecap="round" opacity="0.5"/>
+                    <path id="arco-2" fill="none" stroke="#b4f9f8" stroke-width="1.1" stroke-linecap="round" opacity="0.36"/>
+                    <path id="arco-3" fill="none" stroke="#bb9af7" stroke-width="0.9" stroke-linecap="round" opacity="0.24"/>
+                </g>
+                <!-- SONAR PROATIVO: um raio curto varre o anel sem atravessar a cara. -->
+                <g id="sonar-proativo">
+                    <!-- setor atrás da linha: o rastro translúcido do radar clássico -->
+                    <path d="M 100 100 L 150.9 68.2 A 60 60 0 0 1 160 100 Z"/>
+                    <line x1="100" y1="100" x2="160" y2="100" stroke-width="1.5" stroke-linecap="round"/>
+                </g>
+                <!-- ONDAS: só no modo RADAR (pesquisar_web). No idle atravessavam o rosto. -->
+                <!-- MODO JOGO: controle orbitando + barra de vida no lugar dos arcos -->
+                <g id="controle" opacity="0">
+                    <rect x="-10.5" y="-5.4" width="21" height="10.8" rx="5.1" fill="#7bf98f" opacity="0.9"/>
+                    <rect x="-6.9" y="-0.9" width="3.9" height="1.65" rx="0.75" fill="#0d0d12"/>
+                    <rect x="-6.07" y="-3" width="1.65" height="3.9" rx="0.75" fill="#0d0d12"/>
+                    <circle cx="4.8" cy="-1.35" r="1.27" fill="#0d0d12"/>
+                    <circle cx="7.35" cy="1.05" r="1.27" fill="#0d0d12"/>
+                </g>
+                <g id="vida" opacity="0">
+                    <rect x="60" y="150" width="80" height="4.5" rx="2.2" fill="#2a2a3a"/>
+                    <rect id="vida-barra" x="60" y="150" width="80" height="4.5" rx="2.2" fill="#7bf98f"/>
+                </g>
+                <!-- FOGUETES: pousam nela e incomodam até você chacoalhar -->
+                <g id="foguetes"></g>
+                <!-- SATELITES: ficam em ORBITA (nao pousam) e saem clicando um a um -->
+                <g id="satelites"></g>
+                <!-- COMETAO: cai nela, GRUDA, e so sai a marteladas -->
+                <g id="cometao" opacity="0" style="cursor:pointer"></g>
+                <!-- FULIGEM: manchas grudadas nela; saem esfregando o mouse (sem clicar) -->
+                <g id="sujeira"></g>
+                <g id="ondas">
+                    <circle cx="100" cy="100" r="70"/><circle cx="100" cy="100" r="70"/>
+                    <circle cx="100" cy="100" r="70"/>
+                </g>
+            </svg>

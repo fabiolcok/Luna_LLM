@@ -8,6 +8,18 @@ Legenda: ✨ novo · 🔧 melhorado · 🐛 corrigido
 
 ---
 
+## 09/11/2026
+
+- ✨ **Expressões animadas no avatar.** Faces Noto adaptadas à aparência da Luna,
+  mantendo o círculo e seus efeitos. Os arquivos são locais e o modelo continua
+  usando os mesmos 12 climas. O piloto permite revisar e classificar as expressões.
+- 🔧 **Troca entre expressões.** Uma face sorridente faz a ponte por 400 ms,
+  com transição suave. Movimento reduzido é respeitado e os kaomojis permanecem
+  como alternativa se uma expressão não carregar.
+- 🐛 **Ajustes visuais e de interação.** Corrigidos fundos e cores nas faces
+  selecionadas; as interações reconhecem movimentos suaves e evitam disparos
+  acidentais em passagens rápidas do cursor.
+
 ## 04/11/2026
 
 - ✨ **Voz da Luna no Discord.** Integração opcional por bot próprio, sem placa de som

@@ -1,0 +1,1005 @@
+{
+  "versao": 1,
+  "tipo": "classificacao_expressoes",
+  "escala": 75,
+  "categorias": {
+    "Tom da resposta": [
+      [
+        "zoeira",
+        "Zoeira"
+      ],
+      [
+        "revolta",
+        "Revolta"
+      ],
+      [
+        "facepalm",
+        "Facepalm / sem paciência"
+      ],
+      [
+        "choque",
+        "Choque"
+      ],
+      [
+        "carinho",
+        "Carinho"
+      ],
+      [
+        "cansaco",
+        "Cansaço"
+      ],
+      [
+        "festa",
+        "Festa"
+      ],
+      [
+        "orgulho",
+        "Orgulho"
+      ],
+      [
+        "suspeita",
+        "Suspeita"
+      ],
+      [
+        "duvida",
+        "Dúvida"
+      ],
+      [
+        "tedio",
+        "Tédio"
+      ],
+      [
+        "tristeza",
+        "Tristeza"
+      ]
+    ],
+    "Estados da interface": [
+      [
+        "repouso",
+        "Padrão / repouso"
+      ],
+      [
+        "jogos",
+        "Jogos / concentrada"
+      ],
+      [
+        "pensando",
+        "Pensando"
+      ],
+      [
+        "dormindo",
+        "Dormindo / ausente"
+      ],
+      [
+        "ouvindo",
+        "Ouvindo"
+      ],
+      [
+        "falando",
+        "Falando"
+      ],
+      [
+        "digitando",
+        "Digitando"
+      ],
+      [
+        "radar",
+        "Radar / pesquisando"
+      ]
+    ],
+    "Easter eggs e interações": [
+      [
+        "easter_eggs",
+        "Easter eggs · geral"
+      ],
+      [
+        "susto",
+        "Susto / medo"
+      ],
+      [
+        "irritada",
+        "Irritada / incomodada"
+      ],
+      [
+        "tonta",
+        "Tonta / chacoalhada"
+      ],
+      [
+        "alivio",
+        "Alívio"
+      ],
+      [
+        "afago",
+        "Carinho / afago"
+      ],
+      [
+        "encarada",
+        "Encarando"
+      ],
+      [
+        "oculos",
+        "Óculos / eclipse"
+      ]
+    ],
+    "Expressões especiais propostas": [
+      [
+        "doente",
+        "Doente"
+      ],
+      [
+        "machucada",
+        "Machucada"
+      ],
+      [
+        "dinheiro",
+        "Dinheiro"
+      ],
+      [
+        "disfarce",
+        "Disfarce"
+      ]
+    ]
+  },
+  "expressoes": [
+    {
+      "codigo": "1f603",
+      "nome": "Sorriso aberto",
+      "emoji": "😃",
+      "favorita": true,
+      "categorias": [
+        "zoeira"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f604",
+      "nome": "Rindo de olhos fechados",
+      "emoji": "😄",
+      "favorita": true,
+      "categorias": [
+        "zoeira"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f601",
+      "nome": "Sorriso com dentes",
+      "emoji": "😁",
+      "problema": {
+        "tipos": [
+          "cabeca"
+        ],
+        "nota": "",
+        "modo": "ciano",
+        "escala": 64
+      },
+      "categorias": [
+        "festa",
+        "orgulho"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f606",
+      "nome": "Gargalhada",
+      "emoji": "😆",
+      "favorita": true,
+      "categorias": [
+        "zoeira"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f605",
+      "nome": "Riso nervoso",
+      "emoji": "😅",
+      "problema": {
+        "tipos": [
+          "cabeca"
+        ],
+        "nota": "",
+        "modo": "ciano",
+        "escala": 64
+      },
+      "categorias": [
+        "choque"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f602",
+      "nome": "Lágrimas de alegria",
+      "emoji": "😂",
+      "problema": {
+        "tipos": [
+          "cabeca"
+        ],
+        "nota": "",
+        "modo": "ciano",
+        "escala": 64
+      },
+      "categorias": [
+        "zoeira"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f923",
+      "nome": "Rolando de rir",
+      "emoji": "🤣",
+      "problema": {
+        "tipos": [
+          "cabeca"
+        ],
+        "nota": "",
+        "modo": "ciano",
+        "escala": 64
+      },
+      "categorias": [
+        "zoeira"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f642",
+      "nome": "Sorriso discreto",
+      "emoji": "🙂",
+      "favorita": true,
+      "categorias": [
+        "carinho",
+        "tedio"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f643",
+      "nome": "De cabeça para baixo",
+      "emoji": "🙃",
+      "favorita": true,
+      "categorias": [
+        "tedio",
+        "pensando"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f609",
+      "nome": "Piscadinha",
+      "emoji": "😉",
+      "favorita": true,
+      "categorias": [
+        "orgulho"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f60a",
+      "nome": "Sorriso tímido",
+      "emoji": "😊",
+      "favorita": true,
+      "categorias": [
+        "carinho",
+        "afago"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f607",
+      "nome": "Anjinho",
+      "emoji": "😇",
+      "favorita": true,
+      "categorias": [
+        "orgulho"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f60d",
+      "nome": "Olhos de coração",
+      "emoji": "😍",
+      "favorita": true,
+      "categorias": [
+        "carinho",
+        "orgulho"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f929",
+      "nome": "Deslumbrada",
+      "emoji": "🤩",
+      "favorita": true,
+      "categorias": [
+        "festa",
+        "orgulho"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f61b",
+      "nome": "Língua de fora",
+      "emoji": "😛",
+      "favorita": true,
+      "categorias": [
+        "zoeira"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f61c",
+      "nome": "Piscando com língua",
+      "emoji": "😜",
+      "problema": {
+        "tipos": [
+          "cabeca"
+        ],
+        "nota": "",
+        "modo": "ciano",
+        "escala": 64
+      },
+      "categorias": [
+        "zoeira"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f92a",
+      "nome": "Maluquinha",
+      "emoji": "🤪",
+      "problema": {
+        "tipos": [
+          "cabeca"
+        ],
+        "nota": "",
+        "modo": "ciano",
+        "escala": 64
+      },
+      "categorias": [],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f61d",
+      "nome": "Brincalhona",
+      "emoji": "😝",
+      "favorita": true,
+      "categorias": [
+        "zoeira"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f911",
+      "nome": "Dinheiro",
+      "emoji": "🤑",
+      "favorita": true,
+      "categorias": [
+        "dinheiro"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f917",
+      "nome": "Abraço",
+      "emoji": "🤗",
+      "problema": {
+        "tipos": [
+          "outro"
+        ],
+        "nota": "mao nao esta na cor ciano",
+        "modo": "ciano",
+        "escala": 64
+      },
+      "categorias": [
+        "carinho"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f92d",
+      "nome": "Mão na boca",
+      "emoji": "🤭",
+      "problema": {
+        "tipos": [],
+        "nota": "mao nao esta na cor ciano",
+        "modo": "ciano",
+        "escala": 64
+      },
+      "categorias": [],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1fae2",
+      "nome": "Surpresa com mão na boca",
+      "emoji": "🫢",
+      "problema": {
+        "tipos": [],
+        "nota": "mao nao esta na cor ciano",
+        "modo": "ciano",
+        "escala": 64
+      },
+      "categorias": [],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1fae3",
+      "nome": "Espiando",
+      "emoji": "🫣",
+      "problema": {
+        "tipos": [
+          "cabeca"
+        ],
+        "nota": "",
+        "modo": "ciano",
+        "escala": 64
+      },
+      "categorias": [],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f92b",
+      "nome": "Silêncio",
+      "emoji": "🤫",
+      "problema": {
+        "tipos": [],
+        "nota": "mao nao esta na cor ciano",
+        "modo": "ciano",
+        "escala": 64
+      },
+      "categorias": [],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f914",
+      "nome": "Pensativa",
+      "emoji": "🤔",
+      "problema": {
+        "tipos": [],
+        "nota": "mao nao esta na cor ciano",
+        "modo": "ciano",
+        "escala": 64
+      },
+      "categorias": [
+        "duvida",
+        "pensando"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f910",
+      "nome": "Boca fechada",
+      "emoji": "🤐",
+      "problema": {
+        "tipos": [
+          "cabeca"
+        ],
+        "nota": "",
+        "modo": "ciano",
+        "escala": 64
+      },
+      "categorias": [],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f928",
+      "nome": "Sobrancelha levantada",
+      "emoji": "🤨",
+      "favorita": true,
+      "categorias": [
+        "suspeita",
+        "duvida"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f610",
+      "nome": "Neutra",
+      "emoji": "😐",
+      "favorita": true,
+      "categorias": [
+        "tedio",
+        "ouvindo"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f611",
+      "nome": "Sem expressão",
+      "emoji": "😑",
+      "favorita": true,
+      "categorias": [
+        "tedio"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f636",
+      "nome": "Sem boca",
+      "emoji": "😶",
+      "favorita": true,
+      "categorias": [
+        "tedio",
+        "ouvindo",
+        "encarada"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f60f",
+      "nome": "Sorriso malicioso",
+      "emoji": "😏",
+      "favorita": true,
+      "categorias": [
+        "suspeita"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f612",
+      "nome": "Descontente",
+      "emoji": "😒",
+      "favorita": true,
+      "categorias": [
+        "cansaco",
+        "tedio",
+        "tristeza"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f62c",
+      "nome": "Careta",
+      "emoji": "😬",
+      "favorita": true,
+      "categorias": [],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1fae8",
+      "nome": "Tremendo",
+      "emoji": "🫨",
+      "problema": {
+        "tipos": [
+          "cabeca"
+        ],
+        "nota": "",
+        "modo": "ciano",
+        "escala": 64
+      },
+      "categorias": [
+        "tonta"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f60c",
+      "nome": "Aliviada",
+      "emoji": "😌",
+      "favorita": true,
+      "categorias": [
+        "alivio"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f614",
+      "nome": "Desanimada",
+      "emoji": "😔",
+      "favorita": true,
+      "categorias": [
+        "facepalm",
+        "cansaco"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f62a",
+      "nome": "Sonolenta",
+      "emoji": "😪",
+      "favorita": true,
+      "categorias": [
+        "dormindo"
+      ],
+      "nota": "",
+      "revisada": true
+    },
+    {
+      "codigo": "1f924",
+      "nome": "Babando",
+      "emoji": "🤤",
+      "favorita": true,
+      "categorias": [],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f634",
+      "nome": "Dormindo",
+      "emoji": "😴",
+      "favorita": true,
+      "categorias": [
+        "dormindo"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f912",
+      "nome": "Termômetro",
+      "emoji": "🤒",
+      "favorita": true,
+      "categorias": [
+        "doente"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f915",
+      "nome": "Machucada",
+      "emoji": "🤕",
+      "favorita": true,
+      "categorias": [
+        "machucada"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f92e",
+      "nome": "Vomitando",
+      "emoji": "🤮",
+      "favorita": true,
+      "categorias": [
+        "doente"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f927",
+      "nome": "Espirrando",
+      "emoji": "🤧",
+      "favorita": true,
+      "categorias": [
+        "doente"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f974",
+      "nome": "Tonta",
+      "emoji": "🥴",
+      "favorita": true,
+      "categorias": [
+        "tonta"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f635",
+      "nome": "Atordoada",
+      "emoji": "😵",
+      "problema": {
+        "tipos": [
+          "cabeca"
+        ],
+        "nota": "",
+        "modo": "ciano",
+        "escala": 64
+      },
+      "categorias": [],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f973",
+      "nome": "Festa",
+      "emoji": "🥳",
+      "favorita": true,
+      "categorias": [
+        "festa"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f978",
+      "nome": "Disfarçada",
+      "emoji": "🥸",
+      "favorita": true,
+      "categorias": [
+        "facepalm"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f60e",
+      "nome": "Óculos escuros",
+      "emoji": "😎",
+      "favorita": true,
+      "categorias": [
+        "oculos"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f913",
+      "nome": "Nerd",
+      "emoji": "🤓",
+      "favorita": true,
+      "categorias": [
+        "jogos"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f9d0",
+      "nome": "Monóculo",
+      "emoji": "🧐",
+      "favorita": true,
+      "categorias": [
+        "pensando"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f615",
+      "nome": "Confusa",
+      "emoji": "😕",
+      "favorita": true,
+      "categorias": [
+        "facepalm",
+        "duvida"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1fae4",
+      "nome": "Boca diagonal",
+      "emoji": "🫤",
+      "favorita": true,
+      "categorias": [
+        "tedio"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f61f",
+      "nome": "Preocupada",
+      "emoji": "😟",
+      "favorita": true,
+      "categorias": [
+        "tristeza"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f641",
+      "nome": "Triste",
+      "emoji": "🙁",
+      "favorita": true,
+      "categorias": [
+        "tristeza"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "2639",
+      "nome": "Muito triste",
+      "emoji": "☹",
+      "favorita": true,
+      "categorias": [
+        "tristeza"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f62e",
+      "nome": "Boca aberta",
+      "emoji": "😮",
+      "favorita": true,
+      "categorias": [
+        "choque"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f62f",
+      "nome": "Surpresa",
+      "emoji": "😯",
+      "favorita": true,
+      "categorias": [
+        "choque"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f97a",
+      "nome": "Implorando",
+      "emoji": "🥺",
+      "favorita": true,
+      "categorias": [
+        "susto"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f979",
+      "nome": "Segurando lágrimas",
+      "emoji": "🥹",
+      "favorita": true,
+      "categorias": [
+        "tristeza"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f627",
+      "nome": "Angustiada",
+      "emoji": "😧",
+      "favorita": true,
+      "categorias": [
+        "choque"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f62d",
+      "nome": "Choro intenso",
+      "emoji": "😭",
+      "favorita": true,
+      "categorias": [
+        "tristeza"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f616",
+      "nome": "Confusa e frustrada",
+      "emoji": "😖",
+      "favorita": true,
+      "categorias": [],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f623",
+      "nome": "Perseverante",
+      "emoji": "😣",
+      "favorita": true,
+      "categorias": [],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f61e",
+      "nome": "Decepcionada",
+      "emoji": "😞",
+      "favorita": true,
+      "categorias": [],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f629",
+      "nome": "Exausta",
+      "emoji": "😩",
+      "favorita": true,
+      "categorias": [
+        "facepalm"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f62b",
+      "nome": "Cansada",
+      "emoji": "😫",
+      "favorita": true,
+      "categorias": [
+        "revolta",
+        "facepalm"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f624",
+      "nome": "Bufando",
+      "emoji": "😤",
+      "favorita": true,
+      "categorias": [
+        "irritada"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f621",
+      "nome": "Furiosa",
+      "emoji": "😡",
+      "favorita": true,
+      "categorias": [
+        "revolta",
+        "irritada"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f620",
+      "nome": "Brava",
+      "emoji": "😠",
+      "favorita": true,
+      "categorias": [
+        "revolta"
+      ],
+      "nota": "",
+      "revisada": false
+    },
+    {
+      "codigo": "1f92c",
+      "nome": "Palavrões",
+      "emoji": "🤬",
+      "favorita": true,
+      "categorias": [
+        "irritada"
+      ],
+      "nota": "esse é pra usar quando clica na cara varias vezes e tem aquela parte da cara ficar grande e tal.",
+      "revisada": false
+    }
+  ]
+}

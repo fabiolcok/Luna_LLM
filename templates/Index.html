@@ -3255,6 +3255,16 @@
         function pintarRosto(txt) {
             const el = document.getElementById('rosto-txt');
             if (el && txt) el.textContent = txt;
+            if (typeof window !== 'undefined' && window.lunaRostoAnimado) window.lunaRostoAnimado.atualizar(txt);
+        }
+
+        function contextoRostoAnimado() {
+            return {atual:_rostoAtual, reacao:_rostoReacao, afk:_afk,
+                gigante:_encaradaGigante, chacoalhando:_chacoalhando,
+                afago:_afagando, esfregando:_esfregando, invasao:_invasao,
+                medo:_medo, desistiu:_desistiu, foguetes:_foguetesNaCabeca,
+                satelites:_satelitesNaOrbita, cometao:_cometaoNaCabeca,
+                sujeira:_sujeiraNaCara, jogo:_jogoAtivo};
         }
 
         function trocarRosto(txt) {
@@ -3344,6 +3354,8 @@
         const AFAGO_SOBE = 14;        // desloca a área pra CIMA: carinho é na cabeça,
                                       // não embaixo do queixo
         const AFAGO_JANELA = 380;     // sem movimento por isso -> parou de fazer carinho
+        const AFAGO_ATIVACAO_MS = 2000; // uma passagem rápida não deve trocar a expressão
+        let _afagoInicio = 0;
         let _mouseX = -9999, _mouseY = -9999, _afagoUltimo = 0, _afagando = false;
 
         // Quando passa um cometa/OVNI ela ACOMPANHA com o olhar — tem prioridade sobre o
@@ -3366,6 +3378,9 @@
             const r = svg.getBoundingClientRect();
             const dx = e.clientX - (r.left + r.width / 2);
             const dy = e.clientY - (r.top + r.height / 2);
+            if (Math.hypot(dx, dy + AFAGO_SOBE) > AFAGO_RAIO) {
+                _afagoInicio = 0; _afagoUltimo = 0;
+            }
             const d = Math.hypot(dx, dy) || 1;
             const forca = Math.min(1, d / OLHAR_ALCANCE);   // perto = olha pouco; longe = o máximo
             _olhoAlvoX = (dx / d) * OLHAR_MAX * forca;
@@ -3386,7 +3401,7 @@
                 aplicarArrasto();
                 if (Math.hypot(_arrX, _arrY) > 4) _arrastou = true;   // puxão, não cutucão
                 registrarMovimento(percorreu);                       // tontura vale sempre
-            } else if (mexeu && svgA) {
+            } else if (percorreu > 0 && svgA) {
                 const rA = svgA.getBoundingClientRect();
                 // ESFREGAR passa na frente do carinho: enquanto ela está suja, a mão passando
                 // por cima está limpando, não fazendo cafuné. Cafuné em cima da fuligem seria
@@ -3397,13 +3412,19 @@
                     const raio = _invasao ? INV_ATENCAO : AFAGO_RAIO;
                     const dM = Math.hypot(e.clientX - (rA.left + rA.width / 2),
                                           e.clientY - (rA.top + rA.height / 2 - AFAGO_SOBE));
-                    if (dM <= raio) atrapalhar();
-                } else if (_sujeiraNaCara && esfregar(e.clientX, e.clientY, rA, percorreu)) {
+                    if (mexeu && dM <= raio) atrapalhar();
+                } else if (_sujeiraNaCara && mexeu && esfregar(e.clientX, e.clientY, rA, percorreu)) {
                     _afagoUltimo = 0;
                 } else if (!_foguetesNaCabeca && !_sujeiraNaCara) {
                     const dA = Math.hypot(e.clientX - (rA.left + rA.width / 2),
                                           e.clientY - (rA.top + rA.height / 2 - AFAGO_SOBE));
-                    if (dA <= AFAGO_RAIO) _afagoUltimo = Date.now();   // mão de leve = carinho
+                    if (dA <= AFAGO_RAIO) {
+                        // Movimentos lentos chegam em passos menores que 1,5 px; também
+                        // precisam sustentar o gesto durante os dois segundos de espera.
+                        const agora = Date.now();
+                        if (!_afagoInicio || agora - _afagoUltimo >= AFAGO_JANELA) _afagoInicio = agora;
+                        _afagoUltimo = agora;
+                    }
                 }
             }
         });
@@ -3625,7 +3646,7 @@
             });
         }
 
-        // ═══ AFAGO — mouse PARADO em cima dela (não é clique). Ela fecha os olhos e tudo
+        // ═══ AFAGO — movimento contínuo sobre a cabeça (não é clique). Ela fecha os olhos e tudo
         //     desacelera. É o oposto do clique: um assusta, o outro acalma. ═══
 
         function checarAfago() {
@@ -3633,7 +3654,9 @@
             const el = document.getElementById('rosto-txt');
             if (!pres || !el) return;
             const acariciando = _afagoUltimo && (Date.now() - _afagoUltimo) < AFAGO_JANELA;
-            const deve = acariciando && !_afk && !_reagindo && !_sujeiraNaCara && !_medo;
+            const permitido = acariciando && !_afk && !_reagindo && !_sujeiraNaCara && !_medo;
+            if (!permitido) _afagoInicio = 0;
+            const deve = permitido && _afagoInicio && Date.now() - _afagoInicio >= AFAGO_ATIVACAO_MS;
 
             if (deve && !_afagando) {
                 _afagando = true;
@@ -8170,6 +8193,9 @@
         })();
     </script>
     <script src="/static/avaliacao-ferramentas.js"></script>
+    <link rel="stylesheet" href="/static/rosto-animado/rosto.css">
+    <script src="/static/rosto-animado/lottie.min.js"></script>
+    <script src="/static/rosto-animado/rosto.js"></script>
     <script src="/static/discord-voz.js"></script>
 </body>
 </html>
